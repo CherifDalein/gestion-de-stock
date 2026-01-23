@@ -34,7 +34,7 @@ public class UtilisateurService {
         utilisateur.setEmail(email);
         utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
         utilisateur.setDateInscription(LocalDate.now());
-        utilisateur.setRole(Role.CAISSIER);
+        utilisateur.setRole(Role.ADMIN);
 
         return utilisateurRepository.save(utilisateur);
     }
@@ -60,8 +60,8 @@ public class UtilisateurService {
 
             return org.springframework.security.core.userdetails.User.builder()
                     .username(utilisateur.getEmail())
-                    .password(utilisateur.getMotDePasse()) // déjà encodé avec BCrypt
-                    .roles(utilisateur.getRole().name())    // UTILISATEUR ou ADMIN
+                    .password(utilisateur.getMotDePasse())
+                    .roles(utilisateur.getRole().name())
                     .build();
         };
     }

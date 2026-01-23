@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -56,10 +56,12 @@
                         <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
                         Produits
                     </a>
-                    <a class="nav-link" th:href="@{/categories}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-tags"></i></div>
-                        Catégories
-                    </a>
+                    <div sec:authorize="hasRole('ADMIN')">
+                        <a class="nav-link" th:href="@{/categories}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tags"></i></div>
+                            Catégories
+                        </a>
+                    </div>
 
                     <div class="sb-sidenav-menu-heading">Partenaires</div>
                     <a class="nav-link" th:href="@{/suppliers}">
