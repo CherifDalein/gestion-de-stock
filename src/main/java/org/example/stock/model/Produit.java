@@ -14,8 +14,11 @@ public class Produit {
 
     private String nom;
     private String reference;
+    private Double prixAchat;
+    private Double prixVente;
+    private Long quantite;
 
     @ManyToOne
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "categorie_id")
     private Categorie categorie;
 }

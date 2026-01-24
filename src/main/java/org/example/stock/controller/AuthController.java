@@ -13,13 +13,11 @@ public class AuthController {
     @Autowired
     private UtilisateurService utilisateurService;
 
-    // Page d'inscription
     @GetMapping("/register")
     public String showRegisterForm() {
         return "register";
     }
 
-    // Soumission du formulaire d'inscription
     @PostMapping("/register")
     public String registerUser(
             @RequestParam String nom,
@@ -36,13 +34,11 @@ public class AuthController {
         return "register";
     }
 
-    // Page de connexion
     @GetMapping("/login")
     public String showLoginForm() {
         return "login";
     }
 
-    // Pour un login manuel si tu veux gérer via un formulaire
     @PostMapping("/login")
     public String loginUser(
             @RequestParam String email,

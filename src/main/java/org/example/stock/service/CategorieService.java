@@ -17,7 +17,7 @@ public class CategorieService {
         return categorieRepository.findAll();
     }
 
-    public void enregistrer(Categorie categorie) {
+    public void ajouterCategorie(Categorie categorie) {
         categorieRepository.save(categorie);
     }
 
@@ -30,8 +30,6 @@ public class CategorieService {
     }
 
     public void supprimer(Long id) {
-        // La règle métier dit : suppression bloquée si utilisée.
-        // JPA s'en chargera via une exception si des produits y sont liés.
         categorieRepository.deleteById(id);
     }
 }

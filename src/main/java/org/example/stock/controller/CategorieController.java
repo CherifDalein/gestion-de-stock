@@ -40,7 +40,7 @@ public class CategorieController {
             return "categories/nouveau";
         }
 
-        categorieService.enregistrer(categorie);
+        categorieService.ajouterCategorie(categorie);
         return "redirect:/categories";
     }
 
@@ -69,7 +69,7 @@ public class CategorieController {
         }
 
         categorie.setId(id);
-        categorieService.enregistrer(categorie);
+        categorieService.ajouterCategorie(categorie);
         return "redirect:/categories";
     }
 }
