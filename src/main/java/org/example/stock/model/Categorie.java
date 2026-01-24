@@ -18,7 +18,6 @@ public class Categorie {
     @Column(unique = true)
     private String nom;
 
-    // Une catégorie peut avoir plusieurs produits
     @OneToMany(mappedBy = "categorie")
     private List<Produit> produits;
 }

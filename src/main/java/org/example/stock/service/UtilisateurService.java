@@ -21,9 +21,7 @@ public class UtilisateurService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    /**
-     * Crée un nouvel utilisateur
-     */
+
     public Utilisateur registerUtilisateur(String nom, String email, String motDePasse) {
         if (utilisateurRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email déjà utilisé");
