@@ -3,6 +3,7 @@ package org.example.stock.controller;
 import jakarta.validation.Valid;
 import org.example.stock.model.Categorie;
 import org.example.stock.model.Produit;
+import org.example.stock.service.FournisseurService;
 import org.springframework.ui.Model;
 import org.example.stock.service.CategorieService;
 import org.example.stock.service.ProduitService;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProduitController {
     @Autowired private ProduitService produitService;
     @Autowired private CategorieService categorieService;
+    @Autowired private FournisseurService fournisseurService;
 
     @GetMapping
     public String liste(Model model) {
@@ -27,6 +29,7 @@ public class ProduitController {
     public String afficherFormulaire(Model model) {
         model.addAttribute("produit", new Produit());
         model.addAttribute("categories", categorieService.listerToutes());
+        model.addAttribute("fournisseurs", fournisseurService.listerTous());
         return "produits/nouveau";
     }
 
@@ -53,6 +56,7 @@ public class ProduitController {
         Produit produit = produitService.trouverParId(id);
         model.addAttribute("produit", produit);
         model.addAttribute("categories", categorieService.listerToutes());
+        model.addAttribute("fournisseurs", fournisseurService.listerTous());
         return "produits/modifier";
     }
 

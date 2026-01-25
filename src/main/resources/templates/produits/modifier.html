@@ -69,6 +69,15 @@
                                                 <label for="inputCategorie">Catégorie</label>
                                             </div>
                                         </div>
+                                        <div class="col-md-6">
+                                            <div class="form-floating">
+                                                <select class="form-select" th:field="*{fournisseur}">
+                                                    <option value="" selected>Inconnu / Divers</option>
+                                                    <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
+                                                </select>
+                                                <label>Fournisseur</label>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="d-flex align-items-center justify-content-between mt-4 mb-0">

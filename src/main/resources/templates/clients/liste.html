@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <title>Liste des Clients - Stock Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
+    <link th:href="@{/css/styles.css}" rel="stylesheet" />
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+</head>
+<body class="sb-nav-fixed">
+<div id="layoutSidenav_content">
+    <main>
+        <div class="container-fluid px-4">
+            <h1 class="mt-4">Clients</h1>
+            <div class="mb-4 d-flex justify-content-end">
+                <a th:href="@{/clients/nouveau}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Nouveau Client
+                </a>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header"><i class="fas fa-users me-1"></i> Répertoire Clients</div>
+                <div class="card-body">
+                    <table id="datatablesSimple">
+                        <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Email</th>
+                            <th>Adresse</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="c : ${clients}">
+                            <td th:text="${c.nom}" class="fw-bold"></td>
+                            <td th:text="${c.telephone}"></td>
+                            <td th:text="${c.email}"></td>
+                            <td th:text="${c.adresse}"></td>
+                            <td>
+                                <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="btn btn-warning btn-sm">Modifier <i class="fas fa-edit"></i></a>
+                                <a th:href="@{/clients/supprimer/{id}(id=${c.id})}" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ce client ?')">Supprimer <i class="fas fa-trash"></i></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script th:src="@{/js/scripts.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+<script th:src="@{/js/datatables-simple-demo.js}"></script>
+</body>
+</html>

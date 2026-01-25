@@ -21,4 +21,8 @@ public class Produit {
     @ManyToOne
     @JoinColumn(name = "categorie_id")
     private Categorie categorie;
+
+    @ManyToOne
+    @JoinColumn(name = "fournisseur_id")
+    private Fournisseur fournisseur;
 }
