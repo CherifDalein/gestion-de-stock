@@ -29,7 +29,7 @@
                             <th>Référence</th>
                             <th>Nom</th>
                             <th>Catégorie</th>
-                            <th>Prix Achat</th>
+                            <th>Fournisseur</th> <th>Prix Achat</th>
                             <th>Prix Vente</th>
                             <th>Stock</th>
                             <th>Actions</th>
@@ -41,6 +41,9 @@
                             <td th:text="${p.nom}"></td>
                             <td>
                                 <span class="badge bg-secondary" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span>
+                            </td>
+                            <td>
+                                <span th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}" class="text-muted small"></span>
                             </td>
                             <td th:text="${p.prixAchat + ' GNF'}"></td>
                             <td th:text="${p.prixVente + ' GNF'}"></td>

@@ -6,26 +6,19 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
-public class Fournisseur {
+public class Client {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Le nom du fournisseur est obligatoire")
+    @NotBlank(message = "Le nom du client est obligatoire")
     private String nom;
 
     private String telephone;
-
     @Email(message = "Format d'email invalide")
     private String email;
-
     private String adresse;
-
-    @OneToMany(mappedBy = "fournisseur")
-    private List<Produit> produits;
 }
