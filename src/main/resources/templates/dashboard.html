@@ -74,11 +74,11 @@
                     </a>
 
                     <div class="sb-sidenav-menu-heading">Opérations</div>
-                    <a class="nav-link" th:href="@{/purchases}">
+                    <a class="nav-link" th:href="@{/achats}">
                         <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
                         Achats
                     </a>
-                    <a class="nav-link" th:href="@{/sales}">
+                    <a class="nav-link" th:href="@{/ventes}">
                         <div class="sb-nav-link-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                         Ventes
                     </a>
@@ -103,7 +103,11 @@
 
     <div id="layoutSidenav_content">
         <main>
-            <div class="container-fluid px-4">
+            <div th:if="${view != null and view != ''}">
+                <div th:replace="~{__${view}__ :: content}"></div>
+            </div>
+
+            <div th:if="${view == null or view == ''}" class="container-fluid px-4">
                 <h1 class="mt-4">Tableau de Bord</h1>
                 <p>Bienvenue dans votre gestion de stock.</p>
             </div>
