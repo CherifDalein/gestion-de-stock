@@ -3,7 +3,9 @@ package org.example.stock.controller;
 import jakarta.validation.Valid;
 import org.example.stock.model.Categorie;
 import org.example.stock.model.Produit;
+import org.example.stock.repository.ProduitRepository;
 import org.example.stock.service.FournisseurService;
+import org.example.stock.service.UtilisateurService;
 import org.springframework.ui.Model;
 import org.example.stock.service.CategorieService;
 import org.example.stock.service.ProduitService;
@@ -18,11 +20,15 @@ public class ProduitController {
     @Autowired private ProduitService produitService;
     @Autowired private CategorieService categorieService;
     @Autowired private FournisseurService fournisseurService;
+    @Autowired private UtilisateurService utilisateurService;
 
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("produits", produitService.listerTous());
-        return "produits/liste";
+        model.addAttribute("utilisateur", utilisateurService.getUtilisateurConnecte());
+        model.addAttribute("view", "produits/liste");
+        model.addAttribute("pageTitle", "Liste des Produits - Stock Pro");
+        return "dashboard";
     }
 
     @GetMapping("/nouveau")
@@ -30,7 +36,11 @@ public class ProduitController {
         model.addAttribute("produit", new Produit());
         model.addAttribute("categories", categorieService.listerToutes());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
-        return "produits/nouveau";
+        // 1. On indique le chemin du fragment (le formulaire)
+        model.addAttribute("view", "produits/nouveau");
+
+        model.addAttribute("pageTitle", "Ajouter un Produit - Stock Pro");
+        return "dashboard";
     }
 
     @PostMapping("/ajouter")
