@@ -1,9 +1,7 @@
 package org.example.stock.controller;
 
 import jakarta.validation.Valid;
-import org.example.stock.model.Categorie;
 import org.example.stock.model.Produit;
-import org.example.stock.repository.ProduitRepository;
 import org.example.stock.service.FournisseurService;
 import org.example.stock.service.UtilisateurService;
 import org.springframework.ui.Model;
@@ -25,9 +23,7 @@ public class ProduitController {
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("produits", produitService.listerTous());
-        model.addAttribute("utilisateur", utilisateurService.getUtilisateurConnecte());
         model.addAttribute("view", "produits/liste");
-        model.addAttribute("pageTitle", "Liste des Produits - Stock Pro");
         return "dashboard";
     }
 
@@ -36,10 +32,8 @@ public class ProduitController {
         model.addAttribute("produit", new Produit());
         model.addAttribute("categories", categorieService.listerToutes());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
-        // 1. On indique le chemin du fragment (le formulaire)
-        model.addAttribute("view", "produits/nouveau");
 
-        model.addAttribute("pageTitle", "Ajouter un Produit - Stock Pro");
+        model.addAttribute("view", "produits/nouveau");
         return "dashboard";
     }
 
@@ -49,7 +43,8 @@ public class ProduitController {
                                  Model model) {
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
-            return "produits/nouveau";
+            model.addAttribute("view", "produits/nouveau");
+            return "dashboard";
         }
         produitService.ajouterProduit(produit);
         return "redirect:/produits";
@@ -67,14 +62,16 @@ public class ProduitController {
         model.addAttribute("produit", produit);
         model.addAttribute("categories", categorieService.listerToutes());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
-        return "produits/modifier";
+        model.addAttribute("view", "produits/modifier");
+        return "dashboard";
     }
 
     @PostMapping("/modifier/{id}")
     public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model) {
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
-            return "produits/modifier";
+            model.addAttribute("view", "produits/modifier");
+            return "dashboard";
         }
         produit.setId(id);
         produitService.ajouterProduit(produit);
