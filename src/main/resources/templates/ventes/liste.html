@@ -1,60 +1,81 @@
-<!DOCTYPE html>
-<html lang="fr" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="utf-8" />
-    <title>Historique des Ventes - Stock Pro</title>
-    <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
-    <link th:href="@{/css/styles.css}" rel="stylesheet" />
-    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
-</head>
-<body class="sb-nav-fixed">
-<div id="layoutSidenav_content">
-    <main>
-        <div class="container-fluid px-4">
-            <h1 class="mt-4">Ventes</h1>
-            <div class="mb-4 d-flex justify-content-end">
-                <a th:href="@{/ventes/nouveau}" class="btn btn-success">
-                    <i class="fas fa-shopping-cart"></i> Effectuer une vente
-                </a>
-            </div>
-
-            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-
-            <div class="card mb-4">
-                <div class="card-header"><i class="fas fa-table me-1"></i> Journal des transactions</div>
-                <div class="card-body">
-                    <table id="datatablesSimple">
-                        <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Date</th>
-                            <th>Client</th>
-                            <th>Nb Articles</th>
-                            <th>Total</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="v : ${ventes}">
-                            <td th:text="${v.id}"></td>
-                            <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
-                            <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
-                            <td th:text="${v.lignes.size()}"></td>
-                            <td class="fw-bold text-success" th:text="${v.montantTotal + ' GNF'}"></td>
-                            <td>
-                                <a href="#" class="btn btn-info btn-sm"><i class="fas fa-eye"></i> Détails</a>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div th:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Journal des Ventes</h1>
+        <div class="mb-4 d-flex justify-content-end">
+            <a th:href="@{/ventes/nouveau}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Effectuer une vente
+            </a>
         </div>
-    </main>
+
+        <table id="datatablesSimple">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="v : ${ventes}">
+                <td th:text="${v.id}"></td>
+                <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
+                <td class="fw-bold text-success" th:text="${v.montantTotal + ' GNF'}"></td>
+                <td>
+                    <button type="button" class="btn btn-info btn-sm"
+                            data-bs-toggle="modal"
+                            th:data-bs-target="'#modalVente' + ${v.id}">
+                        <i class="fas fa-eye"></i> Détails
+                    </button>
+
+                    <div class="modal fade" th:id="'modalVente' + ${v.id}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-light">
+                                    <h5 class="modal-title">Détails de la Vente #<span th:text="${v.id}"></span></h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <strong>Date :</strong> <span th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></span><br>
+                                            <strong>Client :</strong> <span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            <h4 class="text-primary">Total : <span th:text="${v.montantTotal}"></span> GNF</h4>
+                                        </div>
+                                    </div>
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-dark">
+                                        <tr>
+                                            <th>Produit</th>
+                                            <th>Prix Unitaire</th>
+                                            <th>Quantité</th>
+                                            <th>Sous-total</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr th:each="ligne : ${v.lignes}">
+                                            <td th:text="${ligne.produit.nom}"></td>
+                                            <td th:text="${ligne.prixUnitaire + ' GNF'}"></td>
+                                            <td th:text="${ligne.quantite}"></td>
+                                            <td th:text="${(ligne.prixUnitaire * ligne.quantite) + ' GNF'}"></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                    <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:src="@{/js/scripts.js}"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
-<script th:src="@{/js/datatables-simple-demo.js}"></script>
-</body>
-</html>

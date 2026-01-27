@@ -11241,3 +11241,25 @@ body {
   font-size: 0.75rem;
   border-radius: 0.375rem !important;
 }
+
+@media print {
+    /* On cache tout le reste de la page */
+    body * {
+        visibility: hidden;
+    }
+    /* On affiche uniquement la modal active et son contenu */
+    .modal.show, .modal.show * {
+        visibility: visible;
+    }
+    /* On positionne la modal en haut à gauche pour l'impression */
+    .modal.show {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    /* On cache les boutons Fermer et Imprimer sur le papier */
+    .modal-footer, .btn-close {
+        display: none !important;
+    }
+}

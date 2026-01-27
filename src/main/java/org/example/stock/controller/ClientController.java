@@ -20,13 +20,15 @@ public class ClientController {
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("clients", clientService.listerTous());
-        return "clients/liste";
+        model.addAttribute("view", "clients/liste");
+        return "dashboard";
     }
 
     @GetMapping("/nouveau")
     public String formulaire(Model model) {
         model.addAttribute("client", new Client());
-        return "clients/nouveau";
+        model.addAttribute("view", "clients/nouveau");
+        return "dashboard";
     }
 
     @PostMapping("/enregistrer")
@@ -38,7 +40,8 @@ public class ClientController {
     @GetMapping("/modifier/{id}")
     public String afficherFormulaireModif(@PathVariable Long id, Model model) {
         model.addAttribute("client", clientService.trouverParId(id));
-        return "clients/modifier";
+        model.addAttribute("view", "clients/modifier");
+        return "dashboard";
     }
 
     @PostMapping("/modifier/{id}")

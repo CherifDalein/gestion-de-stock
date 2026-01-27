@@ -24,7 +24,8 @@ public class VenteController {
     @GetMapping
     public String listeVentes(Model model) {
         model.addAttribute("ventes", venteService.listerToutes());
-        return "ventes/liste";
+        model.addAttribute("view", "ventes/liste");
+        return "dashboard";
     }
 
     @GetMapping("/nouveau")
@@ -32,18 +33,23 @@ public class VenteController {
         model.addAttribute("vente", new Vente());
         model.addAttribute("clients", clientService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
-        return "ventes/nouveau";
+        model.addAttribute("view", "ventes/nouveau");
+        return "dashboard";
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrerVente(@ModelAttribute("vente") Vente vente, RedirectAttributes redirectAttributes) {
+    public String enregistrerVente(@ModelAttribute("vente") Vente vente, RedirectAttributes redirectAttributes, Model model) {
         try {
             venteService.effectuerVente(vente);
             redirectAttributes.addFlashAttribute("success", "Vente enregistrée avec succès !");
+            return "redirect:/ventes";
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return "redirect:/ventes/nouveau";
+            model.addAttribute("clients", clientService.listerTous());
+            model.addAttribute("produits", produitService.listerTous());
+
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("view", "ventes/nouveau");
+            return "dashboard";
         }
-        return "redirect:/ventes";
     }
 }

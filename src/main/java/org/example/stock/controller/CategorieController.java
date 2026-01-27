@@ -19,25 +19,29 @@ public class CategorieController {
     @GetMapping
     public String afficherListe(Model model) {
         model.addAttribute("categories", categorieService.listerToutes());
-        return "categories/liste";
+        model.addAttribute("view", "categories/liste");
+        return "dashboard";
     }
 
     @GetMapping("/nouveau")
     public String afficherFormulaire(Model model) {
         model.addAttribute("nouvelleCategorie", new Categorie());
-        return "categories/nouveau";
+        model.addAttribute("view", "categories/nouveau");
+        return "dashboard";
     }
 
     @PostMapping("/ajouter")
     public String ajouterCategorie(@Valid @ModelAttribute("nouvelleCategorie") Categorie categorie,
-                                   BindingResult result) {
+                                   BindingResult result,
+                                   Model model) {
 
         if (categorieService.existeDeja(categorie.getNom())) {
             result.rejectValue("nom", "error.categorie", "Cette catégorie existe déjà.");
         }
 
         if (result.hasErrors()) {
-            return "categories/nouveau";
+            model.addAttribute("view", "categories/nouveau");
+            return "dashboard";
         }
 
         categorieService.ajouterCategorie(categorie);
@@ -57,15 +61,18 @@ public class CategorieController {
             return "redirect:/categories";
         }
         model.addAttribute("categorie", categorie);
-        return "categories/modifier";
+        model.addAttribute("view", "categories/modifier");
+        return "dashboard";
     }
 
     @PostMapping("/modifier/{id}")
     public String modifierCategorie(@PathVariable Long id,
                                     @Valid @ModelAttribute("categorie") Categorie categorie,
-                                    BindingResult result) {
+                                    BindingResult result,
+                                    Model model) {
         if (result.hasErrors()) {
-            return "categories/modifier";
+            model.addAttribute("view", "categories/modifier");
+            return "dashboard";
         }
 
         categorie.setId(id);
