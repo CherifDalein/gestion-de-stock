@@ -1,24 +1,26 @@
 <div th:fragment="content">
     <div class="container-fluid px-4">
-        <h1 class="mt-4"><i class="fas fa-truck-loading"></i> Nouvel Approvisionnement</h1>
+        <h1 class="mt-4"><i class="fas fa-edit"></i> Modifier l'Achat #<span th:text="${achat.id}"></span></h1>
+
         <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/achats}" class="btn btn-success">
-                <i class="fas fa-truck"></i> Liste des achats
+            <a th:href="@{/achats}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour à la liste
             </a>
         </div>
 
-        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm">
+        <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm">
+            <input type="hidden" th:field="*{id}">
+
             <div class="row">
                 <div class="col-md-4">
-                    <div class="card shadow-sm mb-4 border-left-primary">
-                        <div class="card-header bg-primary text-white fw-bold">
-                            <i class="fas fa-money-bill-wave me-1"></i> Règlement Fournisseur
+                    <div class="card shadow-sm mb-4 border-left-warning">
+                        <div class="card-header bg-warning text-dark fw-bold">
+                            <i class="fas fa-money-bill-wave me-1"></i> Mise à jour Règlement
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Fournisseur</label>
                                 <select th:field="*{fournisseur}" class="form-select" required>
-                                    <option value="">-- Sélectionner le fournisseur --</option>
                                     <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
                                 </select>
                             </div>
@@ -34,8 +36,8 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold text-success">Montant Versé (Cash)</label>
                                 <input type="number" th:field="*{montantVerse}" id="montantVerse"
-                                       class="form-control form-control-lg border-success" placeholder="Ex: 500000" required step="0.01">
-                                <small class="text-muted">Somme réellement payée au fournisseur.</small>
+                                       class="form-control form-control-lg border-warning" required step="0.01">
+                                <small class="text-muted">Modifier la somme payée si nécessaire.</small>
                             </div>
 
                             <div class="mb-3">
@@ -43,8 +45,8 @@
                                 <input type="number" id="resteAPayer" class="form-control bg-light fw-bold" readonly>
                             </div>
 
-                            <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm mt-3">
-                                <i class="fas fa-save"></i> Valider l'entrée en stock
+                            <button type="submit" class="btn btn-warning btn-lg w-100 shadow-sm mt-3 fw-bold">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
                             </button>
                         </div>
                     </div>
@@ -53,14 +55,14 @@
                 <div class="col-md-8">
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-dark text-white fw-bold">
-                            <i class="fas fa-boxes me-1"></i> Produits à ajouter
+                            <i class="fas fa-boxes me-1"></i> Produits de l'achat
                         </div>
                         <div class="card-body">
                             <div class="row g-2 mb-4 border-bottom pb-3">
                                 <div class="col-md-5">
                                     <label class="small fw-bold">Produit</label>
                                     <select id="selectProduit" class="form-select">
-                                        <option value="">-- Choisir un produit --</option>
+                                        <option value="">-- Ajouter un autre produit --</option>
                                         <option th:each="p : ${produits}"
                                                 th:value="${p.id}"
                                                 th:data-nom="${p.nom}"
@@ -106,4 +108,32 @@
     </div>
 
     <script th:src="@{/js/achat.js}"></script>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Initialisation du mode modification...");
+
+            // 1. On boucle sur les lignes existantes de l'achat via Thymeleaf
+            /*[# th:each="ligne : ${achat.lignes}"]*/
+            // On remplit les champs de saisie temporairement
+            document.getElementById('selectProduit').value = /*[[${ligne.produit.id}]]*/ '';
+            document.getElementById('inputPrix').value = /*[[${ligne.prixAchatUnitaire}]]*/ '';
+            document.getElementById('inputQtite').value = /*[[${ligne.quantite}]]*/ '';
+
+            // On appelle la fonction ajouterLigne() de ton fichier achat.js
+            // Cette fonction va créer la ligne dans le tableau et mettre à jour le total
+            if (typeof ajouterLigne === "function") {
+                ajouterLigne();
+            }
+            /*[/]*/
+
+            // 2. On remet le montant versé initial (car ajouterLigne peut recalculer le total)
+            const montantInitial = /*[[${achat.montantVerse}]]*/ 0;
+            document.getElementById('montantVerse').value = montantInitial;
+
+            // 3. On force le calcul du reste à payer
+            if (typeof calculerReste === "function") {
+                calculerReste();
+            }
+        });
+    </script>
 </div>

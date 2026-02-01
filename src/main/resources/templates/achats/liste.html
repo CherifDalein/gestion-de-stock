@@ -7,15 +7,18 @@
             </a>
         </div>
 
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
             <div class="card-body">
-                <table id="datatablesSimple">
+                <table id="datatablesSimple" class="table table-striped table-hover">
                     <thead>
                     <tr>
                         <th>ID</th>
                         <th>Date</th>
                         <th>Fournisseur</th>
-                        <th>Montant Total</th>
+                        <th>Total</th>
+                        <th>Versé</th>
+                        <th>Reste</th>
+                        <th>Statut</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
@@ -24,19 +27,36 @@
                         <td th:text="${a.id}"></td>
                         <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
-                        <td class="fw-bold text-danger" th:text="${a.montantTotal + ' GNF'}"></td>
+                        <td class="fw-bold" th:text="${a.montantTotal + ' GNF'}"></td>
+                        <td class="text-success" th:text="${(a.montantVerse ?: 0) + ' GNF'}"></td>
+                        <td class="text-danger fw-bold"
+                            th:text="${(a.montantTotal - (a.montantVerse ?: 0)) + ' GNF'}">
+                        </td>
                         <td>
-                            <button type="button" class="btn btn-info btn-sm"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#modalAchat' + ${a.id}">
-                                <i class="fas fa-eye"></i> Détails
-                            </button>
+                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) == 0}" class="badge bg-success">Réglé</span>
+                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">Dette</span>
+                        </td>
+                        <td>
+                            <div class="d-flex">
+                                <button type="button" class="btn btn-info btn-sm me-2"
+                                        title="Voir détails"
+                                        data-bs-toggle="modal"
+                                        th:data-bs-target="'#modalAchat' + ${a.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+
+                                <a th:href="@{/achats/modifier/{id}(id=${a.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   title="Modifier l'achat">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
 
                             <div class="modal fade" th:id="'modalAchat' + ${a.id}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-lg">
                                     <div class="modal-content">
                                         <div class="modal-header bg-light">
-                                            <h5 class="modal-title">Détails de l'Achat #<span th:text="${a.id}"></span></h5>
+                                            <h5 class="modal-title">Facture Achat #<span th:text="${a.id}"></span></h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
@@ -46,14 +66,18 @@
                                                     <strong>Date :</strong> <span th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></span>
                                                 </div>
                                                 <div class="col-6 text-end">
-                                                    <h4 class="text-success">Total : <span th:text="${a.montantTotal}"></span> GNF</h4>
+                                                    <p class="mb-0">Total : <strong th:text="${a.montantTotal + ' GNF'}"></strong></p>
+                                                    <p class="mb-0 text-success">Payé : <strong th:text="${(a.montantVerse ?: 0) + ' GNF'}"></strong></p>
+                                                    <h4 class="text-danger">
+                                                        Reste : <span th:text="${a.montantTotal - (a.montantVerse ?: 0)}"></span> GNF
+                                                    </h4>
                                                 </div>
                                             </div>
                                             <table class="table table-sm table-bordered">
                                                 <thead class="table-dark">
                                                 <tr>
                                                     <th>Produit</th>
-                                                    <th>Prix Achat</th>
+                                                    <th>Prix Unit.</th>
                                                     <th>Quantité</th>
                                                     <th>Sous-total</th>
                                                 </tr>
@@ -61,7 +85,7 @@
                                                 <tbody>
                                                 <tr th:each="ligne : ${a.lignes}">
                                                     <td th:text="${ligne.produit.nom}"></td>
-                                                    <td th:text="${ligne.prixAchatUnitaire + ' GNF'}"></td>
+                                                    <td th:text="${ligne.prixAchatUnitaire}"></td>
                                                     <td th:text="${ligne.quantite}"></td>
                                                     <td th:text="${(ligne.prixAchatUnitaire * ligne.quantite) + ' GNF'}"></td>
                                                 </tr>
@@ -70,7 +94,7 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                            <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+                                            <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i></button>
                                         </div>
                                     </div>
                                 </div>

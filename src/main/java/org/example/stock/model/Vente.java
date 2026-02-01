@@ -18,10 +18,15 @@ public class Vente {
 
     private LocalDateTime dateVente;
     private Double montantTotal;
+    private Double montantVerse;
 
     @ManyToOne
     private Client client;
 
     @OneToMany(mappedBy = "vente", cascade = CascadeType.ALL)
     private List<DetailVente> lignes = new ArrayList<>();
+
+    public Double getResteAPayer() {
+        return (montantTotal != null && montantVerse != null) ? montantTotal - montantVerse : 0.0;
+    }
 }
