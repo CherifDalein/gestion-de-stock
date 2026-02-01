@@ -1,0 +1,85 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Journal des Achats</h1>
+        <div class="mb-4 d-flex justify-content-end">
+            <a th:href="@{/achats/nouveau}" class="btn btn-success">
+                <i class="fas fa-truck"></i> Nouvel Approvisionnement
+            </a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <table id="datatablesSimple">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Date</th>
+                        <th>Fournisseur</th>
+                        <th>Montant Total</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="a : ${achats}">
+                        <td th:text="${a.id}"></td>
+                        <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td th:text="${a.fournisseur.nom}"></td>
+                        <td class="fw-bold text-danger" th:text="${a.montantTotal + ' GNF'}"></td>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm"
+                                    data-bs-toggle="modal"
+                                    th:data-bs-target="'#modalAchat' + ${a.id}">
+                                <i class="fas fa-eye"></i> Détails
+                            </button>
+
+                            <div class="modal fade" th:id="'modalAchat' + ${a.id}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title">Détails de l'Achat #<span th:text="${a.id}"></span></h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="row mb-3">
+                                                <div class="col-6">
+                                                    <strong>Fournisseur :</strong> <span th:text="${a.fournisseur.nom}"></span><br>
+                                                    <strong>Date :</strong> <span th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></span>
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <h4 class="text-success">Total : <span th:text="${a.montantTotal}"></span> GNF</h4>
+                                                </div>
+                                            </div>
+                                            <table class="table table-sm table-bordered">
+                                                <thead class="table-dark">
+                                                <tr>
+                                                    <th>Produit</th>
+                                                    <th>Prix Achat</th>
+                                                    <th>Quantité</th>
+                                                    <th>Sous-total</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr th:each="ligne : ${a.lignes}">
+                                                    <td th:text="${ligne.produit.nom}"></td>
+                                                    <td th:text="${ligne.prixAchatUnitaire + ' GNF'}"></td>
+                                                    <td th:text="${ligne.quantite}"></td>
+                                                    <td th:text="${(ligne.prixAchatUnitaire * ligne.quantite) + ' GNF'}"></td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                            <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

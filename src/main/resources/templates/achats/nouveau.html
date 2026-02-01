@@ -1,0 +1,86 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4">Nouvel Approvisionnement</h1>
+
+        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fas fa-truck me-1"></i> Infos Achat
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Fournisseur</label>
+                                <select th:field="*{fournisseur}" class="form-select" required>
+                                    <option value="">-- Sélectionner le fournisseur --</option>
+                                    <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Total Général (GNF)</label>
+                                <input type="number" th:field="*{montantTotal}" id="totalGeneral"
+                                       class="form-control form-control-lg fw-bold text-danger bg-light" readonly>
+                            </div>
+                            <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm">
+                                <i class="fas fa-check-circle"></i> Valider l'entrée en stock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fas fa-shopping-cart me-1"></i> Produits à ajouter
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2 mb-4 border-bottom pb-3">
+                                <div class="col-md-5">
+                                    <label class="small">Produit</label>
+                                    <select id="selectProduit" class="form-select">
+                                        <option value="">-- Choisir un produit --</option>
+                                        <option th:each="p : ${produits}"
+                                                th:value="${p.id}"
+                                                th:data-nom="${p.nom}"
+                                                th:data-prix="${p.prixAchat}"
+                                                th:text="${p.nom}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small">Prix d'Achat</label>
+                                    <input type="number" id="inputPrix" class="form-control" placeholder="Prix">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small">Quantité</label>
+                                    <input type="number" id="inputQtite" class="form-control" placeholder="Qté">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-primary w-100" onclick="ajouterLigne()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <table class="table table-hover" id="tableLignes">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Produit</th>
+                                    <th style="width: 150px;">Prix Unit.</th>
+                                    <th style="width: 100px;">Qté</th>
+                                    <th>Sous-total</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script th:src="@{/js/achat.js}"></script>
+</div>
