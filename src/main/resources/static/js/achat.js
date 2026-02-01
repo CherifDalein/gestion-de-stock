@@ -8,7 +8,7 @@ function ajouterLigne() {
     const qte = document.getElementById('inputQtite').value;
 
     if (!pId || !prix || !qte || qte <= 0) {
-        alert("Veuillez remplir correctement tous les champs (produit, prix et quantité positive).");
+        alert("Veuillez remplir correctement tous les champs.");
         return;
     }
 
@@ -27,9 +27,9 @@ function ajouterLigne() {
             <td>
                 <input type="number" name="lignes[${index}].quantite" value="${qte}" class="form-control form-control-sm" readonly>
             </td>
-            <td class="ligne-total">${totalLigne.toFixed(2)}</td>
+            <td class="ligne-total fw-bold">${totalLigne.toFixed(2)}</td>
             <td class="text-center">
-                <button type="button" class="btn btn-danger btn-sm" onclick="supprimerLigne(this)">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="supprimerLigne(this)">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -40,7 +40,7 @@ function ajouterLigne() {
     index++;
     calculerTotal();
 
-    // Reset et focus
+    // Reset et focus pour la ligne suivante
     select.value = "";
     document.getElementById('inputPrix').value = "";
     document.getElementById('inputQtite').value = "";
@@ -57,16 +57,47 @@ function calculerTotal() {
     document.querySelectorAll('.ligne-total').forEach(td => {
         total += parseFloat(td.innerText);
     });
+
     document.getElementById('totalGeneral').value = total.toFixed(2);
+
+    // Suggestion : Par défaut on met le montant versé égal au total
+    const vInput = document.getElementById('montantVerse');
+    if (vInput.value === "" || parseFloat(vInput.value) === 0) {
+        vInput.value = total.toFixed(2);
+    }
+
+    calculerReste();
 }
 
-// Écouteur pour le changement de produit (auto-remplissage du prix)
+function calculerReste() {
+    const total = parseFloat(document.getElementById('totalGeneral').value) || 0;
+    const verse = parseFloat(document.getElementById('montantVerse').value) || 0;
+    const reste = total - verse;
+
+    const resteInput = document.getElementById('resteAPayer');
+    resteInput.value = reste.toFixed(2);
+
+    // Style visuel si dette
+    if (reste > 0) {
+        resteInput.classList.add('text-danger');
+    } else {
+        resteInput.classList.remove('text-danger');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Remplissage auto du prix quand on change de produit
     const selectProduit = document.getElementById('selectProduit');
     if (selectProduit) {
         selectProduit.addEventListener('change', function() {
             const prix = this.options[this.selectedIndex].getAttribute('data-prix');
             document.getElementById('inputPrix').value = prix || "";
         });
+    }
+
+    // Calcul du reste quand on modifie le montant versé manuellement
+    const verseInput = document.getElementById('montantVerse');
+    if (verseInput) {
+        verseInput.addEventListener('input', calculerReste);
     }
 });

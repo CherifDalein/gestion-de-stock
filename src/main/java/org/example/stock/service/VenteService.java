@@ -24,30 +24,39 @@ public class VenteService {
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
         }
-        double montantTotalVente = 0.0;
+
+        // Le montant total est déjà envoyé par l'input hidden du formulaire
+        // On s'assure juste que montantVerse n'est pas null
+        if (vente.getMontantVerse() == null) {
+            vente.setMontantVerse(vente.getMontantTotal());
+        }
 
         for (DetailVente detail : vente.getLignes()) {
             Produit produit = produitRepository.findById(detail.getProduit().getId())
                     .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
 
+            // Vérification de sécurité côté serveur (même si JS le fait déjà)
             if (produit.getQuantite() < detail.getQuantite()) {
-                throw new RuntimeException("Stock insuffisant pour le produit : " + produit.getNom()
-                        + " (Disponible: " + produit.getQuantite() + ")");
+                throw new RuntimeException("Stock insuffisant pour " + produit.getNom());
             }
 
+            // Mise à jour du stock
             produit.setQuantite(produit.getQuantite() - detail.getQuantite());
             produitRepository.save(produit);
 
+            // On fixe les données de la ligne
             detail.setPrixUnitaire(produit.getPrixVente());
             detail.setVente(vente);
-
-            montantTotalVente += detail.getPrixUnitaire() * detail.getQuantite();
         }
 
-        vente.setMontantTotal(montantTotalVente);
         vente.setDateVente(LocalDateTime.now());
 
-        return venteRepository.save(vente);
+        // On enregistre la vente
+        Vente venteEnregistree = venteRepository.save(vente);
+
+        // TODO: Ici on appellera caisseService.enregistrerEntree(vente.getMontantVerse())
+
+        return venteEnregistree;
     }
 
     public List<Vente> listerToutes() {

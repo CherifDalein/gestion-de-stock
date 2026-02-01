@@ -7,10 +7,8 @@ import org.example.stock.service.ProduitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 
@@ -45,6 +43,28 @@ public class AchatController {
     public String enregistrer(@ModelAttribute("achat") Achat achat) {
         service.enregistrerAchat(achat);
         return "redirect:/achats";
+    }
+
+    @GetMapping("/modifier/{id}")
+    public String afficherModifier(@PathVariable Long id, Model model) {
+        Achat achat = service.trouverParId(id);
+        if (achat == null) return "redirect:/achats";
+
+        model.addAttribute("achat", achat);
+        model.addAttribute("fournisseurs", fournisseurService.listerTous());
+        model.addAttribute("produits", produitService.listerTous());
+        model.addAttribute("view", "achats/modifier");
+        return "dashboard";
+    }
+
+    @PostMapping("/modifier/{id}")
+    public String enregistrerModification(@PathVariable Long id, @ModelAttribute("achat") Achat achat) {
+        try {
+            service.modifierAchat(id, achat);
+            return "redirect:/achats?success=modifie";
+        } catch (Exception e) {
+            return "redirect:/achats/modifier/" + id + "?error=" + e.getMessage();
+        }
     }
 
 

@@ -34,7 +34,6 @@ function ajouterAuPanier() {
 
     const row = document.createElement('tr');
     row.id = `row-${index}`;
-    // IMPORTANT : On garde le montant pur (sans GNF) dans l'attribut data-montant pour le calcul
     row.innerHTML = `
         <td>${pNom} <input type="hidden" name="lignes[${index}].produit.id" value="${pId}"></td>
         <td>${pPrix.toLocaleString()} GNF</td>
@@ -78,30 +77,55 @@ function supprimerLigne(idx, montant, pId, qteARendre) {
 }
 
 function actualiserAffichageTotal() {
-    // On met à jour l'affichage avec GNF, mais on garde totalGeneral en nombre pur
+    // 1. Mise à jour de l'affichage total
     document.getElementById('totalVente').innerText = totalGeneral.toLocaleString();
+
+    // 2. Mise à jour de l'input caché pour l'envoi vers Spring Boot
+    document.getElementById('inputTotalTotal').value = totalGeneral;
+
+    // 3. Mise à jour du montant versé (on suggère le total par défaut)
+    const verseInput = document.getElementById('montantVerse');
+    verseInput.value = totalGeneral;
+
+    calculerReste();
 }
 
-// Sécurité pour la soumission
+function calculerReste() {
+    const total = totalGeneral;
+    const verse = parseFloat(document.getElementById('montantVerse').value) || 0;
+    const reste = total - verse;
+
+    const resteInput = document.getElementById('resteAPayer');
+    resteInput.value = reste;
+
+    // Feedback visuel
+    if (reste > 0) {
+        resteInput.classList.add('text-danger', 'fw-bold');
+    } else {
+        resteInput.classList.remove('text-danger', 'fw-bold');
+    }
+}
+
+// Initialisation au chargement
+document.addEventListener('DOMContentLoaded', function() {
+    const verseInput = document.getElementById('montantVerse');
+    if (verseInput) {
+        verseInput.addEventListener('input', calculerReste);
+    }
+});
+
+// Re-indexation avant soumission
 document.addEventListener('submit', function(event) {
     if (event.target.id === 'formVente') {
         const rows = document.querySelectorAll('#panierBody tr');
-
         if (rows.length === 0) {
             event.preventDefault();
             alert("Le panier est vide !");
             return;
         }
-
-        // --- RE-INDEXATION DES LIGNES ---
         rows.forEach((row, newIndex) => {
-            // On trouve l'input du produit ID
-            const inputId = row.querySelector('input[name*=".produit.id"]');
-            if (inputId) inputId.name = `lignes[${newIndex}].produit.id`;
-
-            // On trouve l'input de la quantité
-            const inputQty = row.querySelector('input[name*=".quantite"]');
-            if (inputQty) inputQty.name = `lignes[${newIndex}].quantite`;
+            row.querySelector('input[name*=".produit.id"]').name = `lignes[${newIndex}].produit.id`;
+            row.querySelector('input[name*=".quantite"]').name = `lignes[${newIndex}].quantite`;
         });
     }
 });
