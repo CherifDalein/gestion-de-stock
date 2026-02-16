@@ -82,6 +82,16 @@
                         <div class="sb-nav-link-icon"><i class="fas fa-file-invoice-dollar"></i></div>
                         Ventes
                     </a>
+
+                    <div class="sb-sidenav-menu-heading">Analyses & Rapports</div>
+                    <a class="nav-link" th:href="@{/factures/liste}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
+                        Historique & Factures
+                    </a>
+                    <a class="nav-link" th:href="@{/caisse/journal}">
+                        <div class="sb-nav-link-icon"><i class="fas fa-cash-register"></i></div>
+                        Journal de Caisse
+                    </a>
                 </div>
             </div>
             <div class="sb-sidenav-footer">
@@ -99,21 +109,37 @@
 
             <div th:if="${view == null or view == '' or view == 'dashboard'}" class="container-fluid px-4">
                 <h1 class="mt-4">Tableau de Bord</h1>
+                <p class="text-muted">Vue d'ensemble de votre activité au <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span></p>
 
                 <div class="row">
                     <div class="col-xl-3 col-md-6">
                         <div class="card bg-primary text-white mb-4 shadow border-0">
                             <div class="card-body">
-                                <div class="small text-white-50 fw-bold">CAISSE CENTRALE (CASH)</div>
-                                <h2 class="mt-2" th:text="${soldeCaisse != null ? #numbers.formatDecimal(soldeCaisse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">0 GNF</h2>
+                                <div class="small text-white-50 fw-bold text-uppercase">Caisse Centrale</div>
+                                <h2 class="mt-2 fw-bold" th:text="${soldeCaisse != null ? #numbers.formatDecimal(soldeCaisse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">0 GNF</h2>
                             </div>
                             <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir le journal des mouvements</a>
+                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Consulter les flux</a>
                                 <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                             </div>
                         </div>
                     </div>
 
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card bg-success text-white mb-4 shadow border-0">
+                            <div class="card-body">
+                                <div class="small text-white-50 fw-bold text-uppercase">Ventes du jour</div>
+                                <h2 class="mt-2 fw-bold"
+                                    th:text="${ventesDuJour != null ? #numbers.formatDecimal(ventesDuJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">
+                                    0 GNF
+                                </h2>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
+                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/factures/liste?periode=jour}">Détails du jour</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
