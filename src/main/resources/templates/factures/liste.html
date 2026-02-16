@@ -1,0 +1,89 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4"><i class="fas fa-file-invoice me-2"></i>Historique des Ventes & Factures</h1>
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a th:href="@{/}">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Factures</li>
+        </ol>
+
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-body bg-light">
+                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <div class="btn-group mb-2 mb-md-0" role="group">
+                        <a th:href="@{/factures/liste(periode='jour')}"
+                           th:classappend="${param.periode != null and param.periode[0] == 'jour'} ? 'active' : ''"
+                           class="btn btn-outline-primary">Aujourd'hui</a>
+
+                        <a th:href="@{/factures/liste(periode='semaine')}"
+                           th:classappend="${param.periode != null and param.periode[0] == 'semaine'} ? 'active' : ''"
+                           class="btn btn-outline-primary">Cette Semaine</a>
+
+                        <a th:href="@{/factures/liste(periode='mois')}"
+                           th:classappend="${param.periode != null and param.periode[0] == 'mois'} ? 'active' : ''"
+                           class="btn btn-outline-primary">Ce Mois</a>
+
+                        <a th:href="@{/factures/liste}"
+                           th:classappend="${param.periode == null} ? 'active' : ''"
+                           class="btn btn-outline-primary">Tout afficher</a>
+                    </div>
+
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Affichage : <strong th:text="${param.periode != null ? param.periode[0] : 'Toutes les ventes'}"></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-table me-1"></i> Registre des ventes</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="datatablesSimple">
+                        <thead class="table-light">
+                        <tr>
+                            <th>N° Facture</th>
+                            <th>Date & Heure</th>
+                            <th>Client</th>
+                            <th class="text-end">Montant Total</th>
+                            <th class="text-end">Versé</th>
+                            <th class="text-end">Reste</th>
+                            <th class="text-center">Statut</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="v : ${ventes}">
+                            <td class="fw-bold text-primary" th:text="'#' + ${v.id}"></td>
+                            <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${v.client != null ? v.client.nom : 'Client Passant'}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-danger fw-bold"
+                                th:text="${#numbers.formatDecimal(v.montantTotal - v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+
+                            <td class="text-center">
+                                <span th:if="${v.montantTotal <= v.montantVerse}" class="badge bg-success">Payé</span>
+                                <span th:if="${v.montantTotal > v.montantVerse}" class="badge bg-warning text-dark">Reliquat</span>
+                            </td>
+
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-sm btn-outline-primary" title="Voir la facture">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-sm btn-primary" title="Imprimer">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

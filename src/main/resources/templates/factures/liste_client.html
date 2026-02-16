@@ -1,0 +1,84 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4">
+        <h1 class="mt-4"><i class=""></i>Factures du Client</h1>
+
+        <div class="row mb-4">
+            <div class="col-xl-4">
+                <div class="card bg-danger text-white shadow border-0">
+                    <div class="card-body">
+                        <div class="small text-white-50 fw-bold text-uppercase">Dette totale (Période sélectionnée)</div>
+
+                        <h2 class="mt-2 fw-bold"
+                            th:with="totalReste=${not #lists.isEmpty(ventes) ? #aggregates.sum(ventes.![montantTotal - montantVerse]) : 0}"
+                            th:text="${#numbers.formatDecimal(totalReste, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                            0 GNF
+                        </h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 border-0 bg-light shadow-sm">
+            <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+                <div class="btn-group mb-2 mb-md-0">
+                    <a th:href="@{/factures/client/{id}(id=${clientId}, periode='jour')}"
+                       th:classappend="${param.periode != null and param.periode[0] == 'jour'} ? 'active' : ''"
+                       class="btn btn-outline-primary">Aujourd'hui</a>
+                    <a th:href="@{/factures/client/{id}(id=${clientId}, periode='semaine')}"
+                       th:classappend="${param.periode != null and param.periode[0] == 'semaine'} ? 'active' : ''"
+                       class="btn btn-outline-primary">Semaine</a>
+                    <a th:href="@{/factures/client/{id}(id=${clientId}, periode='mois')}"
+                       th:classappend="${param.periode != null and param.periode[0] == 'mois'} ? 'active' : ''"
+                       class="btn btn-outline-primary">Mois</a>
+                    <a th:href="@{/factures/client/{id}(id=${clientId})}"
+                       th:classappend="${param.periode == null} ? 'active' : ''"
+                       class="btn btn-outline-primary">Tout</a>
+                </div>
+                <div class="text-muted small">
+                    <i class="fas fa-info-circle"></i> Historique pour le client ID: <span th:text="${clientId}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow border-0">
+            <div class="card-header bg-dark text-white">
+                <i class="fas fa-table me-1"></i> Détail des factures
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="datatablesSimple">
+                        <thead class="table-light">
+                        <tr>
+                            <th>N° Facture</th>
+                            <th>Date</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">Versé</th>
+                            <th class="text-end">Reste</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="v : ${ventes}">
+                            <td class="fw-bold" th:text="'#' + ${v.id}"></td>
+                            <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy')}"></td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(v.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal - v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(ventes)}">
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                Aucune facture trouvée pour ce client sur cette période.
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
