@@ -3,9 +3,12 @@ package org.example.stock.service;
 import org.example.stock.model.DetailVente;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Vente;
+import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.VenteRepository;
+import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +19,9 @@ import java.util.List;
 public class VenteService {
 
     @Autowired private VenteRepository venteRepository;
-    @Autowired
-    private ProduitRepository produitRepository;
+    @Autowired private ProduitRepository produitRepository;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private CaisseService caisseService;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -25,36 +29,38 @@ public class VenteService {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
         }
 
-        // Le montant total est déjà envoyé par l'input hidden du formulaire
-        // On s'assure juste que montantVerse n'est pas null
         if (vente.getMontantVerse() == null) {
             vente.setMontantVerse(vente.getMontantTotal());
         }
 
+        // 1. Mise à jour des stocks et préparation des lignes
         for (DetailVente detail : vente.getLignes()) {
             Produit produit = produitRepository.findById(detail.getProduit().getId())
                     .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
 
-            // Vérification de sécurité côté serveur (même si JS le fait déjà)
             if (produit.getQuantite() < detail.getQuantite()) {
                 throw new RuntimeException("Stock insuffisant pour " + produit.getNom());
             }
 
-            // Mise à jour du stock
             produit.setQuantite(produit.getQuantite() - detail.getQuantite());
             produitRepository.save(produit);
 
-            // On fixe les données de la ligne
             detail.setPrixUnitaire(produit.getPrixVente());
             detail.setVente(vente);
         }
 
         vente.setDateVente(LocalDateTime.now());
-
-        // On enregistre la vente
         Vente venteEnregistree = venteRepository.save(vente);
 
-        // TODO: Ici on appellera caisseService.enregistrerEntree(vente.getMontantVerse())
+        // 2. Récupération de l'utilisateur connecté
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+
+        // 3. Enregistrement en Caisse
+        String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
+                (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
+
+        caisseService.enregistrerEntree(venteEnregistree.getMontantVerse(), motif, "VENTE", actuel);
 
         return venteEnregistree;
     }

@@ -1,6 +1,7 @@
 package org.example.stock.controller;
 
 import org.example.stock.repository.UtilisateurRepository;
+import org.example.stock.service.CaisseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,10 +12,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     @Autowired UtilisateurRepository utilisateurRepository;
+    @Autowired CaisseService caisseService;
+
+//    @GetMapping("/")
+//    public String dashboard(Model model, Authentication authentication) {
+//        model.addAttribute("pageTitle", "Tableau de Bord - Stock Pro");
+//        return "dashboard";
+//    }
 
     @GetMapping("/")
-    public String dashboard(Model model, Authentication authentication) {
-        model.addAttribute("pageTitle", "Tableau de Bord - Stock Pro");
+    public String dashboard(Model model) {
+        model.addAttribute("soldeCaisse", caisseService.getSoldeActuel());
+        model.addAttribute("view", "dashboard");
         return "dashboard";
     }
 

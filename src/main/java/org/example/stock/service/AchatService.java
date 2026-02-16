@@ -3,9 +3,12 @@ package org.example.stock.service;
 import org.example.stock.model.Achat;
 import org.example.stock.model.DetailAchat;
 import org.example.stock.model.Produit;
+import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.ProduitRepository;
+import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,12 +18,10 @@ import java.util.List;
 @Service
 public class AchatService {
 
-    @Autowired
-    private AchatRepository achatRepository;
-
-    @Autowired
-    private ProduitRepository produitRepository;
-
+    @Autowired private AchatRepository achatRepository;
+    @Autowired private ProduitRepository produitRepository;
+    @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private CaisseService caisseService;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
@@ -28,26 +29,16 @@ public class AchatService {
             achat.setDateAchat(LocalDateTime.now());
         }
 
-        // SECURITÉ : Si le montant versé n'est pas saisi, on considère
-        // que l'achat est payé en totalité (Cash).
         if (achat.getMontantVerse() == null) {
             achat.setMontantVerse(achat.getMontantTotal());
         }
 
+        // Mise à jour stock
         for (DetailAchat ligne : achat.getLignes()) {
-            if (ligne.getProduit() == null || ligne.getProduit().getId() == null) {
-                continue;
-            }
+            Produit produitBdd = produitRepository.findById(ligne.getProduit().getId())
+                    .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
 
-            Long produitId = ligne.getProduit().getId();
-            Produit produitBdd = produitRepository.findById(produitId)
-                    .orElseThrow(() -> new RuntimeException("Produit non trouvé ID : " + produitId));
-
-            // Mise à jour du stock
-            Long nouveauStock = produitBdd.getQuantite() + ligne.getQuantite();
-            produitBdd.setQuantite(nouveauStock);
-
-            // Mise à jour du prix d'achat dans la fiche produit (Dernier prix d'achat)
+            produitBdd.setQuantite(produitBdd.getQuantite() + ligne.getQuantite());
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
 
             ligne.setAchat(achat);
@@ -56,14 +47,14 @@ public class AchatService {
 
         Achat achatEnregistre = achatRepository.save(achat);
 
-        // TODO: Ici on enregistrera la SORTIE d'argent :
-        // caisseService.enregistrerSortie(achatEnregistre.getMontantVerse());
+        // Enregistrement Sortie Caisse
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+
+        String motif = "Achat #" + achatEnregistre.getId() + " - Fournisseur: " + achatEnregistre.getFournisseur().getNom();
+        caisseService.enregistrerSortie(achatEnregistre.getMontantVerse(), motif, "ACHAT", actuel);
 
         return achatEnregistre;
-    }
-
-    public List<Achat> listerTous() {
-        return achatRepository.findAll();
     }
 
     @Transactional
@@ -71,33 +62,22 @@ public class AchatService {
         Achat ancienAchat = achatRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Achat introuvable"));
 
-        // 1. Annuler l'impact de l'ancien stock
+        Double difference = achatModifie.getMontantVerse() - ancienAchat.getMontantVerse();
+
+        // 1. Restaurer l'ancien stock
         for (DetailAchat ancienneLigne : ancienAchat.getLignes()) {
             Produit p = ancienneLigne.getProduit();
             p.setQuantite(p.getQuantite() - ancienneLigne.getQuantite());
-            // On ne fait pas forcément de save ici, l'aspect Transactional s'en chargera à la fin
         }
 
-        // 2. Mise à jour des informations de base
+        // 2. Mettre à jour les infos
         ancienAchat.setFournisseur(achatModifie.getFournisseur());
         ancienAchat.setMontantTotal(achatModifie.getMontantTotal());
         ancienAchat.setMontantVerse(achatModifie.getMontantVerse());
 
-        // On garde la date originale si la nouvelle est nulle
-        if(achatModifie.getDateAchat() != null) {
-            ancienAchat.setDateAchat(achatModifie.getDateAchat());
-        }
-
-        // 3. REMPLACER les lignes proprement
-        // Au lieu de clear(), on peut réassocier les nouvelles lignes
         ancienAchat.getLignes().clear();
-        // Note: Assure-toi que dans Achat.java, l'annotation est @OneToMany(mappedBy = "achat", cascade = CascadeType.ALL, orphanRemoval = true)
-
         for (DetailAchat nouvelleLigne : achatModifie.getLignes()) {
-            Produit p = produitRepository.findById(nouvelleLigne.getProduit().getId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouvé"));
-
-            // Appliquer le nouvel impact
+            Produit p = produitRepository.findById(nouvelleLigne.getProduit().getId()).orElseThrow();
             p.setQuantite(p.getQuantite() + nouvelleLigne.getQuantite());
             p.setPrixAchat(nouvelleLigne.getPrixAchatUnitaire());
 
@@ -106,9 +86,17 @@ public class AchatService {
         }
 
         achatRepository.save(ancienAchat);
+
+        // 3. Ajustement Caisse si le montant versé a changé
+        if (difference != 0) {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+
+            String motif = "Correction Achat #" + id + " (Ajustement paiement)";
+            caisseService.enregistrerSortie(difference, motif, "ACHAT", actuel);
+        }
     }
 
-    public Achat trouverParId(Long id) {
-        return achatRepository.findById(id).orElse(null);
-    }
+    public List<Achat> listerTous() { return achatRepository.findAll(); }
+    public Achat trouverParId(Long id) { return achatRepository.findById(id).orElse(null); }
 }
