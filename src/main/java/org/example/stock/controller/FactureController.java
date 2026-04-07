@@ -42,8 +42,16 @@ public class FactureController {
                 .orElseThrow(() -> new RuntimeException("Vente non trouvee"));
 
         model.addAttribute("vente", vente);
-        model.addAttribute("view", "factures/template_vente");
-        return "dashboard";
+        return "factures/template_vente";
+    }
+
+    @GetMapping("/achat/{id}")
+    public String voirFactureAchat(@PathVariable Long id, Model model) {
+        Achat achat = achatRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Achat non trouve"));
+
+        model.addAttribute("achat", achat);
+        return "factures/template_achat";
     }
 
     @GetMapping("/liste")
@@ -86,8 +94,7 @@ public class FactureController {
         model.addAttribute("client", client);
         model.addAttribute("clientId", clientId);
         model.addAttribute("ventes", ventes);
-        model.addAttribute("view", "factures/template_client_cumule");
-        return "dashboard";
+        return "factures/template_client_cumule";
     }
 
     @GetMapping("/fournisseur/{fournisseurId}")
@@ -122,8 +129,7 @@ public class FactureController {
         model.addAttribute("fournisseur", fournisseur);
         model.addAttribute("fournisseurId", fournisseurId);
         model.addAttribute("achats", achats);
-        model.addAttribute("view", "factures/template_fournisseur_cumule");
-        return "dashboard";
+        return "factures/template_fournisseur_cumule";
     }
 
     private List<Vente> filtrerVentesParPeriode(String periode) {

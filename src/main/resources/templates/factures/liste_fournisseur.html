@@ -71,7 +71,7 @@
                             <td class="text-end text-success" th:text="${#numbers.formatDecimal(a.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
                             <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(a.resteAPayer, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
                             <td class="text-center">
-                                <a th:href="@{/factures/fournisseur/{id}/cumule(id=${fournisseurId}, periode=${param.periode != null ? param.periode[0] : null})}" class="btn btn-sm btn-primary">
+                                <a th:href="@{/factures/achat/{id}(id=${a.id})}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-print"></i>
                                 </a>
                             </td>
