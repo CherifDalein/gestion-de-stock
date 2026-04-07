@@ -1,6 +1,8 @@
 package org.example.stock.controller;
 
+import org.example.stock.model.Client;
 import org.example.stock.model.Vente;
+import org.example.stock.repository.ClientRepository;
 import org.example.stock.repository.VenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,10 +23,13 @@ public class FactureController {
     @Autowired
     private VenteRepository venteRepository;
 
+    @Autowired
+    private ClientRepository clientRepository;
+
     @GetMapping("/vente/{id}")
     public String voirFactureVente(@PathVariable Long id, Model model) {
         Vente vente = venteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vente non trouvée"));
+                .orElseThrow(() -> new RuntimeException("Vente non trouvee"));
 
         model.addAttribute("vente", vente);
         model.addAttribute("view", "factures/template_vente");
@@ -32,24 +37,8 @@ public class FactureController {
     }
 
     @GetMapping("/liste")
-    public String listeFactures(
-            @RequestParam(required = false) String periode,
-            Model model) {
-
-        List<Vente> ventes;
-        LocalDateTime debut = LocalDateTime.now();
-
-        // Logique de filtrage temporel
-        if ("jour".equals(periode)) {
-            ventes = venteRepository.findByDateVenteAfter(debut.with(LocalTime.MIN));
-        } else if ("semaine".equals(periode)) {
-            ventes = venteRepository.findByDateVenteAfter(debut.minusWeeks(1));
-        } else if ("mois".equals(periode)) {
-            ventes = venteRepository.findByDateVenteAfter(debut.withDayOfMonth(1).with(LocalTime.MIN));
-        } else {
-            ventes = venteRepository.findAllByOrderByDateVenteDesc();
-        }
-
+    public String listeFactures(@RequestParam(required = false) String periode, Model model) {
+        List<Vente> ventes = filtrerVentesParPeriode(periode);
         model.addAttribute("ventes", ventes);
         model.addAttribute("view", "factures/liste");
         return "dashboard";
@@ -61,24 +50,67 @@ public class FactureController {
             @RequestParam(required = false) String periode,
             Model model) {
 
-        List<Vente> ventes;
-        LocalDateTime debut = LocalDateTime.now();
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client non trouve"));
 
-        // Logique de filtrage identique mais limitée au client
-        if ("jour".equals(periode)) {
-            ventes = venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut.with(LocalTime.MIN));
-        } else if ("semaine".equals(periode)) {
-            ventes = venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut.minusWeeks(1));
-        } else if ("mois".equals(periode)) {
-            ventes = venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut.withDayOfMonth(1).with(LocalTime.MIN));
-        } else {
-            ventes = venteRepository.findByClientIdOrderByDateVenteDesc(clientId);
-        }
+        List<Vente> ventes = filtrerVentesClientParPeriode(clientId, periode);
 
-        // On récupère les infos du client pour l'affichage (via la 1ere vente ou un repo client)
         model.addAttribute("ventes", ventes);
+        model.addAttribute("client", client);
         model.addAttribute("clientId", clientId);
         model.addAttribute("view", "factures/liste_client");
         return "dashboard";
+    }
+
+    @GetMapping("/client/{clientId}/cumule")
+    public String factureCumuleeClient(
+            @PathVariable Long clientId,
+            @RequestParam(required = false) String periode,
+            Model model) {
+
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+
+        List<Vente> ventes = filtrerVentesClientParPeriode(clientId, periode);
+
+        model.addAttribute("client", client);
+        model.addAttribute("clientId", clientId);
+        model.addAttribute("ventes", ventes);
+        model.addAttribute("view", "factures/template_client_cumule");
+        return "dashboard";
+    }
+
+    private List<Vente> filtrerVentesParPeriode(String periode) {
+        LocalDateTime debut = calculerDebutPeriode(periode);
+        if (debut == null) {
+            return venteRepository.findAllByOrderByDateVenteDesc();
+        }
+        return venteRepository.findByDateVenteAfter(debut);
+    }
+
+    private List<Vente> filtrerVentesClientParPeriode(Long clientId, String periode) {
+        LocalDateTime debut = calculerDebutPeriode(periode);
+        if (debut == null) {
+            return venteRepository.findByClientIdOrderByDateVenteDesc(clientId);
+        }
+        return venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut);
+    }
+
+    private LocalDateTime calculerDebutPeriode(String periode) {
+        LocalDateTime maintenant = LocalDateTime.now();
+
+        if ("jour".equals(periode)) {
+            return maintenant.with(LocalTime.MIN);
+        }
+        if ("semaine".equals(periode)) {
+            return maintenant.minusWeeks(1);
+        }
+        if ("mois".equals(periode)) {
+            return maintenant.withDayOfMonth(1).with(LocalTime.MIN);
+        }
+        if ("annee".equals(periode)) {
+            return maintenant.withDayOfYear(1).with(LocalTime.MIN);
+        }
+        return null;
     }
 }
