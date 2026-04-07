@@ -7,6 +7,8 @@
             </a>
         </div>
 
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
         <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm">
             <div class="row">
                 <div class="col-md-4">

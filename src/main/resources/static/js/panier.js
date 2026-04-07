@@ -85,7 +85,9 @@ function actualiserAffichageTotal() {
 
     // 3. Mise à jour du montant versé (on suggère le total par défaut)
     const verseInput = document.getElementById('montantVerse');
-    verseInput.value = totalGeneral;
+    if (verseInput.value === '' || parseFloat(verseInput.value) === 0) {
+        verseInput.value = totalGeneral;
+    }
 
     calculerReste();
 }

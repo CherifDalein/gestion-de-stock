@@ -10,24 +10,105 @@
             <div class="col-xl-4 col-md-6">
                 <div class="card border-start border-primary border-4 shadow h-100 py-2">
                     <div class="card-body">
-                        <div class="row no-gutters align-items-center">
-                            <div class="col mr-2">
-                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde Actuel en Caisse</div>
-                                <div class="h5 mb-0 font-weight-bold text-gray-800"
-                                     th:text="${soldeTotal != null ? #numbers.formatDecimal(soldeTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">0 GNF</div>
-                            </div>
-                            <div class="col-auto">
-                                <i class="fas fa-wallet fa-2x text-gray-300"></i>
-                            </div>
-                        </div>
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde Actuel en Caisse</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"
+                             th:text="${#numbers.formatDecimal(soldeTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="card border-start border-secondary border-4 shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Solde d'Ouverture</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"
+                             th:text="${#numbers.formatDecimal(soldeOuverture, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 col-md-6">
+                <div class="card border-start border-info border-4 shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Caisse du Jour</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"
+                             th:text="${#numbers.formatDecimal(bilanJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-xl-6 col-md-6">
+                <div class="card border-start border-success border-4 shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Entrees du Jour</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"
+                             th:text="${#numbers.formatDecimal(entreesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-md-6">
+                <div class="card border-start border-danger border-4 shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Sorties du Jour</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800"
+                             th:text="${#numbers.formatDecimal(sortiesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-calendar-day me-1"></i> Transactions du Jour</span>
+                <span class="small">Mouvements enregistres aujourd'hui</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Date & Heure</th>
+                            <th>Designation / Motif</th>
+                            <th>Auteur</th>
+                            <th>Source</th>
+                            <th class="text-center">Type</th>
+                            <th class="text-end">Montant</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="m : ${mouvementsDuJour}">
+                            <td class="small" th:text="${#temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="fw-bold" th:text="${m.motif}"></td>
+                            <td>
+                                <span class="badge bg-info text-dark">
+                                    <i class="fas fa-user me-1"></i>
+                                    <span th:text="${m.utilisateur != null ? m.utilisateur.nom : 'Systeme'}"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <small class="badge bg-light text-dark border" th:text="${m.source}"></small>
+                            </td>
+                            <td class="text-center">
+                                <span th:class="${m.montant > 0 ? 'badge bg-success' : 'badge bg-danger'}"
+                                      th:text="${m.type}">
+                                </span>
+                            </td>
+                            <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
+                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(T(java.lang.Math).abs(m.montant), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(mouvementsDuJour)}">
+                            <td colspan="6" class="text-center py-4 text-muted">Aucune transaction enregistree aujourd'hui.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-list me-1"></i> Historique des flux financiers</span>
+                <span><i class="fas fa-list me-1"></i> Historique Complet des Flux</span>
                 <button class="btn btn-sm btn-light" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimer</button>
             </div>
             <div class="card-body">
@@ -36,7 +117,7 @@
                         <thead class="table-light">
                         <tr>
                             <th>Date & Heure</th>
-                            <th>Désignation / Motif</th>
+                            <th>Designation / Motif</th>
                             <th>Auteur (Utilisateur)</th>
                             <th>Source</th>
                             <th class="text-center">Type</th>
@@ -46,32 +127,27 @@
                         <tbody>
                         <tr th:each="m : ${mouvements}">
                             <td class="small" th:text="${#temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm')}"></td>
-
                             <td class="fw-bold" th:text="${m.motif}"></td>
-
                             <td>
                                 <span class="badge bg-info text-dark">
                                     <i class="fas fa-user me-1"></i>
-                                    <span th:text="${m.utilisateur != null ? m.utilisateur.nom : 'Système'}"></span>
+                                    <span th:text="${m.utilisateur != null ? m.utilisateur.nom : 'Systeme'}"></span>
                                 </span>
                             </td>
-
                             <td>
                                 <small class="badge bg-light text-dark border" th:text="${m.source}"></small>
                             </td>
-
                             <td class="text-center">
-                                <span th:class="${m.type == 'ENTRÉE' or m.type == 'ENTRÉE (CORRECTION)' ? 'badge bg-success' : 'badge bg-danger'}"
+                                <span th:class="${m.montant > 0 ? 'badge bg-success' : 'badge bg-danger'}"
                                       th:text="${m.type}">
                                 </span>
                             </td>
-
                             <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
-                                th:text="${#numbers.formatDecimal(m.montant, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(T(java.lang.Math).abs(m.montant), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(mouvements)}">
-                            <td colspan="6" class="text-center py-4 text-muted">Aucun mouvement enregistré pour le moment.</td>
+                            <td colspan="6" class="text-center py-4 text-muted">Aucun mouvement enregistre pour le moment.</td>
                         </tr>
                         </tbody>
                     </table>

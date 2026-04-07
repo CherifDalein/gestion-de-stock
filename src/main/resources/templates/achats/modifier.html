@@ -8,6 +8,8 @@
             </a>
         </div>
 
+        <div th:if="${param.error}" class="alert alert-danger" th:text="${param.error}"></div>
+
         <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm">
             <input type="hidden" th:field="*{id}">
 
