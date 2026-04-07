@@ -27,12 +27,12 @@
                 <i class="fas fa-user fa-fw"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <li><a class="dropdown-item" href="#!">Paramètres</a></li>
-                <li><a class="dropdown-item" href="#!">Journal d'activité</a></li>
+                <li><a class="dropdown-item" href="#!">Parametres</a></li>
+                <li><a class="dropdown-item" href="#!">Journal d'activite</a></li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                     <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="dropdown-item">Se déconnecter</button>
+                        <button type="submit" class="dropdown-item">Se deconnecter</button>
                     </form>
                 </li>
             </ul>
@@ -59,7 +59,7 @@
                     <div sec:authorize="hasRole('ADMIN')">
                         <a class="nav-link" th:href="@{/categories}">
                             <div class="sb-nav-link-icon"><i class="fas fa-tags"></i></div>
-                            Catégories
+                            Categories
                         </a>
                     </div>
 
@@ -73,7 +73,7 @@
                         Clients
                     </a>
 
-                    <div class="sb-sidenav-menu-heading">Opérations</div>
+                    <div class="sb-sidenav-menu-heading">Operations</div>
                     <a class="nav-link" th:href="@{/achats}">
                         <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
                         Achats
@@ -95,7 +95,7 @@
                 </div>
             </div>
             <div class="sb-sidenav-footer">
-                <div class="small">Connecté en tant que :</div>
+                <div class="small">Connecte en tant que :</div>
                 <span th:text="${utilisateur != null ? utilisateur.nom : 'Administrateur'}">Utilisateur</span>
             </div>
         </nav>
@@ -109,14 +109,27 @@
 
             <div th:if="${view == null or view == '' or view == 'dashboard'}" class="container-fluid px-4">
                 <h1 class="mt-4">Tableau de Bord</h1>
-                <p class="text-muted">Vue d'ensemble de votre activité au <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span></p>
+                <p class="text-muted">Vue d'ensemble de votre activite au <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span></p>
 
                 <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card bg-secondary text-white mb-4 shadow border-0">
+                            <div class="card-body">
+                                <div class="small text-white-50 fw-bold text-uppercase">Solde a l'ouverture</div>
+                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(soldeOuverture, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</h2>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
+                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir le journal</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-xl-3 col-md-6">
                         <div class="card bg-primary text-white mb-4 shadow border-0">
                             <div class="card-body">
                                 <div class="small text-white-50 fw-bold text-uppercase">Caisse Centrale</div>
-                                <h2 class="mt-2 fw-bold" th:text="${soldeCaisse != null ? #numbers.formatDecimal(soldeCaisse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">0 GNF</h2>
+                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(soldeCaisse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</h2>
                             </div>
                             <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
                                 <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Consulter les flux</a>
@@ -128,15 +141,50 @@
                     <div class="col-xl-3 col-md-6">
                         <div class="card bg-success text-white mb-4 shadow border-0">
                             <div class="card-body">
-                                <div class="small text-white-50 fw-bold text-uppercase">Ventes du jour</div>
+                                <div class="small text-white-50 fw-bold text-uppercase">Entrees du Jour</div>
+                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(entreesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</h2>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
+                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir les encaissements</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card bg-danger text-white mb-4 shadow border-0">
+                            <div class="card-body">
+                                <div class="small text-white-50 fw-bold text-uppercase">Sorties du Jour</div>
+                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(sortiesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</h2>
+                            </div>
+                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
+                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir les decaissements</a>
+                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-3 col-md-6">
+                        <div th:class="${caisseDuJour >= 0 ? 'card bg-info text-white mb-4 shadow border-0' : 'card bg-warning text-dark mb-4 shadow border-0'}">
+                            <div class="card-body">
+                                <div class="small fw-bold text-uppercase"
+                                     th:classappend="${caisseDuJour >= 0 ? 'text-white-50' : 'text-black-50'}">
+                                    Caisse du Jour
+                                </div>
                                 <h2 class="mt-2 fw-bold"
-                                    th:text="${ventesDuJour != null ? #numbers.formatDecimal(ventesDuJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF' : '0 GNF'}">
+                                    th:text="${#numbers.formatDecimal(caisseDuJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
                                     0 GNF
                                 </h2>
                             </div>
                             <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/factures/liste?periode=jour}">Détails du jour</a>
-                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                                <a class="small stretched-link text-decoration-none"
+                                   th:classappend="${caisseDuJour >= 0 ? 'text-white' : 'text-dark'}"
+                                   th:href="@{/caisse/journal}">Voir les details du jour</a>
+                                <div class="small" th:classappend="${caisseDuJour >= 0 ? 'text-white' : 'text-dark'}">
+                                    <i class="fas fa-angle-right"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -149,7 +197,7 @@
                 <div class="d-flex align-items-center justify-content-between small">
                     <div class="text-muted">Copyright &copy; Stock Pro 2026</div>
                     <div>
-                        <a href="#">Politique de confidentialité</a>
+                        <a href="#">Politique de confidentialite</a>
                         &middot;
                         <a href="#">CGU</a>
                     </div>

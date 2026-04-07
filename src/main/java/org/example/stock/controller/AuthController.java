@@ -1,11 +1,12 @@
 package org.example.stock.controller;
 
-import org.example.stock.model.Utilisateur;
 import org.example.stock.service.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class AuthController {
@@ -27,7 +28,7 @@ public class AuthController {
     ) {
         try {
             utilisateurService.registerUtilisateur(nom, email, password);
-            model.addAttribute("success", "Compte créé avec succès !");
+            model.addAttribute("success", "Compte crÃ©Ã© avec succÃ¨s !");
         } catch (Exception e) {
             model.addAttribute("error", "Erreur : " + e.getMessage());
         }
@@ -37,21 +38,5 @@ public class AuthController {
     @GetMapping("/login")
     public String showLoginForm() {
         return "login";
-    }
-
-    @PostMapping("/login")
-    public String loginUser(
-            @RequestParam String email,
-            @RequestParam String password,
-            Model model
-    ) {
-        try {
-            Utilisateur utilisateur = utilisateurService.login(email, password);
-            model.addAttribute("success", "Bienvenue " + utilisateur.getNom() + " !");
-            return "dashboard"; // ou page principale après login
-        } catch (Exception e) {
-            model.addAttribute("error", e.getMessage());
-            return "login";
-        }
     }
 }
