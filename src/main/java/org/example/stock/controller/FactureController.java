@@ -1,8 +1,12 @@
 package org.example.stock.controller;
 
+import org.example.stock.model.Achat;
 import org.example.stock.model.Client;
+import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
+import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.ClientRepository;
+import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.VenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -25,6 +29,12 @@ public class FactureController {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private AchatRepository achatRepository;
+
+    @Autowired
+    private FournisseurRepository fournisseurRepository;
 
     @GetMapping("/vente/{id}")
     public String voirFactureVente(@PathVariable Long id, Model model) {
@@ -80,6 +90,42 @@ public class FactureController {
         return "dashboard";
     }
 
+    @GetMapping("/fournisseur/{fournisseurId}")
+    public String achatsParFournisseur(
+            @PathVariable Long fournisseurId,
+            @RequestParam(required = false) String periode,
+            Model model) {
+
+        Fournisseur fournisseur = fournisseurRepository.findById(fournisseurId)
+                .orElseThrow(() -> new RuntimeException("Fournisseur non trouve"));
+
+        List<Achat> achats = filtrerAchatsFournisseurParPeriode(fournisseurId, periode);
+
+        model.addAttribute("achats", achats);
+        model.addAttribute("fournisseur", fournisseur);
+        model.addAttribute("fournisseurId", fournisseurId);
+        model.addAttribute("view", "factures/liste_fournisseur");
+        return "dashboard";
+    }
+
+    @GetMapping("/fournisseur/{fournisseurId}/cumule")
+    public String factureCumuleeFournisseur(
+            @PathVariable Long fournisseurId,
+            @RequestParam(required = false) String periode,
+            Model model) {
+
+        Fournisseur fournisseur = fournisseurRepository.findById(fournisseurId)
+                .orElseThrow(() -> new RuntimeException("Fournisseur non trouve"));
+
+        List<Achat> achats = filtrerAchatsFournisseurParPeriode(fournisseurId, periode);
+
+        model.addAttribute("fournisseur", fournisseur);
+        model.addAttribute("fournisseurId", fournisseurId);
+        model.addAttribute("achats", achats);
+        model.addAttribute("view", "factures/template_fournisseur_cumule");
+        return "dashboard";
+    }
+
     private List<Vente> filtrerVentesParPeriode(String periode) {
         LocalDateTime debut = calculerDebutPeriode(periode);
         if (debut == null) {
@@ -94,6 +140,14 @@ public class FactureController {
             return venteRepository.findByClientIdOrderByDateVenteDesc(clientId);
         }
         return venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut);
+    }
+
+    private List<Achat> filtrerAchatsFournisseurParPeriode(Long fournisseurId, String periode) {
+        LocalDateTime debut = calculerDebutPeriode(periode);
+        if (debut == null) {
+            return achatRepository.findByFournisseurIdOrderByDateAchatDesc(fournisseurId);
+        }
+        return achatRepository.findByFournisseurIdAndDateAchatAfterOrderByDateAchatDesc(fournisseurId, debut);
     }
 
     private LocalDateTime calculerDebutPeriode(String periode) {
