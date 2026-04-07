@@ -28,11 +28,11 @@ public class AuthController {
     ) {
         try {
             utilisateurService.registerUtilisateur(nom, email, password);
-            model.addAttribute("success", "Compte crÃ©Ã© avec succÃ¨s !");
+            return "redirect:/login?registered";
         } catch (Exception e) {
             model.addAttribute("error", "Erreur : " + e.getMessage());
+            return "register";
         }
-        return "register";
     }
 
     @GetMapping("/login")

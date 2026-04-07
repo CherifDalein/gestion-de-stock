@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -21,23 +22,33 @@ public class UtilisateurService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-
+    @Transactional
     public Utilisateur registerUtilisateur(String nom, String email, String motDePasse) {
-        if (utilisateurRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email déjà utilisé");
+        String emailNormalise = email == null ? null : email.trim().toLowerCase();
+
+        if (emailNormalise == null || emailNormalise.isBlank()) {
+            throw new RuntimeException("Email obligatoire");
+        }
+
+        if (utilisateurRepository.findByEmail(emailNormalise).isPresent()) {
+            throw new RuntimeException("Email deja utilise");
         }
 
         Utilisateur utilisateur = new Utilisateur();
-        utilisateur.setNom(nom);
-        utilisateur.setEmail(email);
+        utilisateur.setNom(nom != null ? nom.trim() : null);
+        utilisateur.setEmail(emailNormalise);
         utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
         utilisateur.setDateInscription(LocalDate.now());
         utilisateur.setRole(Role.ADMIN);
 
-        return utilisateurRepository.save(utilisateur);
+        Utilisateur enregistre = utilisateurRepository.saveAndFlush(utilisateur);
+
+        if (utilisateurRepository.findByEmail(emailNormalise).isEmpty()) {
+            throw new RuntimeException("L'utilisateur n'a pas pu etre enregistre.");
+        }
+
+        return enregistre;
     }
-
-
 
     public Utilisateur login(String email, String motDePasse) {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
@@ -54,7 +65,7 @@ public class UtilisateurService {
     public UserDetailsService userDetailsService() {
         return email -> {
             Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé : " + email));
+                    .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouve : " + email));
 
             return org.springframework.security.core.userdetails.User.builder()
                     .username(utilisateur.getEmail())
@@ -73,6 +84,6 @@ public class UtilisateurService {
         }
         String email = authentication.getName();
         return utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé : " + email));
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouve : " + email));
     }
 }

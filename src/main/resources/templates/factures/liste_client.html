@@ -30,12 +30,19 @@
                     <a th:href="@{/factures/client/{id}(id=${clientId}, periode='mois')}"
                        th:classappend="${param.periode != null and param.periode[0] == 'mois'} ? 'active' : ''"
                        class="btn btn-outline-primary">Mois</a>
+                    <a th:href="@{/factures/client/{id}(id=${clientId}, periode='annee')}"
+                       th:classappend="${param.periode != null and param.periode[0] == 'annee'} ? 'active' : ''"
+                       class="btn btn-outline-primary">Annee</a>
                     <a th:href="@{/factures/client/{id}(id=${clientId})}"
                        th:classappend="${param.periode == null} ? 'active' : ''"
                        class="btn btn-outline-primary">Tout</a>
                 </div>
+                <a th:href="@{/factures/client/{id}/cumule(id=${clientId}, periode=${param.periode != null ? param.periode[0] : null})}"
+                   class="btn btn-primary">
+                    <i class="fas fa-print me-1"></i> Facture cumulee
+                </a>
                 <div class="text-muted small">
-                    <i class="fas fa-info-circle"></i> Historique pour le client ID: <span th:text="${clientId}"></span>
+                    <i class="fas fa-info-circle"></i> Historique pour le client: <span th:text="${client.nom}"></span>
                 </div>
             </div>
         </div>
