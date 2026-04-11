@@ -73,7 +73,7 @@
     <div class="d-flex justify-content-between align-items-center mt-4 mb-3 no-print">
         <h1 class="h3 mb-0">Facture achat</h1>
         <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary" th:href="@{/factures/fournisseur/{id}(id=${achat.fournisseur.id})}">Retour</a>
+            <button type="button" class="btn btn-outline-secondary" onclick="history.back()">Retour</button>
             <button class="btn btn-primary" onclick="window.print()">Imprimer</button>
         </div>
     </div>
