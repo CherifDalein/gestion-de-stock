@@ -16,10 +16,10 @@
                         <th>Date</th>
                         <th>Client</th>
                         <th>Total</th>
-                        <th>Versé</th>
+                        <th>Verse</th>
                         <th>Reste</th>
                         <th>Statut</th>
-                        <th>Actions</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -32,10 +32,10 @@
                         <td class="fw-bold" th:classappend="${(v.montantTotal - (v.montantVerse ?: 0)) > 0 ? 'text-danger' : 'text-muted'}"
                             th:text="${(v.montantTotal - (v.montantVerse ?: 0)) + ' GNF'}"></td>
                         <td>
-                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) == 0}" class="badge bg-success">Payé</span>
-                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">Crédit</span>
+                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) == 0}" class="badge bg-success">Paye</span>
+                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">Credit</span>
                         </td>
-                        <td>
+                        <td class="text-center">
                             <button type="button" class="btn btn-info btn-sm"
                                     data-bs-toggle="modal"
                                     th:data-bs-target="'#modalVente' + ${v.id}">
@@ -56,17 +56,17 @@
                                                     <strong>Client :</strong> <span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span>
                                                 </div>
                                                 <div class="col-6 text-end">
-                                                    <p class="mb-1">Total Facture : <strong th:text="${v.montantTotal + ' GNF'}"></strong></p>
-                                                    <p class="mb-1 text-success">Montant Reçu : <strong th:text="${(v.montantVerse ?: 0) + ' GNF'}"></strong></p>
-                                                    <h4 class="text-danger">Reste à Payer : <span th:text="${v.montantTotal - (v.montantVerse ?: 0)}"></span> GNF</h4>
+                                                    <p class="mb-1">Total facture : <strong th:text="${v.montantTotal + ' GNF'}"></strong></p>
+                                                    <p class="mb-1 text-success">Montant recu : <strong th:text="${(v.montantVerse ?: 0) + ' GNF'}"></strong></p>
+                                                    <h4 class="text-danger">Reste a payer : <span th:text="${v.montantTotal - (v.montantVerse ?: 0)}"></span> GNF</h4>
                                                 </div>
                                             </div>
                                             <table class="table table-sm table-striped">
                                                 <thead class="table-light">
                                                 <tr>
                                                     <th>Produit</th>
-                                                    <th class="text-end">Prix Unitaire</th>
-                                                    <th class="text-center">Quantité</th>
+                                                    <th class="text-end">Prix unitaire</th>
+                                                    <th class="text-center">Quantite</th>
                                                     <th class="text-end">Sous-total</th>
                                                 </tr>
                                                 </thead>
@@ -82,7 +82,9 @@
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                            <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i> Imprimer Reçu</button>
+                                            <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-primary">
+                                                <i class="fas fa-print"></i> Imprimer recu
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
