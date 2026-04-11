@@ -15,7 +15,7 @@
                         <th>ID</th>
                         <th>Date</th>
                         <th>Fournisseur</th>
-                        <th>Total</th>
+                     
                         <th>Verse</th>
                         <th>Reste</th>
                         <th>Statut</th>
@@ -37,65 +37,20 @@
                             <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">Dette</span>
                         </td>
                         <td class="text-center">
-                            <button type="button" class="btn btn-info btn-sm"
-                                    title="Voir details"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#modalAchat' + ${a.id}">
+                            <a th:href="@{/factures/achat/{id}(id=${a.id})}"
+                               class="btn btn-info btn-sm"
+                               title="Voir et imprimer la facture d'achat">
                                 <i class="fas fa-eye"></i>
-                            </button>
-
-                            <div class="modal fade" th:id="'modalAchat' + ${a.id}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-light">
-                                            <h5 class="modal-title">Facture Achat #<span th:text="${a.id}"></span></h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row mb-3">
-                                                <div class="col-6">
-                                                    <strong>Fournisseur :</strong> <span th:text="${a.fournisseur.nom}"></span><br>
-                                                    <strong>Date :</strong> <span th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></span>
-                                                </div>
-                                                <div class="col-6 text-end">
-                                                    <p class="mb-0">Total : <strong th:text="${a.montantTotal + ' GNF'}"></strong></p>
-                                                    <p class="mb-0 text-success">Paye : <strong th:text="${(a.montantVerse ?: 0) + ' GNF'}"></strong></p>
-                                                    <h4 class="text-danger">
-                                                        Reste : <span th:text="${a.montantTotal - (a.montantVerse ?: 0)}"></span> GNF
-                                                    </h4>
-                                                </div>
-                                            </div>
-                                            <table class="table table-sm table-bordered">
-                                                <thead class="table-dark">
-                                                <tr>
-                                                    <th>Produit</th>
-                                                    <th>Prix unit.</th>
-                                                    <th>Quantite</th>
-                                                    <th>Sous-total</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <tr th:each="ligne : ${a.lignes}">
-                                                    <td th:text="${ligne.produit.nom}"></td>
-                                                    <td th:text="${ligne.prixAchatUnitaire}"></td>
-                                                    <td th:text="${ligne.quantite}"></td>
-                                                    <td th:text="${(ligne.prixAchatUnitaire * ligne.quantite) + ' GNF'}"></td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                            <a th:href="@{/factures/achat/{id}(id=${a.id})}" class="btn btn-primary">
-                                                <i class="fas fa-print"></i> Imprimer
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            </a>
                         </td>
                     </tr>
                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+            </tbody>
                 </table>
             </div>
         </div>
