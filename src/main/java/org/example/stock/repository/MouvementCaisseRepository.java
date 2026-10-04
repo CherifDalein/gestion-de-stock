@@ -29,5 +29,6 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
 
     List<MouvementCaisse> findAllByOrderByDateMouvementDesc();
     List<MouvementCaisse> findBySource(String source);
+    List<MouvementCaisse> findByAchatIdOrderByDateMouvementDescIdDesc(Long achatId);
     List<MouvementCaisse> findByDateMouvementGreaterThanEqualOrderByDateMouvementDesc(LocalDateTime date);
 }

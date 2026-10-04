@@ -30,6 +30,7 @@ Les rôles et mots de passe des comptes existants ne sont pas modifiés par ce l
 | Enregistrer et consulter les ventes | Oui | Oui |
 | Consulter et imprimer les factures de vente et relevés clients | Oui | Oui |
 | Gérer les achats et consulter les factures fournisseurs | Oui | Non |
+| Enregistrer et consulter les règlements fournisseurs | Oui | Non |
 | Consulter la caisse globale et ses indicateurs | Oui | Non |
 | Créer un compte caissier | Oui | Non |
 
@@ -42,3 +43,18 @@ Les routes non explicitement autorisées sont refusées par défaut. Les pages d
 ## Vérification
 
 `./gradlew test` utilise le profil `test` avec une base H2 en mémoire. Les tests de sécurité contrôlent les rôles, les refus sans jeton, le rendu des formulaires Thymeleaf et un parcours réel de connexion/suppression/déconnexion avec les jetons extraits du HTML. Aucun accès à la base MySQL n'est nécessaire.
+
+## Régler un fournisseur après un achat
+
+1. Se connecter comme ADMIN et ouvrir le **Journal des Achats**.
+2. Cliquer sur **Régler** à côté de l'achat concerné.
+3. Saisir la **somme payée maintenant**, et non le total cumulé des versements.
+4. Enregistrer le versement. Le montant déjà versé et la dette sont actualisés ; une sortie de caisse est liée à l'achat avec date et auteur. Le stock et les lignes de facture ne sont pas modifiés.
+
+Cette opération reste possible si tout ou partie des produits ont été vendus. Un achat soldé affiche **Règlements**, qui permet de consulter les versements enregistrés. Le montant doit être positif, comporter au plus deux décimales et ne pas dépasser la dette restante. Les montants impossibles à stocker sans perte de précision dans la caisse actuelle sont refusés.
+
+Le formulaire vérifie sous verrou le montant déjà payé au moment de son ouverture. Répéter le même formulaire après un versement, ou soumettre deux copies en même temps, ne crée pas une seconde sortie de caisse : la seconde demande reçoit HTTP 409. Vérifier l'historique et recharger le formulaire avant un nouveau versement. Ce contrôle vise les copies d'un même formulaire ; il ne remplace pas une vérification métier de deux paiements réellement distincts.
+
+Le bouton **Modifier** concerne désormais les lignes et le fournisseur de l'achat. Le montant déjà payé y est affiché en lecture seule. Une réduction du total sous le montant déjà payé est refusée ; les remboursements et annulations de paiements ne sont pas proposés dans ce parcours.
+
+Les versements initiaux des nouveaux achats et les nouveaux règlements apparaissent dans l'historique lié à la facture. Les anciens mouvements de caisse restent consultables dans le journal général ; ils ne sont pas automatiquement rattachés à une facture. Voir [mise à jour du schéma](database-schema.md#mise-à-jour-dune-base-existante--règlements-fournisseurs).

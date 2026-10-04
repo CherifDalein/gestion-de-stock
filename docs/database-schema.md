@@ -79,6 +79,7 @@ Base cible : `stock_pro`
 - `motif`
 - `source`
 - `utilisateur_id` FK -> `utilisateur.id`
+- `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
 
 ## Diagramme relationnel
 
@@ -93,6 +94,7 @@ erDiagram
     VENTE ||--o{ DETAIL_VENTE : contient
     PRODUIT ||--o{ DETAIL_VENTE : reference
     UTILISATEUR ||--o{ MOUVEMENT_CAISSE : enregistre
+    ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
 
     CATEGORIE {
         BIGINT id PK
@@ -167,6 +169,7 @@ erDiagram
         VARCHAR motif
         VARCHAR source
         BIGINT utilisateur_id FK
+        BIGINT achat_id FK
     }
 ```
 
@@ -200,3 +203,18 @@ ALTER TABLE produit ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
 ```
 
 Le script `database-schema.sql` décrit les nouvelles bases ; son `CREATE TABLE IF NOT EXISTS` ne met pas à jour une table déjà existante. Cette migration MySQL n'a pas été exécutée pendant les tests, qui utilisent H2 en mémoire. Les formulaires de modification de produit ouverts avant la mise à jour doivent être rechargés.
+
+## Mise à jour d'une base existante : règlements fournisseurs
+
+Le lien optionnel `mouvement_caisse.achat_id` associe les nouveaux versements et les versements initiaux des nouveaux achats à leur facture. Avec `ddl-auto=update`, Hibernate demande l'ajout de cette colonne et de sa clé étrangère au prochain démarrage.
+
+Pour un schéma administré manuellement, ajouter une seule fois la colonne et sa contrainte si elles sont absentes :
+
+```sql
+ALTER TABLE mouvement_caisse
+    ADD COLUMN achat_id BIGINT NULL,
+    ADD CONSTRAINT fk_mouvement_caisse_achat
+        FOREIGN KEY (achat_id) REFERENCES achat (id);
+```
+
+Les anciens mouvements restent conservés avec `achat_id = NULL` ; aucune association n'est déduite de leur texte de motif. Le montant déjà payé des achats existants reste la référence pour leur dette. Leur historique de versements antérieur reste dans le journal général de caisse. Cette migration n'a pas été exécutée sur MySQL pendant les tests.

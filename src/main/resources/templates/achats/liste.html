@@ -40,6 +40,10 @@
                             <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">Dette</span>
                         </td>
                         <td class="text-center">
+                            <a th:href="@{/achats/regler/{id}(id=${a.id})}" class="btn btn-success btn-sm"
+                               th:text="${a.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
+                            <a th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-warning btn-sm"
+                               title="Modifier les produits de cet achat">Modifier</a>
                             <a th:href="@{/factures/achat/{id}(id=${a.id})}"
                                class="btn btn-info btn-sm"
                                title="Voir et imprimer la facture d'achat">

@@ -16,7 +16,7 @@
                 <div class="col-md-4">
                     <div class="card shadow-sm mb-4 border-left-warning">
                         <div class="card-header bg-warning text-dark fw-bold">
-                            <i class="fas fa-money-bill-wave me-1"></i> Mise à jour Règlement
+                            <i class="fas fa-truck me-1"></i> Achat et fournisseur
                         </div>
                         <div class="card-body">
                             <div class="mb-3">
@@ -35,10 +35,10 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-bold text-success">Montant Versé (Cash)</label>
-                                <input type="number" th:field="*{montantVerse}" id="montantVerse"
-                                       class="form-control form-control-lg border-warning" required min="0" step="0.01">
-                                <small class="text-muted">Modifier la somme payée si nécessaire.</small>
+                                <label class="form-label fw-bold text-success">Déjà versé (GNF)</label>
+                                <input type="number" th:value="${achat.montantVerse ?: 0}" id="montantVerse"
+                                       class="form-control form-control-lg bg-light" readonly data-saisie-manuelle="true">
+                                <a th:href="@{/achats/regler/{id}(id=${achat.id})}">Enregistrer un nouveau versement</a>
                             </div>
 
                             <div class="mb-3">
@@ -128,7 +128,7 @@
             /*[/]*/
 
             // 2. On remet le montant versé initial (car ajouterLigne peut recalculer le total)
-            const montantInitial = /*[[${achat.montantVerse}]]*/ 0;
+            const montantInitial = /*[[${achat.montantVerse ?: 0}]]*/ 0;
             document.getElementById('montantVerse').value = montantInitial;
 
             // 3. On force le calcul du reste à payer

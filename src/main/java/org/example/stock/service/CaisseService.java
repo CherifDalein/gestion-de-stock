@@ -2,6 +2,7 @@ package org.example.stock.service;
 
 import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.model.Achat;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -71,6 +72,19 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerSortie(Double montant, String motif, String source, Utilisateur utilisateur) {
+        enregistrerSortie(montant, motif, source, utilisateur, null);
+    }
+
+    @Transactional
+    public void enregistrerSortieAchat(Double montant, String motif, Achat achat, Utilisateur utilisateur) {
+        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat);
+    }
+
+    public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
+        return mouvementRepo.findByAchatIdOrderByDateMouvementDescIdDesc(achatId);
+    }
+
+    private void enregistrerSortie(Double montant, String motif, String source, Utilisateur utilisateur, Achat achat) {
         if (montant == null || montant == 0) {
             return;
         }
@@ -89,6 +103,7 @@ public class CaisseService {
         mouvement.setMotif(motif);
         mouvement.setSource(source);
         mouvement.setUtilisateur(utilisateur);
+        mouvement.setAchat(achat);
 
         mouvementRepo.save(mouvement);
     }

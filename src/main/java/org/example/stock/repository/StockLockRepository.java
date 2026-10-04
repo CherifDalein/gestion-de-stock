@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Produit;
 import org.springframework.stereotype.Repository;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +39,7 @@ public class StockLockRepository {
 
     public Achat verrouillerAchat(Long id) {
         Achat achat = entityManager.find(Achat.class, id, LockModeType.PESSIMISTIC_WRITE);
-        if (achat == null) throw new IllegalArgumentException("Achat introuvable");
+        if (achat == null) throw new EmptyResultDataAccessException("Achat introuvable", 1);
         // Verrouiller le document avant de rafraîchir ses lignes (cascade REFRESH), puis ses produits.
         entityManager.refresh(achat, LockModeType.PESSIMISTIC_WRITE);
         return achat;

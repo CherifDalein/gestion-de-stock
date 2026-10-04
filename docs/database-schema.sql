@@ -112,7 +112,10 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     motif VARCHAR(255),
     source VARCHAR(255),
     utilisateur_id BIGINT,
+    achat_id BIGINT,
     PRIMARY KEY (id),
     CONSTRAINT fk_mouvement_caisse_utilisateur
-        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_mouvement_caisse_achat
+        FOREIGN KEY (achat_id) REFERENCES achat (id)
 );

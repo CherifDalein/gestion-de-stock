@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
@@ -57,13 +58,16 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
 
         String motif = "Achat #" + achatEnregistre.getId() + " - Fournisseur: " + achatEnregistre.getFournisseur().getNom();
-        caisseService.enregistrerSortie(achatEnregistre.getMontantVerse(), motif, "ACHAT", actuel);
+        caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel);
 
         return achatEnregistre;
     }
 
     @Transactional
     public void modifierAchat(Long id, Achat achatModifie) {
+        if (achatModifie.getMontantVerse() != null) {
+            throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
+        }
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
 
         validerAchat(achatModifie);
@@ -72,8 +76,10 @@ public class AchatService {
                 .map(ligne -> ligne.getProduit().getId()).toList());
 
         double montantTotalCalcule = calculerMontantTotal(achatModifie);
-        Double nouveauMontantVerse = normaliserMontantVerse(achatModifie.getMontantVerse(), montantTotalCalcule);
-        Double difference = nouveauMontantVerse - Objects.requireNonNullElse(ancienAchat.getMontantVerse(), 0.0);
+        double montantDejaVerse = Objects.requireNonNullElse(ancienAchat.getMontantVerse(), 0.0);
+        if (!Double.isFinite(montantTotalCalcule) || montantTotalCalcule < montantDejaVerse) {
+            throw new IllegalArgumentException("Le total modifié ne peut pas être inférieur au montant déjà payé.");
+        }
 
         for (DetailAchat ancienneLigne : ancienAchat.getLignes()) {
             Produit produit = produits.get(ancienneLigne.getProduit().getId());
@@ -89,7 +95,6 @@ public class AchatService {
 
         ancienAchat.setFournisseur(achatModifie.getFournisseur());
         ancienAchat.setMontantTotal(montantTotalCalcule);
-        ancienAchat.setMontantVerse(nouveauMontantVerse);
 
         ancienAchat.getLignes().clear();
         for (DetailAchat nouvelleLigne : achatModifie.getLignes()) {
@@ -104,14 +109,40 @@ public class AchatService {
         }
 
         achatRepository.save(ancienAchat);
+    }
 
-        if (Math.abs(difference) > 0.000001d) {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
-
-            String motif = "Correction Achat #" + id + " (Ajustement paiement)";
-            caisseService.enregistrerSortie(difference, motif, "ACHAT", actuel);
+    @Transactional
+    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        if (montant == null || montant.signum() <= 0 || montant.scale() > 2
+                || montant.compareTo(new BigDecimal("999999999999999.99")) > 0) {
+            throw new IllegalArgumentException("Le versement doit être positif et comporter au maximum 2 décimales.");
         }
+        if (montantVerseAttendu == null || montantVerseAttendu.signum() < 0) {
+            throw new IllegalArgumentException("Rechargez le formulaire de règlement.");
+        }
+        Achat achat = stockLockRepository.verrouillerAchat(id);
+        Double verse = Objects.requireNonNullElse(achat.getMontantVerse(), 0.0);
+        if (achat.getMontantTotal() == null || !Double.isFinite(achat.getMontantTotal())
+                || !Double.isFinite(verse) || verse < 0 || achat.getMontantTotal() < verse) {
+            throw new IllegalArgumentException("Les montants de cet achat sont invalides. Vérifiez la facture.");
+        }
+        BigDecimal dejaVerse = BigDecimal.valueOf(verse);
+        if (montantVerseAttendu.compareTo(dejaVerse) != 0) throw new ReglementAchatObsoleteException();
+        BigDecimal nouveauVerse = dejaVerse.add(montant);
+        if (nouveauVerse.compareTo(BigDecimal.valueOf(achat.getMontantTotal())) > 0) {
+            throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
+        }
+        if (BigDecimal.valueOf(montant.doubleValue()).compareTo(montant) != 0
+                || BigDecimal.valueOf(nouveauVerse.doubleValue()).compareTo(nouveauVerse) != 0) {
+            throw new IllegalArgumentException("Ce montant dépasse la précision prise en charge par la caisse.");
+        }
+        achat.setMontantVerse(nouveauVerse.doubleValue());
+
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Utilisateur actuel = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
+        String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
+        caisseService.enregistrerSortieAchat(montant.doubleValue(), motif, achat, actuel);
     }
 
     public List<Achat> listerTous() {

@@ -4,8 +4,16 @@ import org.example.stock.model.Achat;
 import org.example.stock.service.AchatService;
 import org.example.stock.service.FournisseurService;
 import org.example.stock.service.ProduitService;
+import org.example.stock.service.CaisseService;
+import org.example.stock.service.ReglementAchatObsoleteException;
+import org.example.stock.form.ReglementAchatForm;
+import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
+import java.math.BigDecimal;
 
 @Controller
 @RequestMapping("/achats")
@@ -24,6 +33,7 @@ public class AchatController {
     @Autowired private AchatService service;
     @Autowired private ProduitService produitService;
     @Autowired private FournisseurService fournisseurService;
+    @Autowired private CaisseService caisseService;
 
     @GetMapping
     public String listeVentes(Model model) {
@@ -85,5 +95,51 @@ public class AchatController {
                     ? "Une autre opération modifie cet achat ou son stock. Réessayez la modification." : e.getMessage());
             return "redirect:/achats/modifier/" + id;
         }
+    }
+
+    @GetMapping("/regler/{id}")
+    public String afficherReglement(@PathVariable Long id, Model model) {
+        Achat achat = chargerAchat(id);
+        ReglementAchatForm formulaire = new ReglementAchatForm();
+        formulaire.setMontantVerseAttendu(BigDecimal.valueOf(achat.getMontantVerse() == null ? 0.0 : achat.getMontantVerse()));
+        model.addAttribute("reglementAchat", formulaire);
+        preparerReglement(achat, model);
+        return "dashboard";
+    }
+
+    @PostMapping("/regler/{id}")
+    public String enregistrerReglement(@PathVariable Long id, @Valid @ModelAttribute("reglementAchat") ReglementAchatForm formulaire,
+                                      BindingResult result, Model model, RedirectAttributes redirectAttributes,
+                                      HttpServletResponse response) {
+        FormBindingAdvice.verifier(result);
+        if (!result.hasErrors()) {
+            try {
+                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu());
+                redirectAttributes.addFlashAttribute("success", "Versement fournisseur enregistré avec succès.");
+                return "redirect:/achats/regler/" + id;
+            } catch (ReglementAchatObsoleteException | ConcurrencyFailureException e) {
+                response.setStatus(HttpStatus.CONFLICT.value());
+                result.reject("reglement.conflit", e instanceof ReglementAchatObsoleteException ? e.getMessage()
+                        : "Une autre opération modifie cet achat. Rechargez le formulaire et réessayez.");
+            } catch (IllegalArgumentException e) {
+                result.reject("reglement.invalide", e.getMessage());
+            } catch (EmptyResultDataAccessException e) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achat introuvable");
+            }
+        }
+        preparerReglement(chargerAchat(id), model);
+        return "dashboard";
+    }
+
+    private Achat chargerAchat(Long id) {
+        Achat achat = service.trouverParId(id);
+        if (achat == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achat introuvable");
+        return achat;
+    }
+
+    private void preparerReglement(Achat achat, Model model) {
+        model.addAttribute("achatReglement", achat);
+        model.addAttribute("reglements", caisseService.listerReglementsAchat(achat.getId()));
+        model.addAttribute("view", "achats/regler");
     }
 }

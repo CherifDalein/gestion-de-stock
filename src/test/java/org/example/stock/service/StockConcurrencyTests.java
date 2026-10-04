@@ -21,6 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.math.BigDecimal;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,7 +57,7 @@ class StockConcurrencyTests {
 
     @BeforeEach
     void preparer() {
-        ventes.deleteAll(); achats.deleteAll(); caisse.deleteAll(); produits.deleteAll();
+        ventes.deleteAll(); caisse.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
         Utilisateur utilisateur = new Utilisateur(); utilisateur.setEmail("concurrence@example.test");
         utilisateur.setNom("Test concurrence"); utilisateur.setRole(Role.ADMIN); utilisateurs.save(utilisateur);
@@ -108,21 +109,44 @@ class StockConcurrencyTests {
     void laCorrectionDAchatAttendUneVenteEtConserveSaSortieDeStock() throws Exception {
         Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, 15.0)).getId());
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(4)),
-                () -> achatService.modifierAchat(id, achat(5, 25.0)), false)).isNull();
+                () -> achatService.modifierAchat(id, modification(5)), false)).isNull();
         assertThat(stock()).isEqualTo(11L);
         assertThat(achats.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(55.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualTo(65.0);
     }
 
     @Test
-    void deuxCorrectionsDuMemeAchatNeDoublentPasLePaiementNiLeStock() throws Exception {
+    void deuxCorrectionsDuMemeAchatConserventLeStockSansChangerLePaiement() throws Exception {
         Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, 0.0)).getId());
-        assertThat(executerAvecVerrouRetenu(() -> achatService.modifierAchat(id, achat(4, 10.0)),
-                () -> achatService.modifierAchat(id, achat(5, 20.0)), true)).isNull();
+        assertThat(executerAvecVerrouRetenu(() -> achatService.modifierAchat(id, modification(4)),
+                () -> achatService.modifierAchat(id, modification(5)), true)).isNull();
         assertThat(stock()).isEqualTo(15L);
         assertThat(achats.count()).isEqualTo(1);
+        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(0.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualTo(0.0);
+    }
+
+    @Test
+    void deuxReglementsDuMemeFormulaireNeCreentQuUneSortieDeCaisse() throws Exception {
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, 0.0)).getId());
+        Throwable erreur = executerAvecVerrouRetenu(
+                () -> achatService.reglerAchat(id, new BigDecimal("20"), BigDecimal.ZERO),
+                () -> achatService.reglerAchat(id, new BigDecimal("20"), BigDecimal.ZERO), true);
+        assertThat(erreur).isInstanceOf(ReglementAchatObsoleteException.class);
+        assertThat(stock()).isEqualTo(20L);
         assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(20.0);
+        assertThat(caisse.count()).isEqualTo(1);
         assertThat(caisse.calculerSoldeTotal()).isEqualTo(-20.0);
+    }
+
+    @Test
+    void unReglementPendantUneVenteNeVerrouilleNiNeModifieLeStock() throws Exception {
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, 0.0)).getId());
+        assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(18)),
+                () -> achatService.reglerAchat(id, new BigDecimal("50"), BigDecimal.ZERO), true, false)).isNull();
+        assertThat(stock()).isEqualTo(2L);
+        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(50.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualTo(310.0);
     }
 
     @Test
@@ -215,6 +239,10 @@ class StockConcurrencyTests {
     }
 
     private Throwable executerAvecVerrouRetenu(Runnable premiere, Runnable seconde, boolean document) throws Exception {
+        return executerAvecVerrouRetenu(premiere, seconde, document, true);
+    }
+
+    private Throwable executerAvecVerrouRetenu(Runnable premiere, Runnable seconde, boolean document, boolean doitAttendre) throws Exception {
         CountDownLatch modificationEffectuee = new CountDownLatch(1);
         CountDownLatch autoriserCommit = new CountDownLatch(1);
         CountDownLatch tentative = new CountDownLatch(1);
@@ -237,7 +265,11 @@ class StockConcurrencyTests {
                     authentifie(() -> { seconde.run(); return null; });
                 });
                 assertThat(tentative.await(10, TimeUnit.SECONDS)).isTrue();
-                assertThatThrownBy(() -> b.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+                if (doitAttendre) {
+                    assertThatThrownBy(() -> b.get(200, TimeUnit.MILLISECONDS)).isInstanceOf(TimeoutException.class);
+                } else {
+                    b.get(5, TimeUnit.SECONDS);
+                }
                 autoriserCommit.countDown();
                 a.get(10, TimeUnit.SECONDS);
                 try { b.get(10, TimeUnit.SECONDS); return null; }
@@ -278,6 +310,10 @@ class StockConcurrencyTests {
         Produit reference = new Produit(); reference.setId(produit.getId());
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(reference); ligne.setQuantite(quantite);
         ligne.setPrixAchatUnitaire(5.0); achat.getLignes().add(ligne); return achat;
+    }
+
+    private Achat modification(int quantite) {
+        Achat achat = achat(quantite, 0.0); achat.setMontantVerse(null); return achat;
     }
 
     private long stock() { return produits.findById(produit.getId()).orElseThrow().getQuantite(); }

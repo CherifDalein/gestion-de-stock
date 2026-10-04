@@ -27,6 +27,6 @@ public class Achat {
     private List<DetailAchat> lignes = new ArrayList<>();
 
     public Double getResteAPayer() {
-        return (montantTotal != null && montantVerse != null) ? montantTotal - montantVerse : 0.0;
+        return montantTotal == null ? 0.0 : montantTotal - (montantVerse == null ? 0.0 : montantVerse);
     }
 }
