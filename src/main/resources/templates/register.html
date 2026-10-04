@@ -34,6 +34,7 @@
                                         <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Mot de passe" required>
                                         <label for="inputPassword">Mot de passe</label>
                                     </div>
+                                    <p class="small text-muted">Maximum 72 octets : les accents et les emojis comptent pour plusieurs octets.</p>
 
                                     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
                                     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>

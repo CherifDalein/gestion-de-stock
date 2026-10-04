@@ -18,9 +18,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.web.WebAttributes;
 import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -51,10 +53,10 @@ class SecurityFlowTests {
     @Autowired MockMvc mvc;
     @Autowired UtilisateurRepository utilisateurRepository;
     @Autowired PasswordEncoder passwordEncoder;
-    @MockBean ProduitService produitService;
-    @MockBean ClientService clientService;
-    @MockBean CategorieService categorieService;
-    @MockBean FournisseurService fournisseurService;
+    @MockitoBean ProduitService produitService;
+    @MockitoBean ClientService clientService;
+    @MockitoBean CategorieService categorieService;
+    @MockitoBean FournisseurService fournisseurService;
 
     @BeforeEach
     void preparer() {
@@ -163,6 +165,56 @@ class SecurityFlowTests {
     void logoutExigeUnJeton() throws Exception {
         mvc.perform(post("/logout")).andExpect(status().isForbidden());
         mvc.perform(post("/logout").with(csrf())).andExpect(redirectedUrl("/login?logout"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"admin-audit@example.test", "inconnu@example.test"})
+    @WithAnonymousUser
+    void uneConnexionAvecUnMotDePasseTropLongEchoueNormalement(String email) throws Exception {
+        var resultat = mvc.perform(post("/login").with(csrf()).param("username", email)
+                        .param("password", "a".repeat(73)))
+                .andExpect(redirectedUrl("/login?error")).andReturn();
+        var session = resultat.getRequest().getSession(false);
+        assertThat(session).isNotNull();
+        assertThat(session.getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION))
+                .isInstanceOf(BadCredentialsException.class);
+        org.springframework.security.test.context.TestSecurityContextHolder.clearContext();
+        mvc.perform(get("/produits").session((MockHttpSession) session))
+                .andExpect(redirectedUrl("http://localhost/login"));
+    }
+
+    @Test
+    @WithAnonymousUser
+    void laConnexionExigeToujoursUnJetonCsrf() throws Exception {
+        mvc.perform(post("/login").param("username", "admin-audit@example.test")
+                        .param("password", "MotDePasseTest42"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void unAncienCompteALaLimiteBcryptRefuseUnSuffixeMaisAccepteSonMotDePasse() throws Exception {
+        Utilisateur compte = utilisateurRepository.findByEmail("admin-audit@example.test").orElseThrow();
+        // Empreinte de "a" répété 72 fois, produite avec Spring Security 6.2.4.
+        compte.setMotDePasse("$2a$10$2nIZNaJYnCgS8.dHd5/OPeUcqBvBKVtI5q90FbS54pDBq2VfDnkV.");
+        utilisateurRepository.saveAndFlush(compte);
+        mvc.perform(post("/login").with(csrf()).param("username", compte.getEmail())
+                        .param("password", "a".repeat(72) + "suffixe"))
+                .andExpect(redirectedUrl("/login?error"));
+        mvc.perform(post("/login").with(csrf()).param("username", compte.getEmail())
+                        .param("password", "a".repeat(72)))
+                .andExpect(redirectedUrl("/"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "é"})
+    void laCreationRefuseUnMotDePasseTropLongSansEnregistrerDeCompte(String caractere) throws Exception {
+        String motDePasse = caractere.repeat(caractere.equals("a") ? 73 : 37);
+        mvc.perform(post("/register").with(csrf()).param("nom", "Caissier")
+                        .param("email", "trop-long@example.test").param("password", motDePasse))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Le mot de passe est trop long")));
+        assertThat(utilisateurRepository.findByEmail("trop-long@example.test")).isEmpty();
     }
 
     @Test

@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -51,7 +51,7 @@ class StockConcurrencyTests {
     @Autowired PlatformTransactionManager transactions;
     @Autowired EntityManager entityManager;
     @Autowired MockMvc mvc;
-    @SpyBean StockLockRepository verrous;
+    @MockitoSpyBean StockLockRepository verrous;
     Produit produit;
     Fournisseur fournisseur;
 

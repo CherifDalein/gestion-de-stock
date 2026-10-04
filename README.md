@@ -2,6 +2,8 @@
 
 Application Spring Boot pour les produits, achats, ventes et règlements.
 
+Versions : Spring Boot 3.5.16 et Spring Security 6.5.11.
+
 ## Démarrage local
 
 Prérequis : Java 21 et le serveur MariaDB local démarré sur le port 3306.
@@ -25,5 +27,6 @@ Les tests utilisent H2 en mémoire.
 ## Documentation
 
 - [Accès, CSRF et règlements fournisseurs](docs/acces-et-csrf.md)
+- [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
 - [Schéma et mises à jour de la base](docs/database-schema.md)
 - [Audit et suivi des corrections](docs/audit-2026-10-04.md)

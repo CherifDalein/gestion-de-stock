@@ -1,6 +1,6 @@
 # Connexion à la base de données
 
-Le démarrage local utilise MariaDB sur `localhost:3306`, base `stock_pro`, avec les identifiants locaux par défaut (`root`, mot de passe vide). Le pilote JDBC et le dialecte Hibernate sont choisis automatiquement depuis la connexion. Le pilote MariaDB Connector/J 3.3.3 est géré par Spring Boot 3.2.5.
+Le démarrage local utilise MariaDB sur `localhost:3306`, base `stock_pro`, avec les identifiants locaux par défaut (`root`, mot de passe vide). Le pilote JDBC et le dialecte Hibernate sont choisis automatiquement depuis la connexion. Le pilote MariaDB Connector/J 3.5.8 est géré par Spring Boot 3.5.16.
 
 ```sh
 ./gradlew bootRun
@@ -19,7 +19,7 @@ L'application est accessible sur <http://localhost:8080>. La base doit être dé
 
 Les valeurs locales par défaut conviennent au poste existant. Pour Railway ou un autre hébergement, renseigner les variables de connexion du serveur concerné. Les anciennes coordonnées Railway ne sont plus présentes dans la configuration courante. Les propriétés Spring standard `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` et `SPRING_JPA_HIBERNATE_DDL_AUTO` peuvent également être utilisées.
 
-Les pilotes MySQL et MariaDB restent disponibles. Une URL `jdbc:mysql://...` choisit MySQL Connector/J ; une URL `jdbc:mariadb://...` choisit MariaDB Connector/J. Aucun `driver-class-name` ni dialecte n'est imposé dans le fichier commun. L'option `timezone=UTC` correspond au pilote MariaDB 3.3 utilisé ; les options d'une URL MySQL doivent correspondre au pilote MySQL.
+Les pilotes MySQL et MariaDB restent disponibles. Une URL `jdbc:mysql://...` choisit MySQL Connector/J ; une URL `jdbc:mariadb://...` choisit MariaDB Connector/J. Aucun `driver-class-name` ni dialecte n'est imposé dans le fichier commun. L'option historique `timezone=UTC` reste compatible avec MariaDB Connector/J 3.5 ; les options d'une URL MySQL doivent correspondre au pilote MySQL.
 
 Ne pas conserver de mot de passe distant dans ce fichier ni dans les commandes suivies par Git. Les anciennes valeurs restent dans l'historique Git ; supprimer la configuration courante ne révoque pas ces identifiants.
 
@@ -33,4 +33,6 @@ Les tests d'intégration utilisent le profil `test` et H2 en mémoire. Ce profil
 
 La vérification locale du 4 octobre 2026 a identifié MariaDB 10.4.28 avec MariaDB Connector/J 3.3.3. Le schéma et les nombres de lignes ont été lus sans soumission de paiement. Cette vérification ne certifie pas un déploiement distant ni tous les scénarios métier sur MariaDB.
 
-Références : [MariaDB Connector/J, URL et pilote](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j), [versions gérées par Spring Boot 3.2.5](https://docs.spring.io/spring-boot/docs/3.2.5/reference/html/dependency-versions.html).
+Après la mise à jour de Spring Boot, un démarrage avec validation du schéma et connexions en lecture seule a confirmé la compatibilité avec MariaDB 10.4.28 et Connector/J 3.5.8. La page de connexion répond HTTP 200 avec un jeton CSRF. Aucun changement de données ni de schéma n'a été demandé pour cette vérification.
+
+Références : [MariaDB Connector/J, URL et pilote](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j), [versions gérées par Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html).
