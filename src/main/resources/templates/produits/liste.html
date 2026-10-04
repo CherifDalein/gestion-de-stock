@@ -46,11 +46,12 @@
                             <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-warning btn-sm me-2">
                                 Modifier <i class="fas fa-edit"></i>
                             </a>
-                            <a th:href="@{/produits/supprimer/{id}(id=${p.id})}"
-                               class="btn btn-danger btn-sm me-2"
-                               onclick="return confirm('Supprimer ?')">
-                                Supprimer <i class="fas fa-trash"></i>
-                            </a>
+                            <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post"
+                                  class="d-inline" onsubmit="return confirm('Supprimer ce produit ?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    Supprimer <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     </tbody>

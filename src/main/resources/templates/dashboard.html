@@ -27,6 +27,9 @@
                 <i class="fas fa-user fa-fw"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li sec:authorize="hasRole('ADMIN')">
+                    <a class="dropdown-item" th:href="@{/register}">Créer un compte caissier</a>
+                </li>
                 <li><a class="dropdown-item" href="#!">Parametres</a></li>
                 <li><a class="dropdown-item" href="#!">Journal d'activite</a></li>
                 <li><hr class="dropdown-divider" /></li>

@@ -43,6 +43,7 @@ public class ProduitController {
                                  Model model) {
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
+            model.addAttribute("fournisseurs", fournisseurService.listerTous());
             model.addAttribute("view", "produits/nouveau");
             return "dashboard";
         }
@@ -50,7 +51,7 @@ public class ProduitController {
         return "redirect:/produits";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimerProduit(@PathVariable("id") Long id) {
         produitService.supprimerProduit(id);
         return "redirect:/produits";
@@ -68,12 +69,13 @@ public class ProduitController {
 
     @PostMapping("/modifier/{id}")
     public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model) {
+        produit.setId(id);
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
+            model.addAttribute("fournisseurs", fournisseurService.listerTous());
             model.addAttribute("view", "produits/modifier");
             return "dashboard";
         }
-        produit.setId(id);
         produitService.ajouterProduit(produit);
         return "redirect:/produits";
     }

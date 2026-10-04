@@ -28,11 +28,12 @@
                             <a th:href="@{/categories/modifier/{id}(id=${cat.id})}" class="btn btn-warning btn-sm me-2">
                                 Modifier <i class="fas fa-edit"></i>
                             </a>
-                            <a th:href="@{/categories/supprimer/{id}(id=${cat.id})}"
-                               class="btn btn-danger btn-sm me-2"
-                               onclick="return confirm('Supprimer cette catégorie ?')">
-                                Supprimer <i class="fas fa-trash"></i>
-                            </a>
+                            <form th:action="@{/categories/supprimer/{id}(id=${cat.id})}" method="post"
+                                  class="d-inline" onsubmit="return confirm('Supprimer cette catégorie ?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    Supprimer <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     </tbody>

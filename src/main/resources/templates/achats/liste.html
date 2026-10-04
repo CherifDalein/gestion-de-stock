@@ -1,6 +1,9 @@
 <div th:fragment="content">
     <div class="container-fluid px-4">
         <h1 class="mt-4">Journal des Achats</h1>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
+        <div th:if="${param.success != null and param.success[0] == 'modifie'}"
+             class="alert alert-success" role="status">Achat modifié avec succès.</div>
         <div class="mb-4 d-flex justify-content-end">
             <a th:href="@{/achats/nouveau}" class="btn btn-success">
                 <i class="fas fa-truck"></i> Nouvel Approvisionnement
@@ -15,7 +18,7 @@
                         <th>ID</th>
                         <th>Date</th>
                         <th>Fournisseur</th>
-                     
+                        <th>Total</th>
                         <th>Verse</th>
                         <th>Reste</th>
                         <th>Statut</th>
@@ -45,12 +48,6 @@
                         </td>
                     </tr>
                     </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-            </tbody>
                 </table>
             </div>
         </div>

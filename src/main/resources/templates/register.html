@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Inscription</title>
+    <title>Créer un compte</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
@@ -15,9 +15,12 @@
                     <div class="col-lg-6">
                         <div class="card shadow-lg border-0 rounded-lg mt-5">
                             <div class="card-header">
-                                <h3 class="text-center my-4">Inscription</h3>
+                                <h3 class="text-center my-4">Créer un compte caissier</h3>
                             </div>
                             <div class="card-body">
+                                <div th:if="${param.created}" class="alert alert-success" role="status">
+                                    Le compte caissier a été créé. Il peut maintenant se connecter.
+                                </div>
                                 <form th:action="@{/register}" method="post">
                                     <div class="form-floating mb-3">
                                         <input class="form-control" id="inputNom" type="text" name="nom" placeholder="Votre nom" required>
@@ -44,7 +47,7 @@
                             </div>
                             <div class="card-footer text-center py-3">
                                 <div class="small">
-                                    Deja un compte ? <a th:href="@{/login}">Se connecter</a>
+                                    <a th:href="@{/}">Retour au tableau de bord</a>
                                 </div>
                             </div>
                         </div>

@@ -7,36 +7,55 @@ function ajouterLigne() {
     const prix = document.getElementById('inputPrix').value;
     const qte = document.getElementById('inputQtite').value;
 
-    if (!pId || !prix || !qte || qte <= 0) {
+    const prixNombre = Number(prix);
+    const quantite = Number(qte);
+    if (!pId || prix.trim() === '' || qte.trim() === '' ||
+        !Number.isFinite(prixNombre) || prixNombre < 0 ||
+        !Number.isSafeInteger(quantite) || quantite <= 0) {
         alert("Veuillez remplir correctement tous les champs.");
         return;
     }
 
     const tbody = document.querySelector('#tableLignes tbody');
-    const totalLigne = parseFloat(prix) * parseFloat(qte);
+    const totalLigne = prixNombre * quantite;
+    const row = document.createElement('tr');
+    const nomCellule = row.insertCell();
+    const nom = document.createElement('span');
+    nom.textContent = pNom;
+    nomCellule.appendChild(nom);
 
-    const row = `
-        <tr>
-            <td>
-                ${pNom}
-                <input type="hidden" name="lignes[${index}].produit.id" value="${pId}">
-            </td>
-            <td>
-                <input type="number" name="lignes[${index}].prixAchatUnitaire" value="${prix}" class="form-control form-control-sm" readonly>
-            </td>
-            <td>
-                <input type="number" name="lignes[${index}].quantite" value="${qte}" class="form-control form-control-sm" readonly>
-            </td>
-            <td class="ligne-total fw-bold">${totalLigne.toFixed(2)}</td>
-            <td class="text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="supprimerLigne(this)">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `;
+    const champs = [
+        {cellule: nomCellule, propriete: 'produit.id', valeur: pId, type: 'hidden'},
+        {cellule: row.insertCell(), propriete: 'prixAchatUnitaire', valeur: prixNombre, type: 'number'},
+        {cellule: row.insertCell(), propriete: 'quantite', valeur: quantite, type: 'number'}
+    ];
+    champs.forEach(champ => {
+        const input = document.createElement('input');
+        input.type = champ.type;
+        input.name = `lignes[${index}].${champ.propriete}`;
+        input.value = champ.valeur;
+        input.readOnly = true;
+        input.step = champ.propriete === 'prixAchatUnitaire' ? '0.01' : '1';
+        input.className = 'form-control form-control-sm';
+        champ.cellule.appendChild(input);
+    });
 
-    tbody.insertAdjacentHTML('beforeend', row);
+    const totalCellule = row.insertCell();
+    totalCellule.className = 'ligne-total fw-bold';
+    totalCellule.dataset.montant = totalLigne;
+    totalCellule.textContent = totalLigne.toFixed(2);
+    const actionCellule = row.insertCell();
+    actionCellule.className = 'text-center';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-outline-danger btn-sm';
+    button.setAttribute('aria-label', 'Supprimer la ligne');
+    const icone = document.createElement('i');
+    icone.className = 'fas fa-trash';
+    button.appendChild(icone);
+    button.addEventListener('click', () => supprimerLigne(button));
+    actionCellule.appendChild(button);
+    tbody.appendChild(row);
     index++;
     calculerTotal();
 
@@ -49,20 +68,31 @@ function ajouterLigne() {
 
 function supprimerLigne(button) {
     button.closest('tr').remove();
+    reindexerLignes();
     calculerTotal();
+}
+
+function reindexerLignes() {
+    const rows = document.querySelectorAll('#tableLignes tbody tr');
+    rows.forEach((row, newIndex) => {
+        row.querySelectorAll('input[name]').forEach(input => {
+            input.name = input.name.replace(/^lignes\[\d+\]/, `lignes[${newIndex}]`);
+        });
+    });
+    index = rows.length;
 }
 
 function calculerTotal() {
     let total = 0;
     document.querySelectorAll('.ligne-total').forEach(td => {
-        total += parseFloat(td.innerText);
+        total += Number(td.dataset.montant);
     });
 
     document.getElementById('totalGeneral').value = total.toFixed(2);
 
     // Suggestion : Par défaut on met le montant versé égal au total
     const vInput = document.getElementById('montantVerse');
-    if (vInput.value === "" || parseFloat(vInput.value) === 0) {
+    if (vInput.dataset.saisieManuelle !== 'true') {
         vInput.value = total.toFixed(2);
     }
 
@@ -98,6 +128,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Calcul du reste quand on modifie le montant versé manuellement
     const verseInput = document.getElementById('montantVerse');
     if (verseInput) {
-        verseInput.addEventListener('input', calculerReste);
+        if (verseInput.value !== '') verseInput.dataset.saisieManuelle = 'true';
+        verseInput.addEventListener('input', () => {
+            verseInput.dataset.saisieManuelle = 'true';
+            calculerReste();
+        });
     }
+});
+
+document.addEventListener('submit', function(event) {
+    if (event.target.id !== 'achatForm') return;
+    if (document.querySelectorAll('#tableLignes tbody tr').length === 0) {
+        event.preventDefault();
+        alert("L'achat doit contenir au moins un produit.");
+        return;
+    }
+    reindexerLignes();
 });

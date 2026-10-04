@@ -51,7 +51,7 @@ public class ClientController {
         return "redirect:/clients";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimer(@PathVariable Long id) {
         clientService.supprimerClient(id);
         return "redirect:/clients";

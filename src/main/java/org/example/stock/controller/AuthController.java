@@ -28,7 +28,7 @@ public class AuthController {
     ) {
         try {
             utilisateurService.registerUtilisateur(nom, email, password);
-            return "redirect:/login?registered";
+            return "redirect:/register?created";
         } catch (Exception e) {
             model.addAttribute("error", "Erreur : " + e.getMessage());
             return "register";

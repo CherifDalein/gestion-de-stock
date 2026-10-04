@@ -12,7 +12,8 @@ function ajouterAuPanier() {
 
     const pNom = selectedOption.getAttribute('data-nom');
     const pPrix = parseFloat(selectedOption.getAttribute('data-prix'));
-    const qty = parseInt(qtyInput.value);
+    const qty = Number(qtyInput.value);
+    if (!Number.isSafeInteger(qty) || qty <= 0 || !Number.isFinite(pPrix) || pPrix < 0) return;
 
     // Extraction du stock
     const textActuel = selectedOption.text;
@@ -34,17 +35,41 @@ function ajouterAuPanier() {
 
     const row = document.createElement('tr');
     row.id = `row-${index}`;
-    row.innerHTML = `
-        <td>${pNom} <input type="hidden" name="lignes[${index}].produit.id" value="${pId}"></td>
-        <td>${pPrix.toLocaleString()} GNF</td>
-        <td>${qty} <input type="hidden" name="lignes[${index}].quantite" value="${qty}"></td>
-        <td class="sous-total-val" data-montant="${sousTotal}">${sousTotal.toLocaleString()} GNF</td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm" onclick="supprimerLigne(${index}, ${sousTotal}, '${pId}', ${qty})">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    `;
+    const nomCellule = row.insertCell();
+    const nom = document.createElement('span');
+    nom.textContent = pNom;
+    nomCellule.appendChild(nom);
+    const produitInput = document.createElement('input');
+    produitInput.type = 'hidden';
+    produitInput.name = `lignes[${index}].produit.id`;
+    produitInput.value = pId;
+    nomCellule.appendChild(produitInput);
+
+    row.insertCell().textContent = `${pPrix.toLocaleString()} GNF`;
+    const quantiteCellule = row.insertCell();
+    const quantiteTexte = document.createElement('span');
+    quantiteTexte.textContent = qty;
+    quantiteCellule.appendChild(quantiteTexte);
+    const quantiteInput = document.createElement('input');
+    quantiteInput.type = 'hidden';
+    quantiteInput.name = `lignes[${index}].quantite`;
+    quantiteInput.value = qty;
+    quantiteCellule.appendChild(quantiteInput);
+
+    const totalCellule = row.insertCell();
+    totalCellule.className = 'sous-total-val';
+    totalCellule.dataset.montant = sousTotal;
+    totalCellule.textContent = `${sousTotal.toLocaleString()} GNF`;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-danger btn-sm';
+    button.setAttribute('aria-label', 'Supprimer la ligne');
+    const icone = document.createElement('i');
+    icone.className = 'fas fa-trash';
+    button.appendChild(icone);
+    const rowIndex = index;
+    button.addEventListener('click', () => supprimerLigne(rowIndex, sousTotal, pId, qty));
+    row.insertCell().appendChild(button);
 
     tbody.appendChild(row);
     totalGeneral += sousTotal;
@@ -85,7 +110,7 @@ function actualiserAffichageTotal() {
 
     // 3. Mise à jour du montant versé (on suggère le total par défaut)
     const verseInput = document.getElementById('montantVerse');
-    if (verseInput.value === '' || parseFloat(verseInput.value) === 0) {
+    if (verseInput.dataset.saisieManuelle !== 'true') {
         verseInput.value = totalGeneral;
     }
 
@@ -112,7 +137,11 @@ function calculerReste() {
 document.addEventListener('DOMContentLoaded', function() {
     const verseInput = document.getElementById('montantVerse');
     if (verseInput) {
-        verseInput.addEventListener('input', calculerReste);
+        if (verseInput.value !== '') verseInput.dataset.saisieManuelle = 'true';
+        verseInput.addEventListener('input', () => {
+            verseInput.dataset.saisieManuelle = 'true';
+            calculerReste();
+        });
     }
 });
 

@@ -27,7 +27,12 @@
                         <td th:text="${c.adresse}"></td>
                         <td>
                             <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="btn btn-warning btn-sm">Modifier <i class="fas fa-edit"></i></a>
-                            <a th:href="@{/clients/supprimer/{id}(id=${c.id})}" class="btn btn-danger btn-sm" onclick="return confirm('Supprimer ce client ?')">Supprimer <i class="fas fa-trash"></i></a>
+                            <form th:action="@{/clients/supprimer/{id}(id=${c.id})}" method="post"
+                                  class="d-inline" onsubmit="return confirm('Supprimer ce client ?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    Supprimer <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
                             <a th:href="@{/factures/client/{id}(id=${c.id})}" class="btn btn-info btn-sm text-white" title="Voir les factures">
                                 <i class="fas fa-file-invoice-dollar"></i>
                             </a>

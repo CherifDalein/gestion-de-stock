@@ -48,7 +48,7 @@ public class CategorieController {
         return "redirect:/categories";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimerCategorie(@PathVariable("id") Long id) {
         categorieService.supprimer(id);
         return "redirect:/categories";

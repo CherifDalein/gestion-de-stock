@@ -40,7 +40,7 @@ public class FournisseurController {
         return "redirect:/fournisseurs";
     }
 
-    @GetMapping("/supprimer/{id}")
+    @PostMapping("/supprimer/{id}")
     public String supprimerFournisseur(@PathVariable("id") Long id) {
         fournisseurService.supprimerFournisseur(id);
         return "redirect:/fournisseurs";

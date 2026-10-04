@@ -33,11 +33,12 @@
                                 <a th:href="@{/fournisseurs/modifier/{id}(id=${f.id})}" class="btn btn-warning btn-sm">
                                     Modifier <i class="fas fa-edit"></i>
                                 </a>
-                                <a th:href="@{/fournisseurs/supprimer/{id}(id=${f.id})}"
-                                   class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Supprimer ce fournisseur ? Cela n\\'affectera pas les produits deja enregistres.')">
+                                <form th:action="@{/fournisseurs/supprimer/{id}(id=${f.id})}" method="post"
+                                  class="d-inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
+                                <button type="submit" class="btn btn-danger btn-sm">
                                     Supprimer <i class="fas fa-trash"></i>
-                                </a>
+                                </button>
+                            </form>
                                 <a th:href="@{/factures/fournisseur/{id}(id=${f.id})}" class="btn btn-info btn-sm text-white" title="Voir les achats">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                 </a>

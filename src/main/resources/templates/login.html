@@ -18,10 +18,6 @@
                                 <h3 class="text-center my-4">Connexion</h3>
                             </div>
                             <div class="card-body">
-                                <div th:if="${param.registered}" class="alert alert-success">
-                                    Compte cree avec succes. Vous pouvez maintenant vous connecter.
-                                </div>
-
                                 <form th:action="@{/login}" method="post">
                                     <div class="form-floating mb-3">
                                         <input class="form-control" id="inputEmail" type="text" name="username" placeholder="Votre email" required>
@@ -48,7 +44,7 @@
                             </div>
                             <div class="card-footer text-center py-3">
                                 <div class="small">
-                                    Pas encore de compte ? <a th:href="@{/register}">Creer un compte</a>
+                                    Pour obtenir un compte, contactez votre administrateur.
                                 </div>
                             </div>
                         </div>

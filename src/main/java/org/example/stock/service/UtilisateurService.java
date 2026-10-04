@@ -39,7 +39,7 @@ public class UtilisateurService {
         utilisateur.setEmail(emailNormalise);
         utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
         utilisateur.setDateInscription(LocalDate.now());
-        utilisateur.setRole(Role.ADMIN);
+        utilisateur.setRole(Role.CAISSIER);
 
         Utilisateur enregistre = utilisateurRepository.saveAndFlush(utilisateur);
 
