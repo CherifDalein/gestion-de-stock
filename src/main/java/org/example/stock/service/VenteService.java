@@ -83,13 +83,42 @@ public class VenteService {
         String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
                 (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
 
-        caisseService.enregistrerEntree(venteEnregistree.getMontantVerse(), motif, "VENTE", actuel);
+        caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel);
 
         return venteEnregistree;
     }
 
     public List<Vente> listerToutes() {
         return venteRepository.findAll();
+    }
+
+    public Vente trouverParId(Long id) {
+        return venteRepository.findById(id).orElse(null);
+    }
+
+    @Transactional
+    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        montant = Montants.positifOuNul(montant, "Le versement");
+        if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
+        montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
+        Vente vente = stockLockRepository.verrouillerVente(id);
+        BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(vente.getMontantVerse()), "Le montant déjà versé");
+        BigDecimal total = Montants.positifOuNul(vente.getMontantTotal(), "Le total de la vente");
+        if (total.compareTo(dejaVerse) < 0) {
+            throw new IllegalArgumentException("Les montants de cette vente sont invalides. Vérifiez la facture.");
+        }
+        if (montantVerseAttendu.compareTo(dejaVerse) != 0) throw new ReglementVenteObsoleteException();
+        BigDecimal nouveauVerse = dejaVerse.add(montant);
+        if (nouveauVerse.compareTo(total) > 0) {
+            throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
+        }
+        vente.setMontantVerse(Montants.valider(nouveauVerse, "Le cumul des versements"));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Utilisateur actuel = utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
+        String motif = "Règlement Vente #" + id + " - Client: "
+                + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
+        caisseService.enregistrerEntreeVente(montant, motif, vente, actuel);
     }
 
     private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {

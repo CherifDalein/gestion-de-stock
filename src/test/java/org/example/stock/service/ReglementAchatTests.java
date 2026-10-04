@@ -53,7 +53,7 @@ class ReglementAchatTests {
 
     @BeforeEach
     void preparer() {
-        ventes.deleteAll(); caisse.deleteAll(); achats.deleteAll(); produits.deleteAll();
+        caisse.deleteAll(); ventes.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
         Utilisateur admin = new Utilisateur(); admin.setNom("Administrateur test");
         admin.setEmail("paiement@example.test"); admin.setRole(Role.ADMIN); utilisateurs.save(admin);

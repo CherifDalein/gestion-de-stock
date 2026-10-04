@@ -3,6 +3,7 @@ package org.example.stock.service;
 import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +55,19 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
+        enregistrerEntree(montant, motif, source, utilisateur, null);
+    }
+
+    @Transactional
+    public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur) {
+        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente);
+    }
+
+    public List<MouvementCaisse> listerReglementsVente(Long venteId) {
+        return mouvementRepo.findByVenteIdOrderByDateMouvementDescIdDesc(venteId);
+    }
+
+    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente) {
         if (montant == null || montant.signum() == 0) {
             return;
         }
@@ -69,6 +83,7 @@ public class CaisseService {
         mouvement.setMotif(motif);
         mouvement.setSource(source);
         mouvement.setUtilisateur(utilisateur);
+        mouvement.setVente(vente);
 
         mouvementRepo.save(mouvement);
     }

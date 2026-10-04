@@ -28,6 +28,7 @@ Les rôles et mots de passe des comptes existants ne sont pas modifiés par ce l
 | Consulter, créer et modifier des clients | Oui | Oui |
 | Supprimer des clients | Oui | Non |
 | Enregistrer et consulter les ventes | Oui | Oui |
+| Enregistrer et consulter les règlements clients | Oui | Oui |
 | Consulter et imprimer les factures de vente et relevés clients | Oui | Oui |
 | Gérer les achats et consulter les factures fournisseurs | Oui | Non |
 | Enregistrer et consulter les règlements fournisseurs | Oui | Non |
@@ -58,3 +59,17 @@ Le formulaire vérifie sous verrou le montant déjà payé au moment de son ouve
 Le bouton **Modifier** concerne désormais les lignes et le fournisseur de l'achat. Le montant déjà payé y est affiché en lecture seule. Une réduction du total sous le montant déjà payé est refusée ; les remboursements et annulations de paiements ne sont pas proposés dans ce parcours.
 
 Les versements initiaux des nouveaux achats et les nouveaux règlements apparaissent dans l'historique lié à la facture. Les anciens mouvements de caisse restent consultables dans le journal général ; ils ne sont pas automatiquement rattachés à une facture. Voir [mise à jour du schéma](database-schema.md#mise-à-jour-dune-base-existante--règlements-fournisseurs).
+
+## Régler une vente à crédit
+
+1. Se connecter comme ADMIN ou CAISSIER et ouvrir le **Journal des Ventes**.
+2. Cliquer sur **Régler** à côté de la vente concernée.
+3. Saisir la **somme payée maintenant**, puis enregistrer le versement.
+
+Le montant déjà versé augmente et le reste à payer diminue. Une entrée de caisse positive est liée à la vente, datée et attribuée au compte qui enregistre le versement. Le stock, la date de vente, le client et les lignes de facture ne sont pas modifiés. Le règlement reste possible quand le stock est épuisé. Une vente soldée propose **Règlements** pour consulter son historique ; aucun nouveau versement dépassant le solde n'est accepté.
+
+Les montants doivent être positifs, comporter au plus 15 chiffres entiers et 2 décimales, et ne pas dépasser le reste à payer. Le formulaire utilise CSRF et n'accepte que le montant et le cumul attendu. Le serveur verrouille la vente et relit le cumul avant de l'incrémenter : deux copies du même formulaire ne créent qu'une entrée de caisse, la copie périmée reçoit HTTP 409. Vérifier l'historique et recharger le formulaire avant un versement distinct. Une erreur de caisse annule aussi la mise à jour du cumul.
+
+L'historique inclut les versements initiaux des nouvelles ventes et les règlements effectués après cette mise à jour. Les mouvements antérieurs restent dans le journal général de caisse et ne sont pas automatiquement rattachés. Le montant déjà versé affiché reste la référence ; l'historique d'une ancienne vente peut être incomplet. Voir [mise à jour du schéma](database-schema.md#mise-à-jour-dune-base-existante--règlements-clients).
+
+Comme les ventes et relevés clients, ce parcours est partagé entre les comptes ADMIN/CAISSIER du magasin. Il permet au caissier de consulter les versements de la vente sélectionnée, sans lui ouvrir la caisse globale. Il ne propose pas de remboursement ni d'annulation d'un paiement.

@@ -36,6 +36,8 @@
                             <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">Credit</span>
                         </td>
                         <td class="text-center">
+                            <a th:href="@{/ventes/regler/{id}(id=${v.id})}" class="btn btn-success btn-sm"
+                               th:text="${v.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
                             <button type="button" class="btn btn-info btn-sm"
                                     data-bs-toggle="modal"
                                     th:data-bs-target="'#modalVente' + ${v.id}">

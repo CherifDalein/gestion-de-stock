@@ -1,0 +1,57 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4" th:object="${reglementVente}">
+        <h1 class="mt-4">Règlements de la vente #<span th:text="${venteReglement.id}"></span></h1>
+        <div class="d-flex gap-2 mb-4">
+            <a th:href="@{/ventes}" class="btn btn-secondary">Retour aux ventes</a>
+            <a th:href="@{/factures/vente/{id}(id=${venteReglement.id})}" class="btn btn-outline-primary">Voir la facture</a>
+        </div>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <p>Client : <strong th:text="${venteReglement.client != null ? venteReglement.client.nom : 'Client de passage'}"></strong></p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Total de la vente</dt>
+                    <dd class="col-sm-8" th:text="${venteReglement.montantTotal + ' GNF'}"></dd>
+                    <dt class="col-sm-4">Déjà versé</dt>
+                    <dd class="col-sm-8" th:text="${(venteReglement.montantVerse ?: 0) + ' GNF'}"></dd>
+                    <dt class="col-sm-4">Reste à payer</dt>
+                    <dd class="col-sm-8 fw-bold" th:text="${venteReglement.resteAPayer + ' GNF'}"></dd>
+                </dl>
+            </div>
+        </div>
+        <form th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}"
+              th:action="@{/ventes/regler/{id}(id=${venteReglement.id})}" th:object="${reglementVente}" method="post"
+              class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                    <ul class="mb-2"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
+                    <a th:href="@{/ventes/regler/{id}(id=${venteReglement.id})}">Recharger et vérifier les versements</a>
+                </div>
+                <input type="hidden" th:field="*{montantVerseAttendu}" />
+                <label for="montantReglement" class="form-label fw-bold">Somme payée maintenant (GNF)</label>
+                <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
+                       th:max="${venteReglement.resteAPayer}" class="form-control mb-2" required />
+                <p class="text-muted">Saisissez uniquement ce nouveau versement. Il sera ajouté au montant déjà payé.</p>
+                <button type="submit" class="btn btn-success">Enregistrer le versement</button>
+            </div>
+        </form>
+        <p th:if="${venteReglement.resteAPayer == 0}" class="alert alert-success">Cette vente est entièrement réglée.</p>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">Versements enregistrés</div>
+            <div class="card-body table-responsive">
+                <p class="text-muted">Les versements antérieurs à cette fonctionnalité peuvent ne pas figurer ici. Le montant déjà versé ci-dessus reste la référence.</p>
+                <p th:if="${#lists.isEmpty(reglements)}" class="text-muted">Aucun versement dans cet historique.</p>
+                <table th:unless="${#lists.isEmpty(reglements)}" class="table table-striped">
+                    <thead><tr><th>Date</th><th>Montant payé</th><th>Enregistré par</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${reglements}">
+                        <td th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                        <td th:text="${r.montant + ' GNF'}"></td>
+                        <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

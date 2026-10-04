@@ -57,7 +57,7 @@ class StockConcurrencyTests {
 
     @BeforeEach
     void preparer() {
-        ventes.deleteAll(); caisse.deleteAll(); achats.deleteAll(); produits.deleteAll();
+        caisse.deleteAll(); ventes.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
         Utilisateur utilisateur = new Utilisateur(); utilisateur.setEmail("concurrence@example.test");
         utilisateur.setNom("Test concurrence"); utilisateur.setRole(Role.ADMIN); utilisateurs.save(utilisateur);

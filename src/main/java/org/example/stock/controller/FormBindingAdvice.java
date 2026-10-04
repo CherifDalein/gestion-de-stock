@@ -21,14 +21,14 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         String[] champs = switch (binder.getObjectName()) {
             case "achat" -> new String[]{"fournisseur", "fournisseur.id", "montantVerse",
                     "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire"};
             case "vente" -> new String[]{"client", "client.id", "montantVerse",
                     "lignes[*].produit.id", "lignes[*].quantite"};
-            case "reglementAchat" -> new String[]{"montant", "montantVerseAttendu"};
+            case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu"};
             case "produit" -> new String[]{"nom", "reference", "prixAchat", "prixVente", "quantite",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
             case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};

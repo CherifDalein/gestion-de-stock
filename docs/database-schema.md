@@ -80,6 +80,7 @@ Base cible : `stock_pro`
 - `source`
 - `utilisateur_id` FK -> `utilisateur.id`
 - `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
+- `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
 
 ## Diagramme relationnel
 
@@ -95,6 +96,7 @@ erDiagram
     PRODUIT ||--o{ DETAIL_VENTE : reference
     UTILISATEUR ||--o{ MOUVEMENT_CAISSE : enregistre
     ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
+    VENTE o|--o{ MOUVEMENT_CAISSE : reglements
 
     CATEGORIE {
         BIGINT id PK
@@ -170,6 +172,7 @@ erDiagram
         VARCHAR source
         BIGINT utilisateur_id FK
         BIGINT achat_id FK
+        BIGINT vente_id FK
     }
 ```
 
@@ -224,3 +227,18 @@ Les anciens mouvements restent conservés avec `achat_id = NULL` ; aucune associ
 Les neuf colonnes monétaires sont en `DECIMAL(17,2)` : prix d'achat et de vente des produits, totaux et versements des achats/ventes, prix unitaires des lignes et montant des mouvements de caisse. Les prix des produits sont obligatoires. Les colonnes de versement conservent les anciens `NULL`.
 
 Le script de création ne convertit pas les tables existantes. Avant de démarrer l'application sur une ancienne base, suivre le [guide de migration](montants-et-migration.md), qui décrit l'arrêt des instances, la sauvegarde complète et les scripts avec contrôles et copies des tables. Un `bootRun` déjà lancé avec DevTools et `ddl-auto=update` peut demander cette conversion lors d'un rechargement automatique.
+
+## Mise à jour d'une base existante : règlements clients
+
+Le lien optionnel `mouvement_caisse.vente_id` associe les versements initiaux des nouvelles ventes et les nouveaux règlements à leur facture. Avec `ddl-auto=update`, Hibernate demande l'ajout de la colonne et de la clé étrangère au démarrage ou lors d'un rechargement DevTools.
+
+Pour un schéma administré manuellement, sauvegarder la base puis exécuter une seule fois ce script, si la colonne et sa contrainte sont absentes :
+
+```sql
+ALTER TABLE mouvement_caisse
+    ADD COLUMN vente_id BIGINT NULL,
+    ADD CONSTRAINT fk_mouvement_caisse_vente
+        FOREIGN KEY (vente_id) REFERENCES vente (id);
+```
+
+Les anciennes lignes conservent `vente_id = NULL` ; aucun rattachement n'est déduit du texte des motifs. Le cumul `vente.montant_verse` reste la référence pour le reste à payer, avec les anciens `NULL` interprétés comme zéro. Le nouveau lien n'autorise pas la suppression d'une vente ayant des mouvements de caisse ; aucun parcours de suppression de vente n'est ajouté. Ne pas réexécuter le script de création complet pour migrer une base existante.

@@ -31,4 +31,8 @@ public class MouvementCaisse {
     @JoinColumn(name = "achat_id")
     private Achat achat;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vente_id")
+    private Vente vente;
+
 }

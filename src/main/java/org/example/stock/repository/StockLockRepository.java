@@ -3,6 +3,7 @@ package org.example.stock.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
 import org.springframework.stereotype.Repository;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -43,5 +44,13 @@ public class StockLockRepository {
         // Verrouiller le document avant de rafraîchir ses lignes (cascade REFRESH), puis ses produits.
         entityManager.refresh(achat, LockModeType.PESSIMISTIC_WRITE);
         return achat;
+    }
+
+    public Vente verrouillerVente(Long id) {
+        Vente vente = entityManager.find(Vente.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (vente == null) throw new EmptyResultDataAccessException("Vente introuvable", 1);
+        // Relire le cumul sous verrou, même si la vente est déjà dans le contexte JPA.
+        entityManager.refresh(vente, LockModeType.PESSIMISTIC_WRITE);
+        return vente;
     }
 }
