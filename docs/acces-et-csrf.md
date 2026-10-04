@@ -18,7 +18,26 @@ La route `/register` est réservée aux administrateurs, en GET comme en POST. L
 
 Les rôles et mots de passe des comptes existants ne sont pas modifiés par ce lot. Cette procédure exige donc un administrateur existant ; la création sécurisée du premier administrateur d'une base neuve reste à prévoir. Aucune procédure publique attribuant automatiquement le rôle ADMIN n'est conservée.
 
-Les droits métier de CAISSIER restent ceux de la configuration actuelle. L'incohérence relevée au constat 13 de l'audit (ventes réservées à ADMIN, achats accessibles aux utilisateurs connectés) doit encore être corrigée avec une matrice de droits explicite. Ce lot ne prétend pas résoudre cette politique.
+## Droits ADMIN / CAISSIER
+
+| Fonction | ADMIN | CAISSIER |
+| --- | --- | --- |
+| Consulter les produits, stocks et prix de vente | Oui | Oui |
+| Consulter les prix d'achat et fournisseurs | Oui | Non |
+| Créer, modifier ou supprimer produits, catégories et fournisseurs | Oui | Non |
+| Consulter, créer et modifier des clients | Oui | Oui |
+| Supprimer des clients | Oui | Non |
+| Enregistrer et consulter les ventes | Oui | Oui |
+| Consulter et imprimer les factures de vente et relevés clients | Oui | Oui |
+| Gérer les achats et consulter les factures fournisseurs | Oui | Non |
+| Consulter la caisse globale et ses indicateurs | Oui | Non |
+| Créer un compte caissier | Oui | Non |
+
+Le caissier dispose d'un espace de vente à l'accueil. Les indicateurs de caisse globale sont réservés à l'administrateur et ne sont pas ajoutés au modèle du caissier. Les menus et boutons reflètent ces droits ; une action interdite reste refusée par le serveur même si son URL est appelée directement.
+
+Les historiques de ventes et relevés clients sont partagés à l'échelle du magasin. Une restriction aux seules ventes d'un vendeur n'est pas mise en place dans ce modèle.
+
+Les routes non explicitement autorisées sont refusées par défaut. Les pages de connexion, d'erreur et les ressources statiques restent accessibles pour le fonctionnement de l'interface. Tous les formulaires POST conservent leur protection CSRF.
 
 ## Vérification
 

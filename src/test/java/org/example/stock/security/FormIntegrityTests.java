@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -122,6 +123,7 @@ class FormIntegrityTests {
     }
 
     @Test
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
     void uneVenteNormaleCalculeSesMontantsEtUtiliseLeClientEnBase() throws Exception {
         mvc.perform(post("/ventes/enregistrer").with(csrf()).param("client", client.getId().toString())
                         .param("lignes[0].produit.id", produit.getId().toString())
@@ -206,6 +208,100 @@ class FormIntegrityTests {
         var optionFournisseur = java.util.regex.Pattern.compile("<option[^>]*value=\"" + fournisseur.getId()
                 + "\"[^>]*selected=\"selected\"[^>]*>Fournisseur initial</option>").matcher(html);
         assertThat(optionFournisseur.find()).isTrue();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/", "/produits", "/clients", "/clients/nouveau", "/ventes", "/ventes/nouveau", "/factures/liste"})
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierAccedeAuxPagesDeVenteEtAuxClients(String route) throws Exception {
+        mvc.perform(get(route)).andExpect(status().isOk());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/register", "/categories", "/categories/nouveau", "/fournisseurs", "/fournisseurs/nouveau",
+            "/achats", "/achats/nouveau", "/achats/modifier/1", "/caisse/journal",
+            "/factures/achat/1", "/factures/fournisseur/1", "/factures/fournisseur/1/cumule",
+            "/produits/nouveau", "/produits/modifier/1"})
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierNePeutPasOuvrirLesPagesAdministrateur(String route) throws Exception {
+        mvc.perform(get(route)).andExpect(status().isForbidden());
+        verifierDonneesIntactes();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/achats/enregistrer", "/achats/modifier/1", "/produits/ajouter", "/produits/modifier/1",
+            "/produits/supprimer/1", "/fournisseurs/enregistrer", "/fournisseurs/modifier/1", "/fournisseurs/supprimer/1",
+            "/categories/ajouter", "/categories/modifier/1", "/categories/supprimer/1", "/clients/supprimer/1", "/register"})
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierNePeutPasExecuterLesActionsAdministrateurMemeAvecCsrf(String route) throws Exception {
+        mvc.perform(post(route).with(csrf())).andExpect(status().isForbidden());
+        verifierDonneesIntactes();
+    }
+
+    @Test
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierPeutCreerEtModifierUnClient() throws Exception {
+        mvc.perform(post("/clients/enregistrer").with(csrf()).param("nom", "Nouveau client")
+                        .param("email", "nouveau@example.test").param("telephone", "12345"))
+                .andExpect(redirectedUrl("/clients"));
+        Client nouveau = clients.findAll().stream().filter(c -> c.getNom().equals("Nouveau client")).findFirst().orElseThrow();
+        mvc.perform(get("/clients/modifier/" + nouveau.getId())).andExpect(status().isOk());
+        mvc.perform(post("/clients/modifier/" + nouveau.getId()).with(csrf()).param("nom", "Nom corrigé")
+                        .param("email", "nouveau@example.test").param("telephone", "12345"))
+                .andExpect(redirectedUrl("/clients"));
+        assertThat(clients.count()).isEqualTo(2);
+        assertThat(nouveau.getNom()).isEqualTo("Nom corrigé");
+        assertThat(client.getNom()).isEqualTo("Client initial");
+    }
+
+    @Test
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierConsulteLesFacturesDeVenteEtLesRelevesClient() throws Exception {
+        Vente vente = new Vente(); vente.setClient(client); vente.setDateVente(java.time.LocalDateTime.now());
+        vente.setMontantTotal(20.0); vente.setMontantVerse(20.0);
+        DetailVente ligne = new DetailVente(); ligne.setProduit(produit); ligne.setQuantite(1);
+        ligne.setPrixUnitaire(20.0); ligne.setVente(vente); vente.getLignes().add(ligne);
+        vente = ventes.saveAndFlush(vente);
+        mvc.perform(get("/factures/vente/" + vente.getId())).andExpect(status().isOk());
+        mvc.perform(get("/factures/client/" + client.getId())).andExpect(status().isOk());
+        mvc.perform(get("/factures/client/" + client.getId() + "/cumule")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
+    void leCaissierNeRecoitNiIndicateursGlobauxNiActionsInventaire() throws Exception {
+        var accueil = mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(model().attributeDoesNotExist("soldeCaisse", "soldeOuverture", "entreesJour", "sortiesJour", "bilanJour", "soldeCloture"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(accueil).contains("Espace de vente", "href=\"/ventes/nouveau\"")
+                .doesNotContain("Caisse Centrale", "href=\"/caisse/journal\"", "href=\"/achats\"", "href=\"/fournisseurs\"", "href=\"/register\"");
+        var catalogue = mvc.perform(get("/produits")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(catalogue).contains("Produit initial", "Prix Vente")
+                .doesNotContain("Prix Achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/");
+        var repertoire = mvc.perform(get("/clients")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(repertoire).contains("/clients/modifier/", "href=\"/clients/nouveau\"")
+                .doesNotContain("/clients/supprimer/");
+    }
+
+    @Test
+    void administrateurConserveSesIndicateursEtLesActionsInventaire() throws Exception {
+        var accueil = mvc.perform(get("/")).andExpect(status().isOk())
+                .andExpect(model().attributeExists("soldeCaisse", "soldeOuverture", "entreesJour", "sortiesJour"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(accueil).contains("Caisse Centrale", "href=\"/achats\"", "href=\"/fournisseurs\"", "href=\"/caisse/journal\"");
+        var catalogue = mvc.perform(get("/produits")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(catalogue).contains("Prix Achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/");
+    }
+
+    @Test
+    @WithMockUser(username = "integrite@example.test", roles = "INCONNU")
+    void unRoleInconnuNeRecupertPasLesDroitsParDefaut() throws Exception {
+        for (String route : List.of("/", "/produits", "/clients", "/ventes", "/achats", "/caisse/journal", "/factures/liste")) {
+            mvc.perform(get(route)).andExpect(status().isForbidden());
+        }
     }
 
     @Test

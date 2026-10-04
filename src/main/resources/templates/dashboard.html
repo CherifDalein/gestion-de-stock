@@ -67,7 +67,7 @@
                     </div>
 
                     <div class="sb-sidenav-menu-heading">Partenaires</div>
-                    <a class="nav-link" th:href="@{/fournisseurs}">
+                    <a class="nav-link" th:href="@{/fournisseurs}" sec:authorize="hasRole('ADMIN')">
                         <div class="sb-nav-link-icon"><i class="fas fa-truck"></i></div>
                         Fournisseurs
                     </a>
@@ -77,7 +77,7 @@
                     </a>
 
                     <div class="sb-sidenav-menu-heading">Operations</div>
-                    <a class="nav-link" th:href="@{/achats}">
+                    <a class="nav-link" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')">
                         <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
                         Achats
                     </a>
@@ -91,7 +91,7 @@
                         <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
                         Historique & Factures
                     </a>
-                    <a class="nav-link" th:href="@{/caisse/journal}">
+                    <a class="nav-link" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')">
                         <div class="sb-nav-link-icon"><i class="fas fa-cash-register"></i></div>
                         Journal de Caisse
                     </a>
@@ -114,6 +114,19 @@
                 <h1 class="mt-4">Tableau de Bord</h1>
                 <p class="text-muted">Vue d'ensemble de votre activite au <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span></p>
 
+                <div sec:authorize="hasRole('CAISSIER') and !hasRole('ADMIN')" class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="h5">Espace de vente</h2>
+                        <p>Enregistrez une vente ou consultez les produits et les clients.</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a th:href="@{/ventes/nouveau}" class="btn btn-primary">Nouvelle vente</a>
+                            <a th:href="@{/produits}" class="btn btn-outline-primary">Consulter les produits</a>
+                            <a th:href="@{/clients}" class="btn btn-outline-primary">Clients</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div sec:authorize="hasRole('ADMIN')">
                 <div class="row">
                     <div class="col-xl-3 col-md-6">
                         <div class="card bg-secondary text-white mb-4 shadow border-0">
@@ -191,6 +204,7 @@
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </main>

@@ -28,6 +28,7 @@
                         <td>
                             <a th:href="@{/clients/modifier/{id}(id=${c.id})}" class="btn btn-warning btn-sm">Modifier <i class="fas fa-edit"></i></a>
                             <form th:action="@{/clients/supprimer/{id}(id=${c.id})}" method="post"
+                                  sec:authorize="hasRole('ADMIN')"
                                   class="d-inline" onsubmit="return confirm('Supprimer ce client ?')">
                                 <button type="submit" class="btn btn-danger btn-sm">
                                     Supprimer <i class="fas fa-trash"></i>

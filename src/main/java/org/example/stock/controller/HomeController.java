@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.Authentication;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,7 +21,11 @@ public class HomeController {
     @Autowired VenteRepository venteRepository;
 
     @GetMapping("/")
-    public String dashboard(Model model) {
+    public String dashboard(Model model, Authentication authentication) {
+        if (authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            model.addAttribute("view", "dashboard");
+            return "dashboard";
+        }
         LocalDate aujourdHui = LocalDate.now();
         LocalDateTime debutJournee = aujourdHui.atTime(LocalTime.MIN);
 

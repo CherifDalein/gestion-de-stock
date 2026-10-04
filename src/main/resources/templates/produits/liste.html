@@ -1,7 +1,7 @@
 <div th:fragment="content">
     <div class="container-fluid px-4">
         <h1 class="mt-4">Produits</h1>
-        <div class="mb-4 d-flex justify-content-end">
+        <div class="mb-4 d-flex justify-content-end" sec:authorize="hasRole('ADMIN')">
             <a th:href="@{/produits/nouveau}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Ajouter un produit
             </a>
@@ -18,11 +18,11 @@
                         <th>Référence</th>
                         <th>Nom</th>
                         <th>Catégorie</th>
-                        <th>Fournisseur</th>
-                        <th>Prix Achat</th>
+                        <th sec:authorize="hasRole('ADMIN')">Fournisseur</th>
+                        <th sec:authorize="hasRole('ADMIN')">Prix Achat</th>
                         <th>Prix Vente</th>
                         <th>Stock</th>
-                        <th>Actions</th>
+                        <th sec:authorize="hasRole('ADMIN')">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -32,17 +32,17 @@
                         <td>
                             <span class="badge bg-secondary" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span>
                         </td>
-                        <td>
+                        <td sec:authorize="hasRole('ADMIN')">
                             <span th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}" class="text-muted small"></span>
                         </td>
-                        <td th:text="${p.prixAchat + ' GNF'}"></td>
+                        <td sec:authorize="hasRole('ADMIN')" th:text="${p.prixAchat + ' GNF'}"></td>
                         <td th:text="${p.prixVente + ' GNF'}"></td>
                         <td>
                                 <span th:text="${p.quantite}"
                                       th:class="${p.quantite <= 5} ? 'badge bg-danger badge-sm' : 'badge bg-success badge-sm'">
                                 </span>
                         </td>
-                        <td>
+                        <td sec:authorize="hasRole('ADMIN')">
                             <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-warning btn-sm me-2">
                                 Modifier <i class="fas fa-edit"></i>
                             </a>
