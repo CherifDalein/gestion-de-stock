@@ -5,6 +5,7 @@ import org.example.stock.model.DetailAchat;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.AchatRepository;
+import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,14 +24,13 @@ public class AchatService {
     @Autowired private ProduitRepository produitRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
+    @Autowired private FournisseurRepository fournisseurRepository;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
+        if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
-
-        if (achat.getDateAchat() == null) {
-            achat.setDateAchat(LocalDateTime.now());
-        }
+        achat.setDateAchat(LocalDateTime.now());
 
         double montantTotalCalcule = 0.0;
 
@@ -42,6 +42,7 @@ public class AchatService {
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
 
             ligne.setAchat(achat);
+            ligne.setProduit(produitBdd);
             produitRepository.save(produitBdd);
             montantTotalCalcule += ligne.getPrixAchatUnitaire() * ligne.getQuantite();
         }
@@ -96,6 +97,7 @@ public class AchatService {
             produit.setPrixAchat(nouvelleLigne.getPrixAchatUnitaire());
 
             nouvelleLigne.setAchat(ancienAchat);
+            nouvelleLigne.setProduit(produit);
             ancienAchat.getLignes().add(nouvelleLigne);
         }
 
@@ -125,8 +127,13 @@ public class AchatService {
         if (achat.getLignes() == null || achat.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer un achat sans produit.");
         }
+        achat.setFournisseur(fournisseurRepository.findById(achat.getFournisseur().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Fournisseur introuvable")));
 
         for (DetailAchat ligne : achat.getLignes()) {
+            if (ligne == null || ligne.getId() != null) {
+                throw new IllegalArgumentException("Une ligne d'achat doit être nouvelle et sans identifiant");
+            }
             if (ligne.getProduit() == null || ligne.getProduit().getId() == null) {
                 throw new RuntimeException("Chaque ligne d'achat doit contenir un produit.");
             }

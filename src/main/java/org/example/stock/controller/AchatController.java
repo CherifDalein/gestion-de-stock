@@ -7,6 +7,7 @@ import org.example.stock.service.ProduitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,7 +44,8 @@ public class AchatController {
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrer(@ModelAttribute("achat") Achat achat, RedirectAttributes redirectAttributes, Model model) {
+    public String enregistrer(@ModelAttribute("achat") Achat achat, BindingResult result, RedirectAttributes redirectAttributes, Model model) {
+        FormBindingAdvice.verifier(result);
         try {
             service.enregistrerAchat(achat);
             redirectAttributes.addFlashAttribute("success", "Achat enregistre avec succes !");
@@ -71,12 +73,14 @@ public class AchatController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String enregistrerModification(@PathVariable Long id, @ModelAttribute("achat") Achat achat) {
+    public String enregistrerModification(@PathVariable Long id, @ModelAttribute("achat") Achat achat, BindingResult result, RedirectAttributes redirectAttributes) {
+        FormBindingAdvice.verifier(result);
         try {
             service.modifierAchat(id, achat);
             return "redirect:/achats?success=modifie";
         } catch (Exception e) {
-            return "redirect:/achats/modifier/" + id + "?error=" + e.getMessage();
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/achats/modifier/" + id;
         }
     }
 }

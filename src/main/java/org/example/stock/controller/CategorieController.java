@@ -34,6 +34,7 @@ public class CategorieController {
     public String ajouterCategorie(@Valid @ModelAttribute("nouvelleCategorie") Categorie categorie,
                                    BindingResult result,
                                    Model model) {
+        FormBindingAdvice.verifier(result);
 
         if (categorieService.existeDeja(categorie.getNom())) {
             result.rejectValue("nom", "error.categorie", "Cette catégorie existe déjà.");
@@ -70,13 +71,14 @@ public class CategorieController {
                                     @Valid @ModelAttribute("categorie") Categorie categorie,
                                     BindingResult result,
                                     Model model) {
+        FormBindingAdvice.verifier(result);
+        categorie.setId(id);
         if (result.hasErrors()) {
             model.addAttribute("view", "categories/modifier");
             return "dashboard";
         }
 
-        categorie.setId(id);
-        categorieService.ajouterCategorie(categorie);
+        categorieService.modifierCategorie(id, categorie);
         return "redirect:/categories";
     }
 }

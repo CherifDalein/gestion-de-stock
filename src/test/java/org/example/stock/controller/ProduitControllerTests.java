@@ -38,7 +38,7 @@ class ProduitControllerTests {
 
     @BeforeEach
     void preparer() {
-        mvc = standaloneSetup(controller).build();
+        mvc = standaloneSetup(controller).setControllerAdvice(new FormBindingAdvice()).build();
         fournisseurs = List.of(new Fournisseur());
         when(fournisseurService.listerTous()).thenReturn(fournisseurs);
     }
@@ -54,7 +54,7 @@ class ProduitControllerTests {
 
     @Test
     void modificationInvalideConserveIdDeRouteEtFournisseurs() throws Exception {
-        var resultat = mvc.perform(produitInvalide("/produits/modifier/7").param("id", "99"))
+        var resultat = mvc.perform(produitInvalide("/produits/modifier/7"))
                 .andExpect(view().name("dashboard"))
                 .andExpect(model().attributeHasFieldErrors("produit", "prixVente"))
                 .andExpect(model().attribute("fournisseurs", fournisseurs))

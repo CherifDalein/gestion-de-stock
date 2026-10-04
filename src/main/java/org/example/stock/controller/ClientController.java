@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
@@ -32,7 +33,8 @@ public class ClientController {
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrer(@ModelAttribute("client") Client client) {
+    public String enregistrer(@ModelAttribute("client") Client client, BindingResult result) {
+        FormBindingAdvice.verifier(result);
         clientService.enregistrerClient(client);
         return "redirect:/clients";
     }
@@ -45,9 +47,9 @@ public class ClientController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifier(@PathVariable Long id, @ModelAttribute("client") Client client) {
-        client.setId(id);
-        clientService.enregistrerClient(client);
+    public String modifier(@PathVariable Long id, @ModelAttribute("client") Client client, BindingResult result) {
+        FormBindingAdvice.verifier(result);
+        clientService.modifierClient(id, client);
         return "redirect:/clients";
     }
 

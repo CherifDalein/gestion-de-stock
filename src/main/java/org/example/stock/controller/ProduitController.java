@@ -41,6 +41,7 @@ public class ProduitController {
     public String nouveauProduit(@Valid @ModelAttribute("produit") Produit produit,
                                  BindingResult result,
                                  Model model) {
+        FormBindingAdvice.verifier(result);
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
             model.addAttribute("fournisseurs", fournisseurService.listerTous());
@@ -69,6 +70,7 @@ public class ProduitController {
 
     @PostMapping("/modifier/{id}")
     public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model) {
+        FormBindingAdvice.verifier(result);
         produit.setId(id);
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
@@ -76,7 +78,7 @@ public class ProduitController {
             model.addAttribute("view", "produits/modifier");
             return "dashboard";
         }
-        produitService.ajouterProduit(produit);
+        produitService.modifierProduit(id, produit);
         return "redirect:/produits";
     }
 }

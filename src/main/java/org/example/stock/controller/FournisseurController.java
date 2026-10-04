@@ -32,6 +32,7 @@ public class FournisseurController {
 
     @PostMapping("/enregistrer")
     public String enregistrer(@Valid @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result, Model model) {
+        FormBindingAdvice.verifier(result);
         if (result.hasErrors()){
             model.addAttribute("view", "fournisseurs/nouveau");
             return "dashboard";
@@ -55,9 +56,9 @@ public class FournisseurController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifierFournisseur(@PathVariable Long id, @ModelAttribute("fournisseur") Fournisseur fournisseur) {
-        fournisseur.setId(id); // Sécurité
-        fournisseurService.enregistrer(fournisseur);
+    public String modifierFournisseur(@PathVariable Long id, @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result) {
+        FormBindingAdvice.verifier(result);
+        fournisseurService.modifierFournisseur(id, fournisseur);
         return "redirect:/fournisseurs";
     }
 }

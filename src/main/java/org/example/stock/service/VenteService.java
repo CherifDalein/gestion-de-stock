@@ -7,6 +7,7 @@ import org.example.stock.model.Vente;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
+import org.example.stock.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -23,16 +24,26 @@ public class VenteService {
     @Autowired private ProduitRepository produitRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
+    @Autowired private ClientRepository clientRepository;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
+        if (vente.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
+        }
+        if (vente.getClient() != null) {
+            if (vente.getClient().getId() == null) throw new IllegalArgumentException("Client invalide");
+            vente.setClient(clientRepository.findById(vente.getClient().getId())
+                    .orElseThrow(() -> new IllegalArgumentException("Client introuvable")));
         }
 
         double montantTotalCalcule = 0.0;
 
         for (DetailVente detail : vente.getLignes()) {
+            if (detail == null || detail.getId() != null) {
+                throw new IllegalArgumentException("Une ligne de vente doit être nouvelle et sans identifiant");
+            }
             if (detail.getProduit() == null || detail.getProduit().getId() == null) {
                 throw new RuntimeException("Chaque ligne de vente doit contenir un produit.");
             }
@@ -52,6 +63,7 @@ public class VenteService {
 
             detail.setPrixUnitaire(produit.getPrixVente());
             detail.setVente(vente);
+            detail.setProduit(produit);
             montantTotalCalcule += produit.getPrixVente() * detail.getQuantite();
         }
 
