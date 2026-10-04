@@ -97,6 +97,7 @@ class FormIntegrityTests {
             "/ventes/enregistrer,montantTotal",
             "/produits/ajouter,categorie.nom",
             "/produits/ajouter,fournisseur.nom",
+            "/produits/ajouter,version",
             "/fournisseurs/enregistrer,produits[0].id",
             "/categories/ajouter,produits[0].id",
             "/clients/enregistrer,role"
@@ -179,6 +180,7 @@ class FormIntegrityTests {
     @Test
     void laModificationDeProduitChangeUniquementEntiteDesigneeParLaRoute() throws Exception {
         mvc.perform(post("/produits/modifier/" + produit.getId()).with(csrf()).param("nom", "Produit modifié")
+                        .param("version", produit.getVersion().toString())
                         .param("reference", "REF-INITIALE").param("prixAchat", "5")
                         .param("prixVente", "22").param("quantite", "10")
                         .param("categorie", categorie.getId().toString())
@@ -205,6 +207,7 @@ class FormIntegrityTests {
                 .andExpect(status().isOk()).andReturn();
         String html = resultat.getResponse().getContentAsString();
         assertThat(html).doesNotContain("name=\"id\"");
+        assertThat(html).contains("name=\"version\"");
         var optionFournisseur = java.util.regex.Pattern.compile("<option[^>]*value=\"" + fournisseur.getId()
                 + "\"[^>]*selected=\"selected\"[^>]*>Fournisseur initial</option>").matcher(html);
         assertThat(optionFournisseur.find()).isTrue();

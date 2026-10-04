@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS utilisateur (
 
 CREATE TABLE IF NOT EXISTS produit (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    version BIGINT NOT NULL DEFAULT 0,
     nom VARCHAR(255),
     reference VARCHAR(255),
     prix_achat DOUBLE,

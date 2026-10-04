@@ -5,6 +5,7 @@ import org.example.stock.service.ClientService;
 import org.example.stock.service.ProduitService;
 import org.example.stock.service.VenteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -49,7 +50,8 @@ public class VenteController {
             model.addAttribute("clients", clientService.listerTous());
             model.addAttribute("produits", produitService.listerTous());
 
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", e instanceof ConcurrencyFailureException
+                    ? "Une autre opération modifie le stock. Réessayez la vente." : e.getMessage());
             model.addAttribute("view", "ventes/nouveau");
             return "dashboard";
         }

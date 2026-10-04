@@ -34,6 +34,10 @@ public class FormBindingAdvice {
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};
             default -> throw new IllegalArgumentException("Formulaire non pris en charge");
         };
+        if (binder.getObjectName().equals("produit")
+                && request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/")) {
+            champs = Stream.concat(Stream.of(champs), Stream.of("version")).toArray(String[]::new);
+        }
         for (String parametre : request.getMethod().equals("POST") ? request.getParameterMap().keySet() : java.util.Set.<String>of()) {
             if (!parametre.equals("_csrf") && Arrays.stream(champs).noneMatch(champ -> correspond(champ, parametre))) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");

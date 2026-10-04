@@ -6,7 +6,7 @@ import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.FournisseurRepository;
-import org.example.stock.repository.ProduitRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,12 +16,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
+import java.util.stream.Stream;
 
 @Service
 public class AchatService {
 
     @Autowired private AchatRepository achatRepository;
-    @Autowired private ProduitRepository produitRepository;
+    @Autowired private StockLockRepository stockLockRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
     @Autowired private FournisseurRepository fournisseurRepository;
@@ -31,19 +33,19 @@ public class AchatService {
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
         achat.setDateAchat(LocalDateTime.now());
+        Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
+                .map(ligne -> ligne.getProduit().getId()).toList());
 
         double montantTotalCalcule = 0.0;
 
         for (DetailAchat ligne : achat.getLignes()) {
-            Produit produitBdd = produitRepository.findById(ligne.getProduit().getId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouve"));
+            Produit produitBdd = produits.get(ligne.getProduit().getId());
 
             produitBdd.setQuantite(produitBdd.getQuantite() + ligne.getQuantite());
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
 
             ligne.setAchat(achat);
             ligne.setProduit(produitBdd);
-            produitRepository.save(produitBdd);
             montantTotalCalcule += ligne.getPrixAchatUnitaire() * ligne.getQuantite();
         }
 
@@ -62,18 +64,19 @@ public class AchatService {
 
     @Transactional
     public void modifierAchat(Long id, Achat achatModifie) {
-        Achat ancienAchat = achatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Achat introuvable"));
+        Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
 
         validerAchat(achatModifie);
+        Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(Stream.concat(
+                ancienAchat.getLignes().stream(), achatModifie.getLignes().stream())
+                .map(ligne -> ligne.getProduit().getId()).toList());
 
         double montantTotalCalcule = calculerMontantTotal(achatModifie);
         Double nouveauMontantVerse = normaliserMontantVerse(achatModifie.getMontantVerse(), montantTotalCalcule);
         Double difference = nouveauMontantVerse - Objects.requireNonNullElse(ancienAchat.getMontantVerse(), 0.0);
 
         for (DetailAchat ancienneLigne : ancienAchat.getLignes()) {
-            Produit produit = produitRepository.findById(ancienneLigne.getProduit().getId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouve"));
+            Produit produit = produits.get(ancienneLigne.getProduit().getId());
 
             if (produit.getQuantite() < ancienneLigne.getQuantite()) {
                 throw new RuntimeException(
@@ -90,8 +93,7 @@ public class AchatService {
 
         ancienAchat.getLignes().clear();
         for (DetailAchat nouvelleLigne : achatModifie.getLignes()) {
-            Produit produit = produitRepository.findById(nouvelleLigne.getProduit().getId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouve"));
+            Produit produit = produits.get(nouvelleLigne.getProduit().getId());
 
             produit.setQuantite(produit.getQuantite() + nouvelleLigne.getQuantite());
             produit.setPrixAchat(nouvelleLigne.getPrixAchatUnitaire());

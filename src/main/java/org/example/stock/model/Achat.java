@@ -19,7 +19,7 @@ public class Achat {
     private Double montantTotal;
     private Double montantVerse;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fournisseur_id")
     private Fournisseur fournisseur;
 

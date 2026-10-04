@@ -5,6 +5,7 @@ import org.example.stock.service.AchatService;
 import org.example.stock.service.FournisseurService;
 import org.example.stock.service.ProduitService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -54,7 +55,8 @@ public class AchatController {
             model.addAttribute("achat", achat);
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("fournisseurs", fournisseurService.listerTous());
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", e instanceof ConcurrencyFailureException
+                    ? "Une autre opération modifie le stock. Réessayez l'achat." : e.getMessage());
             model.addAttribute("view", "achats/nouveau");
             return "dashboard";
         }
@@ -79,7 +81,8 @@ public class AchatController {
             service.modifierAchat(id, achat);
             return "redirect:/achats?success=modifie";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute("error", e instanceof ConcurrencyFailureException
+                    ? "Une autre opération modifie cet achat ou son stock. Réessayez la modification." : e.getMessage());
             return "redirect:/achats/modifier/" + id;
         }
     }

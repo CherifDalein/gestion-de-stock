@@ -4,7 +4,7 @@ import org.example.stock.model.DetailVente;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
-import org.example.stock.repository.ProduitRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
 import org.example.stock.repository.ClientRepository;
@@ -16,12 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Map;
 
 @Service
 public class VenteService {
 
     @Autowired private VenteRepository venteRepository;
-    @Autowired private ProduitRepository produitRepository;
+    @Autowired private StockLockRepository stockLockRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
     @Autowired private ClientRepository clientRepository;
@@ -38,8 +39,6 @@ public class VenteService {
                     .orElseThrow(() -> new IllegalArgumentException("Client introuvable")));
         }
 
-        double montantTotalCalcule = 0.0;
-
         for (DetailVente detail : vente.getLignes()) {
             if (detail == null || detail.getId() != null) {
                 throw new IllegalArgumentException("Une ligne de vente doit être nouvelle et sans identifiant");
@@ -50,16 +49,20 @@ public class VenteService {
             if (detail.getQuantite() == null || detail.getQuantite() <= 0) {
                 throw new RuntimeException("La quantite vendue doit etre superieure a 0.");
             }
+        }
 
-            Produit produit = produitRepository.findById(detail.getProduit().getId())
-                    .orElseThrow(() -> new RuntimeException("Produit non trouve"));
+        Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(vente.getLignes().stream()
+                .map(ligne -> ligne.getProduit().getId()).toList());
+        double montantTotalCalcule = 0.0;
+
+        for (DetailVente detail : vente.getLignes()) {
+            Produit produit = produits.get(detail.getProduit().getId());
 
             if (produit.getQuantite() < detail.getQuantite()) {
                 throw new RuntimeException("Stock insuffisant pour " + produit.getNom());
             }
 
             produit.setQuantite(produit.getQuantite() - detail.getQuantite());
-            produitRepository.save(produit);
 
             detail.setPrixUnitaire(produit.getPrixVente());
             detail.setVente(vente);

@@ -65,8 +65,10 @@ class ProduitControllerTests {
     }
 
     private MockHttpServletRequestBuilder produitInvalide(String route) {
-        return post(route).param("nom", "Produit").param("reference", "REF-TEST")
+        var requete = post(route).param("nom", "Produit").param("reference", "REF-TEST")
                 .param("prixAchat", "10").param("prixVente", "-1")
                 .param("quantite", "0").param("categorie.id", "1");
+        if (route.contains("/modifier/")) requete.param("version", "0");
+        return requete;
     }
 }

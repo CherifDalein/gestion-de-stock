@@ -4,6 +4,7 @@ import org.example.stock.model.Produit;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.CategorieRepository;
 import org.example.stock.repository.FournisseurRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +18,7 @@ public class ProduitService {
     @Autowired private ProduitRepository produitRepository;
     @Autowired private CategorieRepository categorieRepository;
     @Autowired private FournisseurRepository fournisseurRepository;
+    @Autowired private StockLockRepository stockLockRepository;
 
     public List<Produit> listerTous() {
         return produitRepository.findAll();
@@ -29,14 +31,21 @@ public class ProduitService {
     @Transactional
     public Produit ajouterProduit(Produit produit) {
         if (produit.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
+        if (produit.getVersion() != null) throw new IllegalArgumentException("Une création ne peut pas contenir de version");
         chargerRelations(produit);
         return produitRepository.save(produit);
     }
 
     @Transactional
     public Produit modifierProduit(Long id, Produit modifications) {
-        Produit produit = produitRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable"));
+        if (modifications.getVersion() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Version du produit obligatoire");
+        }
+        if (!produitRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable");
+        }
+        Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
+        if (!modifications.getVersion().equals(produit.getVersion())) throw new ProduitModifieException();
         chargerRelations(modifications);
         produit.setNom(modifications.getNom());
         produit.setReference(modifications.getReference());

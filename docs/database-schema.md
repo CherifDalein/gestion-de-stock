@@ -34,6 +34,7 @@ Base cible : `stock_pro`
 
 ### `produit`
 - `id` PK
+- `version` BIGINT NOT NULL DEFAULT 0 : version JPA pour détecter les modifications concurrentes
 - `nom`
 - `reference`
 - `prix_achat`
@@ -121,6 +122,7 @@ erDiagram
     }
     PRODUIT {
         BIGINT id PK
+        BIGINT version
         VARCHAR nom
         VARCHAR reference
         DOUBLE prix_achat
@@ -186,3 +188,15 @@ erDiagram
 - Les proprietes calculees comme `getResteAPayer()` ne creent pas de colonne en base.
 - Les annotations de validation comme `@NotBlank` et `@Email` expriment surtout des regles applicatives; elles ne sont pas toutes materialisees en contraintes SQL dans ce script.
 - Les suppressions en cascade JPA ne signifient pas automatiquement `ON DELETE CASCADE` au niveau MySQL, donc ce script reste volontairement proche du mapping JPA.
+
+## Mise à jour d'une base existante : version des produits
+
+Le mapping `@Version` nécessite la colonne `produit.version`. Avec `spring.jpa.hibernate.ddl-auto=update`, Hibernate demande son ajout au prochain démarrage. Le défaut SQL `0` initialise les produits existants sans changer leur quantité.
+
+Si le schéma est administré manuellement (`ddl-auto=none` ou `validate`), ajouter la colonne une seule fois, si elle est absente :
+
+```sql
+ALTER TABLE produit ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+```
+
+Le script `database-schema.sql` décrit les nouvelles bases ; son `CREATE TABLE IF NOT EXISTS` ne met pas à jour une table déjà existante. Cette migration MySQL n'a pas été exécutée pendant les tests, qui utilisent H2 en mémoire. Les formulaires de modification de produit ouverts avant la mise à jour doivent être rechargés.
