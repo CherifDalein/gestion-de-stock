@@ -9,7 +9,7 @@
                         <div class="small text-white-50 fw-bold text-uppercase">Dette totale (Periode selectionnee)</div>
                         <h2 class="mt-2 fw-bold"
                             th:with="totalReste=${not #lists.isEmpty(achats) ? #aggregates.sum(achats.![resteAPayer]) : 0}"
-                            th:text="${#numbers.formatDecimal(totalReste, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                            th:text="${#numbers.formatDecimal(totalReste, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                             0 GNF
                         </h2>
                     </div>
@@ -67,9 +67,9 @@
                         <tr th:each="a : ${achats}">
                             <td class="fw-bold" th:text="'#' + ${a.id}"></td>
                             <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy')}"></td>
-                            <td class="text-end" th:text="${#numbers.formatDecimal(a.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(a.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(a.resteAPayer, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(a.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(a.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-center">
                                 <a th:href="@{/factures/achat/{id}(id=${a.id})}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-print"></i>

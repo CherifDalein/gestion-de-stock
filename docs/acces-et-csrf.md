@@ -51,7 +51,7 @@ Les routes non explicitement autorisées sont refusées par défaut. Les pages d
 3. Saisir la **somme payée maintenant**, et non le total cumulé des versements.
 4. Enregistrer le versement. Le montant déjà versé et la dette sont actualisés ; une sortie de caisse est liée à l'achat avec date et auteur. Le stock et les lignes de facture ne sont pas modifiés.
 
-Cette opération reste possible si tout ou partie des produits ont été vendus. Un achat soldé affiche **Règlements**, qui permet de consulter les versements enregistrés. Le montant doit être positif, comporter au plus deux décimales et ne pas dépasser la dette restante. Les montants impossibles à stocker sans perte de précision dans la caisse actuelle sont refusés.
+Cette opération reste possible si tout ou partie des produits ont été vendus. Un achat soldé affiche **Règlements**, qui permet de consulter les versements enregistrés. Le montant doit être positif, comporter au plus deux décimales et ne pas dépasser la dette restante. Les montants sont désormais calculés en `BigDecimal` et stockés en `DECIMAL(17,2)`, sans conversion en `Double`.
 
 Le formulaire vérifie sous verrou le montant déjà payé au moment de son ouverture. Répéter le même formulaire après un versement, ou soumettre deux copies en même temps, ne crée pas une seconde sortie de caisse : la seconde demande reçoit HTTP 409. Vérifier l'historique et recharger le formulaire avant un nouveau versement. Ce contrôle vise les copies d'un même formulaire ; il ne remplace pas une vérification métier de deux paiements réellement distincts.
 

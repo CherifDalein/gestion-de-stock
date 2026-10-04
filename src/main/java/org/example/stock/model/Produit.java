@@ -1,12 +1,14 @@
 package org.example.stock.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -30,11 +32,15 @@ public class Produit {
 
     @NotNull(message = "Le prix d'achat est obligatoire")
     @PositiveOrZero(message = "Le prix d'achat ne peut pas être négatif")
-    private Double prixAchat;
+    @Column(precision = 17, scale = 2)
+    @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
+    private BigDecimal prixAchat;
 
     @NotNull(message = "Le prix de vente est obligatoire")
     @PositiveOrZero(message = "Le prix de vente ne peut pas être négatif")
-    private Double prixVente;
+    @Column(precision = 17, scale = 2)
+    @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
+    private BigDecimal prixVente;
 
     @NotNull(message = "La quantité est obligatoire")
     @PositiveOrZero(message = "La quantité ne peut pas être négative")

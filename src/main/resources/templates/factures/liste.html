@@ -59,14 +59,14 @@
                             <td class="fw-bold text-primary" th:text="'#' + ${v.id}"></td>
                             <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
                             <td th:text="${v.client != null ? v.client.nom : 'Client Passant'}"></td>
-                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-end text-danger fw-bold"
-                                th:text="${#numbers.formatDecimal(v.montantTotal - v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                                th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
 
                             <td class="text-center">
-                                <span th:if="${v.montantTotal <= v.montantVerse}" class="badge bg-success">Payé</span>
-                                <span th:if="${v.montantTotal > v.montantVerse}" class="badge bg-warning text-dark">Reliquat</span>
+                                <span th:if="${v.resteAPayer <= 0}" class="badge bg-success">Payé</span>
+                                <span th:if="${v.resteAPayer > 0}" class="badge bg-warning text-dark">Reliquat</span>
                             </td>
 
                             <td class="text-center">

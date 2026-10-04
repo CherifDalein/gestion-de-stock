@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
 import org.example.stock.model.Produit;
+import org.example.stock.model.Montants;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.CategorieRepository;
 import org.example.stock.repository.FournisseurRepository;
@@ -58,6 +59,8 @@ public class ProduitService {
     }
 
     private void chargerRelations(Produit produit) {
+        produit.setPrixAchat(Montants.positifOuNul(produit.getPrixAchat(), "Le prix d'achat"));
+        produit.setPrixVente(Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
         if (produit.getCategorie() == null || produit.getCategorie().getId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Catégorie obligatoire");
         }

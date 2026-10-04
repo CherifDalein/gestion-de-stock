@@ -4,6 +4,7 @@ import org.example.stock.model.DetailVente;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
+import org.example.stock.model.Montants;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
@@ -53,7 +55,7 @@ public class VenteService {
 
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
-        double montantTotalCalcule = 0.0;
+        BigDecimal montantTotalCalcule = Montants.ZERO;
 
         for (DetailVente detail : vente.getLignes()) {
             Produit produit = produits.get(detail.getProduit().getId());
@@ -64,13 +66,13 @@ public class VenteService {
 
             produit.setQuantite(produit.getQuantite() - detail.getQuantite());
 
-            detail.setPrixUnitaire(produit.getPrixVente());
+            detail.setPrixUnitaire(Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
             detail.setVente(vente);
             detail.setProduit(produit);
-            montantTotalCalcule += produit.getPrixVente() * detail.getQuantite();
+            montantTotalCalcule = montantTotalCalcule.add(detail.getPrixUnitaire().multiply(BigDecimal.valueOf(detail.getQuantite())));
         }
 
-        vente.setMontantTotal(montantTotalCalcule);
+        vente.setMontantTotal(Montants.valider(montantTotalCalcule, "Le total de la vente"));
         vente.setMontantVerse(normaliserMontantVerse(vente.getMontantVerse(), montantTotalCalcule));
         vente.setDateVente(LocalDateTime.now());
         Vente venteEnregistree = venteRepository.save(vente);
@@ -90,13 +92,9 @@ public class VenteService {
         return venteRepository.findAll();
     }
 
-    private Double normaliserMontantVerse(Double montantVerse, double montantTotal) {
-        double montant = Objects.requireNonNullElse(montantVerse, montantTotal);
-
-        if (montant < 0) {
-            throw new RuntimeException("Le montant verse ne peut pas etre negatif.");
-        }
-        if (montant > montantTotal) {
+    private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {
+        BigDecimal montant = Montants.positifOuNul(Objects.requireNonNullElse(montantVerse, montantTotal), "Le montant versé");
+        if (montant.compareTo(montantTotal) > 0) {
             throw new RuntimeException("Le montant verse ne peut pas depasser le total de la vente.");
         }
 

@@ -24,9 +24,16 @@ Voir [les paramètres de connexion](docs/connexion-base.md) pour les identifiant
 
 Les tests utilisent H2 en mémoire.
 
+Les calculs des paniers se vérifient aussi avec Node.js :
+
+```sh
+node --test src/test/js/montants.test.cjs
+```
+
 ## Documentation
 
 - [Accès, CSRF et règlements fournisseurs](docs/acces-et-csrf.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
 - [Schéma et mises à jour de la base](docs/database-schema.md)
+- [Montants exacts et migration DECIMAL](docs/montants-et-migration.md)
 - [Audit et suivi des corrections](docs/audit-2026-10-04.md)

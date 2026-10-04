@@ -1,5 +1,6 @@
 package org.example.stock.security;
 
+import java.math.BigDecimal;
 import org.example.stock.enums.Role;
 import org.example.stock.model.Categorie;
 import org.example.stock.model.Client;
@@ -80,8 +81,8 @@ class SecurityFlowTests {
         produit.setId(1L);
         produit.setNom("Produit test");
         produit.setReference("REF-TEST");
-        produit.setPrixAchat(10.0);
-        produit.setPrixVente(20.0);
+        produit.setPrixAchat(new BigDecimal("10.0"));
+        produit.setPrixVente(new BigDecimal("20.0"));
         produit.setQuantite(5L);
         produit.setCategorie(categorie);
         produit.setFournisseur(fournisseur);

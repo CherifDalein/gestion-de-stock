@@ -101,7 +101,7 @@ public class AchatController {
     public String afficherReglement(@PathVariable Long id, Model model) {
         Achat achat = chargerAchat(id);
         ReglementAchatForm formulaire = new ReglementAchatForm();
-        formulaire.setMontantVerseAttendu(BigDecimal.valueOf(achat.getMontantVerse() == null ? 0.0 : achat.getMontantVerse()));
+        formulaire.setMontantVerseAttendu(achat.getMontantVerse() == null ? BigDecimal.ZERO : achat.getMontantVerse());
         model.addAttribute("reglementAchat", formulaire);
         preparerReglement(achat, model);
         return "dashboard";

@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS produit (
     version BIGINT NOT NULL DEFAULT 0,
     nom VARCHAR(255),
     reference VARCHAR(255),
-    prix_achat DOUBLE,
-    prix_vente DOUBLE,
+    prix_achat DECIMAL(17,2) NOT NULL,
+    prix_vente DECIMAL(17,2) NOT NULL,
     quantite BIGINT,
     categorie_id BIGINT,
     fournisseur_id BIGINT,
@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS produit (
 CREATE TABLE IF NOT EXISTS achat (
     id BIGINT NOT NULL AUTO_INCREMENT,
     date_achat DATETIME(6),
-    montant_total DOUBLE,
-    montant_verse DOUBLE,
+    montant_total DECIMAL(17,2),
+    montant_verse DECIMAL(17,2),
     fournisseur_id BIGINT,
     PRIMARY KEY (id),
     CONSTRAINT fk_achat_fournisseur
@@ -70,8 +70,8 @@ CREATE TABLE IF NOT EXISTS achat (
 CREATE TABLE IF NOT EXISTS vente (
     id BIGINT NOT NULL AUTO_INCREMENT,
     date_vente DATETIME(6),
-    montant_total DOUBLE,
-    montant_verse DOUBLE,
+    montant_total DECIMAL(17,2),
+    montant_verse DECIMAL(17,2),
     client_id BIGINT,
     PRIMARY KEY (id),
     CONSTRAINT fk_vente_client
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS detail_achat (
     achat_id BIGINT,
     produit_id BIGINT,
     quantite INT,
-    prix_achat_unitaire DOUBLE,
+    prix_achat_unitaire DECIMAL(17,2),
     PRIMARY KEY (id),
     CONSTRAINT fk_detail_achat_achat
         FOREIGN KEY (achat_id) REFERENCES achat (id),
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS detail_vente (
     vente_id BIGINT,
     produit_id BIGINT,
     quantite INT,
-    prix_unitaire DOUBLE,
+    prix_unitaire DECIMAL(17,2),
     PRIMARY KEY (id),
     CONSTRAINT fk_detail_vente_vente
         FOREIGN KEY (vente_id) REFERENCES vente (id),
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS detail_vente (
 CREATE TABLE IF NOT EXISTS mouvement_caisse (
     id BIGINT NOT NULL AUTO_INCREMENT,
     date_mouvement DATETIME(6),
-    montant DOUBLE,
+    montant DECIMAL(17,2),
     type VARCHAR(255),
     motif VARCHAR(255),
     source VARCHAR(255),

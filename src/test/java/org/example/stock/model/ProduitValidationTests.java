@@ -1,5 +1,6 @@
 package org.example.stock.model;
 
+import java.math.BigDecimal;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -38,8 +39,8 @@ class ProduitValidationTests {
     void refuseLesValeursNegatives(String champ) {
         Produit produit = produitValide();
         switch (champ) {
-            case "prixAchat" -> produit.setPrixAchat(-1.0);
-            case "prixVente" -> produit.setPrixVente(-1.0);
+            case "prixAchat" -> produit.setPrixAchat(new BigDecimal("-1.0"));
+            case "prixVente" -> produit.setPrixVente(new BigDecimal("-1.0"));
             case "quantite" -> produit.setQuantite(-1L);
         }
         assertThat(validator.validate(produit))
@@ -56,8 +57,8 @@ class ProduitValidationTests {
         Produit produit = new Produit();
         produit.setNom("Produit test");
         produit.setReference("REF-TEST");
-        produit.setPrixAchat(0.0);
-        produit.setPrixVente(0.0);
+        produit.setPrixAchat(new BigDecimal("0.0"));
+        produit.setPrixVente(new BigDecimal("0.0"));
         produit.setQuantite(0L);
         produit.setCategorie(new Categorie());
         return produit;

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface VenteRepository extends JpaRepository<Vente, Long> {
@@ -15,5 +16,5 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     List<Vente> findByClientIdOrderByDateVenteDesc(Long clientId);
 
     @Query("SELECT COALESCE(SUM(v.montantVerse), 0) FROM Vente v WHERE v.dateVente >= :date")
-    Double calculerTotalVentesDepuis(@Param("date") LocalDateTime date);
+    BigDecimal calculerTotalVentesDepuis(@Param("date") LocalDateTime date);
 }

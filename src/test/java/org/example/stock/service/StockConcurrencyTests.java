@@ -72,7 +72,7 @@ class StockConcurrencyTests {
                 () -> venteService.effectuerVente(vente(4)), false)).isNull();
         assertThat(stock()).isEqualTo(3L);
         assertThat(ventes.count()).isEqualTo(2);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(140.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("140.0");
     }
 
     @Test
@@ -83,70 +83,70 @@ class StockConcurrencyTests {
         assertThat(stock()).isEqualTo(3L);
         assertThat(ventes.count()).isEqualTo(1);
         assertThat(caisse.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(140.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("140.0");
     }
 
     @Test
     void unAchatConcurrentAvecUneVenteConserveEntreesEtSorties() throws Exception {
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(4)),
-                () -> achatService.enregistrerAchat(achat(3, 15.0)), false)).isNull();
+                () -> achatService.enregistrerAchat(achat(3, new BigDecimal("15.0"))), false)).isNull();
         assertThat(stock()).isEqualTo(9L);
         assertThat(ventes.count()).isEqualTo(1);
         assertThat(achats.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(65.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("65.0");
     }
 
     @Test
     void deuxAchatsConserventToutesLesEntreesDeStock() throws Exception {
-        assertThat(executerAvecVerrouRetenu(() -> achatService.enregistrerAchat(achat(3, 15.0)),
-                () -> achatService.enregistrerAchat(achat(4, 20.0)), false)).isNull();
+        assertThat(executerAvecVerrouRetenu(() -> achatService.enregistrerAchat(achat(3, new BigDecimal("15.0"))),
+                () -> achatService.enregistrerAchat(achat(4, new BigDecimal("20.0"))), false)).isNull();
         assertThat(stock()).isEqualTo(17L);
         assertThat(achats.count()).isEqualTo(2);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(-35.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-35.0");
     }
 
     @Test
     void laCorrectionDAchatAttendUneVenteEtConserveSaSortieDeStock() throws Exception {
-        Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, 15.0)).getId());
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, new BigDecimal("15.0"))).getId());
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(4)),
                 () -> achatService.modifierAchat(id, modification(5)), false)).isNull();
         assertThat(stock()).isEqualTo(11L);
         assertThat(achats.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(65.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("65.0");
     }
 
     @Test
     void deuxCorrectionsDuMemeAchatConserventLeStockSansChangerLePaiement() throws Exception {
-        Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, 0.0)).getId());
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(3, new BigDecimal("0.0"))).getId());
         assertThat(executerAvecVerrouRetenu(() -> achatService.modifierAchat(id, modification(4)),
                 () -> achatService.modifierAchat(id, modification(5)), true)).isNull();
         assertThat(stock()).isEqualTo(15L);
         assertThat(achats.count()).isEqualTo(1);
-        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(0.0);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(0.0);
+        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualByComparingTo("0.0");
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("0.0");
     }
 
     @Test
     void deuxReglementsDuMemeFormulaireNeCreentQuUneSortieDeCaisse() throws Exception {
-        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, 0.0)).getId());
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, new BigDecimal("0.0"))).getId());
         Throwable erreur = executerAvecVerrouRetenu(
                 () -> achatService.reglerAchat(id, new BigDecimal("20"), BigDecimal.ZERO),
                 () -> achatService.reglerAchat(id, new BigDecimal("20"), BigDecimal.ZERO), true);
         assertThat(erreur).isInstanceOf(ReglementAchatObsoleteException.class);
         assertThat(stock()).isEqualTo(20L);
-        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(20.0);
+        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualByComparingTo("20.0");
         assertThat(caisse.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(-20.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-20.0");
     }
 
     @Test
     void unReglementPendantUneVenteNeVerrouilleNiNeModifieLeStock() throws Exception {
-        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, 0.0)).getId());
+        Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, new BigDecimal("0.0"))).getId());
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(18)),
                 () -> achatService.reglerAchat(id, new BigDecimal("50"), BigDecimal.ZERO), true, false)).isNull();
         assertThat(stock()).isEqualTo(2L);
-        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualTo(50.0);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(310.0);
+        assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualByComparingTo("50.0");
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("310.0");
     }
 
     @Test
@@ -190,7 +190,7 @@ class StockConcurrencyTests {
         assertThat(stock()).isEqualTo(3L);
         assertThat(produits.findById(second.getId()).orElseThrow().getQuantite()).isEqualTo(3L);
         assertThat(ventes.count()).isEqualTo(2);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(280.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("280.0");
     }
 
     @Test
@@ -225,12 +225,12 @@ class StockConcurrencyTests {
                 () -> produitService.modifierProduit(produit.getId(), produit), false);
         assertThat(erreur).isInstanceOf(ProduitModifieException.class);
         assertThat(stock()).isEqualTo(8L);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(40.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("40.0");
     }
 
     @Test
     void uneErreurDePaiementAnnuleStockDocumentEtCaisse() {
-        Achat achat = achat(3, 999.0);
+        Achat achat = achat(3, new BigDecimal("999.0"));
         assertThatThrownBy(() -> authentifie(() -> achatService.enregistrerAchat(achat)))
                 .hasMessageContaining("ne peut pas depasser");
         assertThat(stock()).isEqualTo(10L);
@@ -292,7 +292,7 @@ class StockConcurrencyTests {
     private Produit creerProduit(Categorie categorie, String reference, Long quantite) {
         Produit nouveau = new Produit(); nouveau.setNom(reference); nouveau.setReference(reference);
         nouveau.setCategorie(categorie); nouveau.setFournisseur(fournisseur);
-        nouveau.setQuantite(quantite); nouveau.setPrixAchat(5.0); nouveau.setPrixVente(20.0);
+        nouveau.setQuantite(quantite); nouveau.setPrixAchat(new BigDecimal("5.0")); nouveau.setPrixVente(new BigDecimal("20.0"));
         return produits.saveAndFlush(nouveau);
     }
 
@@ -305,15 +305,15 @@ class StockConcurrencyTests {
         DetailVente ligne = new DetailVente(); ligne.setProduit(reference); ligne.setQuantite(quantite); return ligne;
     }
 
-    private Achat achat(int quantite, double verse) {
+    private Achat achat(int quantite, BigDecimal verse) {
         Achat achat = new Achat(); achat.setFournisseur(fournisseur); achat.setMontantVerse(verse);
         Produit reference = new Produit(); reference.setId(produit.getId());
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(reference); ligne.setQuantite(quantite);
-        ligne.setPrixAchatUnitaire(5.0); achat.getLignes().add(ligne); return achat;
+        ligne.setPrixAchatUnitaire(new BigDecimal("5.0")); achat.getLignes().add(ligne); return achat;
     }
 
     private Achat modification(int quantite) {
-        Achat achat = achat(quantite, 0.0); achat.setMontantVerse(null); return achat;
+        Achat achat = achat(quantite, new BigDecimal("0.0")); achat.setMontantVerse(null); return achat;
     }
 
     private long stock() { return produits.findById(produit.getId()).orElseThrow().getQuantite(); }

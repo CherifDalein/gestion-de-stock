@@ -170,9 +170,9 @@
                                 <span class="text-muted" th:text="${' x' + ligne.quantite}">x1</span>
                             </div>
                         </td>
-                        <td class="text-end" th:text="${#numbers.formatDecimal(vente.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                        <td class="text-end text-success" th:text="${#numbers.formatDecimal(vente.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                        <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(vente.resteAPayer, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(vente.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="text-end text-success" th:text="${#numbers.formatDecimal((vente.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(vente.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(ventes)}">
                         <td colspan="6" class="text-center text-muted py-4">Aucune transaction trouvee pour cette periode.</td>
@@ -182,11 +182,11 @@
                     <tr>
                         <th colspan="3" class="text-end">Totaux</th>
                         <th class="text-end"
-                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantTotal]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></th>
+                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantTotal]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></th>
                         <th class="text-end text-success"
-                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantVerse]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></th>
+                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![(montantVerse ?: 0)]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></th>
                         <th class="text-end text-danger fw-bold"
-                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![resteAPayer]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></th>
+                            th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![resteAPayer]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></th>
                     </tr>
                     </tfoot>
                 </table>
@@ -199,17 +199,17 @@
                         <tr>
                             <td><strong>Total facture</strong></td>
                             <td class="text-end fw-bold"
-                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantTotal]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantTotal]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         <tr>
                             <td><strong>Total verse</strong></td>
                             <td class="text-end text-success fw-bold"
-                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![montantVerse]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![(montantVerse ?: 0)]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         <tr>
                             <td class="text-danger"><strong>Total restant</strong></td>
                             <td class="text-end text-danger fw-bold"
-                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![resteAPayer]), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                                th:text="${#numbers.formatDecimal(#aggregates.sum(ventes.![resteAPayer]), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         </tbody>
                     </table>

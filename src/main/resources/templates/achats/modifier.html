@@ -108,6 +108,7 @@
         </form>
     </div>
 
+    <script th:src="@{/js/montants.js}"></script>
     <script th:src="@{/js/achat.js}"></script>
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
@@ -117,7 +118,7 @@
             /*[# th:each="ligne : ${achat.lignes}"]*/
             // On remplit les champs de saisie temporairement
             document.getElementById('selectProduit').value = /*[[${ligne.produit.id}]]*/ '';
-            document.getElementById('inputPrix').value = /*[[${ligne.prixAchatUnitaire}]]*/ '';
+            document.getElementById('inputPrix').value = /*[[${ligne.prixAchatUnitaire.toPlainString()}]]*/ '';
             document.getElementById('inputQtite').value = /*[[${ligne.quantite}]]*/ '';
 
             // On appelle la fonction ajouterLigne() de ton fichier achat.js
@@ -128,7 +129,7 @@
             /*[/]*/
 
             // 2. On remet le montant versé initial (car ajouterLigne peut recalculer le total)
-            const montantInitial = /*[[${achat.montantVerse ?: 0}]]*/ 0;
+            const montantInitial = /*[[${achat.montantVerse != null ? achat.montantVerse.toPlainString() : '0.00'}]]*/ '0.00';
             document.getElementById('montantVerse').value = montantInitial;
 
             // 3. On force le calcul du reste à payer

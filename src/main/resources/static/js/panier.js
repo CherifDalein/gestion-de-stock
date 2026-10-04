@@ -1,5 +1,5 @@
 let index = 0;
-let totalGeneral = 0;
+let totalGeneral = 0n;
 
 function ajouterAuPanier() {
     const select = document.getElementById('selectProduit');
@@ -11,26 +11,30 @@ function ajouterAuPanier() {
     if (!pId || pId === "") return;
 
     const pNom = selectedOption.getAttribute('data-nom');
-    const pPrix = parseFloat(selectedOption.getAttribute('data-prix'));
+    const pPrix = Montants.lire(selectedOption.getAttribute('data-prix'));
     const qty = Number(qtyInput.value);
-    if (!Number.isSafeInteger(qty) || qty <= 0 || !Number.isFinite(pPrix) || pPrix < 0) return;
+    if (!Number.isSafeInteger(qty) || qty <= 0 || qty > 2147483647 || pPrix === null || pPrix < 0n) return;
 
     // Extraction du stock
     const textActuel = selectedOption.text;
     const match = textActuel.match(/\((\d+) en stock\)/);
-    const stockActuel = match ? parseInt(match[1]) : 0;
+    const stockActuel = match ? BigInt(match[1]) : 0n;
 
-    if (qty > stockActuel) {
+    if (BigInt(qty) > stockActuel) {
         alert("Stock insuffisant !");
         return;
     }
     if (qty <= 0) return;
 
     // Mise à jour visuelle du stock
-    const nouveauStock = stockActuel - qty;
-    selectedOption.text = `${pNom} (${nouveauStock} en stock)`;
+    const nouveauStock = stockActuel - BigInt(qty);
 
-    const sousTotal = pPrix * qty;
+    const sousTotal = pPrix * BigInt(qty);
+    if (totalGeneral + sousTotal > Montants.maximum) {
+        alert("Le total dépasse le montant maximal autorisé.");
+        return;
+    }
+    selectedOption.text = `${pNom} (${nouveauStock} en stock)`;
     const tbody = document.getElementById('panierBody');
 
     const row = document.createElement('tr');
@@ -45,7 +49,7 @@ function ajouterAuPanier() {
     produitInput.value = pId;
     nomCellule.appendChild(produitInput);
 
-    row.insertCell().textContent = `${pPrix.toLocaleString()} GNF`;
+    row.insertCell().textContent = `${Montants.afficher(pPrix)} GNF`;
     const quantiteCellule = row.insertCell();
     const quantiteTexte = document.createElement('span');
     quantiteTexte.textContent = qty;
@@ -58,8 +62,8 @@ function ajouterAuPanier() {
 
     const totalCellule = row.insertCell();
     totalCellule.className = 'sous-total-val';
-    totalCellule.dataset.montant = sousTotal;
-    totalCellule.textContent = `${sousTotal.toLocaleString()} GNF`;
+    totalCellule.dataset.centimes = sousTotal.toString();
+    totalCellule.textContent = `${Montants.afficher(sousTotal)} GNF`;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-danger btn-sm';
@@ -93,8 +97,8 @@ function supprimerLigne(idx, montant, pId, qteARendre) {
                 const opt = select.options[i];
                 const pNom = opt.getAttribute('data-nom');
                 const match = opt.text.match(/\((\d+) en stock\)/);
-                const stockActuel = match ? parseInt(match[1]) : 0;
-                opt.text = `${pNom} (${stockActuel + qteARendre} en stock)`;
+                const stockActuel = match ? BigInt(match[1]) : 0n;
+                opt.text = `${pNom} (${stockActuel + BigInt(qteARendre)} en stock)`;
                 break;
             }
         }
@@ -103,15 +107,15 @@ function supprimerLigne(idx, montant, pId, qteARendre) {
 
 function actualiserAffichageTotal() {
     // 1. Mise à jour de l'affichage total
-    document.getElementById('totalVente').innerText = totalGeneral.toLocaleString();
+    document.getElementById('totalVente').innerText = Montants.afficher(totalGeneral);
 
     // 2. Mise à jour de l'input caché pour l'envoi vers Spring Boot
-    document.getElementById('inputTotalTotal').value = totalGeneral;
+    document.getElementById('inputTotalTotal').value = Montants.formater(totalGeneral);
 
     // 3. Mise à jour du montant versé (on suggère le total par défaut)
     const verseInput = document.getElementById('montantVerse');
     if (verseInput.dataset.saisieManuelle !== 'true') {
-        verseInput.value = totalGeneral;
+        verseInput.value = Montants.formater(totalGeneral);
     }
 
     calculerReste();
@@ -119,14 +123,17 @@ function actualiserAffichageTotal() {
 
 function calculerReste() {
     const total = totalGeneral;
-    const verse = parseFloat(document.getElementById('montantVerse').value) || 0;
+    const verseInput = document.getElementById('montantVerse');
+    const verse = verseInput.value === '' ? 0n : Montants.lire(verseInput.value);
+    verseInput.setCustomValidity(verse === null || verse < 0n ? 'Saisissez un montant positif ou nul avec au maximum deux décimales.' : '');
+    if (verse === null) return;
     const reste = total - verse;
 
     const resteInput = document.getElementById('resteAPayer');
-    resteInput.value = reste;
+    resteInput.value = Montants.formater(reste);
 
     // Feedback visuel
-    if (reste > 0) {
+    if (reste > 0n) {
         resteInput.classList.add('text-danger', 'fw-bold');
     } else {
         resteInput.classList.remove('text-danger', 'fw-bold');

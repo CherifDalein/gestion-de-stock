@@ -25,7 +25,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -61,9 +60,9 @@ class ReglementAchatTests {
         Categorie categorie = new Categorie(); categorie.setNom("Catégorie"); categorie = categories.save(categorie);
         Fournisseur fournisseur = new Fournisseur(); fournisseur.setNom("Fournisseur test"); fournisseur = fournisseurs.save(fournisseur);
         produit = new Produit(); produit.setNom("Produit test"); produit.setReference("REF-PAIEMENT");
-        produit.setQuantite(0L); produit.setPrixAchat(10000.0); produit.setPrixVente(20000.0);
+        produit.setQuantite(0L); produit.setPrixAchat(new BigDecimal("10000.0")); produit.setPrixVente(new BigDecimal("20000.0"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit = produits.saveAndFlush(produit);
-        Achat nouveau = new Achat(); nouveau.setFournisseur(fournisseur); nouveau.setMontantVerse(50000.0);
+        Achat nouveau = new Achat(); nouveau.setFournisseur(fournisseur); nouveau.setMontantVerse(new BigDecimal("50000.0"));
         nouveau.getLignes().add(ligne(10)); achat = achatService.enregistrerAchat(nouveau);
     }
 
@@ -76,20 +75,20 @@ class ReglementAchatTests {
                 .andExpect(redirectedUrl("/achats/regler/" + achat.getId()))
                 .andExpect(flash().attribute("success", "Versement fournisseur enregistré avec succès."));
         Achat apres = achats.findById(achat.getId()).orElseThrow();
-        assertThat(apres.getMontantVerse()).isEqualTo(100000.0);
+        assertThat(apres.getMontantVerse()).isEqualByComparingTo("100000.0");
         assertThat(apres.getResteAPayer()).isZero();
         assertThat(idsLignes()).isEqualTo(lignesAvant);
         Produit stock = produits.findById(produit.getId()).orElseThrow();
         assertThat(stock.getQuantite()).isEqualTo(2L);
         assertThat(stock.getVersion()).isEqualTo(avant.getVersion());
-        assertThat(stock.getPrixAchat()).isEqualTo(10000.0);
+        assertThat(stock.getPrixAchat()).isEqualByComparingTo("10000.0");
         var reglements = caisse.findByAchatIdOrderByDateMouvementDescIdDesc(achat.getId());
         assertThat(reglements).hasSize(2);
-        assertThat(reglements.getFirst().getMontant()).isEqualTo(-50000.0);
+        assertThat(reglements.getFirst().getMontant()).isEqualByComparingTo("-50000.0");
         assertThat(reglements.getFirst().getMotif()).contains("Règlement Achat #" + achat.getId());
         assertThat(reglements.getFirst().getDateMouvement()).isNotNull();
         assertThat(reglements.getFirst().getUtilisateur().getEmail()).isEqualTo("paiement@example.test");
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(60000.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("60000.0");
         String html = mvc.perform(get("/achats/regler/" + achat.getId())).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(html).contains("Cet achat est entièrement réglé", "Administrateur test")
@@ -101,11 +100,11 @@ class ReglementAchatTests {
     void unVersementPartielAjouteSeulementLaSommePayeeMaintenant() throws Exception {
         vendre(10);
         mvc.perform(versement("20000", "50000").with(csrf())).andExpect(status().is3xxRedirection());
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(70000.0);
-        assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isEqualTo(30000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("70000.0");
+        assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isEqualByComparingTo("30000.0");
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isZero();
         assertThat(caisse.findByAchatIdOrderByDateMouvementDescIdDesc(achat.getId()).getFirst().getMontant())
-                .isEqualTo(-20000.0);
+                .isEqualByComparingTo("-20000.0");
     }
 
     @Test
@@ -114,9 +113,9 @@ class ReglementAchatTests {
         mvc.perform(versement("10000", "50000").with(csrf()))
                 .andExpect(status().isConflict()).andExpect(model().attributeHasErrors("reglementAchat"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Un versement a déjà été enregistré")));
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(60000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("60000.0");
         assertThat(caisse.count()).isEqualTo(2);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(-60000.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-60000.0");
     }
 
     @ParameterizedTest
@@ -178,16 +177,16 @@ class ReglementAchatTests {
     @Test
     void uneDetteAvecAncienVersementNullPeutEtrePayee() {
         achat.setMontantVerse(null); achats.saveAndFlush(achat);
-        assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isEqualTo(100000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isEqualByComparingTo("100000.0");
         achatService.reglerAchat(achat.getId(), new BigDecimal("10000"), BigDecimal.ZERO);
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(10000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("10000.0");
     }
 
     @Test
     void modifierLesLignesNeChangePasLePaiement() throws Exception {
         mvc.perform(modification(12).with(csrf())).andExpect(redirectedUrl("/achats?success=modifie"));
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(12L);
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(50000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("50000.0");
         assertThat(caisse.count()).isEqualTo(1);
         String html = mvc.perform(get("/achats/modifier/" + achat.getId())).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -219,7 +218,7 @@ class ReglementAchatTests {
             invocation.callRealMethod();
             caisse.flush();
             throw new IllegalStateException("Erreur de caisse simulée");
-        }).when(cible).enregistrerSortieAchat(anyDouble(), anyString(), any(Achat.class), any(Utilisateur.class));
+        }).when(cible).enregistrerSortieAchat(any(BigDecimal.class), anyString(), any(Achat.class), any(Utilisateur.class));
         assertThatThrownBy(() -> achatService.reglerAchat(achat.getId(), new BigDecimal("10000"), new BigDecimal("50000")))
                 .hasMessage("Erreur de caisse simulée");
         verifierInitial();
@@ -229,17 +228,19 @@ class ReglementAchatTests {
     void lesPetitsVersementsDecimauxSAdditionnentSansArrondiIntermediaire() throws Exception {
         mvc.perform(versement("0.10", "50000").with(csrf())).andExpect(status().is3xxRedirection());
         mvc.perform(versement("0.20", "50000.10").with(csrf())).andExpect(status().is3xxRedirection());
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(50000.3);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("50000.3");
         assertThat(caisse.findByAchatIdOrderByDateMouvementDescIdDesc(achat.getId()))
-                .extracting(MouvementCaisse::getMontant).containsExactly(-0.2, -0.1, -50000.0);
+                .extracting(MouvementCaisse::getMontant).containsExactly(new BigDecimal("-0.20"), new BigDecimal("-0.10"), new BigDecimal("-50000.00"));
     }
 
     @Test
-    void unPaiementQuiPerdraitSaPrecisionEstRefuseSansEcriture() {
-        achat.setMontantTotal(1.0e15); achats.saveAndFlush(achat);
-        assertThatThrownBy(() -> achatService.reglerAchat(achat.getId(), new BigDecimal("999999999949999.99"),
-                new BigDecimal("50000"))).hasMessageContaining("précision");
-        verifierInitial();
+    void unGrandPaiementConserveDesCentimesQuiEtaientPerdusEnDouble() {
+        achat.setMontantTotal(new BigDecimal("999999999999999.99")); achats.saveAndFlush(achat);
+        achatService.reglerAchat(achat.getId(), new BigDecimal("999999999949999.99"), new BigDecimal("50000"));
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse())
+                .isEqualByComparingTo("999999999999999.99");
+        assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isZero();
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-999999999999999.99");
     }
 
     private MockHttpServletRequestBuilder versement(String montant, String attendu) {
@@ -260,7 +261,7 @@ class ReglementAchatTests {
 
     private DetailAchat ligne(int quantite) {
         DetailAchat ligne = new DetailAchat(); Produit reference = new Produit(); reference.setId(produit.getId());
-        ligne.setProduit(reference); ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(10000.0); return ligne;
+        ligne.setProduit(reference); ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("10000.0")); return ligne;
     }
 
     private List<Long> idsLignes() {
@@ -268,15 +269,15 @@ class ReglementAchatTests {
             var lignes = achats.findById(achat.getId()).orElseThrow().getLignes();
             assertThat(lignes).hasSize(1);
             assertThat(lignes.getFirst().getQuantite()).isEqualTo(10);
-            assertThat(lignes.getFirst().getPrixAchatUnitaire()).isEqualTo(10000.0);
+            assertThat(lignes.getFirst().getPrixAchatUnitaire()).isEqualByComparingTo("10000.0");
             return lignes.stream().map(DetailAchat::getId).toList();
         });
     }
 
     private void verifierInitial() {
-        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualTo(50000.0);
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("50000.0");
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(10L);
         assertThat(caisse.count()).isEqualTo(1);
-        assertThat(caisse.calculerSoldeTotal()).isEqualTo(-50000.0);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-50000.0");
     }
 }

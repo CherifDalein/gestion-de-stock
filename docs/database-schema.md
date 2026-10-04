@@ -1,6 +1,6 @@
 # Schema de Base de Donnees
 
-Ce schema est reconstruit a partir des entites JPA du projet Spring Boot (`3.2.5`) et de la strategie de nommage par defaut en `snake_case`.
+Ce schema est reconstruit a partir des entites JPA du projet Spring Boot (`3.5.16`) et de la strategie de nommage par defaut en `snake_case`.
 
 Base cible : `stock_pro`
 
@@ -127,8 +127,8 @@ erDiagram
         BIGINT version
         VARCHAR nom
         VARCHAR reference
-        DOUBLE prix_achat
-        DOUBLE prix_vente
+        DECIMAL prix_achat
+        DECIMAL prix_vente
         BIGINT quantite
         BIGINT categorie_id FK
         BIGINT fournisseur_id FK
@@ -136,8 +136,8 @@ erDiagram
     ACHAT {
         BIGINT id PK
         DATETIME date_achat
-        DOUBLE montant_total
-        DOUBLE montant_verse
+        DECIMAL montant_total
+        DECIMAL montant_verse
         BIGINT fournisseur_id FK
     }
     DETAIL_ACHAT {
@@ -145,13 +145,13 @@ erDiagram
         BIGINT achat_id FK
         BIGINT produit_id FK
         INT quantite
-        DOUBLE prix_achat_unitaire
+        DECIMAL prix_achat_unitaire
     }
     VENTE {
         BIGINT id PK
         DATETIME date_vente
-        DOUBLE montant_total
-        DOUBLE montant_verse
+        DECIMAL montant_total
+        DECIMAL montant_verse
         BIGINT client_id FK
     }
     DETAIL_VENTE {
@@ -159,12 +159,12 @@ erDiagram
         BIGINT vente_id FK
         BIGINT produit_id FK
         INT quantite
-        DOUBLE prix_unitaire
+        DECIMAL prix_unitaire
     }
     MOUVEMENT_CAISSE {
         BIGINT id PK
         DATETIME date_mouvement
-        DOUBLE montant
+        DECIMAL montant
         VARCHAR type
         VARCHAR motif
         VARCHAR source
@@ -218,3 +218,9 @@ ALTER TABLE mouvement_caisse
 ```
 
 Les anciens mouvements restent conservés avec `achat_id = NULL` ; aucune association n'est déduite de leur texte de motif. Le montant déjà payé des achats existants reste la référence pour leur dette. Leur historique de versements antérieur reste dans le journal général de caisse. Cette migration n'a pas été exécutée sur MySQL pendant les tests.
+
+## Mise à jour d'une base existante : montants décimaux
+
+Les neuf colonnes monétaires sont en `DECIMAL(17,2)` : prix d'achat et de vente des produits, totaux et versements des achats/ventes, prix unitaires des lignes et montant des mouvements de caisse. Les prix des produits sont obligatoires. Les colonnes de versement conservent les anciens `NULL`.
+
+Le script de création ne convertit pas les tables existantes. Avant de démarrer l'application sur une ancienne base, suivre le [guide de migration](montants-et-migration.md), qui décrit l'arrêt des instances, la sauvegarde complète et les scripts avec contrôles et copies des tables. Un `bootRun` déjà lancé avec DevTools et `ddl-auto=update` peut demander cette conversion lors d'un rechargement automatique.

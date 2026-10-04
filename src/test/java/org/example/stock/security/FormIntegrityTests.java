@@ -1,5 +1,6 @@
 package org.example.stock.security;
 
+import java.math.BigDecimal;
 import org.example.stock.enums.Role;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
@@ -65,7 +66,7 @@ class FormIntegrityTests {
         client = new Client(); client.setNom("Client initial");
         client = clients.save(client);
         produit = new Produit(); produit.setNom("Produit initial"); produit.setReference("REF-INITIALE");
-        produit.setQuantite(10L); produit.setPrixAchat(5.0); produit.setPrixVente(20.0);
+        produit.setQuantite(10L); produit.setPrixAchat(new BigDecimal("5.0")); produit.setPrixVente(new BigDecimal("20.0"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur);
         produit = produits.saveAndFlush(produit);
     }
@@ -132,7 +133,7 @@ class FormIntegrityTests {
                 .andExpect(redirectedUrl("/ventes"));
         ventes.flush();
         Vente vente = ventes.findAll().getFirst();
-        assertThat(vente.getMontantTotal()).isEqualTo(40.0);
+        assertThat(vente.getMontantTotal()).isEqualByComparingTo("40.0");
         assertThat(vente.getClient()).isSameAs(client);
         assertThat(vente.getLignes().getFirst().getProduit()).isSameAs(produit);
         assertThat(produit.getQuantite()).isEqualTo(8L);
@@ -148,7 +149,7 @@ class FormIntegrityTests {
                 .andExpect(redirectedUrl("/achats"));
         achats.flush();
         Achat achat = achats.findAll().getFirst();
-        assertThat(achat.getMontantTotal()).isEqualTo(21.0);
+        assertThat(achat.getMontantTotal()).isEqualByComparingTo("21.0");
         assertThat(achat.getFournisseur()).isSameAs(fournisseur);
         assertThat(achat.getLignes().getFirst().getProduit()).isSameAs(produit);
         assertThat(produit.getQuantite()).isEqualTo(13L);
@@ -261,9 +262,9 @@ class FormIntegrityTests {
     @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
     void leCaissierConsulteLesFacturesDeVenteEtLesRelevesClient() throws Exception {
         Vente vente = new Vente(); vente.setClient(client); vente.setDateVente(java.time.LocalDateTime.now());
-        vente.setMontantTotal(20.0); vente.setMontantVerse(20.0);
+        vente.setMontantTotal(new BigDecimal("20.0")); vente.setMontantVerse(new BigDecimal("20.0"));
         DetailVente ligne = new DetailVente(); ligne.setProduit(produit); ligne.setQuantite(1);
-        ligne.setPrixUnitaire(20.0); ligne.setVente(vente); vente.getLignes().add(ligne);
+        ligne.setPrixUnitaire(new BigDecimal("20.0")); ligne.setVente(vente); vente.getLignes().add(ligne);
         vente = ventes.saveAndFlush(vente);
         mvc.perform(get("/factures/vente/" + vente.getId())).andExpect(status().isOk());
         mvc.perform(get("/factures/client/" + client.getId())).andExpect(status().isOk());

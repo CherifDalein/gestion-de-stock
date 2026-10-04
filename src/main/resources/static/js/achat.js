@@ -7,17 +7,23 @@ function ajouterLigne() {
     const prix = document.getElementById('inputPrix').value;
     const qte = document.getElementById('inputQtite').value;
 
-    const prixNombre = Number(prix);
+    const prixCentimes = Montants.lire(prix);
     const quantite = Number(qte);
     if (!pId || prix.trim() === '' || qte.trim() === '' ||
-        !Number.isFinite(prixNombre) || prixNombre < 0 ||
-        !Number.isSafeInteger(quantite) || quantite <= 0) {
+        prixCentimes === null || prixCentimes < 0n ||
+        !Number.isSafeInteger(quantite) || quantite <= 0 || quantite > 2147483647) {
         alert("Veuillez remplir correctement tous les champs.");
         return;
     }
 
     const tbody = document.querySelector('#tableLignes tbody');
-    const totalLigne = prixNombre * quantite;
+    const totalLigne = prixCentimes * BigInt(quantite);
+    const totalActuel = [...document.querySelectorAll('.ligne-total')]
+        .reduce((total, td) => total + BigInt(td.dataset.centimes), 0n);
+    if (totalActuel + totalLigne > Montants.maximum) {
+        alert("Le total dépasse le montant maximal autorisé.");
+        return;
+    }
     const row = document.createElement('tr');
     const nomCellule = row.insertCell();
     const nom = document.createElement('span');
@@ -26,7 +32,7 @@ function ajouterLigne() {
 
     const champs = [
         {cellule: nomCellule, propriete: 'produit.id', valeur: pId, type: 'hidden'},
-        {cellule: row.insertCell(), propriete: 'prixAchatUnitaire', valeur: prixNombre, type: 'number'},
+        {cellule: row.insertCell(), propriete: 'prixAchatUnitaire', valeur: Montants.formater(prixCentimes), type: 'number'},
         {cellule: row.insertCell(), propriete: 'quantite', valeur: quantite, type: 'number'}
     ];
     champs.forEach(champ => {
@@ -42,8 +48,8 @@ function ajouterLigne() {
 
     const totalCellule = row.insertCell();
     totalCellule.className = 'ligne-total fw-bold';
-    totalCellule.dataset.montant = totalLigne;
-    totalCellule.textContent = totalLigne.toFixed(2);
+    totalCellule.dataset.centimes = totalLigne.toString();
+    totalCellule.textContent = Montants.formater(totalLigne);
     const actionCellule = row.insertCell();
     actionCellule.className = 'text-center';
     const button = document.createElement('button');
@@ -83,32 +89,35 @@ function reindexerLignes() {
 }
 
 function calculerTotal() {
-    let total = 0;
+    let total = 0n;
     document.querySelectorAll('.ligne-total').forEach(td => {
-        total += Number(td.dataset.montant);
+        total += BigInt(td.dataset.centimes);
     });
 
-    document.getElementById('totalGeneral').value = total.toFixed(2);
+    document.getElementById('totalGeneral').value = Montants.formater(total);
 
     // Suggestion : Par défaut on met le montant versé égal au total
     const vInput = document.getElementById('montantVerse');
     if (vInput.dataset.saisieManuelle !== 'true') {
-        vInput.value = total.toFixed(2);
+        vInput.value = Montants.formater(total);
     }
 
     calculerReste();
 }
 
 function calculerReste() {
-    const total = parseFloat(document.getElementById('totalGeneral').value) || 0;
-    const verse = parseFloat(document.getElementById('montantVerse').value) || 0;
+    const total = Montants.lire(document.getElementById('totalGeneral').value) ?? 0n;
+    const verseInput = document.getElementById('montantVerse');
+    const verse = verseInput.value === '' ? 0n : Montants.lire(verseInput.value);
+    verseInput.setCustomValidity(verse === null || verse < 0n ? 'Saisissez un montant positif ou nul avec au maximum deux décimales.' : '');
+    if (verse === null) return;
     const reste = total - verse;
 
     const resteInput = document.getElementById('resteAPayer');
-    resteInput.value = reste.toFixed(2);
+    resteInput.value = Montants.formater(reste);
 
     // Style visuel si dette
-    if (reste > 0) {
+    if (reste > 0n) {
         resteInput.classList.add('text-danger');
     } else {
         resteInput.classList.remove('text-danger');

@@ -9,8 +9,8 @@
                         <div class="small text-white-50 fw-bold text-uppercase">Dette totale (Période sélectionnée)</div>
 
                         <h2 class="mt-2 fw-bold"
-                            th:with="totalReste=${not #lists.isEmpty(ventes) ? #aggregates.sum(ventes.![montantTotal - montantVerse]) : 0}"
-                            th:text="${#numbers.formatDecimal(totalReste, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                            th:with="totalReste=${not #lists.isEmpty(ventes) ? #aggregates.sum(ventes.![resteAPayer]) : 0}"
+                            th:text="${#numbers.formatDecimal(totalReste, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                             0 GNF
                         </h2>
                     </div>
@@ -68,9 +68,9 @@
                         <tr th:each="v : ${ventes}">
                             <td class="fw-bold" th:text="'#' + ${v.id}"></td>
                             <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy')}"></td>
-                            <td class="text-end" th:text="${#numbers.formatDecimal(v.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal - v.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(v.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-center">
                                 <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-sm btn-primary">
                                     <i class="fas fa-print"></i>

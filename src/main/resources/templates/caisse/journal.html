@@ -12,7 +12,7 @@
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde Actuel en Caisse</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(soldeTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                             th:text="${#numbers.formatDecimal(soldeTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
@@ -21,7 +21,7 @@
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Solde d'Ouverture</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(soldeOuverture, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                             th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
@@ -30,7 +30,7 @@
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Caisse du Jour</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(bilanJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                             th:text="${#numbers.formatDecimal(bilanJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
@@ -42,7 +42,7 @@
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Entrees du Jour</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(entreesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                             th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                     <div class="card-body">
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Sorties du Jour</div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(sortiesJour, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">0 GNF</div>
+                             th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
                     </div>
                 </div>
             </div>
@@ -94,7 +94,7 @@
                                 </span>
                             </td>
                             <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
-                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(T(java.lang.Math).abs(m.montant), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(mouvementsDuJour)}">
@@ -143,7 +143,7 @@
                                 </span>
                             </td>
                             <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
-                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(T(java.lang.Math).abs(m.montant), 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}">
+                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(mouvements)}">

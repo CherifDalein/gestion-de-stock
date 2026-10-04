@@ -117,8 +117,8 @@
                     <tr th:each="ligne : ${achat.lignes}">
                         <td th:text="${ligne.produit.nom}"></td>
                         <td class="text-center" th:text="${ligne.quantite}"></td>
-                        <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
-                        <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire * ligne.quantite, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                     </tr>
                     </tbody>
                 </table>
@@ -130,15 +130,15 @@
                         <tbody>
                         <tr>
                             <td><strong>Total global</strong></td>
-                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(achat.montantTotal, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(achat.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         <tr>
                             <td><strong>Montant verse</strong></td>
-                            <td class="text-end text-success" th:text="${#numbers.formatDecimal(achat.montantVerse, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-success" th:text="${#numbers.formatDecimal((achat.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         <tr th:if="${achat.resteAPayer > 0}">
                             <td class="text-danger"><strong>Reste a payer</strong></td>
-                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(achat.resteAPayer, 0, 'WHITESPACE', 0, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(achat.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         </tr>
                         </tbody>
                     </table>

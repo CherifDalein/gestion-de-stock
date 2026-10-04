@@ -3,11 +3,13 @@ package org.example.stock.service;
 import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Montants;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,32 +20,32 @@ public class CaisseService {
     @Autowired
     private MouvementCaisseRepository mouvementRepo;
 
-    public Double getSoldeActuel() {
+    public BigDecimal getSoldeActuel() {
         return normaliser(mouvementRepo.calculerSoldeTotal());
     }
 
-    public Double getSoldeOuverture(LocalDate date) {
+    public BigDecimal getSoldeOuverture(LocalDate date) {
         return normaliser(mouvementRepo.calculerSoldeAvant(date.atStartOfDay()));
     }
 
-    public Double getEntreesDuJour(LocalDate date) {
+    public BigDecimal getEntreesDuJour(LocalDate date) {
         return normaliser(mouvementRepo.calculerEntreesDepuis(date.atStartOfDay()));
     }
 
-    public Double getSortiesDuJour(LocalDate date) {
-        return Math.abs(normaliser(mouvementRepo.calculerSortiesDepuis(date.atStartOfDay())));
+    public BigDecimal getSortiesDuJour(LocalDate date) {
+        return normaliser(mouvementRepo.calculerSortiesDepuis(date.atStartOfDay())).abs();
     }
 
-    public Double getNetDuJour(LocalDate date) {
+    public BigDecimal getNetDuJour(LocalDate date) {
         return normaliser(mouvementRepo.calculerFluxTotalDepuis(date.atStartOfDay()));
     }
 
-    public Double getSoldeCloture(LocalDate date) {
-        return getSoldeOuverture(date) + getNetDuJour(date);
+    public BigDecimal getSoldeCloture(LocalDate date) {
+        return getSoldeOuverture(date).add(getNetDuJour(date));
     }
 
-    public Double getCaisseDuJour(LocalDate date) {
-        return getEntreesDuJour(date) - getSortiesDuJour(date);
+    public BigDecimal getCaisseDuJour(LocalDate date) {
+        return getEntreesDuJour(date).subtract(getSortiesDuJour(date));
     }
 
     public List<MouvementCaisse> getMouvementsDuJour(LocalDate date) {
@@ -51,17 +53,18 @@ public class CaisseService {
     }
 
     @Transactional
-    public void enregistrerEntree(Double montant, String motif, String source, Utilisateur utilisateur) {
-        if (montant == null || montant == 0) {
+    public void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
+        if (montant == null || montant.signum() == 0) {
             return;
         }
-        if (montant < 0) {
+        if (montant.signum() < 0) {
             throw new IllegalArgumentException("Le montant d'une entree de caisse doit etre positif.");
         }
 
+        montant = Montants.valider(montant, "Le montant de caisse");
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setDateMouvement(LocalDateTime.now());
-        mouvement.setMontant(Math.abs(montant));
+        mouvement.setMontant(montant.abs());
         mouvement.setType("ENTREE");
         mouvement.setMotif(motif);
         mouvement.setSource(source);
@@ -71,12 +74,12 @@ public class CaisseService {
     }
 
     @Transactional
-    public void enregistrerSortie(Double montant, String motif, String source, Utilisateur utilisateur) {
+    public void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
         enregistrerSortie(montant, motif, source, utilisateur, null);
     }
 
     @Transactional
-    public void enregistrerSortieAchat(Double montant, String motif, Achat achat, Utilisateur utilisateur) {
+    public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur) {
         enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat);
     }
 
@@ -84,19 +87,20 @@ public class CaisseService {
         return mouvementRepo.findByAchatIdOrderByDateMouvementDescIdDesc(achatId);
     }
 
-    private void enregistrerSortie(Double montant, String motif, String source, Utilisateur utilisateur, Achat achat) {
-        if (montant == null || montant == 0) {
+    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat) {
+        if (montant == null || montant.signum() == 0) {
             return;
         }
 
+        montant = Montants.valider(montant, "Le montant de caisse");
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setDateMouvement(LocalDateTime.now());
 
-        if (montant > 0) {
-            mouvement.setMontant(-Math.abs(montant));
+        if (montant.signum() > 0) {
+            mouvement.setMontant(montant.abs().negate());
             mouvement.setType("SORTIE");
         } else {
-            mouvement.setMontant(Math.abs(montant));
+            mouvement.setMontant(montant.abs());
             mouvement.setType("CORRECTION_ENTREE");
         }
 
@@ -108,7 +112,7 @@ public class CaisseService {
         mouvementRepo.save(mouvement);
     }
 
-    private Double normaliser(Double valeur) {
-        return valeur != null ? valeur : 0.0;
+    private BigDecimal normaliser(BigDecimal valeur) {
+        return Montants.ouZero(valeur);
     }
 }
