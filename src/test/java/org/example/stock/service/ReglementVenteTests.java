@@ -165,6 +165,36 @@ class ReglementVenteTests {
         verifierInitial();
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"fr-FR", "en-US", "de-DE"})
+    void leFormulaireRenduPeutEtreSoumisDansLaLangueDuNavigateur(String langue) throws Exception {
+        var page = mvc.perform(get("/ventes/regler/" + vente.getId())
+                .header("Accept-Language", langue)).andExpect(status().isOk()).andReturn();
+        String html = page.getResponse().getContentAsString();
+        var champ = java.util.regex.Pattern.compile("<input\\b(?=[^>]*name=\"montantVerseAttendu\")[^>]*value=\"([^\"]*)\"")
+                .matcher(html);
+        assertThat(champ.find()).isTrue();
+        String attendu = org.springframework.web.util.HtmlUtils.htmlUnescape(champ.group(1));
+        assertThat(attendu).isEqualTo("50000.00");
+        var csrf = java.util.regex.Pattern.compile("<input\\b(?=[^>]*name=\"_csrf\")[^>]*value=\"([^\"]*)\"").matcher(html);
+        assertThat(csrf.find()).isTrue();
+        var envoi = mvc.perform(versement("30000", attendu).header("Accept-Language", langue)
+                .header("User-Agent", "Navigateur de test")
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .contentType("application/x-www-form-urlencoded")
+                .session((org.springframework.mock.web.MockHttpSession) page.getRequest().getSession(false))
+                .param("_csrf", org.springframework.web.util.HtmlUtils.htmlUnescape(csrf.group(1))));
+        assertThat(envoi.andReturn().getResponse().getStatus())
+                .as("Erreur résolue : %s", envoi.andReturn().getResolvedException()).isEqualTo(302);
+        envoi.andExpect(redirectedUrl("/ventes/regler/" + vente.getId()));
+        assertThat(ventes.findById(vente.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("80000");
+        mvc.perform(versement("30000", attendu).header("Accept-Language", langue)
+                .session((org.springframework.mock.web.MockHttpSession) page.getRequest().getSession(false))
+                .param("_csrf", org.springframework.web.util.HtmlUtils.htmlUnescape(csrf.group(1))))
+                .andExpect(status().isConflict());
+        assertThat(caisse.count()).isEqualTo(2);
+    }
+
     @Test
     void unJetonInvalideOuUneSessionAnonymeNePeutPasEncaisser() throws Exception {
         mvc.perform(versement("10000", "50000").with(csrf().useInvalidToken())).andExpect(status().isForbidden());

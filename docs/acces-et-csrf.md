@@ -39,6 +39,8 @@ Le caissier dispose d'un espace de vente à l'accueil. Les indicateurs de caisse
 
 Les historiques de ventes et relevés clients sont partagés à l'échelle du magasin. Une restriction aux seules ventes d'un vendeur n'est pas mise en place dans ce modèle.
 
+Les en-têtes HTTP du navigateur ne sont pas liés aux objets de formulaire. Depuis la mise à jour Spring 6.2, leur prise en compte automatique pouvait provoquer un refus 400 par la liste stricte des champs autorisés. Le filtrage des en-têtes dans le binder évite ce refus ; les paramètres imprévus restent rejetés et CSRF reste actif.
+
 Les routes non explicitement autorisées sont refusées par défaut. Les pages de connexion, d'erreur et les ressources statiques restent accessibles pour le fonctionnement de l'interface. Tous les formulaires POST conservent leur protection CSRF.
 
 ## Vérification

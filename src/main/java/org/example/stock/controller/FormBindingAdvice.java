@@ -10,6 +10,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.ExtendedServletRequestDataBinder;
 
 import java.beans.PropertyEditorSupport;
 import java.util.function.Function;
@@ -23,6 +24,11 @@ import jakarta.servlet.http.HttpServletRequest;
 public class FormBindingAdvice {
     @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
+        // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
+        // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
+        if (binder instanceof ExtendedServletRequestDataBinder servletBinder) {
+            servletBinder.addHeaderPredicate(nom -> false);
+        }
         String[] champs = switch (binder.getObjectName()) {
             case "achat" -> new String[]{"fournisseur", "fournisseur.id", "montantVerse",
                     "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire"};
