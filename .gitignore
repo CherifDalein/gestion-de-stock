@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Sauvegardes locales : données et empreintes des mots de passe des comptes.
+/.local-backups/

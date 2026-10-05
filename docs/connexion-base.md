@@ -36,3 +36,9 @@ La vérification locale du 4 octobre 2026 a identifié MariaDB 10.4.28 avec Mari
 Après la mise à jour de Spring Boot, un démarrage avec validation du schéma et connexions en lecture seule a confirmé la compatibilité avec MariaDB 10.4.28 et Connector/J 3.5.8. La page de connexion répond HTTP 200 avec un jeton CSRF. Aucun changement de données ni de schéma n'a été demandé pour cette vérification.
 
 Références : [MariaDB Connector/J, URL et pilote](https://mariadb.com/docs/connectors/mariadb-connector-j/about-mariadb-connector-j), [versions gérées par Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html).
+
+## Maintenance locale du 5 octobre 2026
+
+L'anomalie `mysql.proc` (erreur 1558, tables système 10.1.8 sur serveur 10.4.28) a été corrigée avec le binaire XAMPP `mysql_upgrade`, limité aux tables système. Une sauvegarde SQL de `stock_pro` et une copie à froid de tout le serveur ont précédé la réparation. Les dix empreintes de tables et les deux comptes applicatifs restent identiques ; la restauration SQL dans une base isolée et le parcours de connexion web ont réussi après redémarrage. Le serveur reste en version 10.4.28.
+
+Voir [sauvegardes et procédure de maintenance](sauvegardes-et-mariadb.md) pour le script d'export privé, les limites de l'export et les contrôles effectués.
