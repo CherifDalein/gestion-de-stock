@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "inscription"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
         // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
@@ -35,6 +35,7 @@ public class FormBindingAdvice {
             case "vente" -> new String[]{"client", "client.id", "montantVerse",
                     "lignes[*].produit.id", "lignes[*].quantite"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu"};
+            case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference", "prixAchat", "prixVente", "quantite",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
             case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};

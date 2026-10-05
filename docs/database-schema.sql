@@ -32,11 +32,12 @@ CREATE TABLE IF NOT EXISTS fournisseur (
 CREATE TABLE IF NOT EXISTS utilisateur (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nom VARCHAR(255),
-    email VARCHAR(255),
+    email VARCHAR(255) NOT NULL,
     mot_de_passe VARCHAR(255),
     date_inscription DATE,
-    role VARCHAR(255),
-    PRIMARY KEY (id)
+    role ENUM('ADMIN', 'CAISSIER'),
+    PRIMARY KEY (id),
+    CONSTRAINT uk_utilisateur_email UNIQUE (email)
 );
 
 CREATE TABLE IF NOT EXISTS produit (

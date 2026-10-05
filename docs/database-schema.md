@@ -27,7 +27,7 @@ Base cible : `stock_pro`
 ### `utilisateur`
 - `id` PK
 - `nom`
-- `email`
+- `email` VARCHAR(255) NOT NULL UNIQUE : enregistré sans espaces autour et en minuscules
 - `mot_de_passe`
 - `date_inscription`
 - `role` valeurs attendues : `CAISSIER`, `ADMIN`
@@ -119,7 +119,7 @@ erDiagram
     UTILISATEUR {
         BIGINT id PK
         VARCHAR nom
-        VARCHAR email
+        VARCHAR email UK
         VARCHAR mot_de_passe
         DATE date_inscription
         VARCHAR role
@@ -242,3 +242,17 @@ ALTER TABLE mouvement_caisse
 ```
 
 Les anciennes lignes conservent `vente_id = NULL` ; aucun rattachement n'est déduit du texte des motifs. Le cumul `vente.montant_verse` reste la référence pour le reste à payer, avec les anciens `NULL` interprétés comme zéro. Le nouveau lien n'autorise pas la suppression d'une vente ayant des mouvements de caisse ; aucun parcours de suppression de vente n'est ajouté. Ne pas réexécuter le script de création complet pour migrer une base existante.
+
+## Mise à jour d'une base existante : comptes utilisateurs
+
+La contrainte `uk_utilisateur_email` empêche deux créations simultanées avec le même email. Les nouveaux comptes et les connexions utilisent la même normalisation Java : `trim()` puis `toLowerCase(Locale.ROOT)`. Un callback JPA applique également cette règle aux écritures d'utilisateurs. Les adresses saisies acceptent au maximum 254 caractères ; la colonne reste `VARCHAR(255)` pour éviter un rétrécissement inutile.
+
+**Arrêter les instances de l'application et DevTools avant de compiler ou migrer une ancienne base**, afin d'éviter qu'un `ddl-auto=update` n'ajoute la contrainte avant le contrôle des données. Voir le [guide des comptes et de migration](comptes-et-migration.md).
+
+```sh
+./gradlew accountEmailsCheck
+# Après sauvegarde complète et vérification des comptes :
+./gradlew accountEmailsMigrate
+```
+
+Ces commandes JDBC ne démarrent pas Spring ni le serveur web. Le contrôle est en lecture seule. La migration refuse les adresses invalides et les doublons, y compris les collisions dues à la collation SQL, avant toute écriture. Elle conserve une copie des lignes dans `accounts_backup_20261005_utilisateur`, normalise uniquement les emails puis ajoute la contrainte unique et NOT NULL. Les identifiants, noms, rôles, empreintes et liens de caisse restent identiques. Une copie existante n'est jamais écrasée ; une base conforme est laissée intacte.

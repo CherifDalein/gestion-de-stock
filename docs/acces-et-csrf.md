@@ -14,9 +14,9 @@ Pour les futurs appels JavaScript `fetch` ou clients HTTP, envoyer le jeton asso
 2. Ouvrir le menu utilisateur, puis **Créer un compte caissier**.
 3. Remplir le nom, l'email et le mot de passe du nouveau compte.
 
-La route `/register` est réservée aux administrateurs, en GET comme en POST. Le rôle du nouveau compte est toujours CAISSIER ; soumettre un champ `role=ADMIN` ne le modifie pas. Le compte créé peut se connecter, et l'administrateur reste dans sa session pour continuer son travail.
+La route `/register` est réservée aux administrateurs, en GET comme en POST. Le rôle du nouveau compte est toujours CAISSIER ; soumettre un champ `role=ADMIN` est refusé, sans créer de compte. Le compte créé peut se connecter, et l'administrateur reste dans sa session pour continuer son travail.
 
-Les rôles et mots de passe des comptes existants ne sont pas modifiés par ce lot. Cette procédure exige donc un administrateur existant ; la création sécurisée du premier administrateur d'une base neuve reste à prévoir. Aucune procédure publique attribuant automatiquement le rôle ADMIN n'est conservée.
+Les rôles et mots de passe des comptes existants ne sont pas modifiés par la migration des emails. Cette procédure exige un administrateur existant ; une commande locale protégée permet de créer le premier ADMIN uniquement sur une base vide. Voir [validation des comptes, migration et premier administrateur](comptes-et-migration.md). Aucune route publique ne crée un ADMIN.
 
 ## Droits ADMIN / CAISSIER
 

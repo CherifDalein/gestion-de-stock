@@ -154,6 +154,10 @@ class SecurityFlowTests {
         mvc.perform(post("/register").with(csrf()).param("nom", "Caissier")
                         .param("email", "caissier@example.test").param("password", "MotDePasseTest42")
                         .param("role", "ADMIN"))
+                .andExpect(status().isBadRequest());
+        assertThat(utilisateurRepository.findByEmail("caissier@example.test")).isEmpty();
+        mvc.perform(post("/register").with(csrf()).param("nom", "Caissier")
+                        .param("email", "caissier@example.test").param("password", "MotDePasseTest42"))
                 .andExpect(redirectedUrl("/register?created"));
         Utilisateur compte = utilisateurRepository.findByEmail("caissier@example.test").orElseThrow();
         assertThat(compte.getRole()).isEqualTo(Role.CAISSIER);

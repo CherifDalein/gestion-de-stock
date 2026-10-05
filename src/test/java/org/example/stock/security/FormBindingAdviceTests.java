@@ -31,7 +31,7 @@ class FormBindingAdviceTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente"})
+    @ValueSource(strings = {"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "inscription"})
     void lesEntetesNeSontPasDesChampsDeFormulaire(String nom) {
         Object cible = switch (nom) {
             case "achat" -> new Achat();
@@ -41,6 +41,7 @@ class FormBindingAdviceTests {
             case "fournisseur" -> new Fournisseur();
             case "categorie", "nouvelleCategorie" -> new Categorie();
             case "reglementAchat" -> new org.example.stock.form.ReglementAchatForm();
+            case "inscription" -> new org.example.stock.form.InscriptionForm();
             default -> new ReglementVenteForm();
         };
         MockHttpServletRequest requete = new MockHttpServletRequest("POST", "/formulaire-test");

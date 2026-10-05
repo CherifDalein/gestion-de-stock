@@ -21,20 +21,23 @@
                                 <div th:if="${param.created}" class="alert alert-success" role="status">
                                     Le compte caissier a été créé. Il peut maintenant se connecter.
                                 </div>
-                                <form th:action="@{/register}" method="post">
+                                <form th:action="@{/register}" th:object="${inscription}" method="post">
+                                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                                        <ul class="mb-0"><li th:each="erreur : ${#fields.errors('*')}" th:text="${erreur}"></li></ul>
+                                    </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputNom" type="text" name="nom" placeholder="Votre nom" required>
+                                        <input class="form-control" id="inputNom" type="text" th:field="*{nom}" maxlength="100" autocomplete="name" placeholder="Votre nom" required>
                                         <label for="inputNom">Nom complet</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputEmail" type="email" name="email" placeholder="Votre email" required>
+                                        <input class="form-control" id="inputEmail" type="email" th:field="*{email}" maxlength="254" autocomplete="username" placeholder="Votre email" required>
                                         <label for="inputEmail">Email</label>
                                     </div>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Mot de passe" required>
+                                        <input class="form-control" id="inputPassword" type="password" name="password" autocomplete="new-password" placeholder="Mot de passe" required>
                                         <label for="inputPassword">Mot de passe</label>
                                     </div>
-                                    <p class="small text-muted">Maximum 72 octets : les accents et les emojis comptent pour plusieurs octets.</p>
+                                    <p class="small text-muted">Au moins 15 caractères et au maximum 72 octets en UTF-8. Les accents et les emojis comptent pour plusieurs octets. Vous pouvez utiliser une phrase de passe.</p>
 
                                     <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
                                     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>

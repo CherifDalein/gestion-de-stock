@@ -33,6 +33,7 @@ node --test src/test/js/montants.test.cjs
 ## Documentation
 
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
+- [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
 - [Schéma et mises à jour de la base](docs/database-schema.md)
 - [Montants exacts et migration DECIMAL](docs/montants-et-migration.md)

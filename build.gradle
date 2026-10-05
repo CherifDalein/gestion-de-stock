@@ -52,3 +52,45 @@ tasks.named('test') {
 jar {
     enabled = false
 }
+
+// Outils JDBC séparés de l'application web : aucun démarrage Spring ni DDL Hibernate.
+sourceSets {
+    migration {
+        java.srcDir 'src/test/migration'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    migrationImplementation.extendsFrom implementation
+    migrationRuntimeOnly.extendsFrom runtimeOnly
+}
+['accountEmailsCheck': '--check', 'accountEmailsMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = "Vérifie ou migre les emails utilisateurs sans démarrer le serveur web"
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.AccountEmailMigration'
+        args mode
+    }
+}
+
+// Les scénarios de migration utilisent H2 dans la suite de tests habituelle.
+dependencies {
+    testImplementation sourceSets.migration.output
+}
+
+tasks.register('initialAdmin', JavaExec) {
+    group = 'database'
+    description = 'Crée le premier administrateur uniquement sur une base locale sans compte'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.InitialAdmin'
+    args '--create-if-empty'
+}
+
+tasks.register('accountEmailsMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration dans des bases MariaDB temporaires locales'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.AccountEmailsMariaDbTest'
+}
