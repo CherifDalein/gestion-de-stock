@@ -12,7 +12,7 @@ function ajouterLigne() {
     if (!pId || prix.trim() === '' || qte.trim() === '' ||
         prixCentimes === null || prixCentimes < 0n ||
         !Number.isSafeInteger(quantite) || quantite <= 0 || quantite > 2147483647) {
-        alert("Veuillez remplir correctement tous les champs.");
+        afficherMessageProduit('Choisissez un produit, un prix positif ou nul et une quantité entière positive.');
         return;
     }
 
@@ -21,7 +21,7 @@ function ajouterLigne() {
     const totalActuel = [...document.querySelectorAll('.ligne-total')]
         .reduce((total, td) => total + BigInt(td.dataset.centimes), 0n);
     if (totalActuel + totalLigne > Montants.maximum) {
-        alert("Le total dépasse le montant maximal autorisé.");
+        afficherMessageProduit('Le total dépasse le montant maximal autorisé.');
         return;
     }
     const row = document.createElement('tr');
@@ -43,6 +43,9 @@ function ajouterLigne() {
         input.readOnly = true;
         input.step = champ.propriete === 'prixAchatUnitaire' ? '0.01' : '1';
         input.className = 'form-control form-control-sm';
+        if (champ.type === 'number') {
+            input.setAttribute('aria-label', `${champ.propriete === 'quantite' ? 'Quantité de' : 'Prix unitaire de'} ${pNom}`);
+        }
         champ.cellule.appendChild(input);
     });
 
@@ -55,13 +58,12 @@ function ajouterLigne() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-outline-danger btn-sm';
-    button.setAttribute('aria-label', 'Supprimer la ligne');
-    const icone = document.createElement('i');
-    icone.className = 'fas fa-trash';
-    button.appendChild(icone);
+    button.textContent = 'Retirer';
+    button.setAttribute('aria-label', `Retirer ${pNom} de l’achat`);
     button.addEventListener('click', () => supprimerLigne(button));
     actionCellule.appendChild(button);
     tbody.appendChild(row);
+    afficherMessageProduit();
     index++;
     calculerTotal();
 
@@ -95,6 +97,8 @@ function calculerTotal() {
     });
 
     document.getElementById('totalGeneral').value = Montants.formater(total);
+    const affichage = document.getElementById('totalAchatAffiche');
+    if (affichage) affichage.textContent = Montants.afficher(total);
 
     // Suggestion : Par défaut on met le montant versé égal au total
     const vInput = document.getElementById('montantVerse');
@@ -102,7 +106,56 @@ function calculerTotal() {
         vInput.value = Montants.formater(total);
     }
 
+    synchroniserPanier();
     calculerReste();
+}
+
+function synchroniserPanier() {
+    const nombre = document.querySelectorAll('#tableLignes tbody tr').length;
+    const vide = document.getElementById('achatVide');
+    const table = document.getElementById('achatTable');
+    const compteur = document.getElementById('achatCompteur');
+    if (vide) vide.hidden = nombre > 0;
+    if (table) table.hidden = nombre === 0;
+    if (compteur) compteur.textContent = `${nombre} ligne${nombre > 1 ? 's' : ''}`;
+}
+
+function afficherMessageProduit(message = '') {
+    const feedback = document.getElementById('produitFeedback');
+    if (feedback) {
+        feedback.textContent = message;
+        feedback.hidden = message === '';
+    } else if (message) {
+        alert(message);
+    }
+}
+
+function actualiserStatutReglement(total, verse) {
+    const statut = document.getElementById('reglementStatut');
+    if (!statut) return;
+    let etat;
+    let message;
+    if (document.querySelectorAll('#tableLignes tbody tr').length === 0) {
+        etat = 'vide';
+        message = 'Ajoutez des produits pour calculer le règlement.';
+    } else if (verse === null || verse < 0n) {
+        etat = 'invalide';
+        message = 'Saisissez un montant versé positif ou nul avec au maximum deux décimales.';
+    } else if (verse > total) {
+        etat = 'depassement';
+        message = 'Le montant versé dépasse le total.';
+    } else if (verse === 0n && total > 0n) {
+        etat = 'credit';
+        message = 'Paiement à crédit';
+    } else if (verse < total) {
+        etat = 'partiel';
+        message = 'Paiement partiel';
+    } else {
+        etat = 'complet';
+        message = 'Paiement intégral';
+    }
+    statut.dataset.etat = etat;
+    statut.textContent = message;
 }
 
 function calculerReste() {
@@ -110,7 +163,11 @@ function calculerReste() {
     const verseInput = document.getElementById('montantVerse');
     const verse = verseInput.value === '' ? 0n : Montants.lire(verseInput.value);
     verseInput.setCustomValidity(verse === null || verse < 0n ? 'Saisissez un montant positif ou nul avec au maximum deux décimales.' : '');
-    if (verse === null) return;
+    actualiserStatutReglement(total, verse);
+    if (verse === null) {
+        document.getElementById('resteAPayer').value = '';
+        return;
+    }
     const reste = total - verse;
 
     const resteInput = document.getElementById('resteAPayer');
@@ -142,14 +199,19 @@ document.addEventListener('DOMContentLoaded', function() {
             verseInput.dataset.saisieManuelle = 'true';
             calculerReste();
         });
+        calculerTotal();
     }
+    ['selectProduit', 'inputPrix', 'inputQtite'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => afficherMessageProduit());
+    });
 });
 
 document.addEventListener('submit', function(event) {
     if (event.target.id !== 'achatForm') return;
     if (document.querySelectorAll('#tableLignes tbody tr').length === 0) {
         event.preventDefault();
-        alert("L'achat doit contenir au moins un produit.");
+        afficherMessageProduit('Ajoutez au moins un produit avant de valider l’achat.');
+        document.getElementById('selectProduit')?.focus();
         return;
     }
     reindexerLignes();

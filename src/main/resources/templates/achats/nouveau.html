@@ -1,114 +1,137 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4"><i class="fas fa-truck-loading"></i> Nouvel Approvisionnement</h1>
-        <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/achats}" class="btn btn-success">
-                <i class="fas fa-truck"></i> Liste des achats
+    <div class="container-fluid stock-operation">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Achats</p>
+                <h1>Nouvel achat</h1>
+                <p class="app-page-subtitle">Ajoutez les produits à recevoir, puis préparez le règlement du fournisseur.</p>
+            </div>
+            <a th:href="@{/achats}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des achats
             </a>
-        </div>
+        </header>
 
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <a th:if="${creationConflit}" th:href="@{/achats/nouveau}" class="btn btn-primary mb-3">Ouvrir un nouvel achat</a>
 
-        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm">
+        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm" class="operation-layout">
             <input type="hidden" name="jetonCreation" th:value="${jetonCreation}">
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card shadow-sm mb-4 border-left-primary">
-                        <div class="card-header bg-primary text-white fw-bold">
-                            <i class="fas fa-money-bill-wave me-1"></i> Règlement Fournisseur
+
+            <div class="operation-workspace">
+                <section class="operation-panel" aria-labelledby="fournisseurTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="fournisseurTitre">Fournisseur</h2>
+                            <p>Choisissez le fournisseur de cet approvisionnement.</p>
                         </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Fournisseur</label>
-                                <select th:field="*{fournisseur.id}" class="form-select" required>
-                                    <option value="">-- Sélectionner le fournisseur --</option>
-                                    <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
-                                </select>
-                            </div>
+                    </div>
+                    <div class="operation-field">
+                        <label for="fournisseur" class="form-label">Fournisseur de l’achat</label>
+                        <select th:field="*{fournisseur.id}" id="fournisseur" class="form-select" required>
+                            <option value="">Choisir un fournisseur…</option>
+                            <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
+                        </select>
+                    </div>
+                </section>
 
-                            <hr>
+                <section class="operation-panel" aria-labelledby="produitsTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="produitsTitre">Produits à recevoir</h2>
+                            <p>Le prix d’achat proposé peut être ajusté pour chaque produit.</p>
+                        </div>
+                        <span id="achatCompteur" class="operation-count" aria-live="polite">0 ligne</span>
+                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Total Facture (GNF)</label>
-                                <input type="number" step="0.01" th:value="${achat.montantTotal}" id="totalGeneral"
-                                       class="form-control form-control-lg fw-bold text-danger bg-light" readonly>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold text-success">Montant Versé (Cash)</label>
-                                <input type="number" th:field="*{montantVerse}" id="montantVerse"
-                                       class="form-control form-control-lg border-success" placeholder="Ex: 500000" required min="0" step="0.01">
-                                <small class="text-muted">Somme réellement payée au fournisseur.</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Reste à Payer (Dette)</label>
-                                <input type="number" id="resteAPayer" class="form-control bg-light fw-bold" readonly>
-                            </div>
-
-                            <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm mt-3">
-                                <i class="fas fa-save"></i> Valider l'entrée en stock
+                    <div class="operation-compose operation-compose--purchase">
+                        <div class="operation-field">
+                            <label for="selectProduit" class="form-label">Produit</label>
+                            <select id="selectProduit" class="form-select">
+                                <option value="">Choisir un produit…</option>
+                                <option th:each="p : ${produits}"
+                                        th:value="${p.id}"
+                                        th:data-nom="${p.nom}"
+                                        th:data-prix="${p.prixAchat}"
+                                        th:text="${p.nom}"></option>
+                            </select>
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputPrix" class="form-label">Prix unitaire (GNF)</label>
+                            <input type="number" id="inputPrix" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputQtite" class="form-label">Quantité</label>
+                            <input type="number" id="inputQtite" class="form-control" value="1" min="1" step="1">
+                        </div>
+                        <div class="operation-add">
+                            <button type="button" class="btn btn-primary w-100" onclick="ajouterLigne()">
+                                <i class="fas fa-plus me-2" aria-hidden="true"></i> Ajouter
                             </button>
                         </div>
                     </div>
-                </div>
+                    <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
 
-                <div class="col-md-8">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-dark text-white fw-bold">
-                            <i class="fas fa-boxes me-1"></i> Produits à ajouter
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-2 mb-4 border-bottom pb-3">
-                                <div class="col-md-5">
-                                    <label class="small fw-bold">Produit</label>
-                                    <select id="selectProduit" class="form-select">
-                                        <option value="">-- Choisir un produit --</option>
-                                        <option th:each="p : ${produits}"
-                                                th:value="${p.id}"
-                                                th:data-nom="${p.nom}"
-                                                th:data-prix="${p.prixAchat}"
-                                                th:text="${p.nom}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small fw-bold">Prix d'Achat Unit.</label>
-                                    <input type="number" id="inputPrix" class="form-control" placeholder="Prix">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small fw-bold">Quantité</label>
-                                    <input type="number" id="inputQtite" class="form-control" placeholder="Qté">
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="ajouterLigne()">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
+                    <div id="achatVide" class="operation-empty">
+                        <span class="operation-empty-icon"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></span>
+                        <h3>Aucun produit ajouté</h3>
+                        <p>Ajoutez les produits à recevoir pour préparer l’entrée en stock.</p>
+                    </div>
+                    <div id="achatTable" class="table-responsive operation-cart-table" hidden>
+                        <table class="table table-hover mb-0" id="tableLignes">
+                            <thead>
+                            <tr>
+                                <th scope="col">Produit</th>
+                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-end">Quantité</th>
+                                <th scope="col" class="text-end">Sous-total</th>
+                                <th scope="col" class="text-end">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="tableLignes">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th>Produit</th>
-                                        <th style="width: 150px;">Prix Unit.</th>
-                                        <th style="width: 100px;">Qté</th>
-                                        <th>Sous-total</th>
-                                        <th style="width: 50px;"></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
+            <aside class="operation-summary">
+                <section class="operation-panel" aria-labelledby="reglementTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="reglementTitre">Règlement</h2>
+                            <p>Le montant payé et la dette fournisseur, en un coup d’œil.</p>
                         </div>
                     </div>
-                </div>
-            </div>
+
+                    <div class="operation-summary-total">
+                        <span id="totalAchatLibelle">Total de l’achat</span>
+                        <div class="operation-total-value">
+                            <output id="totalAchatAffiche" aria-labelledby="totalAchatLibelle">0</output>
+                            <span class="operation-currency">GNF</span>
+                        </div>
+                        <input type="hidden" th:value="${achat.montantTotal}" id="totalGeneral">
+                    </div>
+                    <div class="operation-field">
+                        <label for="montantVerse" class="form-label">Somme payée maintenant (GNF)</label>
+                        <input type="number" th:field="*{montantVerse}" id="montantVerse"
+                               class="form-control" placeholder="0" required min="0" step="0.01" aria-describedby="versementAide">
+                        <p id="versementAide" class="operation-field-help">Indiquez uniquement la somme payée au fournisseur aujourd’hui.</p>
+                    </div>
+                    <div class="operation-field">
+                        <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
+                        <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" value="0" readonly>
+                    </div>
+                    <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Ajoutez des produits pour calculer le règlement.</p>
+                    <div class="operation-note">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        <p>Le reste à payer est conservé avec l’achat. Vous pourrez régler le fournisseur depuis la liste des achats, même après la vente des produits.</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-check me-2" aria-hidden="true"></i> Valider l’entrée en stock
+                    </button>
+                </section>
+            </aside>
         </form>
     </div>
-
     <script th:src="@{/js/montants.js}"></script>
     <script th:src="@{/js/achat.js}"></script>
 </div>
