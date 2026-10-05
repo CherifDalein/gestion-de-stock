@@ -1,58 +1,64 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Connexion</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="theme-color" content="#15805d">
+    <title>Connexion · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
 </head>
-<body class="bg-light">
-<div id="layoutAuthentication">
-    <div id="layoutAuthentication_content">
-        <main>
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-6">
-                        <div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header">
-                                <h3 class="text-center my-4">Connexion</h3>
-                            </div>
-                            <div class="card-body">
-                                <form th:action="@{/login}" method="post">
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputEmail" type="text" name="username" placeholder="Votre email" required>
-                                        <label for="inputEmail">Email</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputPassword" type="password" name="password" placeholder="Mot de passe" required>
-                                        <label for="inputPassword">Mot de passe</label>
-                                    </div>
+<body class="stock-auth">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <div class="auth-brand">
+            <span class="auth-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+            </span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </div>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre espace de gestion</p>
+            <h1 id="auth-intro-title">Votre activité,<br>en toute clarté.</h1>
+            <p class="auth-intro-description">Retrouvez vos produits, vos achats et vos ventes dans un même espace.</p>
+            <ul class="auth-features">
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v14H4zM3 3h18v3H3zM9 10h6"/></svg></span><span><strong>Suivez votre stock</strong><span>Consultez les produits et les quantités disponibles.</span></span></li>
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 7h6M9 11h6M9 15h3"/></svg></span><span><strong>Gardez une vue sur vos opérations</strong><span>Retrouvez vos achats, vos ventes et leurs règlements.</span></span></li>
+            </ul>
+        </div>
+        <p class="auth-intro-footer">Une gestion simple, au quotidien.</p>
+    </section>
 
-                                    <div th:if="${param.error}" class="alert alert-danger" role="alert">
-                                        Email ou mot de passe incorrect.
-                                    </div>
-                                    <div th:if="${param.logout}" class="alert alert-success" role="alert">
-                                        Deconnexion reussie.
-                                    </div>
-
-                                    <div class="mt-4 mb-0">
-                                        <div class="d-grid">
-                                            <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="card-footer text-center py-3">
-                                <div class="small">
-                                    Pour obtenir un compte, contactez votre administrateur.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow">Bienvenue</p>
+                <h2 id="auth-form-title">Connexion</h2>
+                <p>Connectez-vous à votre espace Stock Pro.</p>
             </div>
-        </main>
-    </div>
-</div>
+            <form th:action="@{/login}" method="post" class="auth-form">
+                <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                    Email ou mot de passe incorrect.
+                </div>
+                <div th:if="${param.logout}" class="alert alert-success" role="status">
+                    Deconnexion reussie.
+                </div>
+
+                <div class="auth-field">
+                    <label for="inputEmail">Email</label>
+                    <input class="form-control" id="inputEmail" type="text" name="username" inputmode="email" autocomplete="username" placeholder="vous@exemple.fr" required>
+                </div>
+                <div class="auth-field">
+                    <label for="inputPassword">Mot de passe</label>
+                    <input class="form-control" id="inputPassword" type="password" name="password" autocomplete="current-password" placeholder="Votre mot de passe" required>
+                </div>
+                <button type="submit" class="auth-submit">Se connecter<span aria-hidden="true">→</span></button>
+            </form>
+            <div class="auth-card-footer">
+                Pour obtenir un compte, contactez votre administrateur.
+            </div>
+        </div>
+    </section>
+</main>
 </body>
 </html>

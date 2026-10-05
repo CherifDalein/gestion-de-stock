@@ -32,6 +32,7 @@ node --test src/test/js/montants.test.cjs
 
 ## Documentation
 
+- [Interface et vérification du thème](docs/interface.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

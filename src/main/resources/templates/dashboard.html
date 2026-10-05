@@ -2,231 +2,175 @@
 <html lang="fr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Dashboard - Gestion de Stock</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stock Pro — Gestion de stock</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link th:href="@{/css/styles.css}" rel="stylesheet" />
+    <link th:href="@{/css/stock-pro.css}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
-<body class="sb-nav-fixed">
-<nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
-    <a class="navbar-brand ps-3" th:href="@{/}">Stock Pro</a>
-    <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-
-    <form class="d-none d-md-inline-block form-inline ms-auto me-0 me-md-3 my-2 my-md-0">
-        <div class="input-group">
-            <input class="form-control" type="text" placeholder="Rechercher..." aria-label="Rechercher..." />
-            <button class="btn btn-primary" id="btnNavbarSearch" type="button"><i class="fas fa-search"></i></button>
-        </div>
-    </form>
-
-    <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user fa-fw"></i>
-            </a>
+<body class="stock-app sb-nav-fixed" th:with="page=${view != null and view != '' ? view : 'dashboard'}">
+<a class="visually-hidden-focusable app-skip-link" href="#mainContent">Aller au contenu</a>
+<nav class="sb-topnav navbar navbar-expand app-topbar" aria-label="Navigation principale">
+    <a class="navbar-brand app-brand" th:href="@{/}">
+        <span class="app-brand-mark"><i class="fa-solid fa-cubes-stacked" aria-hidden="true"></i></span>
+        <span><span class="app-brand-name">Stock Pro</span><span class="app-brand-caption">Votre gestion, au quotidien</span></span>
+    </a>
+    <button class="btn app-menu-toggle" id="sidebarToggle" type="button" aria-controls="layoutSidenav_nav" aria-expanded="false" aria-label="Afficher le menu">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+    </button>
+    <div id="stockTopActions" class="d-flex align-items-center gap-3 ms-auto">
+        <a class="btn btn-primary d-none d-md-inline-flex align-items-center gap-2" th:href="@{/ventes/nouveau}">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle vente
+        </a>
+        <div class="dropdown">
+            <button class="app-account dropdown-toggle" id="navbarDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu du compte">
+                <span class="app-account-avatar" th:text="${utilisateur != null and utilisateur.nom != null and utilisateur.nom != '' ? #strings.toUpperCase(#strings.substring(utilisateur.nom, 0, 1)) : 'U'}">U</span>
+                <span class="app-account-info">
+                    <strong th:text="${utilisateur != null ? utilisateur.nom : 'Utilisateur'}">Utilisateur</strong>
+                    <small sec:authorize="hasRole('ADMIN')">Administrateur</small>
+                    <small sec:authorize="hasRole('CAISSIER') and !hasRole('ADMIN')">Caissier</small>
+                </span>
+            </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                <li sec:authorize="hasRole('ADMIN')">
-                    <a class="dropdown-item" th:href="@{/register}">Créer un compte caissier</a>
-                </li>
-                <li><a class="dropdown-item" href="#!">Parametres</a></li>
-                <li><a class="dropdown-item" href="#!">Journal d'activite</a></li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                    <form th:action="@{/logout}" method="post" style="display: inline;">
-                        <button type="submit" class="dropdown-item">Se deconnecter</button>
-                    </form>
-                </li>
+                <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/register}"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Créer un compte caissier</a></li>
+                <li sec:authorize="hasRole('ADMIN')"><hr class="dropdown-divider" /></li>
+                <li><form th:action="@{/logout}" method="post"><button type="submit" class="dropdown-item"><i class="fa-solid fa-arrow-right-from-bracket me-2" aria-hidden="true"></i>Se déconnecter</button></form></li>
             </ul>
-        </li>
-    </ul>
+        </div>
+    </div>
 </nav>
-
 <div id="layoutSidenav">
     <div id="layoutSidenav_nav">
-        <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+        <nav class="sb-sidenav app-sidebar" aria-label="Rubriques">
             <div class="sb-sidenav-menu">
                 <div class="nav">
-                    <div class="sb-sidenav-menu-heading">Accueil</div>
-                    <a class="nav-link" th:href="@{/}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
-                        Tableau de bord
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading">Vue d’ensemble</div>
+                    <a class="nav-link" th:href="@{/}" th:classappend="${page == 'dashboard' ? 'active' : ''}" th:attr="aria-current=${page == 'dashboard' ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i></span>Tableau de bord
                     </a>
-
-                    <div class="sb-sidenav-menu-heading">Inventaire</div>
-                    <a class="nav-link" th:href="@{/produits}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>
-                        Produits
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading">Activité</div>
+                    <a class="nav-link" th:href="@{/ventes}" th:classappend="${#strings.startsWith(page, 'ventes/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'ventes/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>Ventes
                     </a>
-                    <div sec:authorize="hasRole('ADMIN')">
-                        <a class="nav-link" th:href="@{/categories}">
-                            <div class="sb-nav-link-icon"><i class="fas fa-tags"></i></div>
-                            Categories
-                        </a>
-                    </div>
-
-                    <div class="sb-sidenav-menu-heading">Partenaires</div>
-                    <a class="nav-link" th:href="@{/fournisseurs}" sec:authorize="hasRole('ADMIN')">
-                        <div class="sb-nav-link-icon"><i class="fas fa-truck"></i></div>
-                        Fournisseurs
+                    <a class="nav-link" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'achats/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'achats/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span>Achats
                     </a>
-                    <a class="nav-link" th:href="@{/clients}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>
-                        Clients
+                    <a class="nav-link" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'caisse/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'caisse/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>Caisse
                     </a>
-
-                    <div class="sb-sidenav-menu-heading">Operations</div>
-                    <a class="nav-link" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')">
-                        <div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>
-                        Achats
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading">Catalogue</div>
+                    <a class="nav-link" th:href="@{/produits}" th:classappend="${#strings.startsWith(page, 'produits/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'produits/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-cube" aria-hidden="true"></i></span>Produits
                     </a>
-                    <a class="nav-link" th:href="@{/ventes}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                        Ventes
+                    <a class="nav-link" th:href="@{/categories}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'categories/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'categories/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-tags" aria-hidden="true"></i></span>Catégories
                     </a>
-
-                    <div class="sb-sidenav-menu-heading">Analyses & Rapports</div>
-                    <a class="nav-link" th:href="@{/factures/liste}">
-                        <div class="sb-nav-link-icon"><i class="fas fa-file-invoice"></i></div>
-                        Historique & Factures
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading">Partenaires</div>
+                    <a class="nav-link" th:href="@{/clients}" th:classappend="${#strings.startsWith(page, 'clients/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'clients/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-user-group" aria-hidden="true"></i></span>Clients
                     </a>
-                    <a class="nav-link" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')">
-                        <div class="sb-nav-link-icon"><i class="fas fa-cash-register"></i></div>
-                        Journal de Caisse
+                    <a class="nav-link" th:href="@{/fournisseurs}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'fournisseurs/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'fournisseurs/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-truck" aria-hidden="true"></i></span>Fournisseurs
+                    </a>
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading">Documents</div>
+                    <a class="nav-link" th:href="@{/factures/liste}" th:classappend="${#strings.startsWith(page, 'factures/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'factures/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>Historique et factures
                     </a>
                 </div>
             </div>
-            <div class="sb-sidenav-footer">
-                <div class="small">Connecte en tant que :</div>
-                <span th:text="${utilisateur != null ? utilisateur.nom : 'Administrateur'}">Utilisateur</span>
+            <div class="sb-sidenav-footer app-sidebar-footer">
+                <strong>Un seul espace de gestion</strong>
+                <span>Stock, ventes et partenaires.</span>
             </div>
         </nav>
     </div>
-
+    <button class="app-mobile-backdrop" type="button" tabindex="-1" aria-label="Fermer le menu"></button>
     <div id="layoutSidenav_content">
-        <main>
-            <div th:if="${view != null and view != '' and view != 'dashboard'}">
-                <div th:replace="~{__${view}__ :: content}"></div>
-            </div>
-
-            <div th:if="${view == null or view == '' or view == 'dashboard'}" class="container-fluid px-4">
-                <h1 class="mt-4">Tableau de Bord</h1>
-                <p class="text-muted">Vue d'ensemble de votre activite au <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}"></span></p>
-
-                <div sec:authorize="hasRole('CAISSIER') and !hasRole('ADMIN')" class="card mb-4">
-                    <div class="card-body">
-                        <h2 class="h5">Espace de vente</h2>
-                        <p>Enregistrez une vente ou consultez les produits et les clients.</p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a th:href="@{/ventes/nouveau}" class="btn btn-primary">Nouvelle vente</a>
-                            <a th:href="@{/produits}" class="btn btn-outline-primary">Consulter les produits</a>
-                            <a th:href="@{/clients}" class="btn btn-outline-primary">Clients</a>
-                        </div>
+        <main id="mainContent" tabindex="-1">
+            <div th:if="${page != 'dashboard'}"><div th:replace="~{__${view}__ :: content}"></div></div>
+            <div th:if="${page == 'dashboard'}" class="container-fluid px-4">
+                <header class="app-main-header">
+                    <div>
+                        <p class="app-page-kicker">Votre espace de gestion</p>
+                        <h1>Tableau de bord</h1>
+                        <p class="app-page-subtitle">L’essentiel de votre activité, en un coup d’œil.</p>
                     </div>
-                </div>
-
-                <div sec:authorize="hasRole('ADMIN')">
-                <div class="row">
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card bg-secondary text-white mb-4 shadow border-0">
-                            <div class="card-body">
-                                <div class="small text-white-50 fw-bold text-uppercase">Solde a l'ouverture</div>
-                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</h2>
-                            </div>
-                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir le journal</a>
-                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                            </div>
-                        </div>
+                    <span class="app-date"><i class="fa-regular fa-calendar me-2" aria-hidden="true"></i><span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></span>
+                </header>
+                <section class="app-hero">
+                    <div>
+                        <p class="app-page-kicker">Bienvenue sur Stock Pro</p>
+                        <h2 th:text="${utilisateur != null ? 'Bonjour, ' + utilisateur.nom + '.' : 'Bienvenue dans votre espace.'}">Bienvenue dans votre espace.</h2>
+                        <p>Suivez vos opérations et retrouvez vos produits, clients et documents au même endroit.</p>
                     </div>
-
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card bg-primary text-white mb-4 shadow border-0">
-                            <div class="card-body">
-                                <div class="small text-white-50 fw-bold text-uppercase">Caisse Centrale</div>
-                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</h2>
-                            </div>
-                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Consulter les flux</a>
-                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                            </div>
-                        </div>
+                    <div class="app-actions">
+                        <a class="btn btn-primary" th:href="@{/ventes/nouveau}"><i class="fa-solid fa-plus me-2" aria-hidden="true"></i>Nouvelle vente</a>
+                        <a class="btn btn-outline-primary" th:href="@{/achats/nouveau}" sec:authorize="hasRole('ADMIN')">Nouvel achat</a>
                     </div>
-
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card bg-success text-white mb-4 shadow border-0">
-                            <div class="card-body">
-                                <div class="small text-white-50 fw-bold text-uppercase">Entrees du Jour</div>
-                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</h2>
-                            </div>
-                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir les encaissements</a>
-                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                            </div>
-                        </div>
+                </section>
+                <section class="app-panel mb-4" sec:authorize="hasRole('CAISSIER') and !hasRole('ADMIN')">
+                    <h2 class="h5">Espace de vente</h2>
+                    <p class="mb-0 text-muted">Enregistrez une vente, consultez vos produits et retrouvez vos clients depuis les accès rapides ci-dessous.</p>
+                </section>
+                <section sec:authorize="hasRole('ADMIN')" aria-label="Situation de la caisse">
+                    <div class="app-metric-grid">
+                        <article class="app-metric-card app-metric-card--primary">
+                            <span class="app-metric-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Caisse Centrale</h2>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <a class="app-metric-foot" th:href="@{/caisse/journal}">Consulter le journal <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
+                        </article>
+                        <article class="app-metric-card">
+                            <span class="app-metric-icon text-success"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Entrées du jour</h2>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-foot">Encaissements enregistrés aujourd’hui</p>
+                        </article>
+                        <article class="app-metric-card">
+                            <span class="app-metric-icon text-danger"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Sorties du jour</h2>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-foot">Décaissements enregistrés aujourd’hui</p>
+                        </article>
+                        <article class="app-metric-card">
+                            <span class="app-metric-icon"><i class="fa-regular fa-sun" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Solde à l’ouverture</h2>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-foot">Solde au début de la journée</p>
+                        </article>
+                        <article class="app-metric-card">
+                            <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Caisse du jour</h2>
+                            <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-foot">Entrées moins sorties du jour</p>
+                        </article>
+                        <article class="app-metric-card">
+                            <span class="app-metric-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+                            <h2 class="app-metric-label">Ventes du jour · réglé</h2>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-foot">Montants réglés sur les ventes créées aujourd’hui</p>
+                        </article>
                     </div>
-
-                    <div class="col-xl-3 col-md-6">
-                        <div class="card bg-danger text-white mb-4 shadow border-0">
-                            <div class="card-body">
-                                <div class="small text-white-50 fw-bold text-uppercase">Sorties du Jour</div>
-                                <h2 class="mt-2 fw-bold" th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</h2>
-                            </div>
-                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small text-white stretched-link text-decoration-none" th:href="@{/caisse/journal}">Voir les decaissements</a>
-                                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-                            </div>
-                        </div>
+                </section>
+                <section class="app-panel">
+                    <div class="app-panel-heading"><div><h2>Accès rapides</h2><p>Les outils dont vous avez besoin au quotidien.</p></div></div>
+                    <div class="app-shortcuts">
+                        <a class="app-shortcut" th:href="@{/produits}"><span class="app-shortcut-icon"><i class="fa-solid fa-cube" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Catalogue produits</strong><small>Consulter les stocks et les prix</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/ventes}"><span class="app-shortcut-icon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal des ventes</strong><small>Retrouver les ventes et règlements</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/clients}"><span class="app-shortcut-icon"><i class="fa-solid fa-user-group" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Clients</strong><small>Gérer les coordonnées de vos clients</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Approvisionnements</strong><small>Consulter les achats et règlements</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/factures/liste}"><span class="app-shortcut-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Historique et factures</strong><small>Retrouver les documents de vente</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal de caisse</strong><small>Suivre les entrées et les sorties</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-xl-3 col-md-6">
-                        <div th:class="${caisseDuJour >= 0 ? 'card bg-info text-white mb-4 shadow border-0' : 'card bg-warning text-dark mb-4 shadow border-0'}">
-                            <div class="card-body">
-                                <div class="small fw-bold text-uppercase"
-                                     th:classappend="${caisseDuJour >= 0 ? 'text-white-50' : 'text-black-50'}">
-                                    Caisse du Jour
-                                </div>
-                                <h2 class="mt-2 fw-bold"
-                                    th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
-                                    0 GNF
-                                </h2>
-                            </div>
-                            <div class="card-footer d-flex align-items-center justify-content-between bg-dark bg-opacity-10 border-0">
-                                <a class="small stretched-link text-decoration-none"
-                                   th:classappend="${caisseDuJour >= 0 ? 'text-white' : 'text-dark'}"
-                                   th:href="@{/caisse/journal}">Voir les details du jour</a>
-                                <div class="small" th:classappend="${caisseDuJour >= 0 ? 'text-white' : 'text-dark'}">
-                                    <i class="fas fa-angle-right"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                </div>
+                </section>
             </div>
         </main>
-
-        <footer class="py-4 bg-light mt-auto">
-            <div class="container-fluid px-4">
-                <div class="d-flex align-items-center justify-content-between small">
-                    <div class="text-muted">Copyright &copy; Stock Pro 2026</div>
-                    <div>
-                        <a href="#">Politique de confidentialite</a>
-                        &middot;
-                        <a href="#">CGU</a>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        <footer class="app-footer mt-auto"><span>Stock Pro · Gestion de stock</span><span>Un espace pour votre activité.</span></footer>
     </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 <script th:src="@{/js/scripts.js}"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
 <script th:src="@{/js/datatables-simple-demo.js}"></script>
 </body>

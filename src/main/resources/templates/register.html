@@ -1,65 +1,69 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Créer un compte</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="theme-color" content="#15805d">
+    <title>Créer un compte · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
 </head>
-<body class="bg-light">
-<div id="layoutAuthentication">
-    <div id="layoutAuthentication_content">
-        <main>
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-6">
-                        <div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header">
-                                <h3 class="text-center my-4">Créer un compte caissier</h3>
-                            </div>
-                            <div class="card-body">
-                                <div th:if="${param.created}" class="alert alert-success" role="status">
-                                    Le compte caissier a été créé. Il peut maintenant se connecter.
-                                </div>
-                                <form th:action="@{/register}" th:object="${inscription}" method="post">
-                                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
-                                        <ul class="mb-0"><li th:each="erreur : ${#fields.errors('*')}" th:text="${erreur}"></li></ul>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputNom" type="text" th:field="*{nom}" maxlength="100" autocomplete="name" placeholder="Votre nom" required>
-                                        <label for="inputNom">Nom complet</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputEmail" type="email" th:field="*{email}" maxlength="254" autocomplete="username" placeholder="Votre email" required>
-                                        <label for="inputEmail">Email</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="inputPassword" type="password" name="password" autocomplete="new-password" placeholder="Mot de passe" required>
-                                        <label for="inputPassword">Mot de passe</label>
-                                    </div>
-                                    <p class="small text-muted">Au moins 15 caractères et au maximum 72 octets en UTF-8. Les accents et les emojis comptent pour plusieurs octets. Vous pouvez utiliser une phrase de passe.</p>
+<body class="stock-auth">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <div class="auth-brand">
+            <span class="auth-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+            </span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </div>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre équipe</p>
+            <h1 id="auth-intro-title">Un accès pour<br>chaque membre.</h1>
+            <p class="auth-intro-description">Créez un compte personnel pour un caissier de votre équipe.</p>
+            <ul class="auth-features">
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></span><span><strong>Un compte personnel</strong><span>Le nom et l’email identifient le nouvel utilisateur.</span></span></li>
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><span><strong>Un rôle caissier</strong><span>Le compte reçoit les droits prévus pour les caissiers.</span></span></li>
+            </ul>
+        </div>
+        <a class="auth-back-link" th:href="@{/}"><span aria-hidden="true">←</span>Retour au tableau de bord</a>
+    </section>
 
-                                    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-                                    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-
-                                    <div class="mt-4 mb-0">
-                                        <div class="d-grid">
-                                            <button type="submit" class="btn btn-primary btn-block">Creer le compte</button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="card-footer text-center py-3">
-                                <div class="small">
-                                    <a th:href="@{/}">Retour au tableau de bord</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow">Nouveau membre</p>
+                <h2 id="auth-form-title">Créer un compte caissier</h2>
+                <p>Renseignez les informations du nouvel utilisateur.</p>
             </div>
-        </main>
-    </div>
-</div>
+            <div th:if="${param.created}" class="alert alert-success" role="status">
+                Le compte caissier a été créé. Il peut maintenant se connecter.
+            </div>
+            <form th:action="@{/register}" th:object="${inscription}" method="post" class="auth-form">
+                <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li th:each="erreur : ${#fields.errors('*')}" th:text="${erreur}"></li></ul>
+                </div>
+                <div class="auth-field">
+                    <label for="inputNom">Nom complet</label>
+                    <input class="form-control" id="inputNom" type="text" th:field="*{nom}" maxlength="100" autocomplete="name" placeholder="Nom et prénom" required>
+                </div>
+                <div class="auth-field">
+                    <label for="inputEmail">Email</label>
+                    <input class="form-control" id="inputEmail" type="email" th:field="*{email}" maxlength="254" autocomplete="username" placeholder="vous@exemple.fr" required>
+                </div>
+                <div class="auth-field">
+                    <label for="inputPassword">Mot de passe</label>
+                    <input class="form-control" id="inputPassword" type="password" name="password" autocomplete="new-password" placeholder="Une phrase de passe" aria-describedby="password-help" required>
+                    <p id="password-help" class="auth-field-help">Au moins 15 caractères et au maximum 72 octets en UTF-8. Les accents et les emojis comptent pour plusieurs octets. Vous pouvez utiliser une phrase de passe.</p>
+                </div>
+
+                <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+                <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+                <button type="submit" class="auth-submit">Créer le compte<span aria-hidden="true">→</span></button>
+            </form>
+            <div class="auth-card-footer">Le nouveau compte peut se connecter dès sa création.</div>
+        </div>
+    </section>
+</main>
 </body>
 </html>
