@@ -94,3 +94,10 @@ tasks.register('accountEmailsMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.AccountEmailsMariaDbTest'
 }
+
+tasks.register('creationOperationsMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les créations et renvois concurrents dans une base MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.CreationOperationsMariaDbTest'
+}

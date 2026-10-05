@@ -12,8 +12,26 @@ import org.example.stock.model.*;
 import org.springframework.beans.BeanWrapperImpl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FormBindingAdviceTests {
+    @ParameterizedTest
+    @ValueSource(strings = {"achat", "vente"})
+    void leJetonDeCreationEstUnTransportAutoriseUniquementSurLaCreation(String nom) {
+        Object cible = nom.equals("achat") ? new Achat() : new Vente();
+        String route = "/" + (nom.equals("achat") ? "achats" : "ventes");
+        MockHttpServletRequest requete = new MockHttpServletRequest("POST", "/stock" + route + "/enregistrer");
+        requete.setContextPath("/stock");
+        requete.addParameter("jetonCreation", java.util.UUID.randomUUID().toString());
+        ServletRequestDataBinder binder = new ServletRequestDataBinder(cible, nom);
+        new FormBindingAdvice().limiterChamps(binder, requete);
+        binder.bind(requete);
+        FormBindingAdvice.verifier(binder.getBindingResult());
+        requete.setRequestURI("/stock" + route + "/modifier/1");
+        assertThatThrownBy(() -> new FormBindingAdvice().limiterChamps(new ServletRequestDataBinder(cible, nom), requete))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+    }
+
     @Test
     void leChampCsrfNeDevientPasUnMarqueurDeChamp() {
         MockHttpServletRequest requete = new MockHttpServletRequest("POST", "/ventes/regler/1");

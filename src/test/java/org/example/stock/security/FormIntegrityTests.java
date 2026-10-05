@@ -127,7 +127,9 @@ class FormIntegrityTests {
     @Test
     @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
     void uneVenteNormaleCalculeSesMontantsEtUtiliseLeClientEnBase() throws Exception {
+        String jeton = (String) mvc.perform(get("/ventes/nouveau")).andReturn().getModelAndView().getModel().get("jetonCreation");
         mvc.perform(post("/ventes/enregistrer").with(csrf()).param("client", client.getId().toString())
+                        .param("jetonCreation", jeton)
                         .param("lignes[0].produit.id", produit.getId().toString())
                         .param("lignes[0].quantite", "2").param("montantVerse", "20"))
                 .andExpect(redirectedUrl("/ventes"));
@@ -142,7 +144,9 @@ class FormIntegrityTests {
 
     @Test
     void unAchatNormalChargeLeFournisseurEtCreeSesPropresLignes() throws Exception {
+        String jeton = (String) mvc.perform(get("/achats/nouveau")).andReturn().getModelAndView().getModel().get("jetonCreation");
         mvc.perform(post("/achats/enregistrer").with(csrf()).param("fournisseur", fournisseur.getId().toString())
+                        .param("jetonCreation", jeton)
                         .param("lignes[0].produit.id", produit.getId().toString())
                         .param("lignes[0].quantite", "3").param("lignes[0].prixAchatUnitaire", "7")
                         .param("montantVerse", "10"))

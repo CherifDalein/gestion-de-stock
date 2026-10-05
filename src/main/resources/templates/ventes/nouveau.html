@@ -8,8 +8,10 @@
             </div>
             <div class="card-body">
                 <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+                <a th:if="${creationConflit}" th:href="@{/ventes/nouveau}" class="btn btn-primary mb-3">Ouvrir une nouvelle vente</a>
 
                 <form th:action="@{/ventes/enregistrer}" th:object="${vente}" method="post" id="formVente">
+                    <input type="hidden" name="jetonCreation" th:value="${jetonCreation}">
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Client</label>

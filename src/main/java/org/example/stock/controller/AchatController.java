@@ -7,6 +7,9 @@ import org.example.stock.service.ProduitService;
 import org.example.stock.service.CaisseService;
 import org.example.stock.service.ReglementAchatObsoleteException;
 import org.example.stock.form.ReglementAchatForm;
+import org.example.stock.enums.TypeOperationCreation;
+import org.example.stock.service.OperationCreationService;
+import org.example.stock.service.CreationOperationException;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
@@ -34,6 +38,7 @@ public class AchatController {
     @Autowired private ProduitService produitService;
     @Autowired private FournisseurService fournisseurService;
     @Autowired private CaisseService caisseService;
+    @Autowired private OperationCreationService creations;
 
     @GetMapping
     public String listeVentes(Model model) {
@@ -48,6 +53,7 @@ public class AchatController {
         achat.setLignes(new ArrayList<>());
 
         model.addAttribute("achat", achat);
+        model.addAttribute("jetonCreation", creations.ouvrir(TypeOperationCreation.ACHAT));
         model.addAttribute("produits", produitService.listerTous());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
         model.addAttribute("view", "achats/nouveau");
@@ -55,13 +61,22 @@ public class AchatController {
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrer(@ModelAttribute("achat") Achat achat, BindingResult result, RedirectAttributes redirectAttributes, Model model) {
+    public String enregistrer(@ModelAttribute("achat") Achat achat, BindingResult result,
+                              @RequestParam(required = false) String jetonCreation, RedirectAttributes redirectAttributes,
+                              Model model, HttpServletResponse response) {
         FormBindingAdvice.verifier(result);
+        model.addAttribute("jetonCreation", jetonCreation);
         try {
-            service.enregistrerAchat(achat);
-            redirectAttributes.addFlashAttribute("success", "Achat enregistre avec succes !");
+            var resultat = creations.creerAchat(jetonCreation, achat);
+            redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
+                    ? "Cet achat est déjà enregistré. Le stock et la caisse n'ont pas été modifiés une seconde fois."
+                    : "Achat enregistre avec succes !");
             return "redirect:/achats";
         } catch (RuntimeException e) {
+            if (e instanceof CreationOperationException conflit) {
+                response.setStatus(conflit.getStatus().value());
+                model.addAttribute("creationConflit", true);
+            }
             model.addAttribute("achat", achat);
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("fournisseurs", fournisseurService.listerTous());

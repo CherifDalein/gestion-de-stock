@@ -37,5 +37,6 @@ node --test src/test/js/montants.test.cjs
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
 - [Schéma et mises à jour de la base](docs/database-schema.md)
 - [Sauvegardes locales et maintenance MariaDB](docs/sauvegardes-et-mariadb.md)
+- [Créations d'achats/ventes et protection contre les doubles envois](docs/creations-et-doubles-envois.md)
 - [Montants exacts et migration DECIMAL](docs/montants-et-migration.md)
 - [Audit et suivi des corrections](docs/audit-2026-10-04.md)

@@ -82,6 +82,18 @@ Base cible : `stock_pro`
 - `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
 - `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
 
+### `operation_creation`
+
+- `jeton` VARCHAR(36) PK : identifiant aléatoire du formulaire
+- `utilisateur_id` FK NOT NULL -> `utilisateur.id` : propriétaire du formulaire
+- `type` : `ACHAT` ou `VENTE`
+- `date_creation` : instant UTC d'ouverture ; validité de 24 h avant utilisation
+- `empreinte` VARCHAR(64), renseignée au succès : empreinte des saisies initiales
+- `achat_id` FK optionnelle UNIQUE -> `achat.id`
+- `vente_id` FK optionnelle UNIQUE -> `vente.id`
+
+Un résultat est enregistré dans la même transaction que le stock, le document et la caisse. Les résultats utilisés sont conservés pour reconnaître les renvois ultérieurs.
+
 ## Diagramme relationnel
 
 ```mermaid
@@ -97,6 +109,9 @@ erDiagram
     UTILISATEUR ||--o{ MOUVEMENT_CAISSE : enregistre
     ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
     VENTE o|--o{ MOUVEMENT_CAISSE : reglements
+    UTILISATEUR ||--o{ OPERATION_CREATION : ouvre
+    ACHAT o|--o| OPERATION_CREATION : resultat
+    VENTE o|--o| OPERATION_CREATION : resultat
 
     CATEGORIE {
         BIGINT id PK
@@ -174,6 +189,15 @@ erDiagram
         BIGINT achat_id FK
         BIGINT vente_id FK
     }
+    OPERATION_CREATION {
+        VARCHAR jeton PK
+        BIGINT utilisateur_id FK
+        ENUM type
+        DATETIME date_creation
+        VARCHAR empreinte
+        BIGINT achat_id FK,UK
+        BIGINT vente_id FK,UK
+    }
 ```
 
 ## Source des tables
@@ -185,6 +209,7 @@ erDiagram
 - `DetailVente.java`
 - `Fournisseur.java`
 - `MouvementCaisse.java`
+- `OperationCreation.java`
 - `Produit.java`
 - `Utilisateur.java`
 - `Vente.java`

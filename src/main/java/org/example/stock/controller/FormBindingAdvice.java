@@ -50,6 +50,12 @@ public class FormBindingAdvice {
                 && request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/")) {
             champs = Stream.concat(Stream.of(champs), Stream.of("version")).toArray(String[]::new);
         }
+        boolean creation = (binder.getObjectName().equals("achat")
+                && request.getRequestURI().equals(request.getContextPath() + "/achats/enregistrer"))
+                || (binder.getObjectName().equals("vente")
+                && request.getRequestURI().equals(request.getContextPath() + "/ventes/enregistrer"));
+        // Paramètre de transport lu séparément par le contrôleur, jamais une propriété persistante.
+        if (creation) champs = Stream.concat(Stream.of(champs), Stream.of("jetonCreation")).toArray(String[]::new);
         for (String parametre : request.getMethod().equals("POST") ? request.getParameterMap().keySet() : java.util.Set.<String>of()) {
             if (!parametre.equals("_csrf") && Arrays.stream(champs).noneMatch(champ -> correspond(champ, parametre))) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");

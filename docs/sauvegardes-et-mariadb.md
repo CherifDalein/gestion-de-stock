@@ -34,7 +34,9 @@ shasum -a 256 -c SHA256SUMS
 
 L'empreinte vérifie les octets du fichier. Une restauration de test vérifie également que le SQL se recharge et que les données et le schéma correspondent.
 
-Pour la restauration, créer une base temporaire avec un nom neuf, sans `IF NOT EXISTS`, puis importer `stock_pro.sql` avec le client `mysql` en sélectionnant cette base. Ne jamais sélectionner `stock_pro` pour un test. Comparer les dix schémas de tables, les nombres de lignes et les lignes complètes, puis supprimer uniquement cette base temporaire.
+Pour la restauration, créer une base temporaire avec un nom neuf, sans `IF NOT EXISTS`, puis importer `stock_pro.sql` avec le client `mysql` en sélectionnant cette base. Ne jamais sélectionner `stock_pro` pour un test. Comparer tous les schémas de tables, les nombres de lignes et les lignes complètes, puis supprimer uniquement cette base temporaire.
+
+La protection contre les doubles créations ajoute ensuite `operation_creation` comme onzième table. Le script l'exporte également ; ses identifiants et résultats doivent être conservés lors d'une restauration pour continuer à reconnaître les renvois.
 
 Le 5 octobre 2026, l'export a été restauré dans une base isolée `stock_restore_check_*`. Les dix schémas de tables et toutes les lignes correspondent à `stock_pro`, dont les deux comptes présents au début de la maintenance. La base temporaire a ensuite été supprimée.
 
