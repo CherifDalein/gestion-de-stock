@@ -138,6 +138,7 @@ body.stock-app .form-label { font-weight: 600; color: var(--app-ink); font-size:
 body.stock-app :is(.form-control, .form-select, .datatable-input, .datatable-selector) { min-height: 44px; border: 1px solid #cad8d0; border-radius: 9px; font-size: .875rem; color: var(--app-ink); background-color: #fff; }
 body.stock-app :is(.form-control, .form-select, .datatable-input, .datatable-selector):focus { border-color: #15805d; box-shadow: 0 0 0 3px rgb(21 128 93 / 12%); }
 body.stock-app .form-control::placeholder { color: #74867b; }
+body.stock-app .form-floating > .form-control::placeholder { color: transparent; }
 body.stock-app .form-control[readonly] { background: #f4f7f6; }
 body.stock-app :is(.table, .datatable-table) { color: var(--app-ink); font-size: .85rem; }
 body.stock-app :is(.table, .datatable-table) > thead > tr > th { background: #f4f7f6; color: #52685d; font-size: .73rem; font-weight: 650; padding: 13px 14px; border-bottom: 1px solid var(--app-border); }
