@@ -22,6 +22,10 @@ une présentation adaptée aux ordinateurs et aux téléphones.
 - `templates/clients/liste.html`, `templates/fournisseurs/liste.html` et
   `static/js/partenaires.js` : répertoires, recherche des coordonnées, documents
   associés et confirmation de suppression.
+- `templates/factures/liste*.html` et `static/js/factures.js` : historiques,
+  périodes, recherche et état des règlements.
+- `templates/factures/template_*.html` et `static/css/factures.css` : factures
+  individuelles, relevés cumulés et mise en page A4.
 
 Les styles d’authentification sont limités à `body.stock-auth`; le thème commun à
 `body.stock-app`. Les icônes, Bootstrap JavaScript et Simple DataTables utilisent
@@ -53,6 +57,9 @@ et des rôles. En navigateur, vérifier :
 11. Les clients et fournisseurs : recherche par nom, téléphone avec ou sans
     espaces, email et adresse ; filtres de coordonnées ; documents et listes
     vides ; cartes sur téléphone et annulation de suppression.
+12. Les factures : périodes, recherche et règlements, prix historiques, centimes,
+    versements absents et documents vides. Exporter des PDF A4, y compris avec
+    de nombreuses lignes et de grands montants, depuis ordinateur et téléphone.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
@@ -119,3 +126,30 @@ bases H2 temporaires (25 clients et 25 fournisseurs fictifs, puis répertoires
 vides), les rôles administrateur et caissier, trois tailles d’écran et les CDN
 bloqués. Les deux suppressions confirmées sont interceptées avant le serveur.
 Six accès en lecture aux factures et relevés cumulés ont aussi été vérifiés.
+
+Les historiques de factures présentent la période, le nombre de documents et les
+montants total, versé et restant. Ces sommes sont calculées côté serveur pour
+toute la période ; la recherche et le filtre de règlement affinent uniquement
+les lignes affichées. Le script local `factures.js` gère la pagination et le tri
+chronologique sans dépendance externe ni conversion des montants. La période
+« 7 derniers jours » conserve le calcul existant du serveur. Les liens vers les
+relevés cumulés conservent la période sélectionnée.
+
+Les factures et relevés partagent `factures.css`, avec un en-tête « Stock Pro » et
+les coordonnées réelles du client ou du fournisseur. Les prix des lignes restent
+ceux enregistrés lors de l'opération ; un versement absent vaut zéro et le reste
+est toujours visible. Le bouton Imprimer ouvre la commande du navigateur, sans
+impression automatique. Le format A4 répète les en-têtes de tableau, conserve les
+totaux en fin de document et masque les commandes. La règle de visibilité est
+limitée aux documents pour corriger le masquage global hérité de `styles.css`.
+
+Validation des factures le 6 octobre 2026 : 334 tests Java et 14 contrôles privés
+de logique réussis. Les parcours navigateur couvrent les trois historiques et
+les quatre documents sur ordinateur, tablette et téléphone, les périodes, les
+montants exacts, les rôles, les listes vides et le fonctionnement sans JavaScript.
+Douze PDF A4 ont été contrôlés, notamment des factures de 60 lignes, des relevés
+de huit et sept pages, des versements absents, de grands montants et des relevés
+vides. La validation finale des PDF et des parcours restants comporte 196
+assertions réussies. Les vérifications utilisent deux bases H2 temporaires ;
+aucun formulaire métier n'a été envoyé à la base locale. Les exports PDF ont été
+vérifiés, sans essai sur une imprimante physique.
