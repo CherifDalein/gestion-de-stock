@@ -152,6 +152,21 @@ body.stock-app :is(.datatable-search, .datatable-dropdown) { min-width: 0; }
 body.stock-app .datatable-search .datatable-input { width: 240px; max-width: 100%; padding: 9px 13px; }
 body.stock-app .datatable-pagination :is(a, button) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border-radius: 8px; color: var(--app-green-dark); }
 body.stock-app .datatable-pagination :is(.active, .datatable-active) :is(a, button) { background: var(--app-tint); color: var(--app-green-dark); }
+/* Keep journal columns readable while the table scrolls inside its card. */
+body.stock-app .journal-page { min-width: 0; }
+body.stock-app .journal-table-wrap { width: 100%; max-width: 100%; min-width: 0; }
+body.stock-app .journal-table-wrap :is(.datatable-wrapper, .datatable-container) { min-width: 0; max-width: 100%; }
+body.stock-app .journal-table-wrap .datatable-pagination { min-width: 0; max-width: 100%; }
+body.stock-app .journal-table-wrap .datatable-pagination-list { display: flex; flex-wrap: wrap; gap: 4px; }
+body.stock-app .journal-table { min-width: 1100px; table-layout: auto; margin-bottom: 0; }
+body.stock-app .journal-table > thead > tr > th { white-space: nowrap; }
+body.stock-app .journal-table > tbody > tr > td:nth-child(2),
+body.stock-app .journal-table > tbody > tr > td:nth-child(n+4):nth-child(-n+7) { white-space: nowrap; }
+body.stock-app .journal-table > tbody > tr > td:nth-child(3) { min-width: 150px; max-width: 240px; overflow-wrap: anywhere; }
+body.stock-app .journal-row-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 8px; min-width: max-content; }
+body.stock-app .journal-row-actions > .btn { flex: 0 0 auto; white-space: nowrap; }
+body.stock-app .journal-table-wrap:focus-visible,
+body.stock-app .journal-table-wrap .datatable-container:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
 body.stock-app .dropdown-menu { border-color: var(--app-border); border-radius: 12px; padding: 7px; box-shadow: 0 10px 35px rgb(21 44 37 / 10%); }
 body.stock-app .dropdown-item { min-height: 44px; border-radius: 7px; display: flex; align-items: center; gap: 9px; font-size: .85rem; }
 body.stock-app .dropdown-item:hover { background: var(--app-tint); }

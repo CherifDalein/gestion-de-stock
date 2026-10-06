@@ -1,5 +1,5 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
+    <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Journal des Ventes</h1>
         <div class="mb-4 d-flex justify-content-end">
             <a th:href="@{/ventes/nouveau}" class="btn btn-success">
@@ -9,92 +9,100 @@
 
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
-                <table id="datatablesSimple" class="table table-hover">
-                    <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Date</th>
-                        <th>Client</th>
-                        <th>Total</th>
-                        <th>Verse</th>
-                        <th>Reste</th>
-                        <th>Statut</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="v : ${ventes}">
-                        <td th:text="${v.id}"></td>
-                        <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
-                        <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
-                        <td class="fw-bold" th:text="${v.montantTotal + ' GNF'}"></td>
-                        <td class="text-success" th:text="${(v.montantVerse ?: 0) + ' GNF'}"></td>
-                        <td class="fw-bold" th:classappend="${(v.montantTotal - (v.montantVerse ?: 0)) > 0 ? 'text-danger' : 'text-muted'}"
-                            th:text="${(v.montantTotal - (v.montantVerse ?: 0)) + ' GNF'}"></td>
-                        <td>
-                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) == 0}" class="badge bg-success">Paye</span>
-                            <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">Credit</span>
-                        </td>
-                        <td class="text-center">
-                            <a th:href="@{/ventes/regler/{id}(id=${v.id})}" class="btn btn-success btn-sm"
-                               th:text="${v.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
-                            <button type="button" class="btn btn-info btn-sm"
-                                    data-bs-toggle="modal"
-                                    th:data-bs-target="'#modalVente' + ${v.id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-
-                            <div class="modal fade" th:id="'modalVente' + ${v.id}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header bg-primary text-white">
-                                            <h5 class="modal-title">Facture Vente #<span th:text="${v.id}"></span></h5>
-                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="row mb-3 border-bottom pb-3">
-                                                <div class="col-6">
-                                                    <strong>Date :</strong> <span th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></span><br>
-                                                    <strong>Client :</strong> <span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span>
-                                                </div>
-                                                <div class="col-6 text-end">
-                                                    <p class="mb-1">Total facture : <strong th:text="${v.montantTotal + ' GNF'}"></strong></p>
-                                                    <p class="mb-1 text-success">Montant recu : <strong th:text="${(v.montantVerse ?: 0) + ' GNF'}"></strong></p>
-                                                    <h4 class="text-danger">Reste a payer : <span th:text="${v.montantTotal - (v.montantVerse ?: 0)}"></span> GNF</h4>
-                                                </div>
-                                            </div>
-                                            <table class="table table-sm table-striped">
-                                                <thead class="table-light">
-                                                <tr>
-                                                    <th>Produit</th>
-                                                    <th class="text-end">Prix unitaire</th>
-                                                    <th class="text-center">Quantite</th>
-                                                    <th class="text-end">Sous-total</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-                                                <tr th:each="ligne : ${v.lignes}">
-                                                    <td th:text="${ligne.produit.nom}"></td>
-                                                    <td class="text-end" th:text="${ligne.prixUnitaire + ' GNF'}"></td>
-                                                    <td class="text-center" th:text="${ligne.quantite}"></td>
-                                                    <td class="text-end fw-bold" th:text="${(ligne.prixUnitaire * ligne.quantite) + ' GNF'}"></td>
-                                                </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                            <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-primary">
-                                                <i class="fas fa-print"></i> Imprimer recu
-                                            </a>
-                                        </div>
-                                    </div>
+                <p id="ventesTableHint" class="small text-muted mb-3">Sur écran étroit, faites défiler le tableau horizontalement pour accéder aux actions.</p>
+                <div class="table-responsive journal-table-wrap" role="region" tabindex="0" aria-label="Journal des ventes : tableau défilant horizontalement" aria-describedby="ventesTableHint">
+                    <table id="datatablesSimple" class="table table-hover journal-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">Versé</th>
+                            <th scope="col">Reste</th>
+                            <th scope="col">Statut</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="v : ${ventes}">
+                            <td th:text="${v.id}"></td>
+                            <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
+                            <td class="fw-bold" th:text="${v.montantTotal + ' GNF'}"></td>
+                            <td class="text-success" th:text="${(v.montantVerse ?: 0) + ' GNF'}"></td>
+                            <td class="fw-bold" th:classappend="${(v.montantTotal - (v.montantVerse ?: 0)) > 0 ? 'text-danger' : 'text-muted'}"
+                                th:text="${(v.montantTotal - (v.montantVerse ?: 0)) + ' GNF'}"></td>
+                            <td>
+                                <span th:if="${v.montantTotal - (v.montantVerse ?: 0) == 0}" class="badge bg-success">Paye</span>
+                                <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">Credit</span>
+                            </td>
+                            <td class="text-center">
+                                <div class="journal-row-actions">
+                                    <a th:href="@{/ventes/regler/{id}(id=${v.id})}" class="btn btn-success btn-sm"
+                                       th:text="${v.resteAPayer > 0 ? 'Régler' : 'Règlements'}"
+                                       th:attr="aria-label=${(v.resteAPayer > 0 ? 'Régler la vente n° ' : 'Consulter les règlements de la vente n° ') + v.id}"></a>
+                                    <button type="button" class="btn btn-info btn-sm"
+                                            data-bs-toggle="modal"
+                                            th:data-bs-target="'#modalVente' + ${v.id}"
+                                            th:attr="aria-label=${'Consulter les détails de la vente n° ' + v.id}">
+                                        <i class="fas fa-eye" aria-hidden="true"></i> Détails
+                                    </button>
                                 </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div th:each="v : ${ventes}" class="modal fade" th:id="'modalVente' + ${v.id}" tabindex="-1" aria-hidden="true"
+             th:attr="aria-labelledby=${'modalVenteTitre' + v.id}">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" th:id="${'modalVenteTitre' + v.id}">Facture Vente #<span th:text="${v.id}"></span></h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer les détails de la vente"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3 border-bottom pb-3">
+                            <div class="col-6">
+                                <strong>Date :</strong> <span th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></span><br>
+                                <strong>Client :</strong> <span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span>
                             </div>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                            <div class="col-6 text-end">
+                                <p class="mb-1">Total facture : <strong th:text="${v.montantTotal + ' GNF'}"></strong></p>
+                                <p class="mb-1 text-success">Montant recu : <strong th:text="${(v.montantVerse ?: 0) + ' GNF'}"></strong></p>
+                                <h4 class="text-danger">Reste a payer : <span th:text="${v.montantTotal - (v.montantVerse ?: 0)}"></span> GNF</h4>
+                            </div>
+                        </div>
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col">Produit</th>
+                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-center">Quantite</th>
+                                <th scope="col" class="text-end">Sous-total</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ligne : ${v.lignes}">
+                                <td th:text="${ligne.produit.nom}"></td>
+                                <td class="text-end" th:text="${ligne.prixUnitaire + ' GNF'}"></td>
+                                <td class="text-center" th:text="${ligne.quantite}"></td>
+                                <td class="text-end fw-bold" th:text="${(ligne.prixUnitaire * ligne.quantite) + ' GNF'}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-primary">
+                            <i class="fas fa-print"></i> Imprimer recu
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

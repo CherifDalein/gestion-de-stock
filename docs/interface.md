@@ -60,6 +60,9 @@ et des rôles. En navigateur, vérifier :
 12. Les factures : périodes, recherche et règlements, prix historiques, centimes,
     versements absents et documents vides. Exporter des PDF A4, y compris avec
     de nombreuses lignes et de grands montants, depuis ordinateur et téléphone.
+13. Les journaux d'achat et de vente : défilement horizontal jusqu'aux actions,
+    boutons espacés et accessibles au clavier, recherche et pagination, ouverture
+    des détails après défilement et fonctionnement du tableau sans DataTables.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
@@ -153,3 +156,19 @@ vides. La validation finale des PDF et des parcours restants comporte 196
 assertions réussies. Les vérifications utilisent deux bases H2 temporaires ;
 aucun formulaire métier n'a été envoyé à la base locale. Les exports PDF ont été
 vérifiés, sans essai sur une imprimante physique.
+
+Les tableaux des journaux d'achat et de vente conservent une largeur suffisante
+pour les dates, montants et boutons. Le défilement horizontal reste dans la carte
+et les actions restent alignées, sans rétrécissement des boutons. Avec DataTables,
+la recherche et la pagination restent en dehors de la zone de défilement. Cette
+zone est nommée et accessible au clavier. Sans DataTables, le tableau utilise
+directement son enveloppe responsive, sans second conteneur imbriqué. Les fenêtres
+de détails des ventes sont rendues hors du tableau pour rester disponibles après
+une recherche ou un changement de page.
+
+Validation du défilement le 6 octobre 2026 : 430 contrôles navigateur réussis aux
+largeurs 1440, 1024, 768, 390 et 320 pixels, avec les ressources officielles
+DataTables/Bootstrap en cache puis les CDN bloqués. Les contrôles couvrent le
+défilement au clavier, les actions, les montants, la pagination et les détails des
+ventes. Le JAR est construit et la syntaxe du script local est vérifiée. Les
+parcours utilisent une base H2 temporaire sans aucun POST métier.
