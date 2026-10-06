@@ -17,6 +17,8 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   document, historique des versements et paiement du solde.
 - `static/js/achat.js` et `static/js/panier.js` : calculs exacts, compteur de
   lignes, état du panier et indication du paiement.
+- `templates/produits/liste.html` et `static/js/produits.js` : inventaire,
+  recherche, filtres de stock, consultation et confirmation de suppression.
 
 Les styles d’authentification sont limités à `body.stock-auth`; le thème commun à
 `body.stock-app`. Les icônes, Bootstrap JavaScript et Simple DataTables utilisent
@@ -41,6 +43,10 @@ et des rôles. En navigateur, vérifier :
    montant invalide ou supérieur au total.
 8. Les écrans de règlement : historique, reste à payer, montant maximal autorisé,
    état entièrement réglé et affichage mobile.
+9. Les produits : filtres combinés, recherche avec et sans accents, pagination,
+   tri des prix et quantités, consultation et annulation de suppression.
+10. L’inventaire vide et les restrictions du caissier, y compris dans les détails
+    du produit. Vérifier aussi les filtres lorsque les CDN ne répondent pas.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
@@ -64,3 +70,25 @@ Validation des écrans d’opération : 334 tests Java, 4 tests Node des calculs
 Les écrans de règlement ont été contrôlés avec 72 assertions sur des achats et
 ventes partiellement ou entièrement réglés dans une base H2 temporaire. Aucun
 formulaire métier n’a été envoyé à la base locale pendant ces vérifications.
+
+L’inventaire présente les compteurs du catalogue, les produits en stock, les
+stocks faibles et les ruptures. Le seuil existant est conservé : 1 à 5 unités
+correspondent à un stock faible, 0 à une rupture. La recherche ignore la casse et
+les accents et se combine avec les filtres de catégorie et de stock. Les
+compteurs portent sur tout le catalogue, indépendamment des filtres appliqués.
+
+Le script local `produits.js` gère la recherche, le tri et la pagination sans
+Simple DataTables. Le tri des quantités et des prix utilise `BigInt` pour conserver
+les grandes valeurs exactes. Les détails sont affichés dans une boîte de dialogue ;
+le prix d’achat, le fournisseur et les actions de gestion restent réservés à
+l’administrateur, y compris dans les attributs HTML. La suppression demande une
+confirmation puis envoie le formulaire POST d’origine avec son jeton CSRF.
+Sans JavaScript, les lignes restent visibles et les actions de gestion conservent
+leur fonctionnement et la confirmation native de suppression.
+
+Validation du catalogue le 6 octobre 2026 : 334 tests Java réussis, 24 contrôles
+privés de logique et 340 assertions navigateur sur ordinateur, tablette et
+téléphone. Les parcours utilisent deux bases H2 temporaires (25 produits fictifs
+et catalogue vide), les rôles administrateur et caissier, avec les CDN bloqués.
+L’envoi de suppression confirmé est intercepté avant le serveur pour vérifier le
+CSRF ; aucun produit n’est supprimé pendant les contrôles.

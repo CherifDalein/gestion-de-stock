@@ -1,62 +1,194 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4">Produits</h1>
-        <div class="mb-4 d-flex justify-content-end" sec:authorize="hasRole('ADMIN')">
-            <a th:href="@{/produits/nouveau}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Ajouter un produit
-            </a>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-table me-1"></i> Inventaire des produits
+    <div id="stockProduits" class="container-fluid stock-products"
+         th:with="estAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, totalProduits=${#lists.size(produits)}, produitsEnStock=${#lists.size(produits.?[quantite != null and quantite > 0])}, produitsFaibles=${#lists.size(produits.?[quantite != null and quantite > 0 and quantite <= 5])}, produitsRupture=${#lists.size(produits.?[quantite != null and quantite == 0])}">
+        <header class="products-header">
+            <div>
+                <p class="app-page-kicker">Catalogue</p>
+                <h1>Produits</h1>
+                <p class="app-page-subtitle">Retrouvez vos produits, leurs prix et l’état de vos stocks.</p>
             </div>
-            <div class="card-body">
-                <table id="datatablesSimple">
+            <a th:href="@{/produits/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un produit
+            </a>
+        </header>
+
+        <section class="products-metrics" aria-label="État du catalogue">
+            <button class="products-metric" type="button" data-stock-filter="" aria-pressed="true" disabled>
+                <span class="products-metric-heading"><span>Tous les produits</span><i class="fas fa-cubes" aria-hidden="true"></i></span>
+                <strong data-stock-count th:text="${totalProduits}">0</strong>
+                <span class="products-metric-caption">Dans le catalogue</span>
+            </button>
+            <button class="products-metric products-metric--available" type="button" data-stock-filter="en-stock" aria-pressed="false" disabled>
+                <span class="products-metric-heading"><span>En stock</span><i class="fas fa-box" aria-hidden="true"></i></span>
+                <strong data-stock-count th:text="${produitsEnStock}">0</strong>
+                <span class="products-metric-caption">Au moins une unité</span>
+            </button>
+            <button class="products-metric products-metric--low" type="button" data-stock-filter="faible" aria-pressed="false" disabled>
+                <span class="products-metric-heading"><span>Stock faible</span><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></span>
+                <strong data-stock-count th:text="${produitsFaibles}">0</strong>
+                <span class="products-metric-caption">De 1 à 5 unités</span>
+            </button>
+            <button class="products-metric products-metric--empty" type="button" data-stock-filter="rupture" aria-pressed="false" disabled>
+                <span class="products-metric-heading"><span>En rupture</span><i class="fas fa-box-open" aria-hidden="true"></i></span>
+                <strong data-stock-count th:text="${produitsRupture}">0</strong>
+                <span class="products-metric-caption">Aucune unité</span>
+            </button>
+        </section>
+
+        <section class="products-panel" aria-labelledby="produitsCatalogueTitle">
+            <div class="products-panel-heading">
+                <div>
+                    <h2 id="produitsCatalogueTitle">Inventaire des produits</h2>
+                    <p>Les quantités correspondent au stock actuellement disponible.</p>
+                </div>
+                <span class="products-catalogue-count" th:text="${totalProduits + (totalProduits == 1 ? ' produit' : ' produits')}">0 produit</span>
+            </div>
+
+            <div id="produitsToolbar" class="products-toolbar" hidden>
+                <div class="products-search">
+                    <label for="produitsSearch" class="form-label">Rechercher</label>
+                    <div class="products-search-input">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="produitsSearch" class="form-control" type="search" placeholder="Nom, référence ou catégorie…" autocomplete="off" aria-controls="produitsTable">
+                    </div>
+                </div>
+                <div>
+                    <label for="produitsCategory" class="form-label">Catégorie</label>
+                    <select id="produitsCategory" class="form-select" aria-controls="produitsTable">
+                        <option value="">Toutes les catégories</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="produitsStock" class="form-label">État du stock</label>
+                    <select id="produitsStock" class="form-select" aria-controls="produitsTable">
+                        <option value="">Tous les stocks</option>
+                        <option value="en-stock">En stock</option>
+                        <option value="disponible">Disponible (plus de 5)</option>
+                        <option value="faible">Stock faible (1 à 5)</option>
+                        <option value="rupture">En rupture</option>
+                    </select>
+                </div>
+                <button id="produitsReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser les filtres et le tri des produits">
+                    <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                </button>
+            </div>
+
+            <div id="produitsEmptyCatalogue" class="products-empty" th:if="${#lists.isEmpty(produits)}">
+                <span class="products-empty-icon"><i class="fas fa-box-open" aria-hidden="true"></i></span>
+                <h3>Votre catalogue est vide</h3>
+                <p>Les produits ajoutés au catalogue apparaîtront ici.</p>
+                <a th:href="@{/produits/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Ajouter un premier produit</a>
+            </div>
+
+            <div id="produitsTableWrap" class="table-responsive products-table-wrap"
+                 th:attr="hidden=${#lists.isEmpty(produits) ? 'hidden' : null}">
+                <table id="produitsTable" class="table table-hover products-table mb-0" th:classappend="${estAdmin ? 'products-table--admin' : ''}">
+                    <caption class="visually-hidden">Produits du catalogue, prix et quantités disponibles</caption>
                     <thead>
                     <tr>
-                        <th>Référence</th>
-                        <th>Nom</th>
-                        <th>Catégorie</th>
-                        <th sec:authorize="hasRole('ADMIN')">Fournisseur</th>
-                        <th sec:authorize="hasRole('ADMIN')">Prix Achat</th>
-                        <th>Prix Vente</th>
-                        <th>Stock</th>
-                        <th sec:authorize="hasRole('ADMIN')">Actions</th>
+                        <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="reference" disabled>Référence</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="nom" disabled>Produit</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="categorie" disabled>Catégorie</button></th>
+                        <th scope="col" sec:authorize="hasRole('ADMIN')">Fournisseur</th>
+                        <th scope="col" class="text-end" aria-sort="none" sec:authorize="hasRole('ADMIN')"><button type="button" class="products-sort" data-sort="prixAchat" disabled>Prix d’achat</button></th>
+                        <th scope="col" class="text-end" aria-sort="none"><button type="button" class="products-sort" data-sort="prixVente" disabled>Prix de vente</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="quantite" disabled>Stock</button></th>
+                        <th scope="col" class="text-end">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="p : ${produits}">
-                        <td th:text="${p.reference}" class="fw-bold text-primary"></td>
-                        <td th:text="${p.nom}"></td>
+                    <tr th:each="p : ${produits}" data-product-row
+                        th:with="etat=${p.quantite == null ? 'inconnu' : (p.quantite == 0 ? 'rupture' : (p.quantite <= 5 ? 'faible' : 'disponible'))}"
+                        th:attr="data-id=${p.id},data-name=${p.nom},data-reference=${p.reference},data-category-id=${p.categorie != null ? p.categorie.id : ''},data-category-name=${p.categorie != null ? p.categorie.nom : 'Sans catégorie'},data-stock-state=${etat},data-quantity=${p.quantite},data-sale-price=${p.prixVente},data-purchase-price=${estAdmin ? p.prixAchat : null},data-supplier=${estAdmin ? (p.fournisseur != null ? p.fournisseur.nom : 'Non défini') : null}">
+                        <td class="products-reference" th:text="${p.reference}"></td>
+                        <td class="products-name" th:text="${p.nom}"></td>
+                        <td><span class="products-category" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span></td>
+                        <td class="products-supplier" sec:authorize="hasRole('ADMIN')" th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}"></td>
+                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixAchat != null ? #numbers.formatDecimal(p.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></span> <span class="products-currency">GNF</span></td>
+                        <td class="products-price text-end"><span th:text="${p.prixVente != null ? #numbers.formatDecimal(p.prixVente, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></span> <span class="products-currency">GNF</span></td>
                         <td>
-                            <span class="badge bg-secondary" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span>
+                            <div class="products-stock">
+                                <strong th:text="${p.quantite != null ? #numbers.formatInteger(p.quantite, 1, 'WHITESPACE') : '—'}"></strong>
+                                <span class="products-stock-badge" th:classappend="${'products-stock-badge--' + etat}"
+                                      th:text="${etat == 'rupture' ? 'En rupture' : (etat == 'faible' ? 'Stock faible' : (etat == 'disponible' ? 'Disponible' : 'Non renseigné'))}"></span>
+                            </div>
                         </td>
-                        <td sec:authorize="hasRole('ADMIN')">
-                            <span th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}" class="text-muted small"></span>
-                        </td>
-                        <td sec:authorize="hasRole('ADMIN')" th:text="${p.prixAchat + ' GNF'}"></td>
-                        <td th:text="${p.prixVente + ' GNF'}"></td>
                         <td>
-                                <span th:text="${p.quantite}"
-                                      th:class="${p.quantite <= 5} ? 'badge bg-danger badge-sm' : 'badge bg-success badge-sm'">
-                                </span>
-                        </td>
-                        <td sec:authorize="hasRole('ADMIN')">
-                            <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-warning btn-sm me-2">
-                                Modifier <i class="fas fa-edit"></i>
-                            </a>
-                            <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post"
-                                  class="d-inline" onsubmit="return confirm('Supprimer ce produit ?')">
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    Supprimer <i class="fas fa-trash"></i>
+                            <div class="products-row-actions">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-product-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
+                                    <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
-                            </form>
+                                <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Modifier ' + p.nom}">
+                                    <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
+                                </a>
+                                <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" data-product-delete
+                                      sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce produit ?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer ' + p.nom}">
+                                        <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <div id="produitsNoResults" class="products-empty" hidden>
+                <span class="products-empty-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucun produit ne correspond</h3>
+                <p>Essayez un autre mot ou élargissez les filtres.</p>
+                <button type="button" class="btn btn-outline-primary" data-reset-products>Effacer les filtres</button>
+            </div>
+
+            <div id="produitsPagination" class="products-pagination" hidden>
+                <div class="products-page-size">
+                    <label for="produitsPageSize">Afficher</label>
+                    <select id="produitsPageSize" class="form-select" aria-controls="produitsTable">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="all">Tous</option>
+                    </select>
+                    <span>par page</span>
+                </div>
+                <p id="produitsResults" class="products-results" role="status" aria-live="polite" th:text="${totalProduits + (totalProduits == 1 ? ' produit' : ' produits')}"></p>
+                <div class="products-page-navigation" aria-label="Pagination des produits">
+                    <button id="produitsPrevious" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page précédente"><span aria-hidden="true">‹</span></button>
+                    <span id="produitsPageLabel">Page 1</span>
+                    <button id="produitsNext" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page suivante"><span aria-hidden="true">›</span></button>
+                </div>
+            </div>
+        </section>
+
+        <dialog id="produitDetailsDialog" class="product-dialog" aria-labelledby="produitDetailsTitle">
+            <div class="product-dialog-header">
+                <div><p class="app-page-kicker">Fiche produit</p><h2 id="produitDetailsTitle">Détails du produit</h2></div>
+                <button type="button" class="product-dialog-close" data-close-dialog aria-label="Fermer la fiche produit"><span aria-hidden="true">×</span></button>
+            </div>
+            <dl class="product-detail-grid">
+                <div><dt>Référence</dt><dd data-detail="reference"></dd></div>
+                <div><dt>Catégorie</dt><dd data-detail="categorie"></dd></div>
+                <div><dt>Quantité en stock</dt><dd data-detail="quantite"></dd></div>
+                <div><dt>État du stock</dt><dd data-detail="etat"></dd></div>
+                <div><dt>Prix de vente</dt><dd data-detail="prixVente"></dd></div>
+                <div sec:authorize="hasRole('ADMIN')"><dt>Prix d’achat</dt><dd data-detail="prixAchat"></dd></div>
+                <div sec:authorize="hasRole('ADMIN')"><dt>Fournisseur</dt><dd data-detail="fournisseur"></dd></div>
+            </dl>
+            <div class="product-dialog-footer"><button type="button" class="btn btn-primary" data-close-dialog>Fermer</button></div>
+        </dialog>
+
+        <dialog id="produitDeleteDialog" class="product-dialog product-dialog--delete" aria-labelledby="produitDeleteTitle" aria-describedby="produitDeleteDescription" sec:authorize="hasRole('ADMIN')">
+            <div class="product-dialog-header">
+                <h2 id="produitDeleteTitle">Supprimer ce produit ?</h2>
+                <button type="button" class="product-dialog-close" data-close-dialog aria-label="Annuler la suppression"><span aria-hidden="true">×</span></button>
+            </div>
+            <p id="produitDeleteDescription" class="product-delete-description">Confirmez la suppression de <strong id="produitDeleteName"></strong> du catalogue.</p>
+            <div class="product-dialog-footer">
+                <button type="button" class="btn btn-outline-secondary" data-close-dialog>Annuler</button>
+                <button id="produitDeleteConfirm" type="button" class="btn btn-danger"><i class="fas fa-trash" aria-hidden="true"></i> Supprimer le produit</button>
+            </div>
+        </dialog>
     </div>
+    <script th:src="@{/js/produits.js}"></script>
 </div>
