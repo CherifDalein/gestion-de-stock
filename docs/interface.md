@@ -19,6 +19,9 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   lignes, état du panier et indication du paiement.
 - `templates/produits/liste.html` et `static/js/produits.js` : inventaire,
   recherche, filtres de stock, consultation et confirmation de suppression.
+- `templates/clients/liste.html`, `templates/fournisseurs/liste.html` et
+  `static/js/partenaires.js` : répertoires, recherche des coordonnées, documents
+  associés et confirmation de suppression.
 
 Les styles d’authentification sont limités à `body.stock-auth`; le thème commun à
 `body.stock-app`. Les icônes, Bootstrap JavaScript et Simple DataTables utilisent
@@ -47,6 +50,9 @@ et des rôles. En navigateur, vérifier :
    tri des prix et quantités, consultation et annulation de suppression.
 10. L’inventaire vide et les restrictions du caissier, y compris dans les détails
     du produit. Vérifier aussi les filtres lorsque les CDN ne répondent pas.
+11. Les clients et fournisseurs : recherche par nom, téléphone avec ou sans
+    espaces, email et adresse ; filtres de coordonnées ; documents et listes
+    vides ; cartes sur téléphone et annulation de suppression.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
@@ -92,3 +98,24 @@ téléphone. Les parcours utilisent deux bases H2 temporaires (25 produits ficti
 et catalogue vide), les rôles administrateur et caissier, avec les CDN bloqués.
 L’envoi de suppression confirmé est intercepté avant le serveur pour vérifier le
 CSRF ; aucun produit n’est supprimé pendant les contrôles.
+
+Les répertoires Clients et Fournisseurs partagent le script local
+`partenaires.js`. La recherche couvre le nom, le téléphone, l’email et l’adresse,
+avec ou sans accents ; un numéro peut être saisi avec ou sans ses séparateurs.
+Les filtres distinguent les contacts avec téléphone, avec email et sans les deux.
+Les compteurs décrivent tout le répertoire. Les coordonnées absentes s’affichent
+comme « Non renseigné ». Sur téléphone, chaque ligne devient une carte avec les
+coordonnées, les actions et les documents visibles ; le tri reste accessible.
+
+Le caissier conserve la création, la modification et les documents des clients.
+La suppression des clients et l’accès aux fournisseurs restent réservés à
+l’administrateur. La consultation et la confirmation utilisent des dialogues
+natifs ; le formulaire POST et son jeton CSRF sont conservés. Sans JavaScript,
+les répertoires et leurs actions existantes restent utilisables.
+
+Validation des répertoires le 6 octobre 2026 : 334 tests Java, 34 contrôles privés
+de logique et 690 assertions navigateur réussis. Les parcours utilisent deux
+bases H2 temporaires (25 clients et 25 fournisseurs fictifs, puis répertoires
+vides), les rôles administrateur et caissier, trois tailles d’écran et les CDN
+bloqués. Les deux suppressions confirmées sont interceptées avant le serveur.
+Six accès en lecture aux factures et relevés cumulés ont aussi été vérifiés.

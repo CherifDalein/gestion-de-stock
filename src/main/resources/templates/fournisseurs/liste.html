@@ -1,56 +1,173 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4">Fournisseurs</h1>
-        <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Ajouter un fournisseur
-            </a>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-address-book me-1"></i> Carnet d'adresses fournisseurs
+    <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="fournisseur" data-partner-label="fournisseur"
+         th:with="totalPartenaires=${#lists.size(fournisseurs)}, avecTelephone=${#lists.size(fournisseurs.?[telephone != null and !#strings.isEmpty(#strings.trim(telephone))])}, avecEmail=${#lists.size(fournisseurs.?[email != null and !#strings.isEmpty(#strings.trim(email))])}, sansContact=${#lists.size(fournisseurs.?[(telephone == null or #strings.isEmpty(#strings.trim(telephone))) and (email == null or #strings.isEmpty(#strings.trim(email)))])}">
+        <header class="partners-header">
+            <div>
+                <p class="app-page-kicker">Contacts</p>
+                <h1>Fournisseurs</h1>
+                <p class="app-page-subtitle">Retrouvez vos fournisseurs, leurs coordonnées et leurs achats.</p>
             </div>
-            <div class="card-body">
-                <table id="datatablesSimple">
+            <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un fournisseur
+            </a>
+        </header>
+
+        <section class="partners-metrics" aria-label="Coordonnées des fournisseurs">
+            <button class="partners-metric" type="button" data-contact-filter="" aria-pressed="true" disabled>
+                <span class="partners-metric-heading"><span>Tous les fournisseurs</span><i class="fas fa-address-book" aria-hidden="true"></i></span>
+                <strong data-contact-count th:text="${totalPartenaires}">0</strong>
+                <span class="partners-metric-caption">Dans le répertoire</span>
+            </button>
+            <button class="partners-metric" type="button" data-contact-filter="telephone" aria-pressed="false" disabled>
+                <span class="partners-metric-heading"><span>Avec téléphone</span><i class="fas fa-phone" aria-hidden="true"></i></span>
+                <strong data-contact-count th:text="${avecTelephone}">0</strong>
+                <span class="partners-metric-caption">Numéro renseigné</span>
+            </button>
+            <button class="partners-metric" type="button" data-contact-filter="email" aria-pressed="false" disabled>
+                <span class="partners-metric-heading"><span>Avec email</span><i class="fas fa-envelope" aria-hidden="true"></i></span>
+                <strong data-contact-count th:text="${avecEmail}">0</strong>
+                <span class="partners-metric-caption">Email renseigné</span>
+            </button>
+            <button class="partners-metric partners-metric--missing" type="button" data-contact-filter="sans-contact" aria-pressed="false" disabled>
+                <span class="partners-metric-heading"><span>Sans contact</span><i class="fas fa-address-card" aria-hidden="true"></i></span>
+                <strong data-contact-count th:text="${sansContact}">0</strong>
+                <span class="partners-metric-caption">Ni téléphone ni email</span>
+            </button>
+        </section>
+
+        <section class="partners-panel" aria-labelledby="partenairesCatalogueTitle">
+            <div class="partners-panel-heading">
+                <div>
+                    <h2 id="partenairesCatalogueTitle">Répertoire des fournisseurs</h2>
+                    <p>Coordonnées et accès aux documents.</p>
+                </div>
+                <span class="partners-catalogue-count" th:text="${totalPartenaires + (totalPartenaires == 1 ? ' fournisseur' : ' fournisseurs')}">0 fournisseur</span>
+            </div>
+
+            <div id="partenairesToolbar" class="partners-toolbar" hidden>
+                <div class="partners-search">
+                    <label for="partenairesSearch" class="form-label">Rechercher</label>
+                    <div class="partners-search-input">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="partenairesSearch" class="form-control" type="search" placeholder="Nom, téléphone, email ou adresse…" autocomplete="off" aria-controls="partenairesTable">
+                    </div>
+                </div>
+                <div>
+                    <label for="partenairesContact" class="form-label">Coordonnées</label>
+                    <select id="partenairesContact" class="form-select" aria-controls="partenairesTable">
+                        <option value="">Tous les contacts</option>
+                        <option value="telephone">Avec téléphone</option>
+                        <option value="email">Avec email</option>
+                        <option value="sans-contact">Sans téléphone ni email</option>
+                    </select>
+                </div>
+                <button id="partenairesReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche, les filtres et le tri">
+                    <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                </button>
+            </div>
+
+            <div id="partenairesEmptyCatalogue" class="partners-empty" th:if="${#lists.isEmpty(fournisseurs)}">
+                <span class="partners-empty-icon"><i class="fas fa-address-book" aria-hidden="true"></i></span>
+                <h3>Aucun fournisseur pour le moment</h3>
+                <p>Ajoutez vos fournisseurs pour les retrouver lors de vos achats.</p>
+                <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Ajouter un premier fournisseur</a>
+            </div>
+
+            <div id="partenairesTableWrap" class="table-responsive partners-table-wrap" th:attr="hidden=${#lists.isEmpty(fournisseurs) ? 'hidden' : null}">
+                <table id="partenairesTable" class="table table-hover partners-table mb-0">
+                    <caption class="visually-hidden">Fournisseurs, coordonnées et documents associés</caption>
                     <thead>
                     <tr>
-                        <th>Nom / Entreprise</th>
-                        <th>Telephone</th>
-                        <th>Email</th>
-                        <th>Adresse</th>
-                        <th class="text-center">Actions</th>
+                        <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="nom" disabled>Nom / Entreprise</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="telephone" disabled>Téléphone</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="email" disabled>Email</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="adresse" disabled>Adresse</button></th>
+                        <th scope="col" class="text-end">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="f : ${fournisseurs}">
-                        <td th:text="${f.nom}" class="fw-bold text-primary"></td>
-                        <td th:text="${f.telephone}"></td>
-                        <td th:text="${f.email}"></td>
-                        <td th:text="${f.adresse}"></td>
-                        <td class="text-center">
-                            <div class="d-flex flex-wrap justify-content-center gap-2">
-                                <a th:href="@{/fournisseurs/modifier/{id}(id=${f.id})}" class="btn btn-warning btn-sm">
-                                    Modifier <i class="fas fa-edit"></i>
-                                </a>
-                                <form th:action="@{/fournisseurs/supprimer/{id}(id=${f.id})}" method="post"
-                                  class="d-inline" onsubmit="return confirm('Supprimer ce fournisseur ?')">
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    Supprimer <i class="fas fa-trash"></i>
+                    <tr th:each="p : ${fournisseurs}" data-partner-row
+                        th:attr="data-id=${p.id},data-name=${p.nom},data-telephone=${p.telephone ?: ''},data-email=${p.email ?: ''},data-adresse=${p.adresse ?: ''}">
+                        <td class="partners-name" data-label="Nom" th:text="${p.nom}"></td>
+                        <td class="partners-coordinate" data-label="Téléphone" th:classappend="${#strings.isEmpty(#strings.trim(p.telephone)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.telephone)) ? 'Non renseigné' : p.telephone}"></td>
+                        <td class="partners-coordinate partners-email" data-label="Email" th:classappend="${#strings.isEmpty(#strings.trim(p.email)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.email)) ? 'Non renseigné' : p.email}"></td>
+                        <td class="partners-coordinate partners-address" data-label="Adresse" th:classappend="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'Non renseigné' : p.adresse}"></td>
+                        <td>
+                            <div class="partners-row-actions">
+                                <button type="button" class="btn btn-outline-primary btn-sm" data-partner-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
+                                    <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
-                            </form>
-                                <a th:href="@{/factures/fournisseur/{id}(id=${f.id})}" class="btn btn-info btn-sm text-white" title="Voir les achats">
-                                    <i class="fas fa-file-invoice-dollar"></i>
+                                <a th:href="@{/fournisseurs/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm" th:attr="aria-label=${'Modifier ' + p.nom}">
+                                    <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>
-                                <a th:href="@{/factures/fournisseur/{id}/cumule(id=${f.id})}" class="btn btn-primary btn-sm" title="Imprimer le releve cumule">
-                                    <i class="fas fa-print"></i>
-                                </a>
+                                <form th:action="@{/fournisseurs/supprimer/{id}(id=${p.id})}" method="post" data-partner-delete
+                                      sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce fournisseur ?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer ' + p.nom}">
+                                        <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="partners-document-actions">
+                                <a th:href="@{/factures/fournisseur/{id}(id=${p.id})}" class="partners-document-link" th:attr="aria-label=${'Achats de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Achats</span></a>
+                                <a th:href="@{/factures/fournisseur/{id}/cumule(id=${p.id})}" class="partners-document-link" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
                             </div>
                         </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <div id="partenairesNoResults" class="partners-empty" hidden>
+                <span class="partners-empty-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucun fournisseur ne correspond</h3>
+                <p>Essayez un autre mot ou élargissez les filtres.</p>
+                <button type="button" class="btn btn-outline-primary" data-reset-partners>Effacer les filtres</button>
+            </div>
+
+            <div id="partenairesPagination" class="partners-pagination" hidden>
+                <div class="partners-page-size">
+                    <label for="partenairesPageSize">Afficher</label>
+                    <select id="partenairesPageSize" class="form-select" aria-controls="partenairesTable">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="all">Tous</option>
+                    </select>
+                    <span>par page</span>
+                </div>
+                <p id="partenairesResults" class="partners-results" role="status" aria-live="polite" th:text="${totalPartenaires + (totalPartenaires == 1 ? ' fournisseur' : ' fournisseurs')}"></p>
+                <div class="partners-page-navigation" aria-label="Pagination des fournisseurs">
+                    <button id="partenairesPrevious" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page précédente"><span aria-hidden="true">‹</span></button>
+                    <span id="partenairesPageLabel">Page 1</span>
+                    <button id="partenairesNext" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page suivante"><span aria-hidden="true">›</span></button>
+                </div>
+            </div>
+        </section>
+
+        <dialog id="partenaireDetailsDialog" class="partner-dialog" aria-labelledby="partenaireDetailsTitle">
+            <div class="partner-dialog-header">
+                <div><p class="app-page-kicker">Fiche fournisseur</p><h2 id="partenaireDetailsTitle">Détails du fournisseur</h2></div>
+                <button type="button" class="partner-dialog-close" data-close-partner-dialog aria-label="Fermer la fiche fournisseur"><span aria-hidden="true">×</span></button>
+            </div>
+            <dl class="partner-detail-grid">
+                <div><dt>Téléphone</dt><dd data-partner-detail="telephone"></dd></div>
+                <div><dt>Email</dt><dd data-partner-detail="email"></dd></div>
+                <div class="partner-detail-address"><dt>Adresse</dt><dd data-partner-detail="adresse"></dd></div>
+            </dl>
+            <div class="partner-dialog-footer"><button type="button" class="btn btn-primary" data-close-partner-dialog>Fermer</button></div>
+        </dialog>
+
+        <dialog id="partenaireDeleteDialog" class="partner-dialog partner-dialog--delete" aria-labelledby="partenaireDeleteTitle" aria-describedby="partenaireDeleteDescription" sec:authorize="hasRole('ADMIN')">
+            <div class="partner-dialog-header">
+                <h2 id="partenaireDeleteTitle">Supprimer ce fournisseur ?</h2>
+                <button type="button" class="partner-dialog-close" data-close-partner-dialog aria-label="Annuler la suppression"><span aria-hidden="true">×</span></button>
+            </div>
+            <p id="partenaireDeleteDescription" class="partner-delete-description">Confirmez la suppression de <strong id="partenaireDeleteName"></strong> du répertoire.</p>
+            <div class="partner-dialog-footer">
+                <button type="button" class="btn btn-outline-secondary" data-close-partner-dialog>Annuler</button>
+                <button id="partenaireDeleteConfirm" type="button" class="btn btn-danger"><i class="fas fa-trash" aria-hidden="true"></i> Supprimer le fournisseur</button>
+            </div>
+        </dialog>
     </div>
+    <script th:src="@{/js/partenaires.js}"></script>
 </div>
