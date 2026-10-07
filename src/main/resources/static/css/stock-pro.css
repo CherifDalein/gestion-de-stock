@@ -363,7 +363,8 @@ body.stock-app .products-category { display: inline-block; padding: 4px 8px; bor
 body.stock-app .products-supplier { color: var(--app-muted); min-width: 105px; max-width: 175px; font-size: .78rem; overflow-wrap: anywhere; }
 body.stock-app .products-price { white-space: nowrap; font-variant-numeric: tabular-nums; }
 body.stock-app .products-currency { color: var(--app-muted); font-size: .67rem; }
-body.stock-app .products-stock { display: grid; grid-template-columns: max-content; justify-items: start; align-content: start; gap: 8px; min-width: 100px; }
+body.stock-app .products-stock { display: inline-flex; align-items: center; gap: 8px; min-width: max-content; white-space: nowrap; }
+body.stock-app .products-stock > * { flex-shrink: 0; }
 body.stock-app .products-stock strong { display: block; margin: 0; font-size: .9rem; line-height: 1.4; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.stock-app .products-stock-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 8px; border-radius: 6px; font-size: .66rem; line-height: 1.35; font-weight: 650; white-space: nowrap; }
 body.stock-app .products-stock-badge--disponible { color: #106448; background: #eaf5ee; }

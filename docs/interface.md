@@ -82,7 +82,7 @@ et des rôles. En navigateur, vérifier :
     d'achat. Vérifier le panier et les montants sans modifier les règles métier.
 17. Les confirmations après création/modification/suppression, ainsi que les pages
     d'erreur 400, 403, 404 et 500 sans détail interne dans la page générique.
-18. La quantité et le badge de stock sur deux lignes distinctes, même avec de
+18. La quantité puis le badge de stock sur une même ligne, même avec de
     grandes quantités. Les actions des neuf listes doivent garder des dimensions
     communes, sans chevauchement après un filtre ou un changement de page.
 
@@ -97,7 +97,7 @@ utilisent un contour vert, modification un contour gris et suppression un
 contour rouge. Le règlement restant à effectuer utilise le vert plein. Les
 cartes de contacts et catégories permettent le retour à la ligne ; les tableaux
 produits, achats et ventes gardent leur défilement horizontal. La quantité en
-stock et son badge occupent deux lignes de grille, séparées de 8 pixels.
+stock précède son badge sur la même ligne, avec un espace de 8 pixels.
 
 Validation du 5 octobre 2026 : les 334 tests existants passent. Le contrôle
 navigateur couvre 82 assertions sur ordinateur et mobile, dont le focus du menu,
@@ -248,3 +248,7 @@ produits sans JavaScript. Quantités extrêmes, badges, actions dans leurs cellu
 défilement, retours à la ligne et annulations sont contrôlés dans des aperçus H2
 temporaires. Aucun POST métier n'est soumis et aucune erreur JavaScript locale
 n'est détectée. Le JAR est construit et les styles servis sur 8080 sont vérifiés.
+
+Le stock affiche ensuite la quantité puis son statut sur une même ligne.
+Cet ajustement passe 47 contrôles navigateur à 320 et 1440 pixels, avec les rôles
+ADMIN/CAISSIER et des quantités extrêmes : aucun chevauchement ni débordement.
