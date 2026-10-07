@@ -1,12 +1,13 @@
 <div th:fragment="content">
     <div class="container-fluid px-4 journal-page">
-        <h1 class="mt-4">Journal des Achats</h1>
+        <h1 class="mt-4">Journal des achats</h1>
+        <p class="app-page-subtitle">Retrouvez les approvisionnements, leurs règlements et leurs factures.</p>
         <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
         <div th:if="${param.success != null and param.success[0] == 'modifie'}"
              class="alert alert-success" role="status">Achat modifié avec succès.</div>
         <div class="mb-4 d-flex justify-content-end">
             <a th:href="@{/achats/nouveau}" class="btn btn-success">
-                <i class="fas fa-truck"></i> Nouvel Approvisionnement
+                <i class="fas fa-truck" aria-hidden="true"></i> Nouvel approvisionnement
             </a>
         </div>
 
@@ -33,14 +34,14 @@
                         <td th:text="${a.id}"></td>
                         <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
-                        <td class="fw-bold" th:text="${a.montantTotal + ' GNF'}"></td>
-                        <td class="text-success" th:text="${(a.montantVerse ?: 0) + ' GNF'}"></td>
+                        <td class="fw-bold" th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="text-success" th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         <td class="text-danger fw-bold"
-                            th:text="${(a.montantTotal - (a.montantVerse ?: 0)) + ' GNF'}">
+                            th:text="${#numbers.formatDecimal((a.montantTotal - (a.montantVerse ?: 0)), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                         </td>
                         <td>
-                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) == 0}" class="badge bg-success">Regle</span>
-                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">Dette</span>
+                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) == 0}" class="badge bg-success">Réglé</span>
+                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">À régler</span>
                         </td>
                         <td class="text-center">
                             <div class="journal-row-actions">

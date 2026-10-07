@@ -1,6 +1,7 @@
 <div th:fragment="content">
     <div id="stockProduits" class="container-fluid stock-products"
          th:with="estAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, totalProduits=${#lists.size(produits)}, produitsEnStock=${#lists.size(produits.?[quantite != null and quantite > 0])}, produitsFaibles=${#lists.size(produits.?[quantite != null and quantite > 0 and quantite <= 5])}, produitsRupture=${#lists.size(produits.?[quantite != null and quantite == 0])}">
+        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
         <header class="products-header">
             <div>
                 <p class="app-page-kicker">Catalogue</p>

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/clients")
@@ -33,9 +34,10 @@ public class ClientController {
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrer(@ModelAttribute("client") Client client, BindingResult result) {
+    public String enregistrer(@ModelAttribute("client") Client client, BindingResult result, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         clientService.enregistrerClient(client);
+        redirectAttributes.addFlashAttribute("success", "Client créé avec succès.");
         return "redirect:/clients";
     }
 
@@ -47,15 +49,17 @@ public class ClientController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifier(@PathVariable Long id, @ModelAttribute("client") Client client, BindingResult result) {
+    public String modifier(@PathVariable Long id, @ModelAttribute("client") Client client, BindingResult result, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         clientService.modifierClient(id, client);
+        redirectAttributes.addFlashAttribute("success", "Client modifié avec succès.");
         return "redirect:/clients";
     }
 
     @PostMapping("/supprimer/{id}")
-    public String supprimer(@PathVariable Long id) {
+    public String supprimer(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         clientService.supprimerClient(id);
+        redirectAttributes.addFlashAttribute("success", "Client supprimé avec succès.");
         return "redirect:/clients";
     }
 }

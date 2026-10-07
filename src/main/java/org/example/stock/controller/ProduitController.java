@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/produits")
@@ -45,7 +46,7 @@ public class ProduitController {
     @PostMapping("/ajouter")
     public String nouveauProduit(@Valid @ModelAttribute("produit") Produit produit,
                                  BindingResult result,
-                                 Model model) {
+                                 Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         if (result.hasErrors()) {
             model.addAttribute("categories", categorieService.listerToutes());
@@ -54,12 +55,14 @@ public class ProduitController {
             return "dashboard";
         }
         produitService.ajouterProduit(produit);
+        redirectAttributes.addFlashAttribute("success", "Produit créé avec succès.");
         return "redirect:/produits";
     }
 
     @PostMapping("/supprimer/{id}")
-    public String supprimerProduit(@PathVariable("id") Long id) {
+    public String supprimerProduit(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         produitService.supprimerProduit(id);
+        redirectAttributes.addFlashAttribute("success", "Produit supprimé avec succès.");
         return "redirect:/produits";
     }
 
@@ -74,7 +77,7 @@ public class ProduitController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model, HttpServletResponse response) {
+    public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model, HttpServletResponse response, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         produit.setId(id);
         if (produit.getVersion() == null) {
@@ -83,6 +86,7 @@ public class ProduitController {
         if (!result.hasErrors()) {
             try {
                 produitService.modifierProduit(id, produit);
+                redirectAttributes.addFlashAttribute("success", "Produit modifié avec succès.");
                 return "redirect:/produits";
             } catch (ProduitModifieException | ConcurrencyFailureException e) {
                 response.setStatus(HttpStatus.CONFLICT.value());

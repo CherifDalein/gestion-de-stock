@@ -26,6 +26,14 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   périodes, recherche et état des règlements.
 - `templates/factures/template_*.html` et `static/css/factures.css` : factures
   individuelles, relevés cumulés et mise en page A4.
+- `templates/caisse/journal.html`, `static/css/caisse.css` et `static/js/caisse.js` :
+  soldes, mouvements, filtres et impression du journal.
+- `templates/categories/*.html`, `static/css/categories.css` et
+  `static/js/categories.js` : répertoire des catégories, formulaires et suppression.
+- `static/css/formulaires.css` : présentation commune aux neuf formulaires de
+  création/modification de produits, contacts, catégories et achats.
+- `templates/error.html` et `static/css/erreurs.css` : pages d'erreur en français
+  avec retour à l'accueil et connexion.
 
 Les styles d’authentification sont limités à `body.stock-auth`; le thème commun à
 `body.stock-app`. Les icônes, Bootstrap JavaScript et Simple DataTables utilisent
@@ -63,6 +71,17 @@ et des rôles. En navigateur, vérifier :
 13. Les journaux d'achat et de vente : défilement horizontal jusqu'aux actions,
     boutons espacés et accessibles au clavier, recherche et pagination, ouverture
     des détails après défilement et fonctionnement du tableau sans DataTables.
+14. La caisse : montants signés exacts, filtres combinés, pagination, dates
+    inclusives, valeurs anciennes absentes et impression de toutes les lignes de
+    la sélection. Avec la commande d'impression du navigateur ou sans JavaScript,
+    le journal complet doit être imprimé.
+15. Les catégories : recherche, tri, répertoire vide, confirmation de suppression
+    nommée, annulation et focus clavier.
+16. Les neuf formulaires : champs et labels, erreurs, retour/annulation, affichage
+    mobile, version cachée du produit et versement readonly lors d'une modification
+    d'achat. Vérifier le panier et les montants sans modifier les règles métier.
+17. Les confirmations après création/modification/suppression, ainsi que les pages
+    d'erreur 400, 403, 404 et 500 sans détail interne dans la page générique.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
@@ -172,3 +191,40 @@ DataTables/Bootstrap en cache puis les CDN bloqués. Les contrôles couvrent le
 défilement au clavier, les actions, les montants, la pagination et les détails des
 ventes. Le JAR est construit et la syntaxe du script local est vérifiée. Les
 parcours utilisent une base H2 temporaire sans aucun POST métier.
+
+La caisse distingue le solde actuel, le solde d'ouverture, la variation du jour,
+les entrées et les sorties. Les valeurs viennent des calculs serveur existants ;
+les filtres de l'historique ne recalculent pas ces indicateurs globaux. Recherche,
+source, sens et bornes de date s'appliquent aux mouvements déjà rendus. Les montants
+sont triés en centimes `BigInt`, les dates ISO restent locales et les valeurs
+anciennes absentes sont signalées. L'impression explicite inclut toutes les pages
+de la sélection, indique les critères et masque le tableau quotidien pour éviter
+les doublons. L'impression native du navigateur inclut le journal complet.
+
+Les catégories utilisent un script local pour la recherche, le tri et la
+pagination. La suppression garde son formulaire POST et son jeton CSRF, avec
+une confirmation nommée et un focus initial sur Annuler. Sans JavaScript, le
+tableau et la confirmation classique restent disponibles. Les neuf formulaires
+utilisent des en-têtes, sections et actions communes, des labels associés et des
+erreurs reliées aux champs. La modification d'achat conserve le panier exact et
+son versement readonly ; le règlement reste une action distincte.
+
+Les confirmations des produits, clients, fournisseurs et catégories sont des
+messages flash ajoutés uniquement après le succès du service. La liste des ventes
+affiche aussi son message de création existant. Les journaux présentent les
+montants GNF à deux décimales et des libellés cohérents. La page d'erreur générique
+affiche un code et une aide en français, sans recopier les exceptions ou traces
+du serveur ; les réponses JSON et les règles d'accès restent celles du serveur.
+
+Validation de l'harmonisation le 7 octobre 2026 : 334 tests Java et 359 assertions
+navigateur réussis, avec deux bases H2 temporaires (25 catégories et 60 mouvements
+de caisse, puis états vides), les rôles ADMIN/CAISSIER et quatre largeurs d'écran
+de 320 à 1440 pixels. Les neuf formulaires, leurs contrats de champs, la précision
+du panier, les dialogues, les erreurs HTTP, le mode sans JavaScript et les CDN
+bloqués sont vérifiés. Huit créations/modifications de fiches jetables confirment
+les messages de succès ; la suppression est interceptée avant le serveur.
+Quatre PDF de caisse A4 sont vérifiés : sélection de 28 mouvements sur deux pages,
+journal complet de 60 mouvements sur quatre pages, même journal sans JavaScript
+et journal vide sur une page. Montants maximaux signés, indicateurs, lignes et
+en-têtes répétés sont exacts, sans débordement ni page blanche. Aucun formulaire
+métier n'a été soumis à la base opérationnelle. Le JAR final est construit.

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/categories")
@@ -33,7 +34,7 @@ public class CategorieController {
     @PostMapping("/ajouter")
     public String ajouterCategorie(@Valid @ModelAttribute("nouvelleCategorie") Categorie categorie,
                                    BindingResult result,
-                                   Model model) {
+                                   Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
 
         if (categorieService.existeDeja(categorie.getNom())) {
@@ -46,12 +47,14 @@ public class CategorieController {
         }
 
         categorieService.ajouterCategorie(categorie);
+        redirectAttributes.addFlashAttribute("success", "Catégorie créée avec succès.");
         return "redirect:/categories";
     }
 
     @PostMapping("/supprimer/{id}")
-    public String supprimerCategorie(@PathVariable("id") Long id) {
+    public String supprimerCategorie(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         categorieService.supprimer(id);
+        redirectAttributes.addFlashAttribute("success", "Catégorie supprimée avec succès.");
         return "redirect:/categories";
     }
 
@@ -70,7 +73,7 @@ public class CategorieController {
     public String modifierCategorie(@PathVariable Long id,
                                     @Valid @ModelAttribute("categorie") Categorie categorie,
                                     BindingResult result,
-                                    Model model) {
+                                    Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         categorie.setId(id);
         if (result.hasErrors()) {
@@ -79,6 +82,7 @@ public class CategorieController {
         }
 
         categorieService.modifierCategorie(id, categorie);
+        redirectAttributes.addFlashAttribute("success", "Catégorie modifiée avec succès.");
         return "redirect:/categories";
     }
 }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Pro · Une étape à reprendre</title>
+    <link th:href="@{/css/erreurs.css}" rel="stylesheet">
+</head>
+<body class="stock-error" th:with="code=${status ?: 500}">
+<main class="error-shell" aria-labelledby="errorTitle">
+    <a class="error-brand" th:href="@{/}" aria-label="Stock Pro, revenir à l’accueil">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="18" width="10" height="10" rx="2"/><rect x="19" y="18" width="10" height="10" rx="2"/><rect x="11" y="3" width="10" height="10" rx="2"/></svg>
+        <span>Stock Pro</span>
+    </a>
+    <section class="error-card">
+        <p class="error-code" th:text="${'Erreur ' + code}">Erreur</p>
+        <h1 id="errorTitle" th:text="${code == 404 ? 'Page introuvable' : (code == 403 ? 'Accès impossible' : (code == 400 ? 'Demande invalide' : (code == 409 ? 'Une étape à reprendre' : 'Un problème est survenu')))}"></h1>
+        <p class="error-description" th:text="${code == 404 ? 'Cette page ou ce document n’est plus disponible. Vous pouvez retrouver vos informations depuis le tableau de bord.' : (code == 403 ? 'Vérifiez que votre session est ouverte et que votre compte dispose des droits nécessaires. Si vous remplissiez un formulaire, rechargez-le avant de réessayer.' : (code == 400 ? 'Vérifiez les informations saisies et rechargez le formulaire avant de réessayer.' : (code == 409 ? 'Les informations ont changé pendant votre saisie. Rechargez le formulaire avant de réessayer.' : 'Vous pouvez revenir au tableau de bord et réessayer dans un instant.')))}"></p>
+        <div class="error-actions">
+            <a th:href="@{/}" class="error-button error-button--primary">Revenir au tableau de bord</a>
+            <a th:href="@{/login}" class="error-button">Se connecter</a>
+        </div>
+        <p class="error-help">Si le problème persiste, indiquez ce code à la personne qui gère l’application.</p>
+    </section>
+</main>
+</body>
+</html>

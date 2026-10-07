@@ -1,6 +1,7 @@
 <div th:fragment="content">
     <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="client" data-partner-label="client"
          th:with="totalPartenaires=${#lists.size(clients)}, avecTelephone=${#lists.size(clients.?[telephone != null and !#strings.isEmpty(#strings.trim(telephone))])}, avecEmail=${#lists.size(clients.?[email != null and !#strings.isEmpty(#strings.trim(email))])}, sansContact=${#lists.size(clients.?[(telephone == null or #strings.isEmpty(#strings.trim(telephone))) and (email == null or #strings.isEmpty(#strings.trim(email)))])}">
+        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
         <header class="partners-header">
             <div>
                 <p class="app-page-kicker">Contacts</p>

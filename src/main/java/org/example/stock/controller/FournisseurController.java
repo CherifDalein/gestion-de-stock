@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.ModelAndView;
 
 @Controller
@@ -31,19 +32,21 @@ public class FournisseurController {
     }
 
     @PostMapping("/enregistrer")
-    public String enregistrer(@Valid @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result, Model model) {
+    public String enregistrer(@Valid @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result, Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         if (result.hasErrors()){
             model.addAttribute("view", "fournisseurs/nouveau");
             return "dashboard";
         }
         fournisseurService.enregistrer(fournisseur);
+        redirectAttributes.addFlashAttribute("success", "Fournisseur créé avec succès.");
         return "redirect:/fournisseurs";
     }
 
     @PostMapping("/supprimer/{id}")
-    public String supprimerFournisseur(@PathVariable("id") Long id) {
+    public String supprimerFournisseur(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
         fournisseurService.supprimerFournisseur(id);
+        redirectAttributes.addFlashAttribute("success", "Fournisseur supprimé avec succès.");
         return "redirect:/fournisseurs";
     }
 
@@ -56,9 +59,10 @@ public class FournisseurController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifierFournisseur(@PathVariable Long id, @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result) {
+    public String modifierFournisseur(@PathVariable Long id, @ModelAttribute("fournisseur") Fournisseur fournisseur, BindingResult result, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         fournisseurService.modifierFournisseur(id, fournisseur);
+        redirectAttributes.addFlashAttribute("success", "Fournisseur modifié avec succès.");
         return "redirect:/fournisseurs";
     }
 }
