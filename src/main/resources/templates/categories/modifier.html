@@ -1,39 +1,37 @@
 <div th:fragment="content">
-    <div id="layoutAuthentication">
-        <div id="layoutAuthentication_content">
-            <main>
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-6">
-                            <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                <div class="card-header">
-                                    <h3 class="text-center my-4">Modifier la Categorie</h3>
-                                </div>
-                                <div class="card-body">
-                                    <form th:action="@{/categories/modifier/{id}(id=${categorie.id})}" th:object="${categorie}" method="post">
-                                        <div class="form-floating mb-3">
-                                            <input class="form-control" id="inputNom" type="text" th:field="*{nom}" placeholder="Nom de la categorie" required />
-                                            <label for="inputNom">Nom de la categorie</label>
-                                            <div class="text-danger small mt-2"
-                                                 th:if="${#fields.hasErrors('nom')}"
-                                                 th:errors="*{nom}"></div>
-                                        </div>
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <section class="record-page">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Catalogue · Catégories</p>
+                <h1>Modifier la catégorie</h1>
+                <p class="record-intro">Mettez à jour le nom de votre catégorie.</p>
+            </div>
+            <a th:href="@{/categories}" class="btn btn-outline-secondary record-back"><i class="fas fa-arrow-left" aria-hidden="true"></i> Retour aux catégories</a>
+        </header>
 
-                                        <div class="mt-4 mb-0">
-                                            <div class="d-grid">
-                                                <button type="submit" class="btn btn-warning btn-block">Mettre a jour la categorie</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="card-footer text-center py-3">
-                                    <div class="small"><a th:href="@{/categories}">Retour a la liste</a></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <form th:action="@{/categories/modifier/{id}(id=${categorie.id})}" th:object="${categorie}" method="post" class="record-layout record-layout--single">
+            <section class="record-panel" aria-labelledby="categoryFormTitle">
+                <div class="record-panel-heading">
+                    <h2 id="categoryFormTitle">Nom de la catégorie</h2>
+                    <p>Ce champ est obligatoire.</p>
                 </div>
-            </main>
-        </div>
-    </div>
+                <div class="record-errors alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                    <p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p>
+                </div>
+                <div class="record-field">
+                    <label for="inputNom" class="form-label">Nom de la catégorie</label>
+                    <input class="form-control" id="inputNom" type="text" th:field="*{nom}" placeholder="Ex. : Épicerie" required
+                           th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'categoryNameHelp categoryNameError' : 'categoryNameHelp'}" />
+                    <p id="categoryNameHelp" class="record-help">Choisissez un nom clair pour retrouver cette catégorie dans vos produits.</p>
+                    <p id="categoryNameError" class="record-field-error" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}" role="alert"></p>
+                </div>
+                <div class="record-actions">
+                    <a th:href="@{/categories}" class="btn btn-outline-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Enregistrer les modifications</button>
+                </div>
+            </section>
+        </form>
+    </section>
 </div>

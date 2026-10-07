@@ -1,0 +1,58 @@
+/* Shared presentation for product, partner and category records. */
+body.stock-app .record-page { max-width: 1100px; margin-inline: auto; min-width: 0; }
+body.stock-app .record-page [hidden] { display: none !important; }
+body.stock-app .record-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 28px; }
+body.stock-app .record-header > div { min-width: 0; }
+body.stock-app .record-header h1 { margin: 0; overflow-wrap: anywhere; }
+body.stock-app .record-kicker { margin: 0 0 8px; color: var(--app-green-dark, #126448); font-size: .73rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+body.stock-app .record-intro { max-width: 680px; margin: 10px 0 0; color: var(--app-muted, #687b70); font-size: .9rem; line-height: 1.6; }
+body.stock-app .record-back { flex-shrink: 0; min-height: 44px; }
+body.stock-app .record-layout { display: grid; gap: 22px; min-width: 0; }
+body.stock-app .record-layout--single { max-width: 900px; margin-inline: auto; }
+body.stock-app .record-panel { min-width: 0; padding: 26px; border: 1px solid var(--app-border, #dae5de); border-radius: 16px; background: #fff; box-shadow: 0 3px 14px rgb(21 44 37 / 3%); }
+body.stock-app .record-panel-heading { margin-bottom: 22px; }
+body.stock-app .record-panel-heading h2 { margin: 0 0 7px; color: var(--app-ink, #183a2a); font-size: 1.05rem; font-weight: 700; }
+body.stock-app .record-panel-heading p { margin: 0; color: var(--app-muted, #687b70); font-size: .82rem; line-height: 1.6; }
+body.stock-app .record-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+body.stock-app .record-field { min-width: 0; }
+body.stock-app .record-field--wide { grid-column: 1 / -1; }
+body.stock-app .record-field > label { display: block; margin-bottom: 9px; color: var(--app-ink, #183a2a); font-size: .85rem; font-weight: 650; line-height: 1.5; }
+body.stock-app .record-optional { margin-left: 4px; color: var(--app-muted, #687b70); font-size: .76rem; font-weight: 400; }
+body.stock-app .record-field :is(.form-control, .form-select) { width: 100%; min-width: 0; min-height: 46px; }
+body.stock-app .record-field textarea.form-control { min-height: 116px; resize: vertical; }
+body.stock-app .record-field input[type=number] { font-variant-numeric: tabular-nums; }
+body.stock-app .record-help { margin: 8px 0 0; color: var(--app-muted, #687b70); font-size: .77rem; line-height: 1.6; overflow-wrap: anywhere; }
+body.stock-app .record-field-error { margin: 8px 0 0; color: #a32c39; font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+body.stock-app .record-field :is(.stateInvalid, [aria-invalid=true]) { border-color: #b94a54; background-color: #fffafa; }
+body.stock-app .record-field :is(.stateInvalid, [aria-invalid=true]):focus { box-shadow: 0 0 0 3px rgb(185 74 84 / 15%); }
+body.stock-app .record-errors { margin: 0; padding: 18px 22px; border: 1px solid #ebc8cd; border-radius: 12px; background: #fff6f7; color: #8b2834; font-size: .85rem; overflow-wrap: anywhere; }
+body.stock-app .record-errors > p { margin: 0 0 8px; font-weight: 650; }
+body.stock-app .record-errors ul { margin: 0; padding-left: 20px; }
+body.stock-app .record-errors a { display: inline-block; margin-top: 12px; color: #8b2834; font-weight: 650; }
+body.stock-app .record-panel > .record-errors { margin-bottom: 22px; }
+body.stock-app .record-note { margin: 0; padding: 15px 18px; border: 1px solid var(--app-border, #dae5de); border-radius: 11px; background: #f7faf8; color: var(--app-muted, #687b70); font-size: .8rem; line-height: 1.65; }
+body.stock-app .record-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 2px; }
+body.stock-app .record-actions .btn { min-height: 46px; white-space: normal; text-align: center; }
+body.stock-app .record-panel > .record-actions { margin-top: 24px; }
+body.stock-app .record-page :is(a, button, input, select, textarea):focus-visible { outline: 3px solid #8ac4a6; outline-offset: 3px; }
+
+/* The edit purchase keeps the same cart and settlement hooks as a new purchase. */
+body.stock-app .operation-edit .operation-payment-link { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin-top: 9px; font-size: .8rem; font-weight: 650; color: var(--app-green-dark, #126448); }
+body.stock-app .operation-edit .operation-payment-link:hover { color: #0c523b; }
+body.stock-app .operation-edit #montantVerse { background: #f7faf8; }
+body.stock-app .operation-edit .operation-note { margin-top: 0; }
+body.stock-app .operation-edit .operation-cart-help { margin: 12px 0 0; color: var(--app-muted, #687b70); font-size: .75rem; }
+
+@media (max-width: 767.98px) {
+  body.stock-app .record-header { flex-direction: column; align-items: flex-start; gap: 17px; margin-bottom: 22px; }
+  body.stock-app .record-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  body.stock-app .record-field :is(.form-control, .form-select) { font-size: 1rem; }
+}
+@media (max-width: 575.98px) {
+  body.stock-app .record-layout { gap: 18px; }
+  body.stock-app .record-panel { padding: 20px; border-radius: 13px; }
+  body.stock-app .record-panel-heading { margin-bottom: 20px; }
+  body.stock-app .record-actions { flex-direction: column-reverse; align-items: stretch; }
+  body.stock-app .record-actions .btn { width: 100%; }
+  body.stock-app .record-errors { padding: 16px 18px; }
+}

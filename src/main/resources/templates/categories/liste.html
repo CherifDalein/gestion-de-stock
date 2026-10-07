@@ -1,44 +1,124 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4">Catégories</h1>
-        <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/categories/nouveau}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Ajouter une catégorie
-            </a>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-table me-1"></i> Liste des catégories
+    <link th:href="@{/css/categories.css}" rel="stylesheet" />
+    <div id="stockCategories" class="container-fluid categories-page" th:with="totalCategories=${#lists.size(categories)}">
+        <header class="categories-header">
+            <div>
+                <p class="app-page-kicker">Catalogue</p>
+                <h1>Catégories</h1>
+                <p class="app-page-subtitle">Organisez vos produits pour les retrouver plus facilement.</p>
             </div>
-            <div class="card-body">
-                <table id="datatablesSimple">
+            <a th:href="@{/categories/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter une catégorie
+            </a>
+        </header>
+
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+
+        <section class="categories-panel" aria-labelledby="categoriesListTitle">
+            <div class="categories-panel-heading">
+                <div>
+                    <h2 id="categoriesListTitle">Liste des catégories</h2>
+                    <p>Consultez et mettez à jour les catégories de votre catalogue.</p>
+                </div>
+                <span class="categories-count" th:text="${totalCategories + (totalCategories == 1 ? ' catégorie' : ' catégories')}">0 catégorie</span>
+            </div>
+
+            <div id="categoriesToolbar" class="categories-toolbar" hidden>
+                <div class="categories-search">
+                    <label for="categoriesSearch" class="form-label">Rechercher une catégorie</label>
+                    <div class="categories-search-input">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <input id="categoriesSearch" class="form-control" type="search" placeholder="Nom ou identifiant…" autocomplete="off" aria-controls="categoriesTable" />
+                    </div>
+                </div>
+                <div class="categories-order">
+                    <label for="categoriesSort" class="form-label">Trier par</label>
+                    <select id="categoriesSort" class="form-select" aria-controls="categoriesTable">
+                        <option value="nom-asc">Nom · A à Z</option>
+                        <option value="nom-desc">Nom · Z à A</option>
+                        <option value="id-asc">Identifiant croissant</option>
+                        <option value="id-desc">Identifiant décroissant</option>
+                    </select>
+                </div>
+                <button id="categoriesReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche et le tri">
+                    <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                </button>
+            </div>
+
+            <div id="categoriesEmptyCatalogue" class="categories-empty" th:if="${#lists.isEmpty(categories)}">
+                <span class="categories-empty-icon"><i class="fas fa-tags" aria-hidden="true"></i></span>
+                <h3>Aucune catégorie pour le moment</h3>
+                <p>Ajoutez une première catégorie pour organiser vos produits.</p>
+                <a th:href="@{/categories/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Ajouter une catégorie</a>
+            </div>
+
+            <div id="categoriesTableWrap" class="table-responsive categories-table-wrap" tabindex="0" aria-label="Liste des catégories, défilement horizontal si nécessaire" th:attr="hidden=${#lists.isEmpty(categories) ? 'hidden' : null}">
+                <table id="categoriesTable" class="table table-hover categories-table mb-0">
+                    <caption class="visually-hidden">Identifiants, noms et actions des catégories</caption>
                     <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nom</th>
-                        <th>Actions</th>
+                        <th scope="col" aria-sort="none"><button type="button" class="categories-sort" data-category-sort="id" disabled>Identifiant</button></th>
+                        <th scope="col" aria-sort="none"><button type="button" class="categories-sort" data-category-sort="nom" disabled>Nom</button></th>
+                        <th scope="col" class="text-end" sec:authorize="hasRole('ADMIN')">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="cat : ${categories}">
-                        <td th:text="${cat.id}"></td>
-                        <td th:text="${cat.nom}"></td>
-                        <td>
-                            <a th:href="@{/categories/modifier/{id}(id=${cat.id})}" class="btn btn-warning btn-sm me-2">
-                                Modifier <i class="fas fa-edit"></i>
-                            </a>
-                            <form th:action="@{/categories/supprimer/{id}(id=${cat.id})}" method="post"
-                                  class="d-inline" onsubmit="return confirm('Supprimer cette catégorie ?')">
-                                <button type="submit" class="btn btn-danger btn-sm">
-                                    Supprimer <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                    <tr th:each="cat : ${categories}" data-category-row th:attr="data-id=${cat.id},data-name=${cat.nom}">
+                        <td class="categories-id" data-label="Identifiant" th:text="${cat.id}"></td>
+                        <td class="categories-name" data-label="Nom" th:text="${cat.nom}"></td>
+                        <td class="categories-actions-cell" sec:authorize="hasRole('ADMIN')">
+                            <div class="categories-row-actions">
+                                <a th:href="@{/categories/modifier/{id}(id=${cat.id})}" class="btn btn-outline-secondary btn-sm" th:attr="aria-label=${'Modifier ' + cat.nom}">
+                                    <i class="fas fa-pen" aria-hidden="true"></i> Modifier
+                                </a>
+                                <form th:action="@{/categories/supprimer/{id}(id=${cat.id})}" method="post" data-category-delete th:attr="data-category-name=${cat.nom}"
+                                      onsubmit="return confirm('Supprimer la catégorie « ' + this.dataset.categoryName + ' » ?')">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer ' + cat.nom}">
+                                        <i class="fas fa-trash" aria-hidden="true"></i> Supprimer
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            <div id="categoriesNoResults" class="categories-empty" hidden>
+                <span class="categories-empty-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span>
+                <h3>Aucune catégorie ne correspond</h3>
+                <p>Essayez un autre nom ou effacez la recherche.</p>
+                <button type="button" class="btn btn-outline-primary" data-reset-categories>Effacer la recherche</button>
+            </div>
+
+            <div id="categoriesPagination" class="categories-pagination" hidden>
+                <div class="categories-page-size">
+                    <label for="categoriesPageSize">Afficher</label>
+                    <select id="categoriesPageSize" class="form-select" aria-controls="categoriesTable">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="all">Toutes</option>
+                    </select>
+                    <span>par page</span>
+                </div>
+                <p id="categoriesResults" class="categories-results" role="status" aria-live="polite" th:text="${totalCategories + (totalCategories == 1 ? ' catégorie' : ' catégories')}"></p>
+                <nav class="categories-page-navigation" aria-label="Pagination des catégories">
+                    <button id="categoriesPrevious" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page précédente"><span aria-hidden="true">‹</span></button>
+                    <span id="categoriesPageLabel">Page 1</span>
+                    <button id="categoriesNext" type="button" class="btn btn-outline-secondary btn-sm" aria-label="Page suivante"><span aria-hidden="true">›</span></button>
+                </nav>
+            </div>
+        </section>
+
+        <dialog id="categoryDeleteDialog" class="categories-dialog" aria-labelledby="categoryDeleteTitle" aria-describedby="categoryDeleteDescription" sec:authorize="hasRole('ADMIN')">
+            <h2 id="categoryDeleteTitle">Supprimer cette catégorie ?</h2>
+            <p id="categoryDeleteDescription">Confirmez la suppression de la catégorie <strong id="categoryDeleteName"></strong>.</p>
+            <div class="categories-dialog-actions">
+                <button id="categoryDeleteCancel" type="button" class="btn btn-outline-secondary" autofocus>Annuler</button>
+                <button id="categoryDeleteConfirm" type="button" class="btn btn-danger"><i class="fas fa-trash" aria-hidden="true"></i> Supprimer la catégorie</button>
+            </div>
+        </dialog>
     </div>
+    <script th:src="@{/js/categories.js}"></script>
 </div>
