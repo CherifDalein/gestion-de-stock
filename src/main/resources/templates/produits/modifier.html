@@ -1,93 +1,104 @@
 <div th:fragment="content">
-<div id="layoutAuthentication">
-    <div id="layoutAuthentication_content">
-        <main>
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-7">
-                        <div class="card shadow-lg border-0 rounded-lg mt-5">
-                            <div class="card-header"><h3 class="text-center my-4">Modifier le Produit</h3></div>
-                            <div class="card-body">
-                                <form th:action="@{/produits/modifier/{id}(id=${produit.id})}" th:object="${produit}" method="post">
-                                <input type="hidden" th:field="*{version}" />
-                                <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
-                                    <ul class="mb-0">
-                                        <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
-                                    </ul>
-                                    <a th:href="@{/produits/modifier/{id}(id=${produit.id})}">Recharger la fiche du produit</a>
-                                </div>
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <section class="record-page" aria-labelledby="recordTitre">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Catalogue</p>
+                <h1 id="recordTitre">Modifier le produit</h1>
+                <p class="record-intro">Mettez à jour sa fiche, ses prix et la quantité en stock.</p>
+            </div>
+            <a th:href="@{/produits}" class="btn btn-outline-secondary record-back">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des produits
+            </a>
+        </header>
 
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <div class="form-floating mb-3 mb-md-0">
-                                                <input class="form-control" id="inputNom" type="text" th:field="*{nom}" required />
-                                                <label for="inputNom">Nom du produit</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-floating">
-                                                <input class="form-control" id="inputRef" type="text" th:field="*{reference}" required />
-                                                <label for="inputRef">Référence</label>
-                                            </div>
-                                        </div>
-                                    </div>
+        <form th:action="@{/produits/modifier/{id}(id=${produit.id})}" th:object="${produit}" method="post" class="record-layout record-layout--single">
+            <input type="hidden" th:field="*{version}" />
+            <div th:if="${#fields.hasErrors('*')}" class="record-errors" role="alert">
+                <p>Vérifiez les informations du produit.</p>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                </ul>
+                <a th:href="@{/produits/modifier/{id}(id=${produit.id})}">Recharger la fiche du produit</a>
+            </div>
+            <p class="record-note">Tous les champs sont obligatoires, sauf le fournisseur.</p>
 
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <div class="form-floating mb-3 mb-md-0">
-                                                <input class="form-control" id="inputPrixAchat" type="number" step="0.01" min="0" th:field="*{prixAchat}" required />
-                                                <label for="inputPrixAchat">Prix d'Achat (GNF)</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-floating">
-                                                <input class="form-control" id="inputPrixVente" type="number" step="0.01" min="0" th:field="*{prixVente}" required />
-                                                <label for="inputPrixVente">Prix de Vente (GNF)</label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
-                                            <div class="form-floating mb-3 mb-md-0">
-                                                <input class="form-control" id="inputQuantite" type="number" min="0" step="1" th:field="*{quantite}" required />
-                                                <label for="inputQuantite">Quantité en stock</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-floating">
-                                                <select class="form-select" id="inputCategorie" th:field="*{categorie}" required>
-                                                    <option th:each="cat : ${categories}"
-                                                            th:value="${cat.id}"
-                                                            th:text="${cat.nom}"
-                                                            th:selected="${cat.id == produit.categorie?.id}">
-                                                    </option>
-                                                </select>
-                                                <label for="inputCategorie">Catégorie</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-floating">
-                                                <select class="form-select" th:field="*{fournisseur}">
-                                                    <option value="" selected>Inconnu / Divers</option>
-                                                    <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
-                                                </select>
-                                                <label>Fournisseur</label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                        <a class="small" th:href="@{/produits}">Annuler</a>
-                                        <button type="submit" class="btn btn-warning">Mettre à jour le produit</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
+            <section class="record-panel" aria-labelledby="informationsTitre">
+                <div class="record-panel-heading">
+                    <h2 id="informationsTitre">Informations du produit</h2>
+                    <p>Identifiez le produit et retrouvez-le facilement dans le catalogue.</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="inputNom">Nom du produit</label>
+                        <input class="form-control" id="inputNom" th:field="*{nom}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'inputNom-error' : null}" required type="text" autocomplete="off" placeholder="Nom du produit" />
+                        <p id="inputNom-error" class="record-field-error" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="inputRef">Référence</label>
+                        <input class="form-control" id="inputRef" th:field="*{reference}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('reference')},aria-describedby=${#fields.hasErrors('reference') ? 'inputRef-help inputRef-error' : 'inputRef-help'}" required type="text" autocomplete="off" placeholder="REF-001" />
+                        <p id="inputRef-help" class="record-help">La référence permet d’identifier le produit dans le catalogue.</p>
+                        <p id="inputRef-error" class="record-field-error" th:if="${#fields.hasErrors('reference')}" th:errors="*{reference}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="inputCategorie">Catégorie</label>
+                        <select class="form-select" id="inputCategorie" th:field="*{categorie}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('categorie')},aria-describedby=${#fields.hasErrors('categorie') ? 'inputCategorie-error' : null}" required>
+                            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.nom}" th:selected="${cat.id == produit.categorie?.id}"></option>
+                        </select>
+                        <p id="inputCategorie-error" class="record-field-error" th:if="${#fields.hasErrors('categorie')}" th:errors="*{categorie}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="fournisseur">Fournisseur <span class="record-optional">(facultatif)</span></label>
+                        <select class="form-select" id="fournisseur" th:field="*{fournisseur}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('fournisseur')},aria-describedby=${#fields.hasErrors('fournisseur') ? 'fournisseur-help fournisseur-error' : 'fournisseur-help'}">
+                            <option value="" selected>Inconnu / Divers</option>
+                            <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
+                        </select>
+                        <p id="fournisseur-help" class="record-help">Choisissez « Inconnu / Divers » si aucun fournisseur n’est associé.</p>
+                        <p id="fournisseur-error" class="record-field-error" th:if="${#fields.hasErrors('fournisseur')}" th:errors="*{fournisseur}"></p>
                     </div>
                 </div>
+            </section>
+
+            <section class="record-panel" aria-labelledby="prixTitre">
+                <div class="record-panel-heading">
+                    <h2 id="prixTitre">Prix</h2>
+                    <p>Les montants sont exprimés en francs guinéens (GNF).</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="inputPrixAchat">Prix d’achat (GNF)</label>
+                        <input class="form-control" id="inputPrixAchat" th:field="*{prixAchat}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixAchat')},aria-describedby=${#fields.hasErrors('prixAchat') ? 'inputPrixAchat-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
+                        <p id="inputPrixAchat-error" class="record-field-error" th:if="${#fields.hasErrors('prixAchat')}" th:errors="*{prixAchat}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="inputPrixVente">Prix de vente (GNF)</label>
+                        <input class="form-control" id="inputPrixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'inputPrixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
+                        <p id="inputPrixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="record-panel" aria-labelledby="stockTitre">
+                <div class="record-panel-heading">
+                    <h2 id="stockTitre">Stock</h2>
+                    <p>Vérifiez la quantité enregistrée pour ce produit.</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="inputQuantite">Quantité en stock</label>
+                        <input class="form-control" id="inputQuantite" th:field="*{quantite}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('quantite')},aria-describedby=${#fields.hasErrors('quantite') ? 'inputQuantite-help inputQuantite-error' : 'inputQuantite-help'}" required type="number" autocomplete="off" min="0" step="1" inputmode="numeric" placeholder="0" />
+                        <p id="inputQuantite-help" class="record-help">Indiquez un nombre entier d’unités, supérieur ou égal à zéro.</p>
+                        <p id="inputQuantite-error" class="record-field-error" th:if="${#fields.hasErrors('quantite')}" th:errors="*{quantite}"></p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="record-actions">
+                <a th:href="@{/produits}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check me-2" aria-hidden="true"></i> Mettre à jour le produit
+                </button>
             </div>
-        </main>
-    </div>
-</div>
+        </form>
+    </section>
 </div>

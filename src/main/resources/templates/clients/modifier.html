@@ -1,57 +1,67 @@
 <div th:fragment="content">
-    <div id="layoutAuthentication">
-        <div id="layoutAuthentication_content">
-            <main>
-                <div class="container">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-7">
-                            <div class="card shadow-lg border-0 rounded-lg mt-5">
-                                <div class="card-header">
-                                    <h3 class="text-center my-4">Modifier le Client</h3>
-                                </div>
-                                <div class="card-body">
-                                    <form th:action="@{/clients/modifier/{id}(id=${client.id})}" th:object="${client}" method="post">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <section class="record-page" aria-labelledby="recordTitre">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Clients</p>
+                <h1 id="recordTitre">Modifier le client</h1>
+                <p class="record-intro">Mettez à jour les informations et les coordonnées de ce client.</p>
+            </div>
+            <a th:href="@{/clients}" class="btn btn-outline-secondary record-back">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des clients
+            </a>
+        </header>
 
-                                        <div class="form-floating mb-3">
-                                            <input class="form-control" id="inputNom" th:field="*{nom}" type="text" placeholder="Nom complet" required />
-                                            <label for="inputNom">Nom complet / Raison sociale</label>
-                                        </div>
+        <form th:action="@{/clients/modifier/{id}(id=${client.id})}" th:object="${client}" method="post" class="record-layout record-layout--single">
+            <div th:if="${#fields.hasErrors('*')}" class="record-errors" role="alert">
+                <p>Vérifiez les informations de la fiche.</p>
+                <ul>
+                    <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
+                </ul>
+            </div>
 
-                                        <div class="row mb-3">
-                                            <div class="col-md-6">
-                                                <div class="form-floating mb-3 mb-md-0">
-                                                    <input class="form-control" id="inputTelephone" th:field="*{telephone}" type="tel" placeholder="Telephone" />
-                                                    <label for="inputTelephone">Telephone</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input class="form-control" id="inputEmail" th:field="*{email}" type="email" placeholder="Email" />
-                                                    <label for="inputEmail">Email</label>
-                                                </div>
-                                            </div>
-                                        </div>
+            <section class="record-panel" aria-labelledby="identiteTitre">
+                <div class="record-panel-heading">
+                    <h2 id="identiteTitre">Informations du client</h2>
+                    <p>Le nom est obligatoire. Les coordonnées peuvent être complétées plus tard.</p>
+                </div>
+                    <div class="record-field">
+                        <label for="inputNom">Nom complet / Raison sociale</label>
+                        <input class="form-control" id="inputNom" th:field="*{nom}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'inputNom-error' : null}" required type="text" autocomplete="name" placeholder="Nom complet ou entreprise" />
+                        <p id="inputNom-error" class="record-field-error" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}"></p>
+                    </div>
+            </section>
 
-                                        <div class="form-floating mb-3">
-                                            <input class="form-control" id="inputAdresse" th:field="*{adresse}" type="text" placeholder="Adresse" />
-                                            <label for="inputAdresse">Adresse</label>
-                                        </div>
-
-                                        <div class="mt-4 mb-0">
-                                            <div class="d-grid">
-                                                <button type="submit" class="btn btn-warning btn-block">Mettre a jour le client</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                <div class="card-footer text-center py-3">
-                                    <div class="small"><a th:href="@{/clients}">Retour a la liste</a></div>
-                                </div>
-                            </div>
-                        </div>
+            <section class="record-panel" aria-labelledby="coordonneesTitre">
+                <div class="record-panel-heading">
+                    <h2 id="coordonneesTitre">Coordonnées</h2>
+                    <p>Gardez les informations utiles pour contacter le client.</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="inputTelephone">Téléphone <span class="record-optional">(facultatif)</span></label>
+                        <input class="form-control" id="inputTelephone" th:field="*{telephone}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('telephone')},aria-describedby=${#fields.hasErrors('telephone') ? 'inputTelephone-error' : null}" type="tel" autocomplete="tel" inputmode="tel" placeholder="Numéro de téléphone" />
+                        <p id="inputTelephone-error" class="record-field-error" th:if="${#fields.hasErrors('telephone')}" th:errors="*{telephone}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="inputEmail">Adresse e-mail <span class="record-optional">(facultatif)</span></label>
+                        <input class="form-control" id="inputEmail" th:field="*{email}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email') ? 'inputEmail-error' : null}" type="email" autocomplete="email" inputmode="email" placeholder="nom@exemple.com" />
+                        <p id="inputEmail-error" class="record-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="inputAdresse">Adresse <span class="record-optional">(facultatif)</span></label>
+                        <input class="form-control" id="inputAdresse" th:field="*{adresse}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('adresse')},aria-describedby=${#fields.hasErrors('adresse') ? 'inputAdresse-error' : null}" type="text" autocomplete="street-address" placeholder="Adresse du client" />
+                        <p id="inputAdresse-error" class="record-field-error" th:if="${#fields.hasErrors('adresse')}" th:errors="*{adresse}"></p>
                     </div>
                 </div>
-            </main>
-        </div>
-    </div>
+            </section>
+
+            <div class="record-actions">
+                <a th:href="@{/clients}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check me-2" aria-hidden="true"></i> Mettre à jour le client
+                </button>
+            </div>
+        </form>
+    </section>
 </div>

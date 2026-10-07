@@ -1,110 +1,141 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4"><i class="fas fa-edit"></i> Modifier l'Achat #<span th:text="${achat.id}"></span></h1>
-
-        <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/achats}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Retour à la liste
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <div class="container-fluid stock-operation operation-edit">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Achats</p>
+                <h1>Modifier l’achat #<span th:text="${achat.id}"></span></h1>
+                <p class="app-page-subtitle">Ajustez le fournisseur et les produits, puis vérifiez le total de l’achat.</p>
+            </div>
+            <a th:href="@{/achats}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des achats
             </a>
-        </div>
+        </header>
 
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
-        <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm">
-
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card shadow-sm mb-4 border-left-warning">
-                        <div class="card-header bg-warning text-dark fw-bold">
-                            <i class="fas fa-truck me-1"></i> Achat et fournisseur
+        <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm" class="operation-layout">
+            <div class="operation-workspace">
+                <section class="operation-panel" aria-labelledby="fournisseurTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="fournisseurTitre">Fournisseur</h2>
+                            <p>Le fournisseur associé à cet approvisionnement.</p>
                         </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Fournisseur</label>
-                                <select th:field="*{fournisseur}" class="form-select" required>
-                                    <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
-                                </select>
-                            </div>
+                    </div>
+                    <div class="operation-field record-field">
+                        <label for="fournisseur" class="form-label">Fournisseur de l’achat</label>
+                        <select th:field="*{fournisseur}" id="fournisseur" class="form-select" required
+                                th:errorclass="stateInvalid"
+                                th:attr="aria-invalid=${#fields.hasErrors('fournisseur')},aria-describedby=${#fields.hasErrors('fournisseur') ? 'fournisseur-error' : null}">
+                            <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
+                        </select>
+                        <p id="fournisseur-error" class="record-field-error" th:if="${#fields.hasErrors('fournisseur')}" th:errors="*{fournisseur}"></p>
+                    </div>
+                </section>
 
-                            <hr>
+                <section class="operation-panel" aria-labelledby="produitsTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="produitsTitre">Produits de l’achat</h2>
+                            <p>Retirez une ligne pour la remplacer avec un autre prix ou une autre quantité.</p>
+                        </div>
+                        <span id="achatCompteur" class="operation-count" aria-live="polite">0 ligne</span>
+                    </div>
 
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Total Facture (GNF)</label>
-                                <input type="number" step="0.01" th:value="${achat.montantTotal}" id="totalGeneral"
-                                       class="form-control form-control-lg fw-bold text-danger bg-light" readonly>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold text-success">Déjà versé (GNF)</label>
-                                <input type="number" th:value="${achat.montantVerse ?: 0}" id="montantVerse"
-                                       class="form-control form-control-lg bg-light" readonly data-saisie-manuelle="true">
-                                <a th:href="@{/achats/regler/{id}(id=${achat.id})}">Enregistrer un nouveau versement</a>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Reste à Payer (Dette)</label>
-                                <input type="number" id="resteAPayer" class="form-control bg-light fw-bold" readonly>
-                            </div>
-
-                            <button type="submit" class="btn btn-warning btn-lg w-100 shadow-sm mt-3 fw-bold">
-                                <i class="fas fa-save"></i> Enregistrer les modifications
+                    <div class="operation-compose operation-compose--purchase">
+                        <div class="operation-field">
+                            <label for="selectProduit" class="form-label">Produit</label>
+                            <select id="selectProduit" class="form-select" aria-describedby="produitFeedback">
+                                <option value="">Choisir un produit…</option>
+                                <option th:each="p : ${produits}"
+                                        th:value="${p.id}"
+                                        th:data-nom="${p.nom}"
+                                        th:data-prix="${p.prixAchat}"
+                                        th:text="${p.nom}"></option>
+                            </select>
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputPrix" class="form-label">Prix unitaire (GNF)</label>
+                            <input type="number" id="inputPrix" class="form-control" placeholder="0" min="0" step="0.01"
+                                   autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputQtite" class="form-label">Quantité</label>
+                            <input type="number" id="inputQtite" class="form-control" placeholder="1" min="1" step="1"
+                                   autocomplete="off" inputmode="numeric" aria-describedby="produitFeedback">
+                        </div>
+                        <div class="operation-add">
+                            <button type="button" class="btn btn-primary w-100" onclick="ajouterLigne()">
+                                <i class="fas fa-plus me-2" aria-hidden="true"></i> Ajouter
                             </button>
                         </div>
                     </div>
-                </div>
+                    <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
 
-                <div class="col-md-8">
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-dark text-white fw-bold">
-                            <i class="fas fa-boxes me-1"></i> Produits de l'achat
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-2 mb-4 border-bottom pb-3">
-                                <div class="col-md-5">
-                                    <label class="small fw-bold">Produit</label>
-                                    <select id="selectProduit" class="form-select">
-                                        <option value="">-- Ajouter un autre produit --</option>
-                                        <option th:each="p : ${produits}"
-                                                th:value="${p.id}"
-                                                th:data-nom="${p.nom}"
-                                                th:data-prix="${p.prixAchat}"
-                                                th:text="${p.nom}"></option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small fw-bold">Prix d'Achat Unit.</label>
-                                    <input type="number" id="inputPrix" class="form-control" placeholder="Prix">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="small fw-bold">Quantité</label>
-                                    <input type="number" id="inputQtite" class="form-control" placeholder="Qté">
-                                </div>
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button" class="btn btn-primary w-100 fw-bold" onclick="ajouterLigne()">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
+                    <div id="achatVide" class="operation-empty">
+                        <span class="operation-empty-icon"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></span>
+                        <h3>Aucun produit dans cet achat</h3>
+                        <p>Ajoutez au moins un produit pour enregistrer les modifications.</p>
+                    </div>
+                    <div id="achatTable" class="table-responsive operation-cart-table" hidden tabindex="0" aria-label="Produits de l’achat, tableau défilant">
+                        <table class="table table-hover mb-0" id="tableLignes">
+                            <thead>
+                            <tr>
+                                <th scope="col">Produit</th>
+                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-end">Quantité</th>
+                                <th scope="col" class="text-end">Sous-total</th>
+                                <th scope="col" class="text-end">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <p class="operation-cart-help">Sur petit écran, faites défiler le tableau pour voir toutes les colonnes.</p>
+                </section>
+            </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-hover" id="tableLignes">
-                                    <thead class="table-light">
-                                    <tr>
-                                        <th>Produit</th>
-                                        <th style="width: 150px;">Prix Unit.</th>
-                                        <th style="width: 100px;">Qté</th>
-                                        <th>Sous-total</th>
-                                        <th style="width: 50px;"></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
+            <aside class="operation-summary">
+                <section class="operation-panel" aria-labelledby="recapitulatifTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="recapitulatifTitre">Récapitulatif</h2>
+                            <p>Le total actualisé et les versements déjà enregistrés.</p>
                         </div>
                     </div>
-                </div>
-            </div>
+
+                    <div class="operation-summary-total">
+                        <span id="totalAchatLibelle">Total de l’achat</span>
+                        <div class="operation-total-value">
+                            <output id="totalAchatAffiche" aria-labelledby="totalAchatLibelle">0</output>
+                            <span class="operation-currency">GNF</span>
+                        </div>
+                        <input type="hidden" th:value="${achat.montantTotal}" id="totalGeneral">
+                    </div>
+                    <div class="operation-field">
+                        <label for="montantVerse" class="form-label">Déjà versé (GNF)</label>
+                        <input type="number" th:value="${achat.montantVerse ?: 0}" id="montantVerse"
+                               class="form-control" readonly data-saisie-manuelle="true" step="0.01" aria-describedby="versementAide">
+                        <p id="versementAide" class="operation-field-help">Les versements enregistrés sont conservés pendant la modification.</p>
+                        <a th:href="@{/achats/regler/{id}(id=${achat.id})}" class="operation-payment-link">
+                            <i class="fas fa-money-bill-transfer" aria-hidden="true"></i> Enregistrer un nouveau versement
+                        </a>
+                    </div>
+                    <div class="operation-field">
+                        <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
+                        <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" readonly>
+                    </div>
+                    <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Vérification du règlement…</p>
+                    <div class="operation-note">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        <p>Vérifiez les lignes et le récapitulatif avant d’enregistrer les modifications.</p>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        <i class="fas fa-check me-2" aria-hidden="true"></i> Enregistrer les modifications
+                    </button>
+                </section>
+            </aside>
         </form>
     </div>
 
@@ -112,27 +143,19 @@
     <script th:src="@{/js/achat.js}"></script>
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("Initialisation du mode modification...");
-
-            // 1. On boucle sur les lignes existantes de l'achat via Thymeleaf
             /*[# th:each="ligne : ${achat.lignes}"]*/
-            // On remplit les champs de saisie temporairement
             document.getElementById('selectProduit').value = /*[[${ligne.produit.id}]]*/ '';
             document.getElementById('inputPrix').value = /*[[${ligne.prixAchatUnitaire.toPlainString()}]]*/ '';
             document.getElementById('inputQtite').value = /*[[${ligne.quantite}]]*/ '';
 
-            // On appelle la fonction ajouterLigne() de ton fichier achat.js
-            // Cette fonction va créer la ligne dans le tableau et mettre à jour le total
             if (typeof ajouterLigne === "function") {
                 ajouterLigne();
             }
             /*[/]*/
 
-            // 2. On remet le montant versé initial (car ajouterLigne peut recalculer le total)
             const montantInitial = /*[[${achat.montantVerse != null ? achat.montantVerse.toPlainString() : '0.00'}]]*/ '0.00';
             document.getElementById('montantVerse').value = montantInitial;
 
-            // 3. On force le calcul du reste à payer
             if (typeof calculerReste === "function") {
                 calculerReste();
             }
