@@ -134,6 +134,12 @@ body.stock-app .btn-primary { --bs-btn-color: #fff; --bs-btn-bg: #15805d; --bs-b
 body.stock-app .btn-outline-primary { --bs-btn-color: #106448; --bs-btn-border-color: #b6d5c5; --bs-btn-hover-color: #fff; --bs-btn-hover-bg: #106448; --bs-btn-hover-border-color: #106448; --bs-btn-active-color: #fff; --bs-btn-active-bg: #106448; --bs-btn-active-border-color: #106448; --bs-btn-focus-shadow-rgb: 21, 128, 93; }
 body.stock-app .btn-sm { font-size: .77rem; padding: 8px 11px; }
 body.stock-app .btn-lg { font-size: .95rem; padding: 13px 20px; }
+/* Shared row actions: readable labels and the same touch target in every list. */
+body.stock-app .app-row-actions { display: flex; align-items: center; gap: 8px; }
+body.stock-app .app-row-actions > * { flex: 0 0 auto; }
+body.stock-app .app-row-actions > form { margin: 0; }
+body.stock-app .btn.app-row-action { min-width: 44px; min-height: 44px; padding: 8px 11px; border-radius: 9px; font-size: .77rem; line-height: 1.5; gap: 7px; flex: 0 0 auto; white-space: nowrap; text-decoration: none; }
+body.stock-app .btn.app-row-action > :is(i, svg) { width: 1em; flex-shrink: 0; }
 body.stock-app .form-label { font-weight: 600; color: var(--app-ink); font-size: .85rem; }
 body.stock-app :is(.form-control, .form-select, .datatable-input, .datatable-selector) { min-height: 44px; border: 1px solid #cad8d0; border-radius: 9px; font-size: .875rem; color: var(--app-ink); background-color: #fff; }
 body.stock-app :is(.form-control, .form-select, .datatable-input, .datatable-selector):focus { border-color: #15805d; box-shadow: 0 0 0 3px rgb(21 128 93 / 12%); }
@@ -163,8 +169,7 @@ body.stock-app .journal-table > thead > tr > th { white-space: nowrap; }
 body.stock-app .journal-table > tbody > tr > td:nth-child(2),
 body.stock-app .journal-table > tbody > tr > td:nth-child(n+4):nth-child(-n+7) { white-space: nowrap; }
 body.stock-app .journal-table > tbody > tr > td:nth-child(3) { min-width: 150px; max-width: 240px; overflow-wrap: anywhere; }
-body.stock-app .journal-row-actions { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 8px; min-width: max-content; }
-body.stock-app .journal-row-actions > .btn { flex: 0 0 auto; white-space: nowrap; }
+body.stock-app .journal-row-actions { flex-wrap: nowrap; justify-content: center; min-width: max-content; }
 body.stock-app .journal-table-wrap:focus-visible,
 body.stock-app .journal-table-wrap .datatable-container:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
 body.stock-app .dropdown-menu { border-color: var(--app-border); border-radius: 12px; padding: 7px; box-shadow: 0 10px 35px rgb(21 44 37 / 10%); }
@@ -358,16 +363,14 @@ body.stock-app .products-category { display: inline-block; padding: 4px 8px; bor
 body.stock-app .products-supplier { color: var(--app-muted); min-width: 105px; max-width: 175px; font-size: .78rem; overflow-wrap: anywhere; }
 body.stock-app .products-price { white-space: nowrap; font-variant-numeric: tabular-nums; }
 body.stock-app .products-currency { color: var(--app-muted); font-size: .67rem; }
-body.stock-app .products-stock { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 100px; }
-body.stock-app .products-stock strong { font-size: .86rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-body.stock-app .products-stock-badge { display: inline-block; padding: 3px 7px; border-radius: 6px; font-size: .66rem; font-weight: 650; white-space: nowrap; }
+body.stock-app .products-stock { display: grid; grid-template-columns: max-content; justify-items: start; align-content: start; gap: 8px; min-width: 100px; }
+body.stock-app .products-stock strong { display: block; margin: 0; font-size: .9rem; line-height: 1.4; font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.stock-app .products-stock-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 8px; border-radius: 6px; font-size: .66rem; line-height: 1.35; font-weight: 650; white-space: nowrap; }
 body.stock-app .products-stock-badge--disponible { color: #106448; background: #eaf5ee; }
 body.stock-app .products-stock-badge--faible { color: #805810; background: #fff3d9; }
 body.stock-app .products-stock-badge--rupture { color: #a43a37; background: #fceceb; }
 body.stock-app .products-stock-badge--inconnu { color: #596e61; background: #f0f4f2; }
-body.stock-app .products-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-body.stock-app .products-row-actions .btn { white-space: nowrap; min-height: 38px; font-size: .73rem; padding: 8px 9px; gap: 5px; }
-body.stock-app .products-row-actions form { margin: 0; }
+body.stock-app .products-row-actions { justify-content: flex-end; }
 body.stock-app .products-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 38px 24px; margin: 0 24px 24px; border-radius: 12px; border: 1px dashed #cadbd1; background: #f8fbf9; color: var(--app-muted); }
 body.stock-app .products-empty-icon { font-size: 1.6rem; color: #759783; margin-bottom: 3px; }
 body.stock-app .products-empty h3 { margin: 0; font-size: 1rem; font-weight: 650; color: var(--app-ink); }
@@ -410,7 +413,6 @@ body.stock-app .product-delete-description strong { color: var(--app-ink); overf
   body.stock-app .products-toolbar { grid-template-columns: minmax(0, 1fr); gap: 13px; padding: 0 20px 20px; }
   body.stock-app .products-toolbar > .btn { justify-self: stretch; }
   body.stock-app .products-empty { margin-inline: 20px; padding: 28px 16px; }
-  body.stock-app .products-row-actions .btn { min-width: 44px; min-height: 44px; padding: 10px; }
   body.stock-app .products-table--admin { min-width: 1000px; }
   body.stock-app .products-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .products-results { flex-basis: 100%; order: 3; }
@@ -463,13 +465,8 @@ body.stock-app .partners-coordinate { min-width: 125px; max-width: 190px; color:
 body.stock-app .partners-email { min-width: 160px; max-width: 215px; }
 body.stock-app .partners-address { min-width: 130px; max-width: 200px; }
 body.stock-app .partners-coordinate--missing { color: var(--app-muted); font-size: .76rem; }
-body.stock-app .partners-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-body.stock-app .partners-row-actions .btn { white-space: nowrap; min-height: 38px; font-size: .73rem; padding: 8px 9px; gap: 5px; }
-body.stock-app .partners-row-actions form { margin: 0; }
-body.stock-app .partners-document-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 16px; margin-top: 7px; }
-body.stock-app .partners-document-link { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: var(--app-green-dark); text-decoration: none; white-space: nowrap; font-size: .75rem; font-weight: 600; }
-body.stock-app .partners-document-link:hover { color: #0c523b; text-decoration: underline; }
-body.stock-app .partners-document-link > :is(i, svg) { width: 13px; opacity: .75; }
+body.stock-app .partners-row-actions { justify-content: flex-end; }
+body.stock-app .partners-document-actions { justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
 body.stock-app .partners-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 38px 24px; margin: 0 24px 24px; border-radius: 12px; border: 1px dashed #cadbd1; background: #f8fbf9; color: var(--app-muted); }
 body.stock-app .partners-empty-icon { font-size: 1.6rem; color: #759783; margin-bottom: 3px; }
 body.stock-app .partners-empty h3 { margin: 0; font-size: 1rem; font-weight: 650; color: var(--app-ink); }
@@ -525,10 +522,8 @@ body.stock-app .partner-delete-description strong { color: var(--app-ink); overf
   body.stock-app .partners-table > tbody > tr > td { display: block; min-width: 0; max-width: none; padding: 0 !important; border: 0; box-shadow: none; background: transparent; }
   body.stock-app .partners-table > tbody > tr > td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; color: var(--app-muted); font-size: .7rem; font-weight: 500; }
   body.stock-app .partners-name { font-size: .95rem; }
-  body.stock-app .partners-row-actions { justify-content: flex-start; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
-  body.stock-app .partners-row-actions .btn { min-height: 44px; padding: 10px; }
-  body.stock-app .partners-document-actions { justify-content: flex-start; gap: 8px 20px; margin-top: 10px; }
-  body.stock-app .partners-document-link { min-height: 44px; font-size: .78rem; }
+  body.stock-app .partners-row-actions { justify-content: flex-start; flex-wrap: wrap; padding-top: 4px; }
+  body.stock-app .partners-document-actions { justify-content: flex-start; margin-top: 10px; }
   body.stock-app .partners-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .partners-results { flex-basis: 100%; order: 3; }
   body.stock-app .partner-dialog { padding: 22px; max-height: calc(100dvh - 32px); }
@@ -586,7 +581,6 @@ body.stock-app .invoices-money { text-align: right; white-space: nowrap; font-va
 body.stock-app .invoices-money--paid { color: var(--app-green-dark); }
 body.stock-app .invoices-money--remaining { color: #926315; }
 body.stock-app .invoices-document { text-align: right; }
-body.stock-app .invoices-document .btn { min-height: 38px; white-space: nowrap; font-size: .76rem; }
 body.stock-app .invoice-status { display: inline-flex; align-items: center; min-height: 27px; border-radius: 7px; padding: 4px 9px; font-size: .7rem; font-weight: 650; white-space: nowrap; }
 body.stock-app .invoice-status--reglee { color: #176844; background: #eaf6ee; }
 body.stock-app .invoice-status--partielle { color: #8b601c; background: #fff2d9; }
@@ -637,7 +631,6 @@ body.stock-app .invoices-page-navigation .btn > span { font-size: 1.3rem; line-h
   body.stock-app .invoices-money { text-align: left; white-space: normal; overflow-wrap: anywhere; }
   body.stock-app .invoices-reference { font-size: 1rem; }
   body.stock-app .invoices-document { grid-column: 1 / -1; text-align: left; }
-  body.stock-app .invoices-document .btn { min-height: 44px; }
   body.stock-app .invoices-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .invoices-results { flex-basis: 100%; order: 3; }
 }

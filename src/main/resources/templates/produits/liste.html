@@ -115,16 +115,16 @@
                             </div>
                         </td>
                         <td>
-                            <div class="products-row-actions">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-product-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
+                            <div class="products-row-actions app-row-actions">
+                                <button type="button" class="btn btn-outline-primary btn-sm app-row-action" data-product-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
                                     <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
-                                <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Modifier ' + p.nom}">
+                                <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm app-row-action" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Modifier ' + p.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>
                                 <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" data-product-delete
                                       sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce produit ?')">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer ' + p.nom}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm app-row-action" th:attr="aria-label=${'Supprimer ' + p.nom}">
                                         <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
                                     </button>
                                 </form>

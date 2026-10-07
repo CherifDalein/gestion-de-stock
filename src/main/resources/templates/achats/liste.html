@@ -6,7 +6,7 @@
         <div th:if="${param.success != null and param.success[0] == 'modifie'}"
              class="alert alert-success" role="status">Achat modifié avec succès.</div>
         <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/achats/nouveau}" class="btn btn-success">
+            <a th:href="@{/achats/nouveau}" class="btn btn-primary">
                 <i class="fas fa-truck" aria-hidden="true"></i> Nouvel approvisionnement
             </a>
         </div>
@@ -44,15 +44,16 @@
                             <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">À régler</span>
                         </td>
                         <td class="text-center">
-                            <div class="journal-row-actions">
-                                <a th:href="@{/achats/regler/{id}(id=${a.id})}" class="btn btn-success btn-sm"
+                            <div class="journal-row-actions app-row-actions">
+                                <a th:href="@{/achats/regler/{id}(id=${a.id})}" class="btn btn-sm app-row-action"
+                                   th:classappend="${a.resteAPayer > 0 ? 'btn-primary' : 'btn-outline-primary'}"
                                    th:attr="aria-label=${(a.resteAPayer > 0 ? 'Régler l’achat n° ' : 'Voir les règlements de l’achat n° ') + a.id}"
                                    th:text="${a.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
-                                <a th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-warning btn-sm"
+                                <a th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-outline-secondary btn-sm app-row-action"
                                    th:attr="aria-label=${'Modifier les produits de l’achat n° ' + a.id}"
                                    title="Modifier les produits de cet achat">Modifier</a>
                                 <a th:href="@{/factures/achat/{id}(id=${a.id})}"
-                                   class="btn btn-info btn-sm"
+                                   class="btn btn-outline-primary btn-sm app-row-action"
                                    th:attr="aria-label=${'Voir la facture de l’achat n° ' + a.id}"
                                    title="Voir et imprimer la facture d'achat">
                                     <i class="fas fa-eye" aria-hidden="true"></i> Facture

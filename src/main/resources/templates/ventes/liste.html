@@ -4,7 +4,7 @@
         <p class="app-page-subtitle">Retrouvez les ventes, leurs règlements et leurs justificatifs.</p>
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
         <div class="mb-4 d-flex justify-content-end">
-            <a th:href="@{/ventes/nouveau}" class="btn btn-success">
+            <a th:href="@{/ventes/nouveau}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Effectuer une vente
             </a>
         </div>
@@ -40,11 +40,12 @@
                                 <span th:if="${v.montantTotal - (v.montantVerse ?: 0) > 0}" class="badge bg-danger">À régler</span>
                             </td>
                             <td class="text-center">
-                                <div class="journal-row-actions">
-                                    <a th:href="@{/ventes/regler/{id}(id=${v.id})}" class="btn btn-success btn-sm"
+                                <div class="journal-row-actions app-row-actions">
+                                    <a th:href="@{/ventes/regler/{id}(id=${v.id})}" class="btn btn-sm app-row-action"
+                                       th:classappend="${v.resteAPayer > 0 ? 'btn-primary' : 'btn-outline-primary'}"
                                        th:text="${v.resteAPayer > 0 ? 'Régler' : 'Règlements'}"
                                        th:attr="aria-label=${(v.resteAPayer > 0 ? 'Régler la vente n° ' : 'Consulter les règlements de la vente n° ') + v.id}"></a>
-                                    <button type="button" class="btn btn-info btn-sm"
+                                    <button type="button" class="btn btn-outline-primary btn-sm app-row-action"
                                             data-bs-toggle="modal"
                                             th:data-bs-target="'#modalVente' + ${v.id}"
                                             th:attr="aria-label=${'Consulter les détails de la vente n° ' + v.id}">

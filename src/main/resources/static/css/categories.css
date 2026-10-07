@@ -19,9 +19,7 @@
 #stockCategories .categories-id { width: 140px; color: var(--app-muted); font-variant-numeric: tabular-nums; }
 #stockCategories .categories-name { min-width: 180px; font-weight: 600; overflow-wrap: anywhere; }
 #stockCategories .categories-actions-cell { width: 290px; }
-#stockCategories .categories-row-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: nowrap; gap: 10px; }
-#stockCategories .categories-row-actions > * { flex: 0 0 auto; margin: 0; }
-#stockCategories .categories-row-actions .btn { white-space: nowrap; }
+#stockCategories .categories-row-actions { justify-content: flex-end; flex-wrap: nowrap; }
 #stockCategories .categories-sort { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: left; }
 #stockCategories .categories-sort:enabled { cursor: pointer; }
 #stockCategories .categories-sort:disabled { opacity: 1; }

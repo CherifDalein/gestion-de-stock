@@ -82,10 +82,22 @@ et des rôles. En navigateur, vérifier :
     d'achat. Vérifier le panier et les montants sans modifier les règles métier.
 17. Les confirmations après création/modification/suppression, ainsi que les pages
     d'erreur 400, 403, 404 et 500 sans détail interne dans la page générique.
+18. La quantité et le badge de stock sur deux lignes distinctes, même avec de
+    grandes quantités. Les actions des neuf listes doivent garder des dimensions
+    communes, sans chevauchement après un filtre ou un changement de page.
 
 La carte « Ventes du jour · réglé » affiche les montants réglés cumulés des ventes
 créées aujourd’hui, selon le calcul existant. Les informations financières et les
 liens réservés à l’administrateur conservent leurs restrictions de rôle.
+
+Les actions de ligne partagent `app-row-action` : cible d'au moins 44 pixels,
+rayon de 9 pixels, libellé visible et espace entre l'icône et le texte. Les groupes
+`app-row-actions` espacent les boutons de 8 pixels. Consultation et documents
+utilisent un contour vert, modification un contour gris et suppression un
+contour rouge. Le règlement restant à effectuer utilise le vert plein. Les
+cartes de contacts et catégories permettent le retour à la ligne ; les tableaux
+produits, achats et ventes gardent leur défilement horizontal. La quantité en
+stock et son badge occupent deux lignes de grille, séparées de 8 pixels.
 
 Validation du 5 octobre 2026 : les 334 tests existants passent. Le contrôle
 navigateur couvre 82 assertions sur ordinateur et mobile, dont le focus du menu,
@@ -228,3 +240,11 @@ journal complet de 60 mouvements sur quatre pages, même journal sans JavaScript
 et journal vide sur une page. Montants maximaux signés, indicateurs, lignes et
 en-têtes répétés sont exacts, sans débordement ni page blanche. Aucun formulaire
 métier n'a été soumis à la base opérationnelle. Le JAR final est construit.
+
+Validation de l'espacement du stock et des actions le 7 octobre 2026 : 1144
+assertions navigateur réussies aux largeurs 320, 390, 768, 1024 et 1440 pixels,
+avec les rôles ADMIN/CAISSIER, les CDN disponibles en cache puis bloqués et les
+produits sans JavaScript. Quantités extrêmes, badges, actions dans leurs cellules,
+défilement, retours à la ligne et annulations sont contrôlés dans des aperçus H2
+temporaires. Aucun POST métier n'est soumis et aucune erreur JavaScript locale
+n'est détectée. Le JAR est construit et les styles servis sur 8080 sont vérifiés.

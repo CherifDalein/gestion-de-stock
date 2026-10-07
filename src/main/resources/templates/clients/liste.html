@@ -94,23 +94,23 @@
                         <td class="partners-coordinate partners-email" data-label="Email" th:classappend="${#strings.isEmpty(#strings.trim(p.email)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.email)) ? 'Non renseigné' : p.email}"></td>
                         <td class="partners-coordinate partners-address" data-label="Adresse" th:classappend="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'Non renseigné' : p.adresse}"></td>
                         <td>
-                            <div class="partners-row-actions">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-partner-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
+                            <div class="partners-row-actions app-row-actions">
+                                <button type="button" class="btn btn-outline-primary btn-sm app-row-action" data-partner-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
                                     <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
-                                <a th:href="@{/clients/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm" th:attr="aria-label=${'Modifier ' + p.nom}">
+                                <a th:href="@{/clients/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm app-row-action" th:attr="aria-label=${'Modifier ' + p.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>
                                 <form th:action="@{/clients/supprimer/{id}(id=${p.id})}" method="post" data-partner-delete
                                       sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce client ?')">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer ' + p.nom}">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm app-row-action" th:attr="aria-label=${'Supprimer ' + p.nom}">
                                         <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
                                     </button>
                                 </form>
                             </div>
-                            <div class="partners-document-actions">
-                                <a th:href="@{/factures/client/{id}(id=${p.id})}" class="partners-document-link" th:attr="aria-label=${'Factures de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Factures</span></a>
-                                <a th:href="@{/factures/client/{id}/cumule(id=${p.id})}" class="partners-document-link" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                            <div class="partners-document-actions app-row-actions">
+                                <a th:href="@{/factures/client/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Factures de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Factures</span></a>
+                                <a th:href="@{/factures/client/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
                             </div>
                         </td>
                     </tr>
