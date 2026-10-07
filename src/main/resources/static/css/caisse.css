@@ -1,0 +1,151 @@
+/* Loaded only by the journal fragment; screen rules stay within its page. */
+#stockCaisse { max-width: 1600px; margin-inline: auto; padding: 0; min-width: 0; }
+#stockCaisse [hidden] { display: none !important; }
+#stockCaisse .caisse-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+#stockCaisse .caisse-header h1 { margin-bottom: 0; }
+#stockCaisse .caisse-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; }
+#stockCaisse .caisse-header-actions .btn { white-space: nowrap; }
+#stockCaisse .caisse-date { display: inline-flex; align-items: center; gap: 9px; color: var(--app-muted); font-size: .8rem; white-space: nowrap; }
+#stockCaisse .caisse-metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+#stockCaisse .caisse-metric { grid-column: span 2; min-width: 0; padding: 20px; background: #fff; border: 1px solid var(--app-border); border-radius: 14px; box-shadow: 0 3px 14px rgb(21 44 37 / 3%); }
+#stockCaisse .caisse-metric--balance { border-color: #acd5bf; background: #f1faf5; }
+#stockCaisse .caisse-metric--flow { grid-column: span 3; }
+#stockCaisse .caisse-metric-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#stockCaisse .caisse-metric-heading h2 { margin: 0; color: var(--app-muted); font-size: .8rem; font-weight: 600; }
+#stockCaisse .caisse-metric-icon { display: inline-flex; justify-content: center; align-items: center; flex-shrink: 0; width: 34px; height: 34px; background: var(--app-tint); color: var(--app-green-dark); border-radius: 9px; }
+#stockCaisse .caisse-metric-icon--out { background: #fff0ed; color: #a43c36; }
+#stockCaisse .caisse-metric-value { margin: 14px 0 6px; color: var(--app-ink); font-weight: 750; font-size: clamp(1.25rem, 1.8vw, 1.9rem); letter-spacing: -.035em; line-height: 1.3; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#stockCaisse .caisse-metric-caption { margin: 0; color: var(--app-muted); font-size: .72rem; }
+#stockCaisse .caisse-positive { color: #106448; }
+#stockCaisse .caisse-negative { color: #a43c36; }
+#stockCaisse .caisse-summary-note { margin: 13px 0 24px; color: var(--app-muted); font-size: .76rem; }
+#stockCaisse .caisse-panel { min-width: 0; overflow: hidden; background: #fff; border: 1px solid var(--app-border); border-radius: 16px; box-shadow: 0 3px 14px rgb(21 44 37 / 3%); margin-bottom: 24px; }
+#stockCaisse .caisse-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px; }
+#stockCaisse .caisse-panel-heading h2 { margin: 0 0 5px; }
+#stockCaisse .caisse-panel-heading p { margin: 0; color: var(--app-muted); font-size: .82rem; }
+#stockCaisse .caisse-count { white-space: nowrap; padding: 6px 10px; border-radius: 8px; background: var(--app-tint); color: var(--app-green-dark); font-size: .75rem; font-weight: 650; }
+#stockCaisse .caisse-toolbar { display: grid; grid-template-columns: minmax(200px, 1.7fr) repeat(2, minmax(140px, 1fr)); gap: 14px; align-items: end; padding: 0 24px 18px; }
+#stockCaisse .caisse-toolbar > div { min-width: 0; }
+#stockCaisse .caisse-toolbar .form-label { margin-bottom: 8px; font-size: .78rem; }
+#stockCaisse .caisse-toolbar :is(input, select) { min-width: 0; }
+#stockCaisse .caisse-search-input { position: relative; }
+#stockCaisse .caisse-search-input > :is(i, svg) { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); width: 14px; color: var(--app-muted); pointer-events: none; }
+#stockCaisse .caisse-search-input input { padding-left: 39px; }
+#stockCaisse .caisse-filter-help { grid-column: 1 / -1; margin: 0; color: var(--app-muted); font-size: .72rem; }
+#stockCaisse .caisse-date-error { grid-column: 1 / -1; margin: 0; color: #a43c36; font-size: .78rem; }
+#stockCaisse [aria-invalid=true] { border-color: #a43c36; }
+#stockCaisse .caisse-print-help { margin: 0; padding: 0 24px 18px; color: var(--app-muted); font-size: .72rem; }
+#stockCaisse .caisse-scroll-hint { margin: 0; padding: 0 24px 12px; font-size: .72rem; color: var(--app-muted); }
+#stockCaisse .caisse-table-wrap { width: 100%; border-top: 1px solid var(--app-border); }
+#stockCaisse .caisse-table-wrap:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
+#stockCaisse .caisse-table { min-width: 880px; table-layout: auto; }
+#stockCaisse .caisse-table > thead > tr > th { white-space: nowrap; }
+#stockCaisse .caisse-table > :is(thead, tbody) > tr > :first-child { padding-left: 24px; }
+#stockCaisse .caisse-table > :is(thead, tbody) > tr > :last-child { padding-right: 24px; }
+#stockCaisse .caisse-row-date { white-space: nowrap; color: var(--app-muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+#stockCaisse .caisse-row-motif { min-width: 180px; max-width: 360px; font-weight: 650; overflow-wrap: anywhere; }
+#stockCaisse .caisse-row-author { min-width: 110px; max-width: 200px; font-size: .8rem; overflow-wrap: anywhere; }
+#stockCaisse .caisse-row-amount { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .82rem; font-weight: 700; }
+#stockCaisse .caisse-source { display: inline-block; padding: 4px 8px; background: #f3f6f4; border-radius: 6px; color: #52685d; font-size: .7rem; overflow-wrap: anywhere; }
+#stockCaisse .caisse-direction { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f3f6f4; color: #52685d; font-size: .7rem; font-weight: 650; white-space: nowrap; }
+#stockCaisse .caisse-direction--entree { background: #e8f5ed; color: #106448; }
+#stockCaisse .caisse-direction--sortie { background: #fff0ed; color: #a43c36; }
+#stockCaisse .caisse-correction { display: block; margin-top: 4px; font-size: .65rem; color: var(--app-muted); }
+#stockCaisse .caisse-sort { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; border: 0; padding: 0; background: transparent; font: inherit; color: inherit; font-weight: inherit; }
+#stockCaisse .caisse-sort:not(:disabled):hover { color: var(--app-green-dark); }
+#stockCaisse .caisse-sort:not(:disabled)::after { content: "↕"; color: #8a9b90; font-size: .85rem; }
+#stockCaisse .caisse-sort[data-direction=asc]::after { content: "↑"; color: var(--app-green-dark); }
+#stockCaisse .caisse-sort[data-direction=desc]::after { content: "↓"; color: var(--app-green-dark); }
+#stockCaisse .caisse-empty { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 0 24px 24px; padding: 34px 24px; border: 1px dashed #cadbd1; border-radius: 12px; text-align: center; background: #f8fbf9; color: var(--app-muted); }
+#stockCaisse .caisse-empty-icon { font-size: 1.5rem; color: #759783; }
+#stockCaisse .caisse-empty h3 { margin: 0; color: var(--app-ink); font-size: 1rem; font-weight: 650; }
+#stockCaisse .caisse-empty p { margin: 0 0 6px; font-size: .82rem; }
+#stockCaisse .caisse-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; border-top: 1px solid var(--app-border); color: var(--app-muted); font-size: .76rem; }
+#stockCaisse .caisse-page-size { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+#stockCaisse .caisse-page-size .form-select { width: 78px; min-height: 38px; font-size: .78rem; }
+#stockCaisse .caisse-results { margin: 0; font-variant-numeric: tabular-nums; }
+#stockCaisse .caisse-page-navigation { display: flex; align-items: center; gap: 10px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#stockCaisse .caisse-page-navigation .btn { min-width: 38px; min-height: 38px; padding: 8px; }
+#stockCaisse .caisse-page-navigation .btn > span { font-size: 1.3rem; line-height: 1; }
+#stockCaisse .caisse-print-only, #stockCaisse .caisse-print-heading { display: none; }
+#stockCaisse .caisse-noscript { font-size: .78rem; color: var(--app-muted); }
+@media (max-width: 1100px) {
+    #stockCaisse .caisse-header { align-items: flex-start; }
+    #stockCaisse .caisse-header-actions { max-width: 210px; }
+    #stockCaisse .caisse-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #stockCaisse .caisse-metric { grid-column: span 1; }
+    #stockCaisse .caisse-metric--balance { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+    #stockCaisse .caisse-header { flex-direction: column; gap: 16px; margin-bottom: 22px; }
+    #stockCaisse .caisse-header-actions { justify-content: flex-start; max-width: none; }
+    #stockCaisse .caisse-metrics { gap: 12px; }
+    #stockCaisse .caisse-metric { padding: 16px; }
+    #stockCaisse .caisse-metric-value { font-size: 1.3rem; }
+    #stockCaisse .caisse-panel-heading { flex-wrap: wrap; padding: 20px; }
+    #stockCaisse .caisse-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 20px; }
+    #stockCaisse .caisse-search { grid-column: 1 / -1; }
+    #stockCaisse .caisse-toolbar > .btn { grid-column: 1 / -1; }
+    #stockCaisse :is(.caisse-scroll-hint, .caisse-print-help) { padding-inline: 20px; }
+    #stockCaisse .caisse-empty { padding: 28px 16px; margin-inline: 20px; }
+    #stockCaisse .caisse-pagination { padding-inline: 20px; }
+    #stockCaisse .caisse-results { flex-basis: 100%; order: 3; }
+}
+@media (max-width: 420px) {
+    #stockCaisse .caisse-metrics, #stockCaisse .caisse-toolbar { grid-template-columns: minmax(0, 1fr); }
+    #stockCaisse .caisse-metric-value { font-size: 1.5rem; }
+}
+@media print {
+    @page { size: A4 portrait; margin: 13mm 11mm; }
+    /* styles.css hides the whole application for modal printing: restore this journal. */
+    body.stock-app, body.stock-app #layoutSidenav, body.stock-app #layoutSidenav_content, body.stock-app #mainContent,
+    #stockCaisse, #stockCaisse * { visibility: visible !important; }
+    body.stock-app { background: #fff !important; color: #152c25; margin: 0 !important; font-size: 9pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body.stock-app :is(.app-topbar, .app-skip-link, #layoutSidenav_nav, .app-mobile-backdrop, .app-footer) { display: none !important; }
+    body.stock-app #layoutSidenav { display: block !important; }
+    body.stock-app #layoutSidenav #layoutSidenav_content, body.stock-app #mainContent { display: block !important; position: static !important; margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 0 !important; overflow: visible !important; transform: none !important; }
+    body.stock-app #layoutSidenav #layoutSidenav_content::before { display: none !important; }
+    #stockCaisse { max-width: none; margin: 0; padding: 0; }
+    #stockCaisse :is(.caisse-header-actions, #caisseToday, #caisseToolbar, #caissePrintHelp, .caisse-scroll-hint, #caissePagination, #caisseNoResults, #caisseEmptyHistory, noscript) { display: none !important; }
+    #stockCaisse .caisse-header { display: block; margin-bottom: 5mm; }
+    #stockCaisse .caisse-header h1 { font-size: 20pt; }
+    #stockCaisse .caisse-header .app-page-subtitle { font-size: 9pt; }
+    #stockCaisse .caisse-metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3mm; break-inside: avoid; }
+    #stockCaisse .caisse-metric { grid-column: span 2; padding: 3mm; border-radius: 2mm; box-shadow: none; }
+    #stockCaisse .caisse-metric--flow { grid-column: span 3; }
+    #stockCaisse .caisse-metric-icon { display: none; }
+    #stockCaisse .caisse-metric-heading h2 { font-size: 8pt; }
+    #stockCaisse .caisse-metric-value { margin-top: 3mm; font-size: 12pt; }
+    #stockCaisse .caisse-metric-caption { font-size: 7pt; }
+    #stockCaisse .caisse-summary-note { margin: 3mm 0 5mm; font-size: 8pt; }
+    #stockCaisse .caisse-panel { overflow: visible !important; border: 0; border-radius: 0; box-shadow: none; margin: 0; }
+    #stockCaisse .caisse-panel-heading { display: block; padding: 0; margin-bottom: 3mm; break-after: avoid; }
+    #stockCaisse .caisse-panel-heading h2 { font-size: 12pt; }
+    #stockCaisse .caisse-panel-heading :is(p, .caisse-count) { display: none; }
+    #stockCaisse #caissePrintMetadata { display: block !important; margin-bottom: 4mm; font-size: 8pt; }
+    #stockCaisse #caissePrintMetadata p { margin: 0 0 1.5mm; overflow-wrap: anywhere; }
+    #stockCaisse #caisseTableWrap, #stockCaisse #caisseTableWrap[hidden] { display: block !important; overflow: visible !important; border: 0; width: 100%; max-width: none; }
+    #stockCaisse .caisse-table { width: 100%; min-width: 0; table-layout: fixed; font-size: 8pt; border-collapse: collapse; }
+    #stockCaisse .caisse-table thead { display: table-header-group; }
+    #stockCaisse .caisse-table tbody { display: table-row-group; }
+    #stockCaisse .caisse-table tr { break-inside: avoid; page-break-inside: avoid; }
+    #stockCaisse .caisse-table > :is(thead, tbody) > tr > :is(th, td) { padding: 2.5mm 1.5mm; vertical-align: top; border-bottom: 1px solid #dfe8e3; box-shadow: none; background: transparent; }
+    #stockCaisse .caisse-table th { white-space: normal !important; font-size: 7pt; }
+    #stockCaisse .caisse-table th:nth-child(1) { width: 17%; }
+    #stockCaisse .caisse-table th:nth-child(2) { width: 24%; }
+    #stockCaisse .caisse-table th:nth-child(3) { width: 14%; }
+    #stockCaisse .caisse-table th:nth-child(4) { width: 11%; }
+    #stockCaisse .caisse-table th:nth-child(5) { width: 12%; }
+    #stockCaisse .caisse-table th:nth-child(6) { width: 22%; }
+    #stockCaisse .caisse-table :is(.caisse-row-date, .caisse-row-motif, .caisse-row-author, .caisse-row-amount) { min-width: 0; max-width: none; font-size: 8pt; white-space: normal; overflow-wrap: anywhere; }
+    #stockCaisse :is(.caisse-source, .caisse-direction) { padding: 0; background: transparent; color: inherit; font-size: 7pt; white-space: normal; overflow-wrap: anywhere; }
+    /* Plain labels are repeated reliably by Chrome; controls in thead are not. */
+    #stockCaisse .caisse-sort { display: none; }
+    #stockCaisse .caisse-print-heading { display: inline; }
+    /* Browser print and no-JS printing include all rows, including paginated rows. */
+    #stockCaisse #caisseTable tr[data-caisse-row], #stockCaisse #caisseTable tr[data-caisse-row][hidden] { display: table-row !important; }
+    #stockCaisse[data-print-scope=selection] #caisseTable tr[data-print-included=false] { display: none !important; }
+    #stockCaisse #caissePrintEmpty { display: none !important; }
+    #stockCaisse[data-print-empty=true] #caisseTableWrap { display: none !important; }
+    #stockCaisse[data-print-empty=true] #caissePrintEmpty { display: block !important; }
+}

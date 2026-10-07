@@ -1,158 +1,132 @@
 <div th:fragment="content">
-    <div class="container-fluid px-4">
-        <h1 class="mt-4"><i class="fas fa-history me-2"></i>Journal de Caisse</h1>
-        <ol class="breadcrumb mb-4">
-            <li class="breadcrumb-item"><a th:href="@{/}">Tableau de bord</a></li>
-            <li class="breadcrumb-item active">Journal de Caisse</li>
-        </ol>
+    <link th:href="@{/css/caisse.css}" rel="stylesheet">
+    <div id="stockCaisse" class="container-fluid stock-caisse"
+         th:attr="data-print-empty=${#lists.isEmpty(mouvements)}">
+        <header class="caisse-header">
+            <div>
+                <p class="app-page-kicker">Trésorerie</p>
+                <h1>Journal de caisse</h1>
+                <p class="app-page-subtitle">Suivez vos encaissements, vos décaissements et leur historique.</p>
+            </div>
+            <div class="caisse-header-actions">
+                <span class="caisse-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></span>
+                <button id="caissePrint" class="btn btn-outline-primary" type="button" hidden aria-describedby="caissePrintHelp"><i class="fas fa-print" aria-hidden="true"></i> Imprimer le journal</button>
+            </div>
+        </header>
 
-        <div class="row mb-4">
-            <div class="col-xl-4 col-md-6">
-                <div class="card border-start border-primary border-4 shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Solde Actuel en Caisse</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(soldeTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <div class="card border-start border-secondary border-4 shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Solde d'Ouverture</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 col-md-6">
-                <div class="card border-start border-info border-4 shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Caisse du Jour</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(bilanJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <section class="caisse-metrics" aria-label="Situation globale et mouvements du jour">
+            <article class="caisse-metric caisse-metric--balance">
+                <div class="caisse-metric-heading"><h2>Solde actuel</h2><span class="caisse-metric-icon"><i class="fas fa-wallet" aria-hidden="true"></i></span></div>
+                <p class="caisse-metric-value" data-caisse-summary="solde" th:classappend="${soldeTotal < 0 ? 'caisse-negative' : ''}" th:text="${#numbers.formatDecimal(soldeTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                <p class="caisse-metric-caption">Solde de tous les mouvements enregistrés</p>
+            </article>
+            <article class="caisse-metric">
+                <div class="caisse-metric-heading"><h2>Solde à l’ouverture</h2><span class="caisse-metric-icon"><i class="fa-regular fa-sun" aria-hidden="true"></i></span></div>
+                <p class="caisse-metric-value" data-caisse-summary="ouverture" th:classappend="${soldeOuverture < 0 ? 'caisse-negative' : ''}" th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                <p class="caisse-metric-caption">Solde avant le début de la journée</p>
+            </article>
+            <article class="caisse-metric">
+                <div class="caisse-metric-heading"><h2>Variation du jour</h2><span class="caisse-metric-icon"><i class="fas fa-arrows-up-down" aria-hidden="true"></i></span></div>
+                <p class="caisse-metric-value" data-caisse-summary="variation" th:classappend="${bilanJour < 0 ? 'caisse-negative' : (bilanJour > 0 ? 'caisse-positive' : '')}" th:text="${#numbers.formatDecimal(bilanJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                <p class="caisse-metric-caption">Entrées moins sorties du jour</p>
+            </article>
+            <article class="caisse-metric caisse-metric--flow">
+                <div class="caisse-metric-heading"><h2>Entrées du jour</h2><span class="caisse-metric-icon caisse-metric-icon--in"><i class="fas fa-arrow-down" aria-hidden="true"></i></span></div>
+                <p class="caisse-metric-value caisse-positive" data-caisse-summary="entrees" th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                <p class="caisse-metric-caption">Encaissements enregistrés depuis le début de la journée</p>
+            </article>
+            <article class="caisse-metric caisse-metric--flow">
+                <div class="caisse-metric-heading"><h2>Sorties du jour</h2><span class="caisse-metric-icon caisse-metric-icon--out"><i class="fas fa-arrow-up" aria-hidden="true"></i></span></div>
+                <p class="caisse-metric-value caisse-negative" data-caisse-summary="sorties" th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                <p class="caisse-metric-caption">Décaissements enregistrés depuis le début de la journée</p>
+            </article>
+        </section>
+        <p class="caisse-summary-note">Ces indicateurs couvrent la caisse globale et la journée en cours. Les filtres de l’historique ne les modifient pas.</p>
 
-        <div class="row mb-4">
-            <div class="col-xl-6 col-md-6">
-                <div class="card border-start border-success border-4 shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Entrees du Jour</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
-                    </div>
-                </div>
+        <section id="caisseToday" class="caisse-panel" aria-labelledby="caisseTodayTitle">
+            <div class="caisse-panel-heading">
+                <div><h2 id="caisseTodayTitle">Mouvements du jour</h2><p>Les opérations enregistrées depuis le début de la journée.</p></div>
+                <span class="caisse-count" th:text="${#lists.size(mouvementsDuJour) + (#lists.size(mouvementsDuJour) == 1 ? ' mouvement' : ' mouvements')}">0 mouvements</span>
             </div>
-            <div class="col-xl-6 col-md-6">
-                <div class="card border-start border-danger border-4 shadow h-100 py-2">
-                    <div class="card-body">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Sorties du Jour</div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800"
-                             th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0 GNF</div>
-                    </div>
-                </div>
+            <div class="caisse-empty" th:if="${#lists.isEmpty(mouvementsDuJour)}">
+                <span class="caisse-empty-icon"><i class="fa-regular fa-calendar" aria-hidden="true"></i></span>
+                <h3>Aucun mouvement aujourd’hui</h3>
+                <p>Les règlements enregistrés au cours de la journée apparaîtront ici.</p>
             </div>
-        </div>
+            <p id="caisseTodayScrollHint" class="caisse-scroll-hint" th:unless="${#lists.isEmpty(mouvementsDuJour)}">Sur petit écran, faites défiler le tableau horizontalement pour lire toutes les colonnes.</p>
+            <div class="table-responsive caisse-table-wrap" tabindex="0" role="region" aria-labelledby="caisseTodayTitle" aria-describedby="caisseTodayScrollHint" th:unless="${#lists.isEmpty(mouvementsDuJour)}">
+                <table id="caisseTodayTable" class="table table-hover caisse-table mb-0">
+                    <caption class="visually-hidden">Mouvements du jour, dates, motifs, auteurs, sources et montants en GNF</caption>
+                    <thead><tr><th scope="col">Date et heure</th><th scope="col">Motif</th><th scope="col">Auteur</th><th scope="col">Source</th><th scope="col">Sens</th><th scope="col" class="text-end">Montant</th></tr></thead>
+                    <tbody>
+                    <tr th:each="m : ${mouvementsDuJour}" th:with="sens=${m.montant == null ? 'inconnu' : (m.montant > 0 ? 'entree' : (m.montant < 0 ? 'sortie' : 'neutre'))}">
+                        <td class="caisse-row-date" th:text="${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
+                        <td class="caisse-row-motif" th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></td>
+                        <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
+                        <td><span class="caisse-source" th:text="${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée'}"></span></td>
+                        <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
+                        <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <div class="card shadow mb-4">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-calendar-day me-1"></i> Transactions du Jour</span>
-                <span class="small">Mouvements enregistres aujourd'hui</span>
+        <section id="caisseHistory" class="caisse-panel" aria-labelledby="caisseHistoryTitle">
+            <div class="caisse-panel-heading">
+                <div><h2 id="caisseHistoryTitle">Historique des mouvements</h2><p>Retrouvez chaque opération et son origine.</p></div>
+                <span class="caisse-count" th:text="${#lists.size(mouvements) + (#lists.size(mouvements) == 1 ? ' mouvement' : ' mouvements')}">0 mouvements</span>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Date & Heure</th>
-                            <th>Designation / Motif</th>
-                            <th>Auteur</th>
-                            <th>Source</th>
-                            <th class="text-center">Type</th>
-                            <th class="text-end">Montant</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="m : ${mouvementsDuJour}">
-                            <td class="small" th:text="${#temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm')}"></td>
-                            <td class="fw-bold" th:text="${m.motif}"></td>
-                            <td>
-                                <span class="badge bg-info text-dark">
-                                    <i class="fas fa-user me-1"></i>
-                                    <span th:text="${m.utilisateur != null ? m.utilisateur.nom : 'Systeme'}"></span>
-                                </span>
-                            </td>
-                            <td>
-                                <small class="badge bg-light text-dark border" th:text="${m.source}"></small>
-                            </td>
-                            <td class="text-center">
-                                <span th:class="${m.montant > 0 ? 'badge bg-success' : 'badge bg-danger'}"
-                                      th:text="${m.type}">
-                                </span>
-                            </td>
-                            <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
-                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(mouvementsDuJour)}">
-                            <td colspan="6" class="text-center py-4 text-muted">Aucune transaction enregistree aujourd'hui.</td>
-                        </tr>
-                        </tbody>
-                    </table>
+            <div id="caisseToolbar" class="caisse-toolbar" hidden>
+                <div class="caisse-search">
+                    <label for="caisseSearch" class="form-label">Rechercher un mouvement</label>
+                    <div class="caisse-search-input"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input id="caisseSearch" class="form-control" type="search" placeholder="Motif, auteur, source ou date…" autocomplete="off" aria-controls="caisseTable"></div>
                 </div>
+                <div><label for="caisseSource" class="form-label">Source</label><select id="caisseSource" class="form-select" aria-controls="caisseTable"><option value="">Toutes les sources</option></select></div>
+                <div><label for="caisseDirection" class="form-label">Sens</label><select id="caisseDirection" class="form-select" aria-controls="caisseTable"><option value="">Tous les mouvements</option><option value="entree">Entrées</option><option value="sortie">Sorties</option><option value="neutre">Sans variation</option><option value="inconnu">Montant non renseigné</option></select></div>
+                <div><label for="caisseDateFrom" class="form-label">Du</label><input id="caisseDateFrom" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
+                <div><label for="caisseDateTo" class="form-label">Au</label><input id="caisseDateTo" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
+                <button id="caisseReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche, les filtres et le tri"><i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser</button>
+                <p id="caissePeriodHelp" class="caisse-filter-help">Les deux dates sont incluses. Sans date, tout l’historique est affiché. Les mouvements sans date sont exclus lorsqu’une période est choisie.</p>
+                <p id="caisseDateError" class="caisse-date-error" role="status" aria-live="polite" hidden>La date de début doit précéder ou égaler la date de fin.</p>
             </div>
-        </div>
-
-        <div class="card shadow mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-list me-1"></i> Historique Complet des Flux</span>
-                <button class="btn btn-sm btn-light" onclick="window.print()"><i class="fas fa-print me-1"></i>Imprimer</button>
+            <p id="caissePrintHelp" class="caisse-print-help" hidden>« Imprimer le journal » inclut tous les mouvements correspondant aux filtres, sur toutes les pages. Ctrl / ⌘ + P imprime le journal complet.</p>
+            <div id="caissePrintMetadata" class="caisse-print-only">
+                <p id="caissePrintDate" th:text="${'État de la caisse au ' + #temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm')}"></p>
+                <p id="caissePrintSelection" th:text="${'Sélection : journal complet · ' + #lists.size(mouvements) + (#lists.size(mouvements) == 1 ? ' mouvement' : ' mouvements')}"></p>
+                <p>Les indicateurs ci-dessus couvrent la caisse globale et le jour de consultation, indépendamment de la sélection imprimée.</p>
             </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="datatablesSimple">
-                        <thead class="table-light">
-                        <tr>
-                            <th>Date & Heure</th>
-                            <th>Designation / Motif</th>
-                            <th>Auteur (Utilisateur)</th>
-                            <th>Source</th>
-                            <th class="text-center">Type</th>
-                            <th class="text-end">Montant</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="m : ${mouvements}">
-                            <td class="small" th:text="${#temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm')}"></td>
-                            <td class="fw-bold" th:text="${m.motif}"></td>
-                            <td>
-                                <span class="badge bg-info text-dark">
-                                    <i class="fas fa-user me-1"></i>
-                                    <span th:text="${m.utilisateur != null ? m.utilisateur.nom : 'Systeme'}"></span>
-                                </span>
-                            </td>
-                            <td>
-                                <small class="badge bg-light text-dark border" th:text="${m.source}"></small>
-                            </td>
-                            <td class="text-center">
-                                <span th:class="${m.montant > 0 ? 'badge bg-success' : 'badge bg-danger'}"
-                                      th:text="${m.type}">
-                                </span>
-                            </td>
-                            <td th:class="${m.montant > 0 ? 'text-success fw-bold text-end' : 'text-danger fw-bold text-end'}"
-                                th:text="${(m.montant > 0 ? '+ ' : '- ') + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
-                            </td>
-                        </tr>
-                        <tr th:if="${#lists.isEmpty(mouvements)}">
-                            <td colspan="6" class="text-center py-4 text-muted">Aucun mouvement enregistre pour le moment.</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div id="caisseEmptyHistory" class="caisse-empty" th:if="${#lists.isEmpty(mouvements)}">
+                <span class="caisse-empty-icon"><i class="fas fa-wallet" aria-hidden="true"></i></span><h3>Votre journal est encore vide</h3><p>Les règlements des achats et des ventes alimentent automatiquement la caisse.</p>
             </div>
-        </div>
+            <p id="caisseScrollHint" class="caisse-scroll-hint" th:unless="${#lists.isEmpty(mouvements)}">Sur petit écran, faites défiler le tableau horizontalement pour lire toutes les colonnes.</p>
+            <div id="caisseTableWrap" class="table-responsive caisse-table-wrap" tabindex="0" role="region" aria-labelledby="caisseHistoryTitle" aria-describedby="caisseScrollHint" th:attr="hidden=${#lists.isEmpty(mouvements) ? 'hidden' : null}">
+                <table id="caisseTable" class="table table-hover caisse-table mb-0">
+                    <caption class="visually-hidden">Historique de caisse, dates, motifs, auteurs, sources et montants signés en GNF</caption>
+                    <thead><tr><th scope="col" aria-sort="descending"><button type="button" class="caisse-sort" data-caisse-sort="date" disabled>Date et heure</button><span class="caisse-print-heading">Date et heure</span></th><th scope="col">Motif</th><th scope="col">Auteur</th><th scope="col">Source</th><th scope="col">Sens</th><th scope="col" class="text-end" aria-sort="none"><button type="button" class="caisse-sort" data-caisse-sort="montant" disabled>Montant</button><span class="caisse-print-heading">Montant</span></th></tr></thead>
+                    <tbody>
+                    <tr th:each="m : ${mouvements}" data-caisse-row
+                        th:with="sens=${m.montant == null ? 'inconnu' : (m.montant > 0 ? 'entree' : (m.montant < 0 ? 'sortie' : 'neutre'))}"
+                        th:attr="data-id=${m.id},data-date=${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'yyyy-MM-dd') + 'T' + #temporals.format(m.dateMouvement, 'HH:mm:ss.SSSSSSSSS') : ''},data-amount=${m.montant != null ? m.montant.toPlainString() : ''},data-source=${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? #strings.trim(m.source) : ''},data-direction=${sens},data-type=${m.type ?: ''}">
+                        <td class="caisse-row-date" th:text="${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
+                        <td class="caisse-row-motif" th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></td>
+                        <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
+                        <td><span class="caisse-source" th:text="${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée'}"></span></td>
+                        <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
+                        <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="caisseNoResults" class="caisse-empty" hidden><span class="caisse-empty-icon"><i class="fas fa-magnifying-glass" aria-hidden="true"></i></span><h3>Aucun mouvement ne correspond</h3><p>Essayez un autre mot, une autre source ou une période plus large.</p><button type="button" class="btn btn-outline-primary" data-reset-caisse>Effacer les filtres</button></div>
+            <p id="caissePrintEmpty" class="caisse-print-only">Aucun mouvement enregistré.</p>
+            <div id="caissePagination" class="caisse-pagination" hidden>
+                <div class="caisse-page-size"><label for="caissePageSize">Afficher</label><select id="caissePageSize" class="form-select" aria-controls="caisseTable"><option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="all">Tous</option></select><span>par page</span></div>
+                <p id="caisseResults" class="caisse-results" role="status" aria-live="polite"></p>
+                <div class="caisse-page-navigation" aria-label="Pagination de l’historique"><button id="caissePrevious" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Page précédente"><span aria-hidden="true">‹</span></button><span id="caissePageLabel">Page 1</span><button id="caisseNext" class="btn btn-outline-secondary btn-sm" type="button" aria-label="Page suivante"><span aria-hidden="true">›</span></button></div>
+            </div>
+        </section>
+        <noscript><p class="caisse-noscript">Le journal complet est affiché. Utilisez la commande d’impression du navigateur pour l’imprimer.</p></noscript>
     </div>
+    <script th:src="@{/js/caisse.js}"></script>
 </div>
