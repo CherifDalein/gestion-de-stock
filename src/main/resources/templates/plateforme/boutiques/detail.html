@@ -53,18 +53,30 @@
         </form>
 
         <section class="app-panel platform-list-panel" aria-labelledby="platformUsersTitle">
-            <div class="app-panel-heading"><div><h2 id="platformUsersTitle">Utilisateurs de la boutique</h2><p>Les comptes et leurs rôles dans cet espace de gestion.</p></div><span class="platform-count" th:text="${#lists.size(utilisateurs) + (#lists.size(utilisateurs) == 1 ? ' utilisateur' : ' utilisateurs')}"></span></div>
+            <div class="app-panel-heading"><div><h2 id="platformUsersTitle">Utilisateurs de la boutique</h2><p>Gérez l’accès de chaque compte. Désactiver un compte conserve les données de la boutique.</p></div><span class="platform-count" th:text="${#lists.size(utilisateurs) + (#lists.size(utilisateurs) == 1 ? ' utilisateur' : ' utilisateurs')}"></span></div>
             <div class="platform-empty" th:if="${#lists.isEmpty(utilisateurs)}"><h3>Aucun utilisateur</h3><p>Aucun compte n’est rattaché à cette boutique.</p></div>
             <p id="platformUsersScrollHelp" class="platform-table-help" th:unless="${#lists.isEmpty(utilisateurs)}">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
             <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="platformUsersTitle" aria-describedby="platformUsersScrollHelp" tabindex="0" th:unless="${#lists.isEmpty(utilisateurs)}">
                 <table id="platformUsersTable" class="table table-hover platform-table platform-table--users mb-0">
-                    <caption class="visually-hidden">Noms, emails, rôles et dates d’inscription des utilisateurs de la boutique</caption>
-                    <thead><tr><th scope="col">Nom</th><th scope="col">Email de connexion</th><th scope="col">Rôle</th><th scope="col">Inscription</th></tr></thead>
-                    <tbody><tr th:each="u : ${utilisateurs}">
+                    <caption class="visually-hidden">Utilisateurs de la boutique, emails, rôles, inscriptions et accès individuels</caption>
+                    <thead><tr><th scope="col">Nom</th><th scope="col">Email de connexion</th><th scope="col">Rôle</th><th scope="col">Inscription</th><th scope="col">Accès</th><th scope="col" class="text-end">Actions</th></tr></thead>
+                    <tbody><tr th:each="u : ${utilisateurs}" th:attr="data-user-id=${u.id},data-user-active=${u.actif}">
                         <th scope="row" class="platform-name" th:text="${u.nom}"></th>
                         <td class="platform-email" th:text="${u.email}"></td>
                         <td><span class="platform-role" th:text="${u.role != null and u.role.name() == 'ADMIN' ? 'Gérant' : (u.role != null and u.role.name() == 'CAISSIER' ? 'Caissier' : 'Non renseigné')}"></span></td>
                         <td class="platform-date" th:text="${u.dateInscription != null ? #temporals.format(u.dateInscription, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
+                        <td><span class="platform-status" th:classappend="${u.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${u.actif ? 'Actif' : 'Désactivé'}"></span></td>
+                        <td class="platform-actions-cell">
+                            <div class="app-row-actions">
+                                <span class="platform-action-hint" th:if="${utilisateur != null and utilisateur.id == u.id}">Votre compte</span>
+                                <form th:unless="${utilisateur != null and utilisateur.id == u.id}" th:action="@{/plateforme/boutiques/{id}/utilisateurs/{utilisateurId}/acces(id=${boutique.id},utilisateurId=${u.id})}" method="post">
+                                    <input type="hidden" name="actif" th:value="${!u.actif}" />
+                                    <button type="submit" class="btn btn-sm app-row-action" th:classappend="${u.actif ? 'btn-outline-danger' : 'btn-outline-primary'}" th:attr="aria-label=${(u.actif ? 'Désactiver le compte de ' : 'Réactiver le compte de ') + u.nom}">
+                                        <i class="fa-solid" th:classappend="${u.actif ? 'fa-user-slash' : 'fa-user-check'}" aria-hidden="true"></i><span th:text="${u.actif ? 'Désactiver' : 'Réactiver'}"></span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr></tbody>
                 </table>
             </div>

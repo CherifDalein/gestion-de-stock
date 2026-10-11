@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Locale;
@@ -98,7 +100,7 @@ public class UtilisateurService {
     }
 
     private boolean connexionAutorisee(Utilisateur utilisateur) {
-        return utilisateur.getBoutique() != null
+        return utilisateur.isActif() && utilisateur.getBoutique() != null
                 && (utilisateur.getBoutique().isActif() || administrationPlateformeAutorisee(utilisateur));
     }
 
@@ -114,7 +116,11 @@ public class UtilisateurService {
             return null;
         }
         String email = authentication.getName();
-        return utilisateurRepository.findByEmail(email)
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouve : " + email));
+        if (!utilisateur.isActif()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à ce compte est désactivé");
+        }
+        return utilisateur;
     }
 }

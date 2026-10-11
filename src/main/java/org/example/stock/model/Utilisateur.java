@@ -42,6 +42,9 @@ public class Utilisateur {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean administrateurPlateforme;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean actif = true;
+
     @PrePersist
     @PreUpdate
     private void normaliserEmail() {

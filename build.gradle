@@ -135,3 +135,20 @@ tasks.register('plateformeMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.PlateformeMariaDbTest'
 }
+
+['accesUtilisateurCheck': '--check', 'accesUtilisateurMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Vérifie ou ajoute le statut individuel des comptes sans démarrer le serveur web'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.AccesUtilisateurMigration'
+        args mode
+    }
+}
+
+tasks.register('accesUtilisateurMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les accès utilisateurs dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.AccesUtilisateurMariaDbTest'
+}

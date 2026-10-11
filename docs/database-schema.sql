@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS utilisateur (
     date_inscription DATE,
     role ENUM('ADMIN', 'CAISSIER'),
     administrateur_plateforme BOOLEAN NOT NULL DEFAULT FALSE,
+    actif BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id),
     CONSTRAINT fk_utilisateur_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),

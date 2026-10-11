@@ -55,6 +55,7 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 - `date_inscription`
 - `role` valeurs attendues : `CAISSIER`, `ADMIN`
 - `administrateur_plateforme` BOOLEAN NOT NULL DEFAULT FALSE : droit distinct de la gestion d'une boutique ; réservé à un compte ADMIN désigné explicitement
+- `actif` BOOLEAN NOT NULL DEFAULT TRUE : autorisation individuelle de connexion ; sa désactivation conserve le compte, les droits et les historiques
 
 ### `produit`
 - `id` PK
@@ -183,6 +184,7 @@ erDiagram
         DATE date_inscription
         VARCHAR role
         BOOLEAN administrateur_plateforme
+        BOOLEAN actif
     }
     PRODUIT {
         BIGINT id PK
@@ -336,3 +338,7 @@ Ces commandes JDBC ne démarrent pas Spring ni le serveur web. Le contrôle est 
 ## Mise à jour d'une base existante : administration de la plateforme
 
 Après la migration des boutiques, suivre le [guide des accès plateforme](migrations/plateforme.md). Il ajoute les états de boutique et le droit plateforme avec des valeurs par défaut explicites, puis peut attribuer ce droit à un seul compte ADMIN sélectionné par `PLATEFORME_ADMIN_EMAIL`. L'ancien rôle de gérant, les mots de passe et les appartenances aux boutiques sont conservés. Aucun droit plateforme n'est déduit automatiquement du rôle ADMIN.
+
+## Mise à jour d'une base existante : accès individuels des utilisateurs
+
+Après la migration des accès plateforme, suivre le [guide des accès utilisateurs](migrations/acces-utilisateurs.md). Il ajoute `utilisateur.actif BOOLEAN NOT NULL DEFAULT TRUE` pour conserver l'accès de tous les comptes existants. Une colonne déjà conforme n'est pas réinitialisée : les comptes désactivés restent désactivés. Aucun compte, mot de passe, rôle, droit plateforme ni historique n'est supprimé ou modifié.

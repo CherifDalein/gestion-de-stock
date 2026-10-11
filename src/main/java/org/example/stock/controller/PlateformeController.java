@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.example.stock.form.AccesBoutiqueForm;
 import org.example.stock.form.CreationBoutiqueForm;
+import org.example.stock.form.AccesUtilisateurForm;
+import org.example.stock.service.AccesUtilisateurService;
 import org.example.stock.service.EmailDejaUtiliseException;
 import org.example.stock.service.PlateformeService;
 import org.springframework.dao.DataAccessException;
@@ -31,17 +33,22 @@ import java.util.stream.Stream;
 @RequestMapping("/plateforme/boutiques")
 public class PlateformeController {
     private final PlateformeService plateforme;
+    private final AccesUtilisateurService accesUtilisateurs;
 
-    public PlateformeController(PlateformeService plateforme) {
+    public PlateformeController(PlateformeService plateforme, AccesUtilisateurService accesUtilisateurs) {
         this.plateforme = plateforme;
+        this.accesUtilisateurs = accesUtilisateurs;
     }
 
-    @InitBinder({"formulaire", "accesBoutique"})
+    @InitBinder({"formulaire", "accesBoutique", "accesUtilisateur"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
-        String[] champs = binder.getObjectName().equals("formulaire")
-                ? new String[]{"nomBoutique", "nom", "email", "password", "accesOffert", "_accesOffert", "_csrf"}
-                : new String[]{"actif", "accesOffert", "_actif", "_accesOffert", "_csrf"};
+        String[] champs = switch (binder.getObjectName()) {
+            case "formulaire" -> new String[]{"nomBoutique", "nom", "email", "password", "accesOffert", "_accesOffert", "_csrf"};
+            case "accesBoutique" -> new String[]{"actif", "accesOffert", "_actif", "_accesOffert", "_csrf"};
+            case "accesUtilisateur" -> new String[]{"actif", "_csrf"};
+            default -> throw new IllegalArgumentException("Formulaire non pris en charge");
+        };
         if (request.getMethod().equals("POST")) {
             for (String parametre : request.getParameterMap().keySet()) {
                 if (Arrays.stream(champs).noneMatch(champ -> champ.equals(parametre))) {
@@ -51,7 +58,8 @@ public class PlateformeController {
             }
         }
         // Spring propose aussi l'identifiant de route ; le contrôle des paramètres ci-dessus refuse un id envoyé par le client.
-        binder.setAllowedFields(Stream.concat(Arrays.stream(champs), Stream.of("id")).toArray(String[]::new));
+        var champsRoute = binder.getObjectName().equals("accesUtilisateur") ? Stream.of("id", "utilisateurId") : Stream.of("id");
+        binder.setAllowedFields(Stream.concat(Arrays.stream(champs), champsRoute).toArray(String[]::new));
     }
 
     @GetMapping
@@ -132,5 +140,17 @@ public class PlateformeController {
             } else nettoye.addError(erreur);
         }
         return nettoye;
+    }
+
+    @PostMapping("/{id}/utilisateurs/{utilisateurId}/acces")
+    public String modifierAccesUtilisateur(@PathVariable Long id, @PathVariable Long utilisateurId,
+                                          @Valid @ModelAttribute("accesUtilisateur") AccesUtilisateurForm formulaire,
+                                          BindingResult result, RedirectAttributes redirectAttributes) {
+        plateforme.verifierAdministrationPlateforme();
+        FormBindingAdvice.verifier(result);
+        if (result.hasErrors()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Le statut du compte est obligatoire et doit être valide");
+        accesUtilisateurs.modifierPourPlateforme(id, utilisateurId, formulaire);
+        redirectAttributes.addFlashAttribute("success", "Accès au compte utilisateur mis à jour.");
+        return "redirect:/plateforme/boutiques/" + id;
     }
 }

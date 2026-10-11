@@ -58,13 +58,21 @@ La commande exige `localhost` ou `127.0.0.1` et la base `stock_pro`. Elle crée 
 
 Le compte est rattaché à l'unique boutique existante. Si aucune boutique n'existe, la commande crée la **Boutique principale** dans la même transaction que le compte. Elle refuse plusieurs boutiques afin de ne pas attribuer arbitrairement le premier administrateur à l'une d'elles. Ce compte ADMIN gère sa boutique ; il n'est pas un administrateur de la plateforme SaaS.
 
-L'accès à l'administration de la plateforme est accordé séparément à un ADMIN désigné par l'opérateur, avec `PLATEFORME_ADMIN_EMAIL` et la [migration des accès plateforme](migrations/plateforme.md). La création des caissiers et des nouveaux gérants ne leur attribue jamais ce droit. Une boutique suspendue bloque les connexions et les sessions métier existantes ; l'opérateur plateforme peut toujours accéder à son espace d'administration pour réactiver une boutique.
+L'accès à l'administration de la plateforme est accordé séparément à un ADMIN désigné par l'opérateur, avec `PLATEFORME_ADMIN_EMAIL` et la [migration des accès plateforme](migrations/plateforme.md). La création des caissiers et des nouveaux gérants ne leur attribue jamais ce droit. Une boutique suspendue bloque les connexions et les sessions métier existantes ; un opérateur plateforme dont le compte reste actif peut accéder à son espace d'administration pour réactiver une boutique.
 
 En cas d'échec après préparation des identifiants, le fichier privé est conservé : une erreur de connexion peut survenir après une insertion validée par le serveur. Vérifier l'existence du compte avant de relancer la commande.
 
 Pour choisir l'email, définir `INITIAL_ADMIN_EMAIL`. Un mot de passe peut être fourni via `INITIAL_ADMIN_PASSWORD`, sans le placer dans une commande ou un fichier suivi par Git ; les mêmes règles de validation s'appliquent.
 
 La commande refuse toute base contenant déjà un compte. Un verrou de session SQL empêche deux initialisations simultanées sur MariaDB/MySQL. Aucun endpoint web ne crée le premier administrateur ; l'inscription normale reste réservée à un ADMIN et crée uniquement des CAISSIER.
+
+## Désactivation et réactivation d'un accès
+
+Après la [migration du statut individuel](migrations/acces-utilisateurs.md), un gérant dispose de la page **Utilisateurs** (`/utilisateurs`) pour les comptes de sa boutique. Dans l'espace plateforme, le détail d'une boutique présente les mêmes boutons **Désactiver / Réactiver** à côté des utilisateurs. Un caissier n'accède pas à cette gestion.
+
+La désactivation bloque la prochaine requête protégée d'une session déjà ouverte et toute nouvelle connexion, y compris pour un administrateur plateforme. Les mots de passe, rôles, appartenances et historiques restent inchangés. La réactivation permet d'utiliser le même compte et le même mot de passe ; une boutique suspendue reste suspendue.
+
+Il est impossible de se désactiver soi-même. Un gérant ne peut pas modifier un compte plateforme depuis sa boutique : ce compte se gère uniquement dans l'administration plateforme. Les boutons effectuent des POST protégés par CSRF et ne peuvent modifier que le statut individuel.
 
 ## Vérification
 

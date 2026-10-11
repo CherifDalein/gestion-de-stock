@@ -28,6 +28,9 @@ public class BoutiqueService {
         }
         var utilisateur = utilisateurs.findByEmail(Emails.normaliser(authentication.getName()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible"));
+        if (!utilisateur.isActif()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à ce compte est désactivé");
+        }
         Boutique boutique = utilisateur.getBoutique();
         if (boutique == null || boutique.getId() == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");

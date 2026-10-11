@@ -1,0 +1,54 @@
+<div th:fragment="content">
+    <section class="platform-page" th:with="nombreUtilisateurs=${#lists.size(utilisateurs)}">
+        <header class="app-main-header">
+            <div>
+                <p class="app-page-kicker">Équipe · <span th:text="${boutique.nom}">Votre boutique</span></p>
+                <h1>Utilisateurs</h1>
+                <p class="app-page-subtitle">Consultez les membres de votre boutique et gérez leur accès.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/register}" sec:authorize="hasRole('ADMIN')"><i class="fa-solid fa-user-plus" aria-hidden="true"></i>Créer un compte caissier</a>
+        </header>
+
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <section class="app-panel platform-list-panel" aria-labelledby="shopUsersTitle">
+            <div class="app-panel-heading">
+                <div><h2 id="shopUsersTitle">Votre équipe</h2><p>Désactiver un compte bloque sa connexion. Les données de la boutique sont conservées.</p></div>
+                <span class="platform-count" th:text="${nombreUtilisateurs + (nombreUtilisateurs == 1 ? ' utilisateur' : ' utilisateurs')}">0 utilisateur</span>
+            </div>
+            <div class="platform-empty" th:if="${#lists.isEmpty(utilisateurs)}">
+                <span class="platform-empty-icon"><i class="fa-solid fa-users" aria-hidden="true"></i></span>
+                <h3>Aucun utilisateur</h3>
+                <p>Aucun compte n’est rattaché à cette boutique.</p>
+            </div>
+            <p id="shopUsersScrollHelp" class="platform-table-help" th:unless="${#lists.isEmpty(utilisateurs)}">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
+            <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="shopUsersTitle" aria-describedby="shopUsersScrollHelp" tabindex="0" th:unless="${#lists.isEmpty(utilisateurs)}">
+                <table id="shopUsersTable" class="table table-hover platform-table platform-table--users mb-0">
+                    <caption class="visually-hidden">Utilisateurs de votre boutique, emails, rôles, inscriptions et accès individuels</caption>
+                    <thead><tr><th scope="col">Nom</th><th scope="col">Email de connexion</th><th scope="col">Rôle</th><th scope="col">Inscription</th><th scope="col">Accès</th><th scope="col" class="text-end">Actions</th></tr></thead>
+                    <tbody><tr th:each="u : ${utilisateurs}" th:attr="data-user-id=${u.id},data-user-active=${u.actif}">
+                        <th scope="row" class="platform-name" th:text="${u.nom}"></th>
+                        <td class="platform-email" th:text="${u.email}"></td>
+                        <td><span class="platform-role" th:text="${u.role != null and u.role.name() == 'ADMIN' ? 'Gérant' : (u.role != null and u.role.name() == 'CAISSIER' ? 'Caissier' : 'Non renseigné')}"></span></td>
+                        <td class="platform-date" th:text="${u.dateInscription != null ? #temporals.format(u.dateInscription, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
+                        <td><span class="platform-status" th:classappend="${u.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${u.actif ? 'Actif' : 'Désactivé'}"></span></td>
+                        <td class="platform-actions-cell">
+                            <div class="app-row-actions">
+                                <span class="platform-action-hint" th:if="${u.administrateurPlateforme}">Compte plateforme</span>
+                                <span class="platform-action-hint" th:if="${utilisateur != null and utilisateur.id == u.id}">Votre compte</span>
+                                <form th:if="${!u.administrateurPlateforme and (utilisateur == null or utilisateur.id != u.id)}" th:action="@{/utilisateurs/{id}/acces(id=${u.id})}" method="post">
+                                    <input type="hidden" name="actif" th:value="${!u.actif}" />
+                                    <button type="submit" class="btn btn-sm app-row-action" th:classappend="${u.actif ? 'btn-outline-danger' : 'btn-outline-primary'}" th:attr="aria-label=${(u.actif ? 'Désactiver le compte de ' : 'Réactiver le compte de ') + u.nom}">
+                                        <i class="fa-solid" th:classappend="${u.actif ? 'fa-user-slash' : 'fa-user-check'}" aria-hidden="true"></i><span th:text="${u.actif ? 'Désactiver' : 'Réactiver'}"></span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr></tbody>
+                </table>
+            </div>
+        </section>
+        <p class="platform-table-help" sec:authorize="hasRole('PLATEFORME_ADMIN')">Pour gérer un compte plateforme, utilisez <a th:href="@{/plateforme/boutiques}">l’administration de la plateforme</a>.</p>
+    </section>
+</div>

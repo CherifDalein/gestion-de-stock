@@ -30,6 +30,9 @@ public class GlobalControllerAdvice {
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible"));
+            if (!utilisateur.isActif()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à ce compte est désactivé");
+            }
             if (utilisateur.getBoutique() == null || utilisateur.getBoutique().getId() == null) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");
             }

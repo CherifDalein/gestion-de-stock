@@ -35,6 +35,13 @@ explicitement à un ADMIN existant par la [migration des accès plateforme](migr
 sans modifier son rôle, son mot de passe ni sa boutique. La création de comptes
 caissiers reste réservée aux gérants de leur propre boutique.
 
+Chaque compte possède aussi un état actif ou désactivé, distinct de son rôle et
+de l'état de sa boutique. La désactivation suspend son accès en conservant ses
+identifiants, son mot de passe, ses droits et les historiques auxquels il est
+lié. La [migration des accès utilisateurs](migrations/acces-utilisateurs.md)
+conserve tous les comptes existants actifs lors du premier ajout ; ses relances
+ne réactivent pas les comptes déjà désactivés.
+
 Les boutiques portent un état actif ou suspendu et un mode commercial offert.
 L'accès offert concerne la boutique, indépendamment des comptes et de leurs
 droits. Il ne donne aucun accès aux autres boutiques et ne réactive pas une
@@ -75,6 +82,8 @@ Deuxième lot réalisé : un espace d'administration distingue le gérant, les
 caissiers et l'administrateur de la plateforme. Il permet de consulter les
 boutiques et leurs utilisateurs, de créer une boutique avec son gérant, puis
 de régler son statut et son mode d'accès.
+L'état individuel des comptes complète cette gestion : un accès utilisateur peut
+être suspendu sans supprimer le compte ni modifier sa boutique ou son rôle.
 Les boutiques peuvent être ouvertes ou suspendues et bénéficier d'un accès
 offert. Les données et utilisateurs restent rattachés à leur boutique ; la
 création publique de boutiques et la souscription relèvent encore des étapes

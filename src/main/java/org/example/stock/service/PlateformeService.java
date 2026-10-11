@@ -131,7 +131,7 @@ public class PlateformeService {
         }
         Utilisateur compte = utilisateurs.findByEmail(Emails.normaliser(authentication.getName()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration de plateforme inaccessible"));
-        if (!compte.isAdministrateurPlateforme() || compte.getRole() != Role.ADMIN) {
+        if (!compte.isActif() || !compte.isAdministrateurPlateforme() || compte.getRole() != Role.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration de plateforme inaccessible");
         }
     }
@@ -150,6 +150,7 @@ public class PlateformeService {
         copie.setDateInscription(original.getDateInscription());
         copie.setRole(original.getRole());
         copie.setAdministrateurPlateforme(original.isAdministrateurPlateforme());
+        copie.setActif(original.isActif());
         copie.setBoutique(original.getBoutique());
         return copie;
     }

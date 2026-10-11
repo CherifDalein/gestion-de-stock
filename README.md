@@ -21,6 +21,8 @@ une base existante sans boutiques, appliquer d'abord la
 [migration des boutiques](docs/migrations/boutiques.md), après sauvegarde.
 Appliquer ensuite la [migration de l'administration plateforme](docs/migrations/plateforme.md)
 si les trois champs d'accès ne sont pas encore présents.
+Ajouter ensuite le [statut individuel des comptes](docs/migrations/acces-utilisateurs.md)
+si `utilisateur.actif` n'existe pas encore.
 
 ## Tests
 
@@ -42,6 +44,7 @@ node --test src/test/js/montants.test.cjs
 - [Évolution SaaS : boutiques et abonnements mensuels](docs/saas.md)
 - [Migration des données existantes vers les boutiques](docs/migrations/boutiques.md)
 - [Administration de la plateforme et gestion des accès](docs/migrations/plateforme.md)
+- [Activation et désactivation des comptes utilisateurs](docs/migrations/acces-utilisateurs.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
