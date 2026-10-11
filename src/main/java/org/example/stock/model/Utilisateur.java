@@ -39,6 +39,9 @@ public class Utilisateur {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean administrateurPlateforme;
+
     @PrePersist
     @PreUpdate
     private void normaliserEmail() {

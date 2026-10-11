@@ -1,0 +1,73 @@
+<div th:fragment="content">
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <section class="platform-page record-page">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Administration plateforme · <span th:text="${'Boutique #' + boutique.id}">Boutique</span></p>
+                <h1 th:text="${boutique.nom}">Boutique</h1>
+                <p class="record-intro">Consultez les utilisateurs et réglez l’accès à cette boutique.</p>
+            </div>
+            <a class="btn btn-outline-secondary record-back" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour aux boutiques</a>
+        </header>
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <section class="app-panel" aria-labelledby="platformSummaryTitle">
+            <div class="app-panel-heading"><div><h2 id="platformSummaryTitle">Informations de la boutique</h2><p>Le statut et le type d’accès sont indépendants.</p></div></div>
+            <dl class="platform-summary">
+                <div><dt>Création</dt><dd th:text="${boutique.dateCreation != null ? #temporals.format(boutique.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></dd></div>
+                <div><dt>Statut</dt><dd><span class="platform-status" th:classappend="${boutique.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${boutique.actif ? 'Active' : 'Suspendue'}"></span></dd></div>
+                <div><dt>Accès</dt><dd><span class="platform-access" th:classappend="${boutique.accesOffert ? 'platform-access--offered' : ''}" th:text="${boutique.accesOffert ? 'Offert' : 'Standard'}"></span></dd></div>
+                <div><dt>Utilisateurs</dt><dd class="platform-number" th:text="${#lists.size(utilisateurs)}">0</dd></div>
+            </dl>
+        </section>
+
+        <form th:action="@{/plateforme/boutiques/{id}/acces(id=${boutique.id})}" th:object="${accesBoutique}" method="post" class="record-panel platform-access-form" aria-labelledby="platformAccessTitle">
+            <div class="record-panel-heading"><h2 id="platformAccessTitle">Gérer l’accès</h2><p>Les changements s’appliquent après l’enregistrement.</p></div>
+            <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}"><p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p></div>
+            <div class="record-grid">
+                <div class="record-field">
+                    <label for="platformActif">Statut de la boutique</label>
+                    <select id="platformActif" class="form-select" th:field="*{actif}" required
+                            th:classappend="${#fields.hasErrors('actif')} ? 'is-invalid' : ''"
+                            th:attr="aria-invalid=${#fields.hasErrors('actif')},aria-describedby=${#fields.hasErrors('actif') ? 'platformActifHelp platformActifError' : 'platformActifHelp'}">
+                        <option value="true">Active</option>
+                        <option value="false">Suspendue</option>
+                    </select>
+                    <p id="platformActifHelp" class="record-help">Suspendre une boutique bloque l’accès de ses utilisateurs à leurs écrans de gestion. Ses données sont conservées.</p>
+                    <p id="platformActifError" class="record-field-error" th:if="${#fields.hasErrors('actif')}" th:errors="*{actif}" role="alert"></p>
+                </div>
+                <div class="record-field">
+                    <label for="platformDetailAccesOffert">Type d’accès</label>
+                    <select id="platformDetailAccesOffert" class="form-select" th:field="*{accesOffert}" required
+                            th:classappend="${#fields.hasErrors('accesOffert')} ? 'is-invalid' : ''"
+                            th:attr="aria-invalid=${#fields.hasErrors('accesOffert')},aria-describedby=${#fields.hasErrors('accesOffert') ? 'platformDetailAccesOffertHelp platformDetailAccesOffertError' : 'platformDetailAccesOffertHelp'}">
+                        <option value="false">Standard</option>
+                        <option value="true">Offert</option>
+                    </select>
+                    <p id="platformDetailAccesOffertHelp" class="record-help">L’accès offert accorde un accès gratuit à la boutique. Il ne change pas son statut.</p>
+                    <p id="platformDetailAccesOffertError" class="record-field-error" th:if="${#fields.hasErrors('accesOffert')}" th:errors="*{accesOffert}" role="alert"></p>
+                </div>
+            </div>
+            <div class="record-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les accès</button></div>
+        </form>
+
+        <section class="app-panel platform-list-panel" aria-labelledby="platformUsersTitle">
+            <div class="app-panel-heading"><div><h2 id="platformUsersTitle">Utilisateurs de la boutique</h2><p>Les comptes et leurs rôles dans cet espace de gestion.</p></div><span class="platform-count" th:text="${#lists.size(utilisateurs) + (#lists.size(utilisateurs) == 1 ? ' utilisateur' : ' utilisateurs')}"></span></div>
+            <div class="platform-empty" th:if="${#lists.isEmpty(utilisateurs)}"><h3>Aucun utilisateur</h3><p>Aucun compte n’est rattaché à cette boutique.</p></div>
+            <p id="platformUsersScrollHelp" class="platform-table-help" th:unless="${#lists.isEmpty(utilisateurs)}">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
+            <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="platformUsersTitle" aria-describedby="platformUsersScrollHelp" tabindex="0" th:unless="${#lists.isEmpty(utilisateurs)}">
+                <table id="platformUsersTable" class="table table-hover platform-table platform-table--users mb-0">
+                    <caption class="visually-hidden">Noms, emails, rôles et dates d’inscription des utilisateurs de la boutique</caption>
+                    <thead><tr><th scope="col">Nom</th><th scope="col">Email de connexion</th><th scope="col">Rôle</th><th scope="col">Inscription</th></tr></thead>
+                    <tbody><tr th:each="u : ${utilisateurs}">
+                        <th scope="row" class="platform-name" th:text="${u.nom}"></th>
+                        <td class="platform-email" th:text="${u.email}"></td>
+                        <td><span class="platform-role" th:text="${u.role != null and u.role.name() == 'ADMIN' ? 'Gérant' : (u.role != null and u.role.name() == 'CAISSIER' ? 'Caissier' : 'Non renseigné')}"></span></td>
+                        <td class="platform-date" th:text="${u.dateInscription != null ? #temporals.format(u.dateInscription, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
+                    </tr></tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

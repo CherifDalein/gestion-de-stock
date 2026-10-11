@@ -32,6 +32,9 @@ public class BoutiqueService {
         if (boutique == null || boutique.getId() == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");
         }
+        if (!boutique.isActif()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à cette boutique est suspendu");
+        }
         return boutique;
     }
 

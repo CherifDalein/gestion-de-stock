@@ -1,0 +1,71 @@
+<div th:fragment="content">
+    <section class="platform-page" th:with="total=${#lists.size(boutiques)},actives=${#lists.size(boutiques.?[actif])},offertes=${#lists.size(boutiques.?[accesOffert])}">
+        <header class="app-main-header">
+            <div>
+                <p class="app-page-kicker">Administration plateforme</p>
+                <h1>Boutiques</h1>
+                <p class="app-page-subtitle">Gérez les boutiques, leurs utilisateurs et leurs accès.</p>
+            </div>
+            <a class="btn btn-primary" th:href="@{/plateforme/boutiques/nouvelle}"><i class="fa-solid fa-plus" aria-hidden="true"></i>Créer une boutique</a>
+        </header>
+
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <section class="app-metric-grid platform-metrics" aria-label="Situation des boutiques">
+            <article class="app-metric-card">
+                <h2 class="app-metric-label">Boutiques</h2>
+                <p class="app-metric-value" th:text="${total}">0</p>
+                <p class="platform-metric-help">Tous les espaces de gestion</p>
+            </article>
+            <article class="app-metric-card">
+                <h2 class="app-metric-label">Actives</h2>
+                <p class="app-metric-value" th:text="${actives}">0</p>
+                <p class="platform-metric-help">Utilisateurs autorisés à accéder à leur boutique</p>
+            </article>
+            <article class="app-metric-card">
+                <h2 class="app-metric-label">Accès offerts</h2>
+                <p class="app-metric-value" th:text="${offertes}">0</p>
+                <p class="platform-metric-help">Boutiques bénéficiant d’un accès gratuit</p>
+            </article>
+        </section>
+
+        <section class="app-panel platform-list-panel" aria-labelledby="platformBoutiquesTitle">
+            <div class="app-panel-heading">
+                <div>
+                    <h2 id="platformBoutiquesTitle">Liste des boutiques</h2>
+                    <p>Le statut de la boutique et son type d’accès se règlent séparément.</p>
+                </div>
+                <span class="platform-count" th:text="${total + (total == 1 ? ' boutique' : ' boutiques')}">0 boutique</span>
+            </div>
+            <div class="platform-empty" th:if="${#lists.isEmpty(boutiques)}">
+                <span class="platform-empty-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></span>
+                <h3>Aucune boutique pour le moment</h3>
+                <p>Créez une boutique et le compte de son gérant pour commencer.</p>
+                <a class="btn btn-primary" th:href="@{/plateforme/boutiques/nouvelle}">Créer une première boutique</a>
+            </div>
+            <p id="platformBoutiquesScrollHelp" class="platform-table-help" th:unless="${#lists.isEmpty(boutiques)}">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
+            <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="platformBoutiquesTitle" aria-describedby="platformBoutiquesScrollHelp" tabindex="0" th:unless="${#lists.isEmpty(boutiques)}">
+                <table class="table table-hover platform-table mb-0" id="platformBoutiquesTable">
+                    <caption class="visually-hidden">Boutiques, date de création, utilisateurs, statut et type d’accès</caption>
+                    <thead><tr>
+                        <th scope="col">Boutique</th>
+                        <th scope="col">Création</th>
+                        <th scope="col">Utilisateurs</th>
+                        <th scope="col">Statut</th>
+                        <th scope="col">Accès</th>
+                        <th scope="col" class="text-end">Actions</th>
+                    </tr></thead>
+                    <tbody><tr th:each="b : ${boutiques}">
+                        <th scope="row" class="platform-name"><a th:href="@{/plateforme/boutiques/{id}(id=${b.id})}" th:text="${b.nom}">Nom de la boutique</a><small th:text="${'Boutique #' + b.id}"></small></th>
+                        <td class="platform-date" th:text="${b.dateCreation != null ? #temporals.format(b.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
+                        <td class="platform-number" th:text="${utilisateursParBoutique[b.id] ?: 0}">0</td>
+                        <td><span class="platform-status" th:classappend="${b.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${b.actif ? 'Active' : 'Suspendue'}">Active</span></td>
+                        <td><span class="platform-access" th:classappend="${b.accesOffert ? 'platform-access--offered' : ''}" th:text="${b.accesOffert ? 'Offert' : 'Standard'}">Standard</span></td>
+                        <td class="platform-actions-cell"><div class="app-row-actions"><a class="btn btn-outline-primary btn-sm app-row-action" th:href="@{/plateforme/boutiques/{id}(id=${b.id})}" th:attr="aria-label=${'Gérer la boutique ' + b.nom}"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>Gérer</span></a></div></td>
+                    </tr></tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

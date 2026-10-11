@@ -58,6 +58,8 @@ La commande exige `localhost` ou `127.0.0.1` et la base `stock_pro`. Elle crée 
 
 Le compte est rattaché à l'unique boutique existante. Si aucune boutique n'existe, la commande crée la **Boutique principale** dans la même transaction que le compte. Elle refuse plusieurs boutiques afin de ne pas attribuer arbitrairement le premier administrateur à l'une d'elles. Ce compte ADMIN gère sa boutique ; il n'est pas un administrateur de la plateforme SaaS.
 
+L'accès à l'administration de la plateforme est accordé séparément à un ADMIN désigné par l'opérateur, avec `PLATEFORME_ADMIN_EMAIL` et la [migration des accès plateforme](migrations/plateforme.md). La création des caissiers et des nouveaux gérants ne leur attribue jamais ce droit. Une boutique suspendue bloque les connexions et les sessions métier existantes ; l'opérateur plateforme peut toujours accéder à son espace d'administration pour réactiver une boutique.
+
 En cas d'échec après préparation des identifiants, le fichier privé est conservé : une erreur de connexion peut survenir après une insertion validée par le serveur. Vérifier l'existence du compte avant de relancer la commande.
 
 Pour choisir l'email, définir `INITIAL_ADMIN_EMAIL`. Un mot de passe peut être fourni via `INITIAL_ADMIN_PASSWORD`, sans le placer dans une commande ou un fichier suivi par Git ; les mêmes règles de validation s'appliquent.

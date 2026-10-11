@@ -28,9 +28,18 @@ catégories sont uniques par boutique et les emails restent uniques pour les
 comptes. Les données locales existantes sont conservées dans la Boutique
 principale par la [migration explicite](migrations/boutiques.md).
 
-L'administrateur actuel correspond au gérant de la boutique. L'administration de
-la plateforme SaaS doit disposer de droits distincts pour gérer les boutiques et
-leurs abonnements. La création actuelle de comptes caissiers est réservée à ADMIN.
+Le rôle ADMIN correspond au gérant de la boutique. Le droit distinct
+`administrateur_plateforme` permet l'administration de la plateforme et reste
+désactivé par défaut, y compris pour les autres gérants. Il est attribué
+explicitement à un ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md),
+sans modifier son rôle, son mot de passe ni sa boutique. La création de comptes
+caissiers reste réservée aux gérants de leur propre boutique.
+
+Les boutiques portent un état actif ou suspendu et un mode commercial offert.
+L'accès offert concerne la boutique, indépendamment des comptes et de leurs
+droits. Il ne donne aucun accès aux autres boutiques et ne réactive pas une
+boutique suspendue. La gestion de ces états prépare l'abonnement mensuel ; elle
+ne déclenche aucun paiement.
 
 ## Lots de réalisation
 
@@ -62,11 +71,21 @@ dont les données sont déjà isolées.
 
 ### 2. Gestion des boutiques et de leurs utilisateurs
 
-- Distinguer le gérant, les caissiers et l'administrateur de la plateforme.
-- Organiser l'ouverture d'une boutique et la gestion de ses utilisateurs.
-- Prévoir l'écran de gestion des boutiques et de leur mode d'accès commercial.
-- Attribuer l'accès offert à la boutique du frère, avec les mêmes contrôles
-  d'isolation que pour une boutique payante.
+Deuxième lot réalisé : un espace d'administration distingue le gérant, les
+caissiers et l'administrateur de la plateforme. Il permet de consulter les
+boutiques et leurs utilisateurs, de créer une boutique avec son gérant, puis
+de régler son statut et son mode d'accès.
+Les boutiques peuvent être ouvertes ou suspendues et bénéficier d'un accès
+offert. Les données et utilisateurs restent rattachés à leur boutique ; la
+création publique de boutiques et la souscription relèvent encore des étapes
+suivantes.
+
+- Organiser l'ouverture des boutiques et la gestion de leurs utilisateurs depuis
+  l'administration de la plateforme, avec contrôle des droits côté serveur.
+- Réserver le choix du mode d'accès commercial à l'administration de la plateforme.
+- Attribuer l'accès offert à la boutique du frère lorsqu'elle est identifiée,
+  avec les mêmes contrôles d'isolation que pour une boutique payante ; ne pas
+  déduire cette gratuité d'un email ou d'un rôle utilisateur.
 
 ### 3. Abonnements mensuels
 
@@ -87,6 +106,6 @@ leur restauration, les connexions, la supervision et la procédure de migration.
 L'automatisation des sauvegardes et le renforcement des connexions, reportés
 pendant le travail local, restent à traiter avant l'ouverture du service.
 
-La séparation des boutiques est implémentée. L'administration de la plateforme,
-la création publique de boutiques, l'accès commercial offert et la facturation
-restent à mettre en œuvre.
+La séparation des boutiques, le droit plateforme distinct et les états de
+boutique préparent le service SaaS. La création publique de boutiques, les offres,
+les paiements et la facturation récurrente restent à mettre en œuvre.

@@ -1,0 +1,71 @@
+<div th:fragment="content">
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <section class="record-page platform-page">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Administration plateforme</p>
+                <h1>Nouvelle boutique</h1>
+                <p class="record-intro">Créez un espace de gestion et le compte de son gérant.</p>
+            </div>
+            <a class="btn btn-outline-secondary record-back" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour aux boutiques</a>
+        </header>
+        <form th:action="@{/plateforme/boutiques}" th:object="${formulaire}" method="post" class="record-layout record-layout--single">
+            <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                <p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p>
+            </div>
+            <section class="record-panel" aria-labelledby="platformNewBoutiqueTitle">
+                <div class="record-panel-heading"><h2 id="platformNewBoutiqueTitle">La boutique</h2><p>Le nom de la boutique est obligatoire.</p></div>
+                <div class="record-grid">
+                    <div class="record-field record-field--wide">
+                        <label for="platformNomBoutique">Nom de la boutique</label>
+                        <input id="platformNomBoutique" class="form-control" type="text" th:field="*{nomBoutique}" maxlength="255" autocomplete="organization" required
+                               th:classappend="${#fields.hasErrors('nomBoutique')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('nomBoutique')},aria-describedby=${#fields.hasErrors('nomBoutique') ? 'platformNomBoutiqueError' : null}" />
+                        <p id="platformNomBoutiqueError" class="record-field-error" th:if="${#fields.hasErrors('nomBoutique')}" th:errors="*{nomBoutique}" role="alert"></p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="platformAccesOffert">Type d’accès</label>
+                        <select id="platformAccesOffert" class="form-select" th:field="*{accesOffert}" aria-describedby="platformAccesOffertHelp">
+                            <option value="false">Standard</option>
+                            <option value="true">Offert</option>
+                        </select>
+                        <p id="platformAccesOffertHelp" class="record-help">Choisissez « Offert » pour accorder un accès gratuit à cette boutique.</p>
+                    </div>
+                </div>
+            </section>
+            <section class="record-panel" aria-labelledby="platformNewGerantTitle">
+                <div class="record-panel-heading"><h2 id="platformNewGerantTitle">Le gérant</h2><p>Ces informations créent son compte personnel. Tous les champs sont obligatoires.</p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="platformNomGerant">Nom complet du gérant</label>
+                        <input id="platformNomGerant" class="form-control" type="text" th:field="*{nom}" maxlength="100" autocomplete="name" required
+                               th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'platformNomGerantError' : null}" />
+                        <p id="platformNomGerantError" class="record-field-error" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}" role="alert"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="platformEmailGerant">Email de connexion</label>
+                        <input id="platformEmailGerant" class="form-control" type="email" th:field="*{email}" maxlength="254" autocomplete="username" required
+                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email') ? 'platformEmailGerantHelp platformEmailGerantError' : 'platformEmailGerantHelp'}" />
+                        <p id="platformEmailGerantHelp" class="record-help">Utilisez un email qui ne correspond pas déjà à un compte.</p>
+                        <p id="platformEmailGerantError" class="record-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}" role="alert"></p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="platformPasswordGerant">Mot de passe</label>
+                        <input id="platformPasswordGerant" class="form-control" type="password" name="password" autocomplete="new-password" required
+                               th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('password')},aria-describedby=${#fields.hasErrors('password') ? 'platformPasswordGerantHelp platformPasswordGerantError' : 'platformPasswordGerantHelp'}" />
+                        <p id="platformPasswordGerantHelp" class="record-help">Au moins 15 caractères et au maximum 72 octets en UTF-8. Vous pouvez utiliser une phrase de passe. En cas d’erreur, saisissez de nouveau le mot de passe.</p>
+                        <p id="platformPasswordGerantError" class="record-field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}" role="alert"></p>
+                    </div>
+                </div>
+            </section>
+            <p class="record-note">Le gérant pourra gérer les produits, les achats, les ventes et les comptes caissiers de sa boutique.</p>
+            <div class="record-actions">
+                <a class="btn btn-outline-secondary" th:href="@{/plateforme/boutiques}">Annuler</a>
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Créer la boutique et son gérant</button>
+            </div>
+        </form>
+    </section>
+</div>

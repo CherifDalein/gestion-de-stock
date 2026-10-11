@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nom VARCHAR(255) NOT NULL,
     date_creation DATETIME(6) NOT NULL,
+    actif BOOLEAN NOT NULL DEFAULT TRUE,
+    acces_offert BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
 );
 
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS utilisateur (
     mot_de_passe VARCHAR(255),
     date_inscription DATE,
     role ENUM('ADMIN', 'CAISSIER'),
+    administrateur_plateforme BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id),
     CONSTRAINT fk_utilisateur_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),

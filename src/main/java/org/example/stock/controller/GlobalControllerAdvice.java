@@ -1,6 +1,7 @@
 package org.example.stock.controller;
 
 import org.example.stock.model.Utilisateur;
+import org.example.stock.enums.Role;
 import org.example.stock.repository.UtilisateurRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -20,16 +21,29 @@ public class GlobalControllerAdvice {
 
     @ModelAttribute
     public void addAttributes(Model model, Authentication authentication, HttpServletRequest request) {
-        if ("/login".equals(request.getServletPath()) || "/error".equals(request.getServletPath())) return;
+        String chemin = request.getServletPath();
+        if (chemin == null || chemin.isEmpty()) {
+            chemin = request.getRequestURI().substring(request.getContextPath().length());
+        }
+        if ("/login".equals(chemin) || "/error".equals(chemin)) return;
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
-                Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible"));
-                if (utilisateur.getBoutique() == null || utilisateur.getBoutique().getId() == null) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");
-                }
-                model.addAttribute("utilisateur", utilisateur);
-                model.addAttribute("boutique", utilisateur.getBoutique());
+            Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible"));
+            if (utilisateur.getBoutique() == null || utilisateur.getBoutique().getId() == null) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");
+            }
+            boolean plateforme = "/plateforme".equals(chemin) || chemin.startsWith("/plateforme/");
+            if (plateforme && (!utilisateur.isAdministrateurPlateforme() || utilisateur.getRole() != Role.ADMIN
+                    || authentication.getAuthorities().stream()
+                    .noneMatch(authority -> "ROLE_PLATEFORME_ADMIN".equals(authority.getAuthority())))) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration inaccessible");
+            }
+            if (!plateforme && !utilisateur.getBoutique().isActif()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à cette boutique est suspendu");
+            }
+            model.addAttribute("utilisateur", utilisateur);
+            model.addAttribute("boutique", utilisateur.getBoutique());
         }
     }
 }

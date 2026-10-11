@@ -22,6 +22,11 @@ public class HomeController {
     @Autowired VenteRepository venteRepository;
     @Autowired BoutiqueService boutiqueService;
 
+    @GetMapping("/plateforme")
+    public String plateforme() {
+        return "redirect:/plateforme/boutiques";
+    }
+
     @GetMapping("/")
     public String dashboard(Model model, Authentication authentication) {
         Long boutiqueId = boutiqueService.idBoutiqueCourante();

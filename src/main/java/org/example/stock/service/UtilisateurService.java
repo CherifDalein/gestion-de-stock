@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Locale;
+import java.util.ArrayList;
 
 @Service
 public class UtilisateurService {
@@ -70,7 +71,7 @@ public class UtilisateurService {
         Utilisateur utilisateur = utilisateurRepository.findByEmail(Emails.normaliser(email))
                 .orElseThrow(() -> new RuntimeException("Email ou mot de passe incorrect"));
 
-        if (!passwordEncoder.matches(motDePasse, utilisateur.getMotDePasse())) {
+        if (!passwordEncoder.matches(motDePasse, utilisateur.getMotDePasse()) || !connexionAutorisee(utilisateur)) {
             throw new RuntimeException("Email ou mot de passe incorrect");
         }
 
@@ -83,12 +84,26 @@ public class UtilisateurService {
             Utilisateur utilisateur = utilisateurRepository.findByEmail(Emails.normaliser(email))
                     .orElseThrow(() -> new UsernameNotFoundException("Email ou mot de passe incorrect"));
 
+            var roles = new ArrayList<String>();
+            roles.add(utilisateur.getRole().name());
+            if (administrationPlateformeAutorisee(utilisateur)) roles.add("PLATEFORME_ADMIN");
+
             return org.springframework.security.core.userdetails.User.builder()
                     .username(utilisateur.getEmail())
                     .password(utilisateur.getMotDePasse())
-                    .roles(utilisateur.getRole().name())
+                    .roles(roles.toArray(String[]::new))
+                    .disabled(!connexionAutorisee(utilisateur))
                     .build();
         };
+    }
+
+    private boolean connexionAutorisee(Utilisateur utilisateur) {
+        return utilisateur.getBoutique() != null
+                && (utilisateur.getBoutique().isActif() || administrationPlateformeAutorisee(utilisateur));
+    }
+
+    private boolean administrationPlateformeAutorisee(Utilisateur utilisateur) {
+        return utilisateur.isAdministrateurPlateforme() && utilisateur.getRole() == Role.ADMIN;
     }
 
     public Utilisateur getUtilisateurConnecte() {

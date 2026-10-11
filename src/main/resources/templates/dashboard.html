@@ -28,13 +28,15 @@
                 <span class="app-account-avatar" th:text="${utilisateur != null and utilisateur.nom != null and utilisateur.nom != '' ? #strings.toUpperCase(#strings.substring(utilisateur.nom, 0, 1)) : 'U'}">U</span>
                 <span class="app-account-info">
                     <strong th:text="${utilisateur != null ? utilisateur.nom : 'Utilisateur'}">Utilisateur</strong>
-                    <small sec:authorize="hasRole('ADMIN')">Administrateur</small>
+                    <small sec:authorize="hasRole('PLATEFORME_ADMIN')">Administration plateforme</small>
+                    <small sec:authorize="hasRole('ADMIN') and !hasRole('PLATEFORME_ADMIN')">Gérant</small>
                     <small sec:authorize="hasRole('CAISSIER') and !hasRole('ADMIN')">Caissier</small>
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li sec:authorize="hasRole('PLATEFORME_ADMIN')"><a class="dropdown-item" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-store me-2" aria-hidden="true"></i>Administration plateforme</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/register}"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Créer un compte caissier</a></li>
-                <li sec:authorize="hasRole('ADMIN')"><hr class="dropdown-divider" /></li>
+                <li sec:authorize="hasAnyRole('ADMIN', 'PLATEFORME_ADMIN')"><hr class="dropdown-divider" /></li>
                 <li><form th:action="@{/logout}" method="post"><button type="submit" class="dropdown-item"><i class="fa-solid fa-arrow-right-from-bracket me-2" aria-hidden="true"></i>Se déconnecter</button></form></li>
             </ul>
         </div>
@@ -76,6 +78,10 @@
                     <div class="sb-sidenav-menu-heading app-sidebar-heading">Documents</div>
                     <a class="nav-link" th:href="@{/factures/liste}" th:classappend="${#strings.startsWith(page, 'factures/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'factures/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>Historique et factures
+                    </a>
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('PLATEFORME_ADMIN')">Plateforme</div>
+                    <a class="nav-link" th:href="@{/plateforme/boutiques}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${#strings.startsWith(page, 'plateforme/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'plateforme/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></span>Administration plateforme
                     </a>
                 </div>
             </div>

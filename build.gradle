@@ -118,3 +118,20 @@ tasks.register('boutiquesMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.BoutiquesMariaDbTest'
 }
+
+['plateformeCheck': '--check', 'plateformeMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Vérifie ou migre les accès à la plateforme sans démarrer le serveur web'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.PlateformeMigration'
+        args mode
+    }
+}
+
+tasks.register('plateformeMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les accès plateforme dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.PlateformeMariaDbTest'
+}

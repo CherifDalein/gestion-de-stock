@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.http.HttpMethod;
+import org.example.stock.security.PlateformeAuthenticationSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -17,6 +18,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**").permitAll()
+                        .requestMatchers("/plateforme", "/plateforme/**").hasRole("PLATEFORME_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/", "/produits").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**").hasAnyRole("ADMIN", "CAISSIER")
@@ -30,7 +32,7 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/", true)
+                        .successHandler(new PlateformeAuthenticationSuccessHandler())
                         .failureUrl("/login?error")
                         .permitAll()
                 )

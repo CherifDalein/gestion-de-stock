@@ -25,6 +25,12 @@ public class Boutique {
     @Column(nullable = false)
     private LocalDateTime dateCreation;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean actif = true;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean accesOffert;
+
     @PrePersist
     private void daterCreation() {
         if (dateCreation == null) dateCreation = LocalDateTime.now();

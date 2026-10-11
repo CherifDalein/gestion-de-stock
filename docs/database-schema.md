@@ -8,7 +8,7 @@ Base cible : `stock_pro`
 
 Le fichier [database-schema.sql](database-schema.sql) crée les douze tables du schéma actuel, dont `boutique` et les neuf références `boutique_id` obligatoires. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
-Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur. Le script SQL ne crée aucun compte ni ne stocke de mot de passe.
+Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
 L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma au démarrage sans créer ni modifier les tables. Pour une base contenant déjà des données, suivre la [migration des boutiques](migrations/boutiques.md) après arrêt de l'application et sauvegarde complète. Les `CREATE TABLE IF NOT EXISTS` du fichier de création ne convertissent pas des tables existantes ; ne pas les employer comme migration.
 
@@ -18,6 +18,8 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 - `id` PK
 - `nom` VARCHAR(255) NOT NULL
 - `date_creation` DATETIME(6) NOT NULL
+- `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
+- `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
 
 Les neuf tables racines (`utilisateur`, `categorie`, `client`, `fournisseur`,
 `produit`, `achat`, `vente`, `mouvement_caisse`, `operation_creation`) portent
@@ -52,6 +54,7 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 - `mot_de_passe`
 - `date_inscription`
 - `role` valeurs attendues : `CAISSIER`, `ADMIN`
+- `administrateur_plateforme` BOOLEAN NOT NULL DEFAULT FALSE : droit distinct de la gestion d'une boutique ; réservé à un compte ADMIN désigné explicitement
 
 ### `produit`
 - `id` PK
@@ -147,6 +150,8 @@ erDiagram
         BIGINT id PK
         VARCHAR nom
         DATETIME date_creation
+        BOOLEAN actif
+        BOOLEAN acces_offert
     }
     CATEGORIE {
         BIGINT id PK
@@ -177,6 +182,7 @@ erDiagram
         VARCHAR mot_de_passe
         DATE date_inscription
         VARCHAR role
+        BOOLEAN administrateur_plateforme
     }
     PRODUIT {
         BIGINT id PK
@@ -326,3 +332,7 @@ La contrainte `uk_utilisateur_email` empêche deux créations simultanées avec 
 ```
 
 Ces commandes JDBC ne démarrent pas Spring ni le serveur web. Le contrôle est en lecture seule. La migration refuse les adresses invalides et les doublons, y compris les collisions dues à la collation SQL, avant toute écriture. Elle conserve une copie des lignes dans `accounts_backup_20261005_utilisateur`, normalise uniquement les emails puis ajoute la contrainte unique et NOT NULL. Les identifiants, noms, rôles, empreintes et liens de caisse restent identiques. Une copie existante n'est jamais écrasée ; une base conforme est laissée intacte.
+
+## Mise à jour d'une base existante : administration de la plateforme
+
+Après la migration des boutiques, suivre le [guide des accès plateforme](migrations/plateforme.md). Il ajoute les états de boutique et le droit plateforme avec des valeurs par défaut explicites, puis peut attribuer ce droit à un seul compte ADMIN sélectionné par `PLATEFORME_ADMIN_EMAIL`. L'ancien rôle de gérant, les mots de passe et les appartenances aux boutiques sont conservés. Aucun droit plateforme n'est déduit automatiquement du rôle ADMIN.
