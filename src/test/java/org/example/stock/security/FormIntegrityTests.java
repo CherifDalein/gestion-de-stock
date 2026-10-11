@@ -36,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @WithMockUser(username = "integrite@example.test", roles = "ADMIN")
 class FormIntegrityTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired MockMvc mvc;
     @Autowired ProduitRepository produits;
     @Autowired CategorieRepository categories;
@@ -54,18 +56,20 @@ class FormIntegrityTests {
 
     @BeforeEach
     void preparer() {
-        Utilisateur utilisateur = new Utilisateur();
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
+        Utilisateur utilisateur = new Utilisateur(); utilisateur.setBoutique(boutique);
         utilisateur.setEmail("integrite@example.test");
         utilisateur.setNom("Test intégrité");
         utilisateur.setRole(Role.ADMIN);
         utilisateurs.save(utilisateur);
-        categorie = new Categorie(); categorie.setNom("Catégorie initiale");
+        categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Catégorie initiale");
         categorie = categories.save(categorie);
-        fournisseur = new Fournisseur(); fournisseur.setNom("Fournisseur initial");
+        fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Fournisseur initial");
         fournisseur = fournisseurs.save(fournisseur);
-        client = new Client(); client.setNom("Client initial");
+        client = new Client(); client.setBoutique(boutique); client.setNom("Client initial");
         client = clients.save(client);
-        produit = new Produit(); produit.setNom("Produit initial"); produit.setReference("REF-INITIALE");
+        produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Produit initial"); produit.setReference("REF-INITIALE");
         produit.setQuantite(10L); produit.setPrixAchat(new BigDecimal("5.0")); produit.setPrixVente(new BigDecimal("20.0"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur);
         produit = produits.saveAndFlush(produit);
@@ -265,7 +269,7 @@ class FormIntegrityTests {
     @Test
     @WithMockUser(username = "integrite@example.test", roles = "CAISSIER")
     void leCaissierConsulteLesFacturesDeVenteEtLesRelevesClient() throws Exception {
-        Vente vente = new Vente(); vente.setClient(client); vente.setDateVente(java.time.LocalDateTime.now());
+        Vente vente = new Vente(); vente.setBoutique(boutique); vente.setClient(client); vente.setDateVente(java.time.LocalDateTime.now());
         vente.setMontantTotal(new BigDecimal("20.0")); vente.setMontantVerse(new BigDecimal("20.0"));
         DetailVente ligne = new DetailVente(); ligne.setProduit(produit); ligne.setQuantite(1);
         ligne.setPrixUnitaire(new BigDecimal("20.0")); ligne.setVente(vente); vente.getLignes().add(ligne);
@@ -316,8 +320,8 @@ class FormIntegrityTests {
 
     @Test
     void lesServicesRefusentAussiUnIdentifiantDeDocumentExistant() {
-        Achat achat = new Achat(); achat.setId(1L);
-        Vente vente = new Vente(); vente.setId(1L);
+        Achat achat = new Achat(); achat.setBoutique(boutique); achat.setId(1L);
+        Vente vente = new Vente(); vente.setBoutique(boutique); vente.setId(1L);
         assertThatThrownBy(() -> achatService.enregistrerAchat(achat)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> venteService.effectuerVente(vente)).isInstanceOf(IllegalArgumentException.class);
         // Ne pas exécuter de requête JPA après ces erreurs : la transaction de test est marquée rollback-only.

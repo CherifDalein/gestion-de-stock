@@ -16,6 +16,10 @@ public class OperationCreation {
     private String jeton;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boutique_id", nullable = false)
+    private Boutique boutique;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 

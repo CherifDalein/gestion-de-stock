@@ -24,7 +24,7 @@ public class CaisseController {
     public String afficherJournal(Model model) {
         LocalDate aujourdHui = LocalDate.now();
 
-        model.addAttribute("mouvements", mouvementRepo.findAllByOrderByDateMouvementDesc());
+        model.addAttribute("mouvements", caisseService.listerTous());
         model.addAttribute("mouvementsDuJour", caisseService.getMouvementsDuJour(aujourdHui));
         model.addAttribute("soldeTotal", caisseService.getSoldeActuel());
         model.addAttribute("soldeOuverture", caisseService.getSoldeOuverture(aujourdHui));

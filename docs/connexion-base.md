@@ -6,7 +6,10 @@ Le démarrage local utilise MariaDB sur `localhost:3306`, base `stock_pro`, avec
 ./gradlew bootRun
 ```
 
-L'application est accessible sur <http://localhost:8080>. La base doit être démarrée. En local, la création de la base si elle est absente et la mise à jour du schéma JPA sont activées.
+L'application est accessible sur <http://localhost:8080>. La base doit être démarrée
+et son schéma doit déjà être prêt. Hibernate valide le schéma au démarrage ; les
+changements passent par des migrations explicites. Pour une base existante sans
+boutiques, suivre la [migration des boutiques](migrations/boutiques.md).
 
 ## Paramètres de connexion
 
@@ -15,7 +18,7 @@ L'application est accessible sur <http://localhost:8080>. La base doit être dé
 | `DB_URL` | `jdbc:mariadb://localhost:3306/stock_pro?timezone=UTC&sslMode=disable&createDatabaseIfNotExist=true` | Adresse JDBC complète |
 | `DB_USERNAME` | `root` | Utilisateur de base |
 | `DB_PASSWORD` | vide | Mot de passe de base |
-| `DB_DDL_AUTO` | `update` | Mode de gestion du schéma Hibernate |
+| `DB_DDL_AUTO` | `validate` | Validation du schéma Hibernate, sans modification automatique |
 
 Les valeurs locales par défaut conviennent au poste existant. Pour Railway ou un autre hébergement, renseigner les variables de connexion du serveur concerné. Les anciennes coordonnées Railway ne sont plus présentes dans la configuration courante. Les propriétés Spring standard `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` et `SPRING_JPA_HIBERNATE_DDL_AUTO` peuvent également être utilisées.
 

@@ -13,6 +13,27 @@ import java.util.List;
 @Repository
 public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse, Long> {
 
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId")
+    BigDecimal calculerSoldeTotal(@Param("boutiqueId") Long boutiqueId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.boutique.id = :boutiqueId")
+    BigDecimal calculerFluxTotalDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement < :date AND m.boutique.id = :boutiqueId")
+    BigDecimal calculerSoldeAvant(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant > 0 AND m.boutique.id = :boutiqueId")
+    BigDecimal calculerEntreesDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant < 0 AND m.boutique.id = :boutiqueId")
+    BigDecimal calculerSortiesDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
+
+    List<MouvementCaisse> findByBoutiqueIdOrderByDateMouvementDesc(Long boutiqueId);
+    List<MouvementCaisse> findBySourceAndBoutiqueId(String source, Long boutiqueId);
+    List<MouvementCaisse> findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long achatId, Long boutiqueId);
+    List<MouvementCaisse> findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long venteId, Long boutiqueId);
+    List<MouvementCaisse> findByDateMouvementGreaterThanEqualAndBoutiqueIdOrderByDateMouvementDesc(LocalDateTime date, Long boutiqueId);
+
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m")
     BigDecimal calculerSoldeTotal();
 

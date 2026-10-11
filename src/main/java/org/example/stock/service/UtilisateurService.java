@@ -30,6 +30,9 @@ public class UtilisateurService {
     @Autowired
     private Validator validator;
 
+    @Autowired
+    private BoutiqueService boutiqueService;
+
     @Transactional
     public Utilisateur registerUtilisateur(String nom, String email, String motDePasse) {
         InscriptionForm formulaire = new InscriptionForm();
@@ -46,6 +49,7 @@ public class UtilisateurService {
         utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
         utilisateur.setDateInscription(LocalDate.now());
         utilisateur.setRole(Role.CAISSIER);
+        utilisateur.setBoutique(boutiqueService.boutiqueCourante());
 
         try {
             return utilisateurRepository.saveAndFlush(utilisateur);

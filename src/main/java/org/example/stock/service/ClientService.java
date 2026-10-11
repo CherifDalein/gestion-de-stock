@@ -16,19 +16,23 @@ public class ClientService {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Autowired
+    private BoutiqueService boutiqueService;
+
     public List<Client> listerTous() {
-        return clientRepository.findAll();
+        return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    @Transactional
     public Client enregistrerClient(Client client) {
         if (client.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
+        client.setBoutique(boutiqueService.boutiqueCourante());
         return clientRepository.save(client);
     }
 
     @Transactional
     public Client modifierClient(Long id, Client modifications) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable"));
+        Client client = trouverParId(id);
         client.setNom(modifications.getNom());
         client.setTelephone(modifications.getTelephone());
         client.setEmail(modifications.getEmail());
@@ -36,10 +40,12 @@ public class ClientService {
         return clientRepository.save(client);
     }
     public Client trouverParId(Long id) {
-        return clientRepository.findById(id).orElseThrow(() -> new RuntimeException("Client introuvable"));
+        return clientRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable"));
     }
 
+    @Transactional
     public void supprimerClient(Long id) {
-        clientRepository.deleteById(id);
+        clientRepository.delete(trouverParId(id));
     }
 }

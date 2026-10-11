@@ -101,3 +101,20 @@ tasks.register('creationOperationsMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.CreationOperationsMariaDbTest'
 }
+
+['boutiquesCheck': '--check', 'boutiquesMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Vérifie ou migre les données locales vers la première boutique'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.BoutiquesMigration'
+        args mode
+    }
+}
+
+tasks.register('boutiquesMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration des boutiques dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.BoutiquesMariaDbTest'
+}

@@ -42,6 +42,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser(username = "paiement@example.test", roles = "CAISSIER")
 class ReglementVenteTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired MockMvc mvc;
     @Autowired VenteService venteService;
     @Autowired VenteRepository ventes;
@@ -59,17 +61,19 @@ class ReglementVenteTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         caisse.deleteAll(); ventes.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); clients.deleteAll(); utilisateurs.deleteAll();
-        Utilisateur admin = new Utilisateur(); admin.setNom("Caissier test");
+        Utilisateur admin = new Utilisateur(); admin.setBoutique(boutique); admin.setNom("Caissier test");
         admin.setEmail("paiement@example.test"); admin.setRole(Role.CAISSIER); utilisateurs.save(admin);
-        Categorie categorie = new Categorie(); categorie.setNom("Catégorie"); categorie = categories.save(categorie);
-        Fournisseur fournisseur = new Fournisseur(); fournisseur.setNom("Fournisseur test"); fournisseur = fournisseurs.save(fournisseur);
-        produit = new Produit(); produit.setNom("Produit test"); produit.setReference("REF-PAIEMENT");
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Catégorie"); categorie = categories.save(categorie);
+        Fournisseur fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Fournisseur test"); fournisseur = fournisseurs.save(fournisseur);
+        produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Produit test"); produit.setReference("REF-PAIEMENT");
         produit.setQuantite(10L); produit.setPrixAchat(new BigDecimal("5000.00")); produit.setPrixVente(new BigDecimal("10000.00"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit = produits.saveAndFlush(produit);
-        Client client = new Client(); client.setNom("Client test"); client = clients.save(client);
-        Vente nouveau = new Vente(); nouveau.setClient(client); nouveau.setMontantVerse(new BigDecimal("50000.00"));
+        Client client = new Client(); client.setBoutique(boutique); client.setNom("Client test"); client = clients.save(client);
+        Vente nouveau = new Vente(); nouveau.setBoutique(boutique); nouveau.setClient(client); nouveau.setMontantVerse(new BigDecimal("50000.00"));
         nouveau.getLignes().add(ligne(10)); vente = venteService.effectuerVente(nouveau);
     }
 
@@ -207,7 +211,7 @@ class ReglementVenteTests {
 
     @Test
     void unAutreCaissierPeutEncaisserEtDevientAuteurDuVersement() throws Exception {
-        Utilisateur autre = new Utilisateur(); autre.setNom("Autre caissier"); autre.setEmail("autre@example.test");
+        Utilisateur autre = new Utilisateur(); autre.setBoutique(boutique); autre.setNom("Autre caissier"); autre.setEmail("autre@example.test");
         autre.setRole(Role.CAISSIER); utilisateurs.save(autre);
         mvc.perform(versement("10000", "50000").with(csrf())
                 .with(SecurityMockMvcRequestPostProcessors.user("autre@example.test").roles("CAISSIER")))
@@ -225,7 +229,8 @@ class ReglementVenteTests {
         try {
             assertThatThrownBy(() -> authentifie(contexte, () -> venteService.reglerVente(vente.getId(),
                     new BigDecimal("10000"), new BigDecimal("50000"))))
-                    .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Utilisateur introuvable");
+                    .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                    .hasMessageContaining("403 FORBIDDEN");
         } finally { SecurityContextHolder.setContext(precedent); }
         verifierInitial();
     }
@@ -323,7 +328,7 @@ class ReglementVenteTests {
     }
 
     @Test
-    @WithMockUser(roles = "AUTRE")
+    @WithMockUser(username = "paiement@example.test", roles = "AUTRE")
     void unRoleInconnuNePeutNiVoirNiPayerUneVente() throws Exception {
         mvc.perform(get("/ventes/regler/" + vente.getId())).andExpect(status().isForbidden());
         mvc.perform(versement("10000", "50000").with(csrf())).andExpect(status().isForbidden());
@@ -392,7 +397,7 @@ class ReglementVenteTests {
     }
 
     private DetailVente ligne(int quantite) {
-        DetailVente ligne = new DetailVente(); Produit reference = new Produit(); reference.setId(produit.getId());
+        DetailVente ligne = new DetailVente(); Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
         ligne.setProduit(reference); ligne.setQuantite(quantite); return ligne;
     }
 

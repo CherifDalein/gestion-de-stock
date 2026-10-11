@@ -7,6 +7,7 @@ import org.example.stock.model.*;
 import org.example.stock.repository.OperationCreationRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,14 +31,16 @@ public class OperationCreationService {
     private final AchatService achats;
     private final VenteService ventes;
     private final EntityManager entityManager;
+    private final BoutiqueService boutiques;
 
     public OperationCreationService(OperationCreationRepository operations, UtilisateurRepository utilisateurs,
-                                    AchatService achats, VenteService ventes, EntityManager entityManager) {
+                                    AchatService achats, VenteService ventes, EntityManager entityManager, BoutiqueService boutiques) {
         this.operations = operations;
         this.utilisateurs = utilisateurs;
         this.achats = achats;
         this.ventes = ventes;
         this.entityManager = entityManager;
+        this.boutiques = boutiques;
     }
 
     public record ResultatCreation(Long documentId, boolean dejaEnregistre) {}
@@ -45,6 +48,7 @@ public class OperationCreationService {
     @Transactional
     public String ouvrir(TypeOperationCreation type) {
         OperationCreation operation = new OperationCreation();
+        operation.setBoutique(boutiques.boutiqueCourante());
         operation.setJeton(UUID.randomUUID().toString());
         operation.setUtilisateur(utilisateurActuel());
         operation.setType(type);
@@ -57,6 +61,7 @@ public class OperationCreationService {
         OperationCreation operation = verrouiller(jeton, TypeOperationCreation.ACHAT);
         String empreinte = empreinte(achat, null);
         if (operation.getAchat() != null) {
+            verifierResultat(Achat.class, operation.getAchat().getId());
             verifierCopie(operation, empreinte);
             return new ResultatCreation(operation.getAchat().getId(), true);
         }
@@ -72,6 +77,7 @@ public class OperationCreationService {
         OperationCreation operation = verrouiller(jeton, TypeOperationCreation.VENTE);
         String empreinte = empreinte(null, vente);
         if (operation.getVente() != null) {
+            verifierResultat(Vente.class, operation.getVente().getId());
             verifierCopie(operation, empreinte);
             return new ResultatCreation(operation.getVente().getId(), true);
         }
@@ -89,9 +95,11 @@ public class OperationCreationService {
             throw new CreationOperationException(HttpStatus.BAD_REQUEST, "L'identifiant du formulaire est invalide. Ouvrez un nouveau formulaire.");
         }
         Long utilisateurId = utilisateurActuel().getId();
-        OperationCreation operation = operations.verrouiller(jeton).orElseThrow(OperationCreationService::formulaireInvalide);
+        OperationCreation operation = operations.verrouiller(jeton, boutiques.idBoutiqueCourante())
+                .orElseThrow(OperationCreationService::formulaireInvalide);
         // Relire aussi un jeton déjà chargé dans le contexte JPA avant l'attente du verrou.
         entityManager.refresh(operation, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(operation.getBoutique());
         if (operation.getType() != type || !operation.getUtilisateur().getId().equals(utilisateurId)) throw formulaireInvalide();
         return operation;
     }
@@ -99,8 +107,21 @@ public class OperationCreationService {
     private Utilisateur utilisateurActuel() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) throw new AccessDeniedException("Connexion requise");
-        return utilisateurs.findByEmail(authentication.getName())
+        Utilisateur utilisateur = utilisateurs.findByEmail(authentication.getName())
                 .orElseThrow(() -> new AccessDeniedException("Reconnectez-vous avant de créer une opération."));
+        boutiques.exigerAppartenance(utilisateur.getBoutique());
+        return utilisateur;
+    }
+
+    private <T> void verifierResultat(Class<T> type, Long id) {
+        // Lecture courante sous verrou : avec REPEATABLE READ, le document peut
+        // avoir été créé après le snapshot initial d'une requête concurrente.
+        if (entityManager.createQuery("select document from " + type.getSimpleName()
+                        + " document where document.id = :id and document.boutique.id = :boutiqueId", type)
+                .setParameter("id", id).setParameter("boutiqueId", boutiques.idBoutiqueCourante())
+                .setLockMode(LockModeType.PESSIMISTIC_READ).getResultList().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable");
+        }
     }
 
     private void verifierValidite(OperationCreation operation) {

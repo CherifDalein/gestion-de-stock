@@ -38,6 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @ActiveProfiles("test")
 class StockConcurrencyTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired ProduitRepository produits;
     @Autowired CategorieRepository categories;
     @Autowired FournisseurRepository fournisseurs;
@@ -57,12 +59,14 @@ class StockConcurrencyTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         caisse.deleteAll(); ventes.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
-        Utilisateur utilisateur = new Utilisateur(); utilisateur.setEmail("concurrence@example.test");
+        Utilisateur utilisateur = new Utilisateur(); utilisateur.setBoutique(boutique); utilisateur.setEmail("concurrence@example.test");
         utilisateur.setNom("Test concurrence"); utilisateur.setRole(Role.ADMIN); utilisateurs.save(utilisateur);
-        Categorie categorie = new Categorie(); categorie.setNom("Concurrence"); categorie = categories.save(categorie);
-        fournisseur = new Fournisseur(); fournisseur.setNom("Concurrence"); fournisseur = fournisseurs.save(fournisseur);
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Concurrence"); categorie = categories.save(categorie);
+        fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Concurrence"); fournisseur = fournisseurs.save(fournisseur);
         produit = creerProduit(categorie, "PREMIER", 10L);
     }
 
@@ -179,7 +183,7 @@ class StockConcurrencyTests {
     void desPaniersEnOrdreInversePeuventEtreEnregistresSimultanement() throws Exception {
         Produit second = creerProduit(produit.getCategorie(), "SECOND", 10L);
         Vente premiere = vente(2); premiere.getLignes().add(ligneVente(second.getId(), 3));
-        Vente seconde = new Vente(); seconde.getLignes().add(ligneVente(second.getId(), 4));
+        Vente seconde = new Vente(); seconde.setBoutique(boutique); seconde.getLignes().add(ligneVente(second.getId(), 4));
         seconde.getLignes().add(ligneVente(produit.getId(), 5));
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
             CyclicBarrier depart = new CyclicBarrier(2);
@@ -290,24 +294,24 @@ class StockConcurrencyTests {
     }
 
     private Produit creerProduit(Categorie categorie, String reference, Long quantite) {
-        Produit nouveau = new Produit(); nouveau.setNom(reference); nouveau.setReference(reference);
+        Produit nouveau = new Produit(); nouveau.setBoutique(boutique); nouveau.setNom(reference); nouveau.setReference(reference);
         nouveau.setCategorie(categorie); nouveau.setFournisseur(fournisseur);
         nouveau.setQuantite(quantite); nouveau.setPrixAchat(new BigDecimal("5.0")); nouveau.setPrixVente(new BigDecimal("20.0"));
         return produits.saveAndFlush(nouveau);
     }
 
     private Vente vente(int quantite) {
-        Vente vente = new Vente(); vente.getLignes().add(ligneVente(produit.getId(), quantite)); return vente;
+        Vente vente = new Vente(); vente.setBoutique(boutique); vente.getLignes().add(ligneVente(produit.getId(), quantite)); return vente;
     }
 
     private DetailVente ligneVente(Long id, int quantite) {
-        Produit reference = new Produit(); reference.setId(id);
+        Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(id);
         DetailVente ligne = new DetailVente(); ligne.setProduit(reference); ligne.setQuantite(quantite); return ligne;
     }
 
     private Achat achat(int quantite, BigDecimal verse) {
-        Achat achat = new Achat(); achat.setFournisseur(fournisseur); achat.setMontantVerse(verse);
-        Produit reference = new Produit(); reference.setId(produit.getId());
+        Achat achat = new Achat(); achat.setBoutique(boutique); achat.setFournisseur(fournisseur); achat.setMontantVerse(verse);
+        Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(reference); ligne.setQuantite(quantite);
         ligne.setPrixAchatUnitaire(new BigDecimal("5.0")); achat.getLignes().add(ligne); return achat;
     }

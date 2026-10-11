@@ -2,7 +2,9 @@ package org.example.stock.security;
 
 import org.example.stock.enums.Role;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.model.Boutique;
 import org.example.stock.repository.UtilisateurRepository;
+import org.example.stock.repository.BoutiqueRepository;
 import org.example.stock.service.UtilisateurService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser(username = "admin-comptes@example.test", roles = "ADMIN")
 class CompteUtilisateurTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     static final String SECRET = "MotDePasseTest42";
     @Autowired MockMvc mvc;
     @Autowired UtilisateurRepository utilisateurs;
@@ -45,8 +49,10 @@ class CompteUtilisateurTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         utilisateurs.deleteAll();
-        Utilisateur admin = new Utilisateur(); admin.setNom("Administrateur"); admin.setEmail("admin-comptes@example.test");
+        Utilisateur admin = new Utilisateur(); admin.setBoutique(boutique); admin.setNom("Administrateur"); admin.setEmail("admin-comptes@example.test");
         admin.setRole(Role.ADMIN);
         admin.setMotDePasse("$2a$10$.J5tnOlvK5hz1YmzGTfCveVTFmwylAyCesO4/wU4eI9S0zgbIyYm2");
         utilisateurs.saveAndFlush(admin);
@@ -176,10 +182,10 @@ class CompteUtilisateurTests {
 
     @Test
     void uneEcritureDirecteNormaliseAussiLEmailEtLaBaseRefuseLeDoublon() {
-        Utilisateur premier = new Utilisateur(); premier.setNom("Premier"); premier.setEmail(" DIRECT@EXAMPLE.TEST ");
+        Utilisateur premier = new Utilisateur(); premier.setBoutique(boutique); premier.setNom("Premier"); premier.setEmail(" DIRECT@EXAMPLE.TEST ");
         utilisateurs.saveAndFlush(premier);
         assertThat(premier.getEmail()).isEqualTo("direct@example.test");
-        Utilisateur second = new Utilisateur(); second.setEmail("direct@example.test");
+        Utilisateur second = new Utilisateur(); second.setBoutique(boutique); second.setEmail("direct@example.test");
         assertThatThrownBy(() -> utilisateurs.saveAndFlush(second)).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         assertThat(utilisateurs.count()).isEqualTo(2);
     }

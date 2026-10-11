@@ -1,6 +1,9 @@
 package org.example.stock.controller;
 
 import org.example.stock.model.Achat;
+import org.example.stock.service.BoutiqueService;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.example.stock.model.Client;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
@@ -27,6 +30,8 @@ public class FactureController {
     @Autowired
     private VenteRepository venteRepository;
 
+    @Autowired private BoutiqueService boutiqueService;
+
     @Autowired
     private ClientRepository clientRepository;
 
@@ -38,8 +43,8 @@ public class FactureController {
 
     @GetMapping("/vente/{id}")
     public String voirFactureVente(@PathVariable Long id, Model model) {
-        Vente vente = venteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vente non trouvee"));
+        Vente vente = venteRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         model.addAttribute("vente", vente);
         return "factures/template_vente";
@@ -47,8 +52,8 @@ public class FactureController {
 
     @GetMapping("/achat/{id}")
     public String voirFactureAchat(@PathVariable Long id, Model model) {
-        Achat achat = achatRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Achat non trouve"));
+        Achat achat = achatRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         model.addAttribute("achat", achat);
         return "factures/template_achat";
@@ -68,8 +73,8 @@ public class FactureController {
             @RequestParam(required = false) String periode,
             Model model) {
 
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+        Client client = clientRepository.findByIdAndBoutiqueId(clientId, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         List<Vente> ventes = filtrerVentesClientParPeriode(clientId, periode);
 
@@ -86,8 +91,8 @@ public class FactureController {
             @RequestParam(required = false) String periode,
             Model model) {
 
-        Client client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+        Client client = clientRepository.findByIdAndBoutiqueId(clientId, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         List<Vente> ventes = filtrerVentesClientParPeriode(clientId, periode);
 
@@ -103,8 +108,8 @@ public class FactureController {
             @RequestParam(required = false) String periode,
             Model model) {
 
-        Fournisseur fournisseur = fournisseurRepository.findById(fournisseurId)
-                .orElseThrow(() -> new RuntimeException("Fournisseur non trouve"));
+        Fournisseur fournisseur = fournisseurRepository.findByIdAndBoutiqueId(fournisseurId, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         List<Achat> achats = filtrerAchatsFournisseurParPeriode(fournisseurId, periode);
 
@@ -121,8 +126,8 @@ public class FactureController {
             @RequestParam(required = false) String periode,
             Model model) {
 
-        Fournisseur fournisseur = fournisseurRepository.findById(fournisseurId)
-                .orElseThrow(() -> new RuntimeException("Fournisseur non trouve"));
+        Fournisseur fournisseur = fournisseurRepository.findByIdAndBoutiqueId(fournisseurId, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Élément introuvable"));
 
         List<Achat> achats = filtrerAchatsFournisseurParPeriode(fournisseurId, periode);
 
@@ -135,25 +140,25 @@ public class FactureController {
     private List<Vente> filtrerVentesParPeriode(String periode) {
         LocalDateTime debut = calculerDebutPeriode(periode);
         if (debut == null) {
-            return venteRepository.findAllByOrderByDateVenteDesc();
+            return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
         }
-        return venteRepository.findByDateVenteAfter(debut);
+        return venteRepository.findByDateVenteAfterAndBoutiqueId(debut, boutiqueService.idBoutiqueCourante());
     }
 
     private List<Vente> filtrerVentesClientParPeriode(Long clientId, String periode) {
         LocalDateTime debut = calculerDebutPeriode(periode);
         if (debut == null) {
-            return venteRepository.findByClientIdOrderByDateVenteDesc(clientId);
+            return venteRepository.findByClientIdAndBoutiqueIdOrderByDateVenteDesc(clientId, boutiqueService.idBoutiqueCourante());
         }
-        return venteRepository.findByClientIdAndDateVenteAfterOrderByDateVenteDesc(clientId, debut);
+        return venteRepository.findByClientIdAndDateVenteAfterAndBoutiqueIdOrderByDateVenteDesc(clientId, debut, boutiqueService.idBoutiqueCourante());
     }
 
     private List<Achat> filtrerAchatsFournisseurParPeriode(Long fournisseurId, String periode) {
         LocalDateTime debut = calculerDebutPeriode(periode);
         if (debut == null) {
-            return achatRepository.findByFournisseurIdOrderByDateAchatDesc(fournisseurId);
+            return achatRepository.findByFournisseurIdAndBoutiqueIdOrderByDateAchatDesc(fournisseurId, boutiqueService.idBoutiqueCourante());
         }
-        return achatRepository.findByFournisseurIdAndDateAchatAfterOrderByDateAchatDesc(fournisseurId, debut);
+        return achatRepository.findByFournisseurIdAndDateAchatAfterAndBoutiqueIdOrderByDateAchatDesc(fournisseurId, debut, boutiqueService.idBoutiqueCourante());
     }
 
     private LocalDateTime calculerDebutPeriode(String periode) {

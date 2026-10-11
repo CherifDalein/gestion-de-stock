@@ -16,32 +16,38 @@ public class CategorieService {
     @Autowired
     private CategorieRepository categorieRepository;
 
+    @Autowired
+    private BoutiqueService boutiqueService;
+
     public List<Categorie> listerToutes() {
-        return categorieRepository.findAll();
+        return categorieRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    @Transactional
     public void ajouterCategorie(Categorie categorie) {
         if (categorie.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
+        categorie.setBoutique(boutiqueService.boutiqueCourante());
         categorieRepository.save(categorie);
     }
 
     @Transactional
     public void modifierCategorie(Long id, Categorie modifications) {
-        Categorie categorie = categorieRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Catégorie introuvable"));
+        Categorie categorie = trouverParId(id);
         categorie.setNom(modifications.getNom());
         categorieRepository.save(categorie);
     }
 
     public Categorie trouverParId(Long id) {
-        return categorieRepository.findById(id).orElse(null);
+        return categorieRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Catégorie introuvable"));
     }
 
     public boolean existeDeja(String nom) {
-        return categorieRepository.findByNom(nom).isPresent();
+        return categorieRepository.findByNomAndBoutiqueId(nom, boutiqueService.idBoutiqueCourante()).isPresent();
     }
 
+    @Transactional
     public void supprimer(Long id) {
-        categorieRepository.deleteById(id);
+        categorieRepository.delete(trouverParId(id));
     }
 }

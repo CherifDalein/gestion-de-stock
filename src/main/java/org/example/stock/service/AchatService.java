@@ -29,11 +29,13 @@ public class AchatService {
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
     @Autowired private FournisseurRepository fournisseurRepository;
+    @Autowired private BoutiqueService boutiqueService;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
+        achat.setBoutique(boutiqueService.boutiqueCourante());
         achat.setDateAchat(LocalDateTime.now());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
@@ -141,11 +143,11 @@ public class AchatService {
     }
 
     public List<Achat> listerTous() {
-        return achatRepository.findAll();
+        return achatRepository.findByBoutiqueIdOrderByDateAchatDesc(boutiqueService.idBoutiqueCourante());
     }
 
     public Achat trouverParId(Long id) {
-        return achatRepository.findById(id).orElse(null);
+        return achatRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante()).orElse(null);
     }
 
     private void validerAchat(Achat achat) {
@@ -155,7 +157,7 @@ public class AchatService {
         if (achat.getLignes() == null || achat.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer un achat sans produit.");
         }
-        achat.setFournisseur(fournisseurRepository.findById(achat.getFournisseur().getId())
+        achat.setFournisseur(fournisseurRepository.findByIdAndBoutiqueId(achat.getFournisseur().getId(), boutiqueService.idBoutiqueCourante())
                 .orElseThrow(() -> new IllegalArgumentException("Fournisseur introuvable")));
 
         for (DetailAchat ligne : achat.getLignes()) {

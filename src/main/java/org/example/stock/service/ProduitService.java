@@ -20,19 +20,22 @@ public class ProduitService {
     @Autowired private CategorieRepository categorieRepository;
     @Autowired private FournisseurRepository fournisseurRepository;
     @Autowired private StockLockRepository stockLockRepository;
+    @Autowired private BoutiqueService boutiqueService;
 
     public List<Produit> listerTous() {
-        return produitRepository.findAll();
+        return produitRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
     public Produit trouverParId(Long id) {
-        return produitRepository.findById(id).get();
+        return produitRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable"));
     }
 
     @Transactional
     public Produit ajouterProduit(Produit produit) {
         if (produit.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (produit.getVersion() != null) throw new IllegalArgumentException("Une création ne peut pas contenir de version");
+        produit.setBoutique(boutiqueService.boutiqueCourante());
         chargerRelations(produit);
         return produitRepository.save(produit);
     }
@@ -42,7 +45,7 @@ public class ProduitService {
         if (modifications.getVersion() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Version du produit obligatoire");
         }
-        if (!produitRepository.existsById(id)) {
+        if (!produitRepository.existsByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable");
         }
         Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
@@ -64,18 +67,20 @@ public class ProduitService {
         if (produit.getCategorie() == null || produit.getCategorie().getId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Catégorie obligatoire");
         }
-        produit.setCategorie(categorieRepository.findById(produit.getCategorie().getId())
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        produit.setCategorie(categorieRepository.findByIdAndBoutiqueId(produit.getCategorie().getId(), boutiqueId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Catégorie introuvable")));
         if (produit.getFournisseur() != null) {
             if (produit.getFournisseur().getId() == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fournisseur invalide");
             }
-            produit.setFournisseur(fournisseurRepository.findById(produit.getFournisseur().getId())
+            produit.setFournisseur(fournisseurRepository.findByIdAndBoutiqueId(produit.getFournisseur().getId(), boutiqueId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fournisseur introuvable")));
         }
     }
 
+    @Transactional
     public void supprimerProduit(Long id) {
-        produitRepository.deleteById(id);
+        produitRepository.delete(trouverParId(id));
     }
 }

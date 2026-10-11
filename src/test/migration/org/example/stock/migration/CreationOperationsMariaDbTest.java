@@ -76,14 +76,15 @@ public class CreationOperationsMariaDbTest {
 
     private void verifier(EntityManager em) throws Exception {
         transaction.executeWithoutResult(status -> {
+            Boutique boutique = new Boutique(); boutique.setNom("Boutique tests MariaDB"); em.persist(boutique);
             for (String email : List.of("test-admin@example.test", "autre-admin@example.test")) {
-                Utilisateur u = new Utilisateur(); u.setNom("Test"); u.setEmail(email); u.setRole(Role.ADMIN);
+                Utilisateur u = new Utilisateur(); u.setBoutique(boutique); u.setNom("Test"); u.setEmail(email); u.setRole(Role.ADMIN);
                 u.setMotDePasse("empreinte-fictive"); em.persist(u);
             }
-            Categorie categorie = new Categorie(); categorie.setNom("Tests"); em.persist(categorie);
-            Fournisseur fournisseur = new Fournisseur(); fournisseur.setNom("Tests"); em.persist(fournisseur);
+            Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Tests"); em.persist(categorie);
+            Fournisseur fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Tests"); em.persist(fournisseur);
             fournisseurId = fournisseur.getId();
-            Produit produit = new Produit(); produit.setNom("Test"); produit.setReference("TEST-CREATION");
+            Produit produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Test"); produit.setReference("TEST-CREATION");
             produit.setCategorie(categorie); produit.setQuantite(100L);
             produit.setPrixAchat(new BigDecimal("5.00")); produit.setPrixVente(new BigDecimal("10.00"));
             em.persist(produit); produitId = produit.getId();

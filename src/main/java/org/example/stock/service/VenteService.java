@@ -28,6 +28,7 @@ public class VenteService {
     @Autowired private UtilisateurRepository utilisateurRepository;
     @Autowired private CaisseService caisseService;
     @Autowired private ClientRepository clientRepository;
+    @Autowired private BoutiqueService boutiqueService;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -37,7 +38,7 @@ public class VenteService {
         }
         if (vente.getClient() != null) {
             if (vente.getClient().getId() == null) throw new IllegalArgumentException("Client invalide");
-            vente.setClient(clientRepository.findById(vente.getClient().getId())
+            vente.setClient(clientRepository.findByIdAndBoutiqueId(vente.getClient().getId(), boutiqueService.idBoutiqueCourante())
                     .orElseThrow(() -> new IllegalArgumentException("Client introuvable")));
         }
 
@@ -55,6 +56,7 @@ public class VenteService {
 
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
+        vente.setBoutique(boutiqueService.boutiqueCourante());
         BigDecimal montantTotalCalcule = Montants.ZERO;
 
         for (DetailVente detail : vente.getLignes()) {
@@ -89,11 +91,11 @@ public class VenteService {
     }
 
     public List<Vente> listerToutes() {
-        return venteRepository.findAll();
+        return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
     }
 
     public Vente trouverParId(Long id) {
-        return venteRepository.findById(id).orElse(null);
+        return venteRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante()).orElse(null);
     }
 
     @Transactional

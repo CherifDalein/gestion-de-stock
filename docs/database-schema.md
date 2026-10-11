@@ -4,11 +4,32 @@ Ce schema est reconstruit a partir des entites JPA du projet Spring Boot (`3.5.1
 
 Base cible : `stock_pro`
 
+## Création d'une base neuve
+
+Le fichier [database-schema.sql](database-schema.sql) crée les douze tables du schéma actuel, dont `boutique` et les neuf références `boutique_id` obligatoires. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+
+Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur. Le script SQL ne crée aucun compte ni ne stocke de mot de passe.
+
+L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma au démarrage sans créer ni modifier les tables. Pour une base contenant déjà des données, suivre la [migration des boutiques](migrations/boutiques.md) après arrêt de l'application et sauvegarde complète. Les `CREATE TABLE IF NOT EXISTS` du fichier de création ne convertissent pas des tables existantes ; ne pas les employer comme migration.
+
 ## Tables
+
+### `boutique`
+- `id` PK
+- `nom` VARCHAR(255) NOT NULL
+- `date_creation` DATETIME(6) NOT NULL
+
+Les neuf tables racines (`utilisateur`, `categorie`, `client`, `fournisseur`,
+`produit`, `achat`, `vente`, `mouvement_caisse`, `operation_creation`) portent
+`boutique_id` BIGINT NOT NULL, avec une clé étrangère vers `boutique.id`. Les
+lignes d’achat et de vente appartiennent à la boutique de leur document ;
+leurs produits doivent appartenir au même espace. Les accès métier déterminent
+la boutique depuis le compte authentifié, sans utiliser un identifiant fourni
+par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 
 ### `categorie`
 - `id` PK
-- `nom` UNIQUE
+- `nom` : UNIQUE (`boutique_id`, `nom`)
 
 ### `client`
 - `id` PK
@@ -98,6 +119,15 @@ Un résultat est enregistré dans la même transaction que le stock, le document
 
 ```mermaid
 erDiagram
+    BOUTIQUE ||--o{ UTILISATEUR : accueille
+    BOUTIQUE ||--o{ PRODUIT : possede
+    BOUTIQUE ||--o{ CATEGORIE : classe
+    BOUTIQUE ||--o{ CLIENT : repertorie
+    BOUTIQUE ||--o{ FOURNISSEUR : repertorie
+    BOUTIQUE ||--o{ ACHAT : enregistre
+    BOUTIQUE ||--o{ VENTE : enregistre
+    BOUTIQUE ||--o{ MOUVEMENT_CAISSE : journalise
+    BOUTIQUE ||--o{ OPERATION_CREATION : protege
     CATEGORIE ||--o{ PRODUIT : classe
     FOURNISSEUR ||--o{ PRODUIT : fournit
     FOURNISSEUR ||--o{ ACHAT : concerne
@@ -113,12 +143,19 @@ erDiagram
     ACHAT o|--o| OPERATION_CREATION : resultat
     VENTE o|--o| OPERATION_CREATION : resultat
 
+    BOUTIQUE {
+        BIGINT id PK
+        VARCHAR nom
+        DATETIME date_creation
+    }
     CATEGORIE {
         BIGINT id PK
-        VARCHAR nom UK
+        BIGINT boutique_id FK
+        VARCHAR nom
     }
     CLIENT {
         BIGINT id PK
+        BIGINT boutique_id FK
         VARCHAR nom
         VARCHAR telephone
         VARCHAR email
@@ -126,6 +163,7 @@ erDiagram
     }
     FOURNISSEUR {
         BIGINT id PK
+        BIGINT boutique_id FK
         VARCHAR nom
         VARCHAR telephone
         VARCHAR email
@@ -133,6 +171,7 @@ erDiagram
     }
     UTILISATEUR {
         BIGINT id PK
+        BIGINT boutique_id FK
         VARCHAR nom
         VARCHAR email UK
         VARCHAR mot_de_passe
@@ -141,6 +180,7 @@ erDiagram
     }
     PRODUIT {
         BIGINT id PK
+        BIGINT boutique_id FK
         BIGINT version
         VARCHAR nom
         VARCHAR reference
@@ -152,6 +192,7 @@ erDiagram
     }
     ACHAT {
         BIGINT id PK
+        BIGINT boutique_id FK
         DATETIME date_achat
         DECIMAL montant_total
         DECIMAL montant_verse
@@ -166,6 +207,7 @@ erDiagram
     }
     VENTE {
         BIGINT id PK
+        BIGINT boutique_id FK
         DATETIME date_vente
         DECIMAL montant_total
         DECIMAL montant_verse
@@ -180,6 +222,7 @@ erDiagram
     }
     MOUVEMENT_CAISSE {
         BIGINT id PK
+        BIGINT boutique_id FK
         DATETIME date_mouvement
         DECIMAL montant
         VARCHAR type
@@ -191,6 +234,7 @@ erDiagram
     }
     OPERATION_CREATION {
         VARCHAR jeton PK
+        BIGINT boutique_id FK
         BIGINT utilisateur_id FK
         ENUM type
         DATETIME date_creation
@@ -203,6 +247,7 @@ erDiagram
 ## Source des tables
 
 - `Achat.java`
+- `Boutique.java`
 - `Categorie.java`
 - `Client.java`
 - `DetailAchat.java`

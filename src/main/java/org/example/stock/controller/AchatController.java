@@ -72,6 +72,8 @@ public class AchatController {
                     ? "Cet achat est déjà enregistré. Le stock et la caisse n'ont pas été modifiés une seconde fois."
                     : "Achat enregistre avec succes !");
             return "redirect:/achats";
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             if (e instanceof CreationOperationException conflit) {
                 response.setStatus(conflit.getStatus().value());
@@ -90,7 +92,7 @@ public class AchatController {
     @GetMapping("/modifier/{id}")
     public String afficherModifier(@PathVariable Long id, Model model) {
         Achat achat = service.trouverParId(id);
-        if (achat == null) return "redirect:/achats";
+        if (achat == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achat introuvable");
 
         model.addAttribute("achat", achat);
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
@@ -105,6 +107,8 @@ public class AchatController {
         try {
             service.modifierAchat(id, achat);
             return "redirect:/achats?success=modifie";
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie cet achat ou son stock. Réessayez la modification." : e.getMessage());

@@ -16,6 +16,10 @@ public class MouvementCaisse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boutique_id", nullable = false)
+    private Boutique boutique;
+
     private LocalDateTime dateMouvement;
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")

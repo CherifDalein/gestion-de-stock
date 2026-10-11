@@ -7,6 +7,7 @@ import lombok.Setter;
 import java.util.List;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_categorie_boutique_nom", columnNames = {"boutique_id", "nom"}))
 @Getter
 @Setter
 public class Categorie {
@@ -14,8 +15,11 @@ public class Categorie {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boutique_id", nullable = false)
+    private Boutique boutique;
+
     @NotBlank(message = "Le nom de la catégorie est obligatoire")
-    @Column(unique = true)
     private String nom;
 
     @OneToMany(mappedBy = "categorie")

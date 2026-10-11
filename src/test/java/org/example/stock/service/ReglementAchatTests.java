@@ -36,6 +36,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser(username = "paiement@example.test", roles = "ADMIN")
 class ReglementAchatTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired MockMvc mvc;
     @Autowired AchatService achatService;
     @Autowired VenteService venteService;
@@ -53,16 +55,18 @@ class ReglementAchatTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         caisse.deleteAll(); ventes.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
-        Utilisateur admin = new Utilisateur(); admin.setNom("Administrateur test");
+        Utilisateur admin = new Utilisateur(); admin.setBoutique(boutique); admin.setNom("Administrateur test");
         admin.setEmail("paiement@example.test"); admin.setRole(Role.ADMIN); utilisateurs.save(admin);
-        Categorie categorie = new Categorie(); categorie.setNom("Catégorie"); categorie = categories.save(categorie);
-        Fournisseur fournisseur = new Fournisseur(); fournisseur.setNom("Fournisseur test"); fournisseur = fournisseurs.save(fournisseur);
-        produit = new Produit(); produit.setNom("Produit test"); produit.setReference("REF-PAIEMENT");
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Catégorie"); categorie = categories.save(categorie);
+        Fournisseur fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Fournisseur test"); fournisseur = fournisseurs.save(fournisseur);
+        produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Produit test"); produit.setReference("REF-PAIEMENT");
         produit.setQuantite(0L); produit.setPrixAchat(new BigDecimal("10000.0")); produit.setPrixVente(new BigDecimal("20000.0"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit = produits.saveAndFlush(produit);
-        Achat nouveau = new Achat(); nouveau.setFournisseur(fournisseur); nouveau.setMontantVerse(new BigDecimal("50000.0"));
+        Achat nouveau = new Achat(); nouveau.setBoutique(boutique); nouveau.setFournisseur(fournisseur); nouveau.setMontantVerse(new BigDecimal("50000.0"));
         nouveau.getLignes().add(ligne(10)); achat = achatService.enregistrerAchat(nouveau);
     }
 
@@ -284,13 +288,13 @@ class ReglementAchatTests {
     }
 
     private void vendre(int quantite) {
-        Vente vente = new Vente(); DetailVente ligne = new DetailVente();
-        Produit reference = new Produit(); reference.setId(produit.getId());
+        Vente vente = new Vente(); vente.setBoutique(boutique); DetailVente ligne = new DetailVente();
+        Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
         ligne.setProduit(reference); ligne.setQuantite(quantite); vente.getLignes().add(ligne); venteService.effectuerVente(vente);
     }
 
     private DetailAchat ligne(int quantite) {
-        DetailAchat ligne = new DetailAchat(); Produit reference = new Produit(); reference.setId(produit.getId());
+        DetailAchat ligne = new DetailAchat(); Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
         ligne.setProduit(reference); ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("10000.0")); return ligne;
     }
 

@@ -50,6 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @ActiveProfiles("test")
 class CreationOperationTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     private static final String EMAIL = "creation@example.test";
     private static final String AUTRE_EMAIL = "autre-creation@example.test";
 
@@ -72,13 +74,15 @@ class CreationOperationTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         operations.deleteAll(); caisse.deleteAll(); ventes.deleteAll(); achats.deleteAll();
         produits.deleteAll(); categories.deleteAll(); fournisseurs.deleteAll(); utilisateurs.deleteAll();
         auteur = utilisateur(EMAIL);
         utilisateur(AUTRE_EMAIL);
-        Categorie categorie = new Categorie(); categorie.setNom("Création"); categorie = categories.save(categorie);
-        fournisseur = new Fournisseur(); fournisseur.setNom("Fournisseur création"); fournisseur = fournisseurs.save(fournisseur);
-        produit = new Produit(); produit.setNom("Produit création"); produit.setReference("CREATION");
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Création"); categorie = categories.save(categorie);
+        fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Fournisseur création"); fournisseur = fournisseurs.save(fournisseur);
+        produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Produit création"); produit.setReference("CREATION");
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit.setQuantite(10L);
         produit.setPrixAchat(new BigDecimal("5")); produit.setPrixVente(new BigDecimal("20"));
         produit = produits.saveAndFlush(produit);
@@ -390,7 +394,7 @@ class CreationOperationTests {
     }
 
     private Utilisateur utilisateur(String email) {
-        Utilisateur utilisateur = new Utilisateur(); utilisateur.setNom("Test création"); utilisateur.setEmail(email);
+        Utilisateur utilisateur = new Utilisateur(); utilisateur.setBoutique(boutique); utilisateur.setNom("Test création"); utilisateur.setEmail(email);
         utilisateur.setRole(Role.ADMIN); return utilisateurs.saveAndFlush(utilisateur);
     }
 
@@ -416,17 +420,17 @@ class CreationOperationTests {
     }
 
     private Achat achat(int quantite) {
-        Achat achat = new Achat(); Fournisseur reference = new Fournisseur(); reference.setId(fournisseur.getId());
+        Achat achat = new Achat(); achat.setBoutique(boutique); Fournisseur reference = new Fournisseur(); reference.setBoutique(boutique); reference.setId(fournisseur.getId());
         achat.setFournisseur(reference); DetailAchat ligne = new DetailAchat(); ligne.setProduit(referenceProduit());
         ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("5")); achat.getLignes().add(ligne); return achat;
     }
 
     private Vente vente(int quantite) {
-        Vente vente = new Vente(); DetailVente ligne = new DetailVente(); ligne.setProduit(referenceProduit());
+        Vente vente = new Vente(); vente.setBoutique(boutique); DetailVente ligne = new DetailVente(); ligne.setProduit(referenceProduit());
         ligne.setQuantite(quantite); vente.getLignes().add(ligne); return vente;
     }
 
-    private Produit referenceProduit() { Produit reference = new Produit(); reference.setId(produit.getId()); return reference; }
+    private Produit referenceProduit() { Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId()); return reference; }
 
     private void vieillir(String jeton) {
         var operation = operations.findById(jeton).orElseThrow(); operation.setDateCreation(Instant.now().minus(25, ChronoUnit.HOURS));

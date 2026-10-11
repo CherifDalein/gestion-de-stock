@@ -1,47 +1,69 @@
+-- Création d'une base neuve uniquement : ne pas utiliser ce script pour migrer des tables existantes.
+-- Pour une ancienne base, utiliser boutiquesCheck puis boutiquesMigrate après sauvegarde.
 CREATE DATABASE IF NOT EXISTS stock_pro
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE stock_pro;
 
+CREATE TABLE IF NOT EXISTS boutique (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    nom VARCHAR(255) NOT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS categorie (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     nom VARCHAR(255),
     PRIMARY KEY (id),
-    CONSTRAINT uk_categorie_nom UNIQUE (nom)
+    CONSTRAINT fk_categorie_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT uk_categorie_boutique_nom UNIQUE (boutique_id, nom)
 );
 
 CREATE TABLE IF NOT EXISTS client (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     nom VARCHAR(255),
     telephone VARCHAR(255),
     email VARCHAR(255),
     adresse VARCHAR(255),
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    CONSTRAINT fk_client_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id)
 );
 
 CREATE TABLE IF NOT EXISTS fournisseur (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     nom VARCHAR(255),
     telephone VARCHAR(255),
     email VARCHAR(255),
     adresse VARCHAR(255),
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    CONSTRAINT fk_fournisseur_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id)
 );
 
 CREATE TABLE IF NOT EXISTS utilisateur (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     nom VARCHAR(255),
     email VARCHAR(255) NOT NULL,
     mot_de_passe VARCHAR(255),
     date_inscription DATE,
     role ENUM('ADMIN', 'CAISSIER'),
     PRIMARY KEY (id),
+    CONSTRAINT fk_utilisateur_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT uk_utilisateur_email UNIQUE (email)
 );
 
 CREATE TABLE IF NOT EXISTS produit (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     version BIGINT NOT NULL DEFAULT 0,
     nom VARCHAR(255),
     reference VARCHAR(255),
@@ -51,6 +73,8 @@ CREATE TABLE IF NOT EXISTS produit (
     categorie_id BIGINT,
     fournisseur_id BIGINT,
     PRIMARY KEY (id),
+    CONSTRAINT fk_produit_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_produit_categorie
         FOREIGN KEY (categorie_id) REFERENCES categorie (id),
     CONSTRAINT fk_produit_fournisseur
@@ -59,22 +83,28 @@ CREATE TABLE IF NOT EXISTS produit (
 
 CREATE TABLE IF NOT EXISTS achat (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     date_achat DATETIME(6),
     montant_total DECIMAL(17,2),
     montant_verse DECIMAL(17,2),
     fournisseur_id BIGINT,
     PRIMARY KEY (id),
+    CONSTRAINT fk_achat_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_achat_fournisseur
         FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id)
 );
 
 CREATE TABLE IF NOT EXISTS vente (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     date_vente DATETIME(6),
     montant_total DECIMAL(17,2),
     montant_verse DECIMAL(17,2),
     client_id BIGINT,
     PRIMARY KEY (id),
+    CONSTRAINT fk_vente_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_vente_client
         FOREIGN KEY (client_id) REFERENCES client (id)
 );
@@ -107,6 +137,7 @@ CREATE TABLE IF NOT EXISTS detail_vente (
 
 CREATE TABLE IF NOT EXISTS mouvement_caisse (
     id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
     date_mouvement DATETIME(6),
     montant DECIMAL(17,2),
     type VARCHAR(255),
@@ -116,6 +147,8 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     achat_id BIGINT,
     vente_id BIGINT,
     PRIMARY KEY (id),
+    CONSTRAINT fk_mouvement_caisse_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_mouvement_caisse_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
     CONSTRAINT fk_mouvement_caisse_achat
@@ -126,6 +159,7 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
 
 CREATE TABLE IF NOT EXISTS operation_creation (
     jeton VARCHAR(36) NOT NULL,
+    boutique_id BIGINT NOT NULL,
     utilisateur_id BIGINT NOT NULL,
     type ENUM('ACHAT', 'VENTE') NOT NULL,
     date_creation DATETIME(6) NOT NULL,
@@ -133,6 +167,8 @@ CREATE TABLE IF NOT EXISTS operation_creation (
     achat_id BIGINT,
     vente_id BIGINT,
     PRIMARY KEY (jeton),
+    CONSTRAINT fk_operation_creation_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT uk_operation_creation_achat UNIQUE (achat_id),
     CONSTRAINT uk_operation_creation_vente UNIQUE (vente_id),
     CONSTRAINT fk_operation_creation_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),

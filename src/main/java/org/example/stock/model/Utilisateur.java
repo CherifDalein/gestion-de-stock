@@ -22,6 +22,10 @@ public class Utilisateur {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boutique_id", nullable = false)
+    private Boutique boutique;
+
     private String nom;
 
     @Email(message = "Format d'email invalide")

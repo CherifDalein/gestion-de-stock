@@ -16,6 +16,10 @@ Sur macOS/Linux, si nécessaire : `chmod +x gradlew`.
 Ouvrir <http://localhost:8080>. La connexion locale utilise la base `stock_pro`.
 Voir [les paramètres de connexion](docs/connexion-base.md) pour les identifiants et une connexion distante.
 
+Le schéma est validé au démarrage ; il n'est plus modifié automatiquement. Pour
+une base existante sans boutiques, appliquer d'abord la
+[migration des boutiques](docs/migrations/boutiques.md), après sauvegarde.
+
 ## Tests
 
 ```sh
@@ -34,6 +38,7 @@ node --test src/test/js/montants.test.cjs
 
 - [Interface et vérification du thème](docs/interface.md)
 - [Évolution SaaS : boutiques et abonnements mensuels](docs/saas.md)
+- [Migration des données existantes vers les boutiques](docs/migrations/boutiques.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

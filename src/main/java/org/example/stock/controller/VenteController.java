@@ -68,6 +68,8 @@ public class VenteController {
                     ? "Cette vente est déjà enregistrée. Le stock et la caisse n'ont pas été modifiés une seconde fois."
                     : "Vente enregistrée avec succès !");
             return "redirect:/ventes";
+        } catch (ResponseStatusException e) {
+            throw e;
         } catch (RuntimeException e) {
             if (e instanceof CreationOperationException conflit) {
                 response.setStatus(conflit.getStatus().value());

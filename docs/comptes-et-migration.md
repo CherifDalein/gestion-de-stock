@@ -2,7 +2,7 @@
 
 ## Création d'un caissier
 
-Se connecter comme ADMIN, puis ouvrir **Créer un compte caissier**. Le serveur vérifie un objet de formulaire dédié ; les champs internes tels que `role`, `id` ou `motDePasse` sont refusés. Le rôle créé reste CAISSIER et la session de l'administrateur est conservée.
+Se connecter comme ADMIN, puis ouvrir **Créer un compte caissier**. Le serveur vérifie un objet de formulaire dédié ; les champs internes tels que `role`, `id`, `motDePasse` ou `boutique` sont refusés. Le rôle créé reste CAISSIER et la session de l'administrateur est conservée. Le nouveau compte appartient à la boutique de l'administrateur connecté ; son email doit être unique parmi tous les comptes.
 
 - Nom obligatoire, sans espaces autour, maximum 100 caractères Java.
 - Email obligatoire, format validé, maximum 254 caractères. Les espaces autour sont retirés et la casse est normalisée avec `Locale.ROOT`, indépendamment de la langue du système.
@@ -48,13 +48,15 @@ Les scénarios ont été exécutés sur H2 et MariaDB 10.4.28. La variante JDBC 
 
 ## Premier administrateur d'une base locale neuve
 
-Le schéma doit être créé et la table `utilisateur` vide. Utiliser la commande locale réservée à l'opérateur disposant de l'accès JDBC :
+Le schéma courant doit être créé, avec la table `boutique`, et la table `utilisateur` vide. Sur une ancienne base, appliquer d'abord la [migration des boutiques](migrations/boutiques.md). Utiliser la commande locale réservée à l'opérateur disposant de l'accès JDBC :
 
 ```sh
 ./gradlew initialAdmin
 ```
 
 La commande exige `localhost` ou `127.0.0.1` et la base `stock_pro`. Elle crée `admin@stock.local`, rôle ADMIN, avec un mot de passe aléatoire de 32 caractères, haché en BCrypt. Les identifiants sont écrits dans un fichier privé de permissions `0600` ; seul son chemin est affiché. Conserver le mot de passe avant le nettoyage des fichiers temporaires du système.
+
+Le compte est rattaché à l'unique boutique existante. Si aucune boutique n'existe, la commande crée la **Boutique principale** dans la même transaction que le compte. Elle refuse plusieurs boutiques afin de ne pas attribuer arbitrairement le premier administrateur à l'une d'elles. Ce compte ADMIN gère sa boutique ; il n'est pas un administrateur de la plateforme SaaS.
 
 En cas d'échec après préparation des identifiants, le fichier privé est conservé : une erreur de connexion peut survenir après une insertion validée par le serveur. Vérifier l'existence du compte avant de relancer la commande.
 

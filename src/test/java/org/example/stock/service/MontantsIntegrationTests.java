@@ -29,6 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser(username = "montants@example.test", roles = "ADMIN")
 class MontantsIntegrationTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired ProduitRepository produits;
     @Autowired AchatRepository achats;
     @Autowired VenteRepository ventes;
@@ -47,13 +49,15 @@ class MontantsIntegrationTests {
 
     @BeforeEach
     void preparer() {
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
         mouvements.deleteAll(); ventes.deleteAll(); achats.deleteAll(); produits.deleteAll();
         categories.deleteAll(); fournisseurs.deleteAll(); clients.deleteAll(); utilisateurs.deleteAll();
-        utilisateur = new Utilisateur(); utilisateur.setEmail("montants@example.test");
+        utilisateur = new Utilisateur(); utilisateur.setBoutique(boutique); utilisateur.setEmail("montants@example.test");
         utilisateur.setNom("Montants"); utilisateur.setRole(Role.ADMIN); utilisateur = utilisateurs.save(utilisateur);
-        Categorie categorie = new Categorie(); categorie.setNom("Décimales"); categorie = categories.save(categorie);
-        fournisseur = new Fournisseur(); fournisseur.setNom("Décimales"); fournisseur = fournisseurs.save(fournisseur);
-        produit = new Produit(); produit.setNom("Produit décimal"); produit.setReference("DECIMAL");
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique); categorie.setNom("Décimales"); categorie = categories.save(categorie);
+        fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique); fournisseur.setNom("Décimales"); fournisseur = fournisseurs.save(fournisseur);
+        produit = new Produit(); produit.setBoutique(boutique); produit.setNom("Produit décimal"); produit.setReference("DECIMAL");
         produit.setQuantite(10L); produit.setPrixAchat(new BigDecimal("0.10")); produit.setPrixVente(new BigDecimal("0.10"));
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit = produits.saveAndFlush(produit);
     }
@@ -102,7 +106,7 @@ class MontantsIntegrationTests {
     void lesAgregatsDeCaisseRestentExactsEtAcceptentUneCaisseVide() throws Exception {
         assertThat(caisseService.getSoldeActuel()).isZero();
         assertThat(caisseService.getSoldeCloture(LocalDate.now())).isZero();
-        MouvementCaisse ancien = new MouvementCaisse(); ancien.setMontant(new BigDecimal("0.07"));
+        MouvementCaisse ancien = new MouvementCaisse(); ancien.setBoutique(boutique); ancien.setMontant(new BigDecimal("0.07"));
         ancien.setDateMouvement(LocalDate.now().minusDays(1).atStartOfDay()); ancien.setType("ENTREE");
         ancien.setUtilisateur(utilisateur); mouvements.saveAndFlush(ancien);
         caisseService.enregistrerEntree(new BigDecimal("0.10"), "Test", "VENTE", utilisateur);
@@ -120,9 +124,9 @@ class MontantsIntegrationTests {
 
     @Test
     void lesAnciennesDettesAvecVersementNullNeDisparaissentPas() {
-        Vente vente = new Vente(); vente.setMontantTotal(new BigDecimal("0.30"));
+        Vente vente = new Vente(); vente.setBoutique(boutique); vente.setMontantTotal(new BigDecimal("0.30"));
         assertThat(vente.getResteAPayer()).isEqualByComparingTo("0.30");
-        Achat achat = new Achat(); achat.setMontantTotal(new BigDecimal("0.30"));
+        Achat achat = new Achat(); achat.setBoutique(boutique); achat.setMontantTotal(new BigDecimal("0.30"));
         assertThat(achat.getResteAPayer()).isEqualByComparingTo("0.30");
     }
 
@@ -146,7 +150,7 @@ class MontantsIntegrationTests {
 
     @Test
     void lesFacturesCumuleesAdditionnentLesMontantsEnDecimal() throws Exception {
-        Client client = new Client(); client.setNom("Client décimal"); client = clients.save(client);
+        Client client = new Client(); client.setBoutique(boutique); client.setNom("Client décimal"); client = clients.save(client);
         for (int quantite : new int[]{1, 2}) {
             Vente vente = vente(quantite); vente.setClient(client); venteService.effectuerVente(vente);
             achatService.enregistrerAchat(achat("0.10", quantite));
@@ -159,7 +163,7 @@ class MontantsIntegrationTests {
 
     @Test
     void uneAncienneVenteAvecVersementNullAfficheSaDetteEtUnVersementZero() throws Exception {
-        Client client = new Client(); client.setNom("Ancien client"); client = clients.save(client);
+        Client client = new Client(); client.setBoutique(boutique); client.setNom("Ancien client"); client = clients.save(client);
         Vente vente = vente(3); vente.setClient(client);
         Long id = venteService.effectuerVente(vente).getId();
         Vente ancienne = ventes.findById(id).orElseThrow(); ancienne.setMontantVerse(null); ventes.saveAndFlush(ancienne);
@@ -219,13 +223,13 @@ class MontantsIntegrationTests {
     }
 
     private Achat achat(String prix, int quantite) {
-        Achat achat = new Achat(); achat.setFournisseur(fournisseur);
+        Achat achat = new Achat(); achat.setBoutique(boutique); achat.setFournisseur(fournisseur);
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(produit); ligne.setQuantite(quantite);
         ligne.setPrixAchatUnitaire(new BigDecimal(prix)); achat.getLignes().add(ligne); return achat;
     }
 
     private Vente vente(int quantite) {
-        Vente vente = new Vente(); DetailVente ligne = new DetailVente();
+        Vente vente = new Vente(); vente.setBoutique(boutique); DetailVente ligne = new DetailVente();
         ligne.setProduit(produit); ligne.setQuantite(quantite); vente.getLignes().add(ligne); return vente;
     }
 

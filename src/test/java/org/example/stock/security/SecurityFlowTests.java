@@ -7,7 +7,9 @@ import org.example.stock.model.Client;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.model.Boutique;
 import org.example.stock.repository.UtilisateurRepository;
+import org.example.stock.repository.BoutiqueRepository;
 import org.example.stock.service.CategorieService;
 import org.example.stock.service.ClientService;
 import org.example.stock.service.FournisseurService;
@@ -51,6 +53,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @WithMockUser(username = "admin-audit@example.test", roles = "ADMIN")
 class SecurityFlowTests {
+    @Autowired BoutiqueRepository boutiques;
+    Boutique boutique;
     @Autowired MockMvc mvc;
     @Autowired UtilisateurRepository utilisateurRepository;
     @Autowired PasswordEncoder passwordEncoder;
@@ -61,23 +65,25 @@ class SecurityFlowTests {
 
     @BeforeEach
     void preparer() {
-        Utilisateur admin = new Utilisateur();
+        boutique = new Boutique(); boutique.setNom("Boutique de test");
+        boutique = boutiques.saveAndFlush(boutique);
+        Utilisateur admin = new Utilisateur(); admin.setBoutique(boutique);
         admin.setNom("Administrateur test");
         admin.setEmail("admin-audit@example.test");
         admin.setMotDePasse(passwordEncoder.encode("MotDePasseTest42"));
         admin.setRole(Role.ADMIN);
         utilisateurRepository.saveAndFlush(admin);
 
-        Categorie categorie = new Categorie();
+        Categorie categorie = new Categorie(); categorie.setBoutique(boutique);
         categorie.setId(1L);
         categorie.setNom("Catégorie test");
-        Fournisseur fournisseur = new Fournisseur();
+        Fournisseur fournisseur = new Fournisseur(); fournisseur.setBoutique(boutique);
         fournisseur.setId(1L);
         fournisseur.setNom("Fournisseur test");
-        Client client = new Client();
+        Client client = new Client(); client.setBoutique(boutique);
         client.setId(1L);
         client.setNom("Client test");
-        Produit produit = new Produit();
+        Produit produit = new Produit(); produit.setBoutique(boutique);
         produit.setId(1L);
         produit.setNom("Produit test");
         produit.setReference("REF-TEST");

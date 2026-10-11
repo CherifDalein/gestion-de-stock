@@ -18,10 +18,15 @@ feuille de route ne les impose pas.
 
 ## État actuel
 
-L'application fonctionne actuellement pour une entreprise unique. Aucun modèle
-de boutique, d'appartenance ou d'abonnement n'existe encore. Les rôles ADMIN et
-CAISSIER s'appliquent globalement ; les lectures des données et les totaux de
-caisse ne sont pas limités à une boutique.
+Le premier lot introduit les boutiques et isole les données côté serveur. Chaque
+compte appartient à une boutique ; les rôles ADMIN et CAISSIER donnent des droits
+dans cet espace. Les listes, documents, relations, règlements, factures, verrous
+et totaux de caisse utilisent la boutique du compte authentifié.
+
+Dans ce premier lot, un compte appartient à une seule boutique. Les noms de
+catégories sont uniques par boutique et les emails restent uniques pour les
+comptes. Les données locales existantes sont conservées dans la Boutique
+principale par la [migration explicite](migrations/boutiques.md).
 
 L'administrateur actuel correspond au gérant de la boutique. L'administration de
 la plateforme SaaS doit disposer de droits distincts pour gérer les boutiques et
@@ -31,12 +36,16 @@ leurs abonnements. La création actuelle de comptes caissiers est réservée à 
 
 ### 1. Boutiques et isolation des données
 
+Premier lot réalisé : modèle Boutique, rattachement obligatoire des données et
+contrôles d'appartenance sur les opérations métier et HTTP. La création publique
+des boutiques, leur administration et les abonnements relèvent des lots suivants.
+
 - Introduire la boutique et l'appartenance des comptes, avec leurs rôles dans la
   boutique. Prévoir qu'un compte puisse avoir plusieurs appartenances si ce
   besoin est confirmé plus tard.
 - Rattacher les données existantes à une première boutique par une migration
-  explicite qui les conserve. Le propriétaire de cette boutique sera identifié
-  avant l'application de la migration.
+  explicite qui les conserve. Les comptes ADMIN existants restent les gérants
+  de cette boutique, avec leurs identifiants et leurs mots de passe conservés.
 - Déterminer la boutique autorisée depuis la session côté serveur. Un identifiant
   reçu dans un formulaire ou une URL ne suffit pas à autoriser l'accès.
 - Limiter les listes, consultations, modifications, suppressions, règlements,
@@ -78,5 +87,6 @@ leur restauration, les connexions, la supervision et la procédure de migration.
 L'automatisation des sauvegardes et le renforcement des connexions, reportés
 pendant le travail local, restent à traiter avant l'ouverture du service.
 
-Cette feuille de route documente la direction retenue ; la séparation des
-boutiques et la facturation ne sont pas encore implémentées.
+La séparation des boutiques est implémentée. L'administration de la plateforme,
+la création publique de boutiques, l'accès commercial offert et la facturation
+restent à mettre en œuvre.

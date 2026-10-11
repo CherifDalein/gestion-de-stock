@@ -15,19 +15,23 @@ public class FournisseurService {
     @Autowired
     private FournisseurRepository fournisseurRepository;
 
+    @Autowired
+    private BoutiqueService boutiqueService;
+
     public List<Fournisseur> listerTous() {
-        return fournisseurRepository.findAll();
+        return fournisseurRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    @Transactional
     public Fournisseur enregistrer(Fournisseur f) {
         if (f.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
+        f.setBoutique(boutiqueService.boutiqueCourante());
         return fournisseurRepository.save(f);
     }
 
     @Transactional
     public Fournisseur modifierFournisseur(Long id, Fournisseur modifications) {
-        Fournisseur fournisseur = fournisseurRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fournisseur introuvable"));
+        Fournisseur fournisseur = trouverParId(id);
         fournisseur.setNom(modifications.getNom());
         fournisseur.setTelephone(modifications.getTelephone());
         fournisseur.setEmail(modifications.getEmail());
@@ -36,10 +40,12 @@ public class FournisseurService {
     }
 
     public Fournisseur trouverParId(Long id) {
-        return fournisseurRepository.findById(id).orElseThrow(() -> new RuntimeException("Fournisseur introuvable"));
+        return fournisseurRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fournisseur introuvable"));
     }
 
+    @Transactional
     public void supprimerFournisseur(Long id) {
-        fournisseurRepository.deleteById(id);
+        fournisseurRepository.delete(trouverParId(id));
     }
 }

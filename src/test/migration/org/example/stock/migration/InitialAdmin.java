@@ -40,6 +40,7 @@ public class InitialAdmin {
     }
 
     static void creer(Connection c, String email, String password) throws Exception {
+        if (!c.getAutoCommit()) throw new IllegalStateException("Utiliser une connexion dédiée sans transaction ouverte");
         InscriptionForm formulaire = new InscriptionForm(); formulaire.setNom("Administrateur"); formulaire.setEmail(email); formulaire.setPassword(password);
         try (var factory = Validation.buildDefaultValidatorFactory()) {
             if (!factory.getValidator().validate(formulaire).isEmpty()) throw new IllegalStateException("L'email ou le mot de passe ne respecte pas les règles de création des comptes");
@@ -54,10 +55,33 @@ public class InitialAdmin {
             try (var s = c.createStatement(); var r = s.executeQuery("SELECT COUNT(*) FROM utilisateur")) {
                 r.next(); if (r.getLong(1) != 0) throw new IllegalStateException("Des comptes existent déjà ; aucun administrateur n'a été ajouté");
             }
-            try (var s = c.prepareStatement("INSERT INTO utilisateur(nom,email,mot_de_passe,date_inscription,role) VALUES(?,?,?,?,?)")) {
+            Long boutiqueId = null;
+            try (var s = c.createStatement(); var r = s.executeQuery("SELECT id FROM boutique ORDER BY id")) {
+                if (r.next()) boutiqueId = r.getLong(1);
+                if (r.next()) throw new IllegalStateException("Plusieurs boutiques existent ; initialisation ambiguë");
+            }
+            boolean autoCommit = c.getAutoCommit();
+            c.setAutoCommit(false);
+            try {
+                if (boutiqueId == null) {
+                    try (var s = c.prepareStatement("INSERT INTO boutique(nom,date_creation) VALUES(?,?)", Statement.RETURN_GENERATED_KEYS)) {
+                        s.setString(1, "Boutique principale");
+                        s.setTimestamp(2, Timestamp.valueOf(java.time.LocalDateTime.now()));
+                        s.executeUpdate();
+                        try (var ids = s.getGeneratedKeys()) { ids.next(); boutiqueId = ids.getLong(1); }
+                    }
+                }
+                try (var s = c.prepareStatement("INSERT INTO utilisateur(nom,email,mot_de_passe,date_inscription,role,boutique_id) VALUES(?,?,?,?,?,?)")) {
                 s.setString(1, formulaire.getNom()); s.setString(2, formulaire.getEmail());
                 s.setString(3, new LengthCheckedBcryptPasswordEncoder().encode(password));
-                s.setDate(4, java.sql.Date.valueOf(java.time.LocalDate.now())); s.setString(5, "ADMIN"); s.executeUpdate();
+                s.setDate(4, java.sql.Date.valueOf(java.time.LocalDate.now())); s.setString(5, "ADMIN");
+                s.setLong(6, boutiqueId); s.executeUpdate();
+                }
+                if (autoCommit) c.commit();
+            } catch (Exception e) {
+                c.rollback(); throw e;
+            } finally {
+                c.setAutoCommit(autoCommit);
             }
         } finally {
             if (verrouSql) try (var s = c.prepareStatement("SELECT RELEASE_LOCK(?)")) { s.setString(1, verrou); s.executeQuery().close(); }

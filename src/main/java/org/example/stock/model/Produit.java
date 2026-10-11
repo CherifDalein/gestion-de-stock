@@ -18,6 +18,10 @@ public class Produit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boutique_id", nullable = false)
+    private Boutique boutique;
+
     @Version
     @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long version;
