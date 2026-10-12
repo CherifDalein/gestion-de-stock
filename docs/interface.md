@@ -169,8 +169,9 @@ chronologique sans dépendance externe ni conversion des montants. La période
 « 7 derniers jours » conserve le calcul existant du serveur. Les liens vers les
 relevés cumulés conservent la période sélectionnée.
 
-Les factures et relevés partagent `factures.css`, avec un en-tête « Stock Pro » et
-les coordonnées réelles du client ou du fournisseur. Les prix des lignes restent
+Les factures et relevés partagent `factures.css`, avec l'identité configurée dans
+les paramètres de la boutique et les coordonnées réelles du client ou du
+fournisseur. Les prix des lignes restent
 ceux enregistrés lors de l'opération ; un versement absent vaut zéro et le reste
 est toujours visible. Le bouton Imprimer ouvre la commande du navigateur, sans
 impression automatique. Le format A4 répète les en-têtes de tableau, conserve les
@@ -252,3 +253,22 @@ n'est détectée. Le JAR est construit et les styles servis sur 8080 sont vérif
 Le stock affiche ensuite la quantité puis son statut sur une même ligne.
 Cet ajustement passe 47 contrôles navigateur à 320 et 1440 pixels, avec les rôles
 ADMIN/CAISSIER et des quantités extrêmes : aucun chevauchement ni débordement.
+
+Les factures et relevés suppriment les marges natives d'impression dans les
+navigateurs qui prennent en charge `box-decoration-break: clone`. Chrome et Edge
+n'ont alors plus d'espace pour ajouter l'URL, la date et le titre du navigateur.
+L'enveloppe du document conserve un retrait de 12 mm, répété sur chaque page grâce
+à cette propriété. L'affichage à l'écran conserve ses espacements. Le repli pour
+les navigateurs sans cette prise en charge reste une marge A4 de 12 mm ; dans ce
+cas, désactiver « En-têtes et pieds de page » dans les paramètres d'impression.
+Ce comportement s'appuie sur les documentations Chrome des
+[marges d'impression](https://developer.chrome.com/blog/print-margins) et de
+[la répétition du padding entre pages](https://developer.chrome.com/blog/box-decoration-break).
+
+Validation de l'impression sans URL le 12 octobre 2026 : les quatre documents
+réels ont été exportés avec les en-têtes et pieds de page du navigateur activés,
+puis avec 120 lignes simulées uniquement dans le navigateur. Les huit PDF finaux
+conservent toutes les lignes, les marges et les totaux, sans URL visible, y compris
+sur les documents de cinq et sept pages. Le PDF témoin avant correction reproduit
+le lien signalé. Ces vérifications utilisent Chrome 155 et ne soumettent aucun
+formulaire métier à la base locale. Aucune imprimante physique n'a été utilisée.

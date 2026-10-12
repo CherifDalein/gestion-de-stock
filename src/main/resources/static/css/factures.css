@@ -128,3 +128,10 @@ body.stock-document .document-footer { margin-top: 30px; padding-top: 18px; bord
   body.stock-document .document-summary-total dd { font-size: 11pt; }
   body.stock-document .document-footer { margin-top: 22px; font-size: 8pt; break-inside: avoid; page-break-inside: avoid; }
 }
+/* Keep printable space inside each page instead of the browser's header/footer margins. */
+@supports (box-decoration-break: clone) {
+  @page { margin: 0; }
+  @media print {
+    body.stock-document .document-shell { padding: 12mm; box-decoration-break: clone; }
+  }
+}
