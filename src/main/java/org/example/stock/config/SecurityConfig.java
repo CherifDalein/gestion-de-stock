@@ -21,6 +21,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**").permitAll()
+                        .requestMatchers("/mot-de-passe-oublie", "/reinitialiser-mot-de-passe").permitAll()
                         .requestMatchers("/plateforme", "/plateforme/**").hasRole("PLATEFORME_ADMIN")
                         .requestMatchers("/mon-compte", "/mon-compte/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/", "/produits").hasAnyRole("ADMIN", "CAISSIER")

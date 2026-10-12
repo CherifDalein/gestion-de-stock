@@ -61,6 +61,9 @@ changer son propre mot de passe avec confirmation du mot de passe actuel.
 Le changement ferme la session courante et bloque les autres sessions anciennes,
 sans modifier les rôles ni les accès. Le [parcours du compte](mon-compte-et-recuperation.md)
 décrit les contrôles et la reconnexion.
+Le lien **Mot de passe oublié** permet aussi de récupérer l'accès par email,
+avec un jeton temporaire à usage unique. Ce parcours ne réactive aucun compte
+ni aucune boutique et conserve les règles d'accès de la plateforme.
 
 ## Lots de réalisation
 

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15805d">
+    <meta name="referrer" content="no-referrer">
+    <title>Nouveau mot de passe · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+</head>
+<body class="stock-auth">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <div class="auth-brand">
+            <span class="auth-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+            </span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </div>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre compte</p>
+            <h1 id="auth-intro-title">Un nouveau<br>mot de passe.</h1>
+            <p class="auth-intro-description">Choisissez un mot de passe personnel pour retrouver votre espace Stock Pro.</p>
+            <ul class="auth-features">
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 10h12v11H6zM8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><span><strong>Une phrase facile à retenir</strong><span>Vous pouvez utiliser une phrase de passe d’au moins 15 caractères.</span></span></li>
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><span><strong>Votre prochaine connexion</strong><span>Utilisez ensuite votre nouveau mot de passe pour vous connecter.</span></span></li>
+            </ul>
+        </div>
+        <p class="auth-intro-footer">Votre espace, toujours à portée de main.</p>
+    </section>
+
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow">Récupérer votre accès</p>
+                <h2 id="auth-form-title">Nouveau mot de passe</h2>
+                <p th:if="${lienInvalide != true}">Saisissez puis confirmez votre nouveau mot de passe.</p>
+            </div>
+            <div th:if="${lienInvalide}" class="alert alert-danger" role="alert">
+                Ce lien est invalide, a expiré ou a déjà été utilisé. Demandez un nouveau lien pour réinitialiser votre mot de passe.
+            </div>
+            <a th:if="${lienInvalide}" class="auth-back-link" th:href="@{/mot-de-passe-oublie}">Demander un nouveau lien<span aria-hidden="true">→</span></a>
+            <form th:if="${lienInvalide != true}" th:action="@{/reinitialiser-mot-de-passe}" th:object="${reinitialisationMotDePasse}" method="post" class="auth-form">
+                <input type="hidden" name="jeton" th:value="*{jeton}">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></li></ul>
+                </div>
+                <div class="auth-field">
+                    <label for="nouveauMotDePasse">Nouveau mot de passe</label>
+                    <input id="nouveauMotDePasse" class="form-control" type="password" name="nouveauMotDePasse" autocomplete="new-password" minlength="15" maxlength="72" required
+                           th:classappend="${#fields.hasErrors('nouveauMotDePasse')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('nouveauMotDePasse')},aria-describedby=${#fields.hasErrors('nouveauMotDePasse') ? 'nouveauMotDePasseHelp nouveauMotDePasseError' : 'nouveauMotDePasseHelp'}">
+                    <p id="nouveauMotDePasseHelp" class="auth-field-help">Au moins 15 caractères et au maximum 72 octets en UTF-8. Les accents et les émojis comptent pour plusieurs octets. Vous pouvez utiliser une phrase de passe.</p>
+                    <p id="nouveauMotDePasseError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('nouveauMotDePasse')}" th:errors="*{nouveauMotDePasse}" role="alert"></p>
+                </div>
+                <div class="auth-field">
+                    <label for="confirmationMotDePasse">Confirmer le nouveau mot de passe</label>
+                    <input id="confirmationMotDePasse" class="form-control" type="password" name="confirmationMotDePasse" autocomplete="new-password" minlength="15" maxlength="72" required
+                           th:classappend="${#fields.hasErrors('confirmationMotDePasse')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('confirmationMotDePasse')},aria-describedby=${#fields.hasErrors('confirmationMotDePasse') ? 'confirmationMotDePasseError' : null}">
+                    <p id="confirmationMotDePasseError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('confirmationMotDePasse')}" th:errors="*{confirmationMotDePasse}" role="alert"></p>
+                </div>
+                <button type="submit" class="auth-submit">Enregistrer le mot de passe<span aria-hidden="true">→</span></button>
+            </form>
+            <div class="auth-card-footer">
+                <a class="auth-back-link" th:href="@{/login}"><span aria-hidden="true">←</span>Retour à la connexion</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

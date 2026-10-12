@@ -182,3 +182,15 @@ CREATE TABLE IF NOT EXISTS operation_creation (
     CONSTRAINT fk_operation_creation_achat FOREIGN KEY (achat_id) REFERENCES achat (id),
     CONSTRAINT fk_operation_creation_vente FOREIGN KEY (vente_id) REFERENCES vente (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS reinitialisation_mot_de_passe (
+    utilisateur_id BIGINT NOT NULL,
+    empreinte_jeton VARCHAR(64) NOT NULL,
+    empreinte_mot_de_passe VARCHAR(64) NOT NULL,
+    cree_le DATETIME(6) NOT NULL,
+    expire_le DATETIME(6) NOT NULL,
+    PRIMARY KEY (utilisateur_id),
+    CONSTRAINT uk_reinitialisation_mdp_jeton UNIQUE (empreinte_jeton),
+    CONSTRAINT fk_reinitialisation_mdp_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

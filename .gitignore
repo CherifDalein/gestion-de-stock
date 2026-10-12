@@ -38,3 +38,5 @@ out/
 
 # Sauvegardes locales : données et empreintes des mots de passe des comptes.
 /.local-backups/
+# Paramètres SMTP locaux et mot de passe d'application.
+/stock-mail-local.properties

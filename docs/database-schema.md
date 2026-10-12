@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les douze tables du schéma actuel, dont `boutique` et les neuf références `boutique_id` obligatoires. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les treize tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires et le stockage des liens de réinitialisation. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -59,6 +59,19 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 - `role` valeurs attendues : `CAISSIER`, `ADMIN`
 - `administrateur_plateforme` BOOLEAN NOT NULL DEFAULT FALSE : droit distinct de la gestion d'une boutique ; réservé à un compte ADMIN désigné explicitement
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : autorisation individuelle de connexion ; sa désactivation conserve le compte, les droits et les historiques
+
+### `reinitialisation_mot_de_passe`
+
+- `utilisateur_id` BIGINT PK/FK -> `utilisateur.id` : au maximum un lien courant par compte
+- `empreinte_jeton` VARCHAR(64) NOT NULL UNIQUE : SHA-256 du jeton, jamais le jeton utilisable
+- `empreinte_mot_de_passe` VARCHAR(64) NOT NULL : empreinte du hash BCrypt lors de l'émission
+- `cree_le`, `expire_le` DATETIME(6) NOT NULL : dates UTC, validité de 30 minutes par défaut
+
+Le lien est remplacé à chaque nouvelle émission et supprimé dans la même
+transaction que le changement de mot de passe lors de son utilisation. Un
+changement depuis Mon compte invalide aussi les liens précédemment émis. La
+[migration dédiée](migrations/reinitialisation-mdp.md) ajoute uniquement cette
+table vide ; elle conserve les douze tables et les comptes existants.
 
 ### `produit`
 - `id` PK
@@ -147,6 +160,7 @@ erDiagram
     ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
     VENTE o|--o{ MOUVEMENT_CAISSE : reglements
     UTILISATEUR ||--o{ OPERATION_CREATION : ouvre
+    UTILISATEUR ||--o| REINITIALISATION_MOT_DE_PASSE : recupere
     ACHAT o|--o| OPERATION_CREATION : resultat
     VENTE o|--o| OPERATION_CREATION : resultat
 

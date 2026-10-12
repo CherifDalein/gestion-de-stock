@@ -46,6 +46,9 @@
                 <div th:if="${param.passwordChanged}" class="alert alert-success" role="status">
                     Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.
                 </div>
+                <div th:if="${param.passwordReset}" class="alert alert-success" role="status">
+                    Votre mot de passe a été réinitialisé. Connectez-vous avec votre nouveau mot de passe.
+                </div>
                 <div th:if="${param.expired}" class="alert alert-info" role="status">
                     Votre session a expiré. Connectez-vous à nouveau.
                 </div>
@@ -58,6 +61,7 @@
                     <label for="inputPassword">Mot de passe</label>
                     <input class="form-control" id="inputPassword" type="password" name="password" autocomplete="current-password" placeholder="Votre mot de passe" required>
                 </div>
+                <p><a class="auth-back-link" th:href="@{/mot-de-passe-oublie}">Mot de passe oublié ?</a></p>
                 <button type="submit" class="auth-submit">Se connecter<span aria-hidden="true">→</span></button>
             </form>
             <div class="auth-card-footer">

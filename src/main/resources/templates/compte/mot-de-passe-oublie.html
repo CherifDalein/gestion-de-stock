@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15805d">
+    <title>Mot de passe oublié · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+</head>
+<body class="stock-auth">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <div class="auth-brand">
+            <span class="auth-brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg>
+            </span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </div>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre compte</p>
+            <h1 id="auth-intro-title">Retrouvez votre<br>espace de gestion.</h1>
+            <p class="auth-intro-description">Vous avez oublié votre mot de passe ? Demandez un lien pour en choisir un nouveau.</p>
+            <ul class="auth-features">
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 5h18v14H3zM3 5l9 7 9-7"/></svg></span><span><strong>Votre email de connexion</strong><span>Utilisez l’adresse associée à votre compte Stock Pro.</span></span></li>
+                <li><span class="auth-feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span><span><strong>Un lien personnel</strong><span>Le lien de réinitialisation permet de définir votre nouveau mot de passe.</span></span></li>
+            </ul>
+        </div>
+        <p class="auth-intro-footer">Votre espace, toujours à portée de main.</p>
+    </section>
+
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow">Récupérer votre accès</p>
+                <h2 id="auth-form-title">Mot de passe oublié</h2>
+                <p>Indiquez votre email de connexion.</p>
+            </div>
+            <div th:if="${demandeEnvoyee}" class="alert alert-success" role="status">
+                Si un compte accessible correspond à cette adresse, un lien de réinitialisation sera envoyé.
+            </div>
+            <form th:if="${demandeEnvoyee != true}" th:action="@{/mot-de-passe-oublie}" th:object="${demandeReinitialisation}" method="post" class="auth-form">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></li></ul>
+                </div>
+                <div class="auth-field">
+                    <label for="emailReinitialisation">Email de connexion</label>
+                    <input id="emailReinitialisation" class="form-control" type="email" th:field="*{email}" maxlength="254" autocomplete="email" required
+                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email') ? 'emailReinitialisationError' : null}">
+                    <p id="emailReinitialisationError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}" role="alert"></p>
+                </div>
+                <button type="submit" class="auth-submit">Demander un lien<span aria-hidden="true">→</span></button>
+            </form>
+            <p th:if="${demandeEnvoyee}" class="auth-field-help">Consultez votre boîte de réception et vos courriers indésirables. Si vous ne recevez rien, vérifiez l’adresse saisie ou contactez votre administrateur.</p>
+            <a th:if="${demandeEnvoyee}" class="auth-back-link" th:href="@{/mot-de-passe-oublie}">Faire une nouvelle demande<span aria-hidden="true">→</span></a>
+            <div class="auth-card-footer">
+                <a class="auth-back-link" th:href="@{/login}"><span aria-hidden="true">←</span>Retour à la connexion</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

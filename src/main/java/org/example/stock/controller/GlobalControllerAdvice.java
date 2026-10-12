@@ -25,7 +25,8 @@ public class GlobalControllerAdvice {
         if (chemin == null || chemin.isEmpty()) {
             chemin = request.getRequestURI().substring(request.getContextPath().length());
         }
-        if ("/login".equals(chemin) || "/error".equals(chemin)) return;
+        if ("/login".equals(chemin) || "/error".equals(chemin)
+                || "/mot-de-passe-oublie".equals(chemin) || "/reinitialiser-mot-de-passe".equals(chemin)) return;
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())

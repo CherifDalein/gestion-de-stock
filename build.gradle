@@ -32,6 +32,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
@@ -168,4 +169,21 @@ tasks.register('parametresBoutiqueMariaDbTest', JavaExec) {
     description = 'Vérifie les paramètres de boutique dans des bases MariaDB temporaires'
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.ParametresBoutiqueMariaDbTest'
+}
+
+['reinitialisationMdpCheck': '--check', 'reinitialisationMdpMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Vérifie ou crée le stockage des liens de réinitialisation sans modifier les comptes'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.ReinitialisationMdpMigration'
+        args mode
+    }
+}
+
+tasks.register('reinitialisationMdpMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie le stockage des réinitialisations dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.ReinitialisationMdpMariaDbTest'
 }
