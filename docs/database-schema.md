@@ -17,6 +17,9 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 ### `boutique`
 - `id` PK
 - `nom` VARCHAR(255) NOT NULL
+- `adresse` VARCHAR(500) NULL : adresse commerciale facultative
+- `telephone` VARCHAR(50) NULL : téléphone commercial facultatif
+- `email` VARCHAR(254) NULL : email commercial facultatif, indépendant des emails de connexion
 - `date_creation` DATETIME(6) NOT NULL
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
@@ -150,6 +153,9 @@ erDiagram
     BOUTIQUE {
         BIGINT id PK
         VARCHAR nom
+        VARCHAR adresse
+        VARCHAR telephone
+        VARCHAR email
         DATETIME date_creation
         BOOLEAN actif
         BOOLEAN acces_offert
@@ -342,3 +348,7 @@ Après la migration des boutiques, suivre le [guide des accès plateforme](migra
 ## Mise à jour d'une base existante : accès individuels des utilisateurs
 
 Après la migration des accès plateforme, suivre le [guide des accès utilisateurs](migrations/acces-utilisateurs.md). Il ajoute `utilisateur.actif BOOLEAN NOT NULL DEFAULT TRUE` pour conserver l'accès de tous les comptes existants. Une colonne déjà conforme n'est pas réinitialisée : les comptes désactivés restent désactivés. Aucun compte, mot de passe, rôle, droit plateforme ni historique n'est supprimé ou modifié.
+
+## Mise à jour d'une base existante : coordonnées des boutiques
+
+Après la migration des accès utilisateurs, suivre le [guide des paramètres boutique](migrations/parametres-boutique.md). Il ajoute les trois coordonnées facultatives de `boutique` : adresse, téléphone et email. Les noms, dates, états, droits et toutes les anciennes colonnes des douze tables restent identiques. Les anciennes boutiques reçoivent des coordonnées `NULL` ; aucune adresse n'est déduite d'un compte ou d'un partenaire. Un schéma déjà conforme conserve les coordonnées saisies lors des relances.

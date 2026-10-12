@@ -12,9 +12,10 @@ Cette gratuité est indépendante des droits des utilisateurs : elle ne donne au
 accès aux autres boutiques ni à l'administration de la plateforme. Elle doit être
 gérée comme un mode d'accès commercial, sans condition codée sur un email.
 
-Le prix, le pays de commercialisation, la monnaie d'abonnement, le moyen de
-paiement et les éventuelles limites d'utilisateurs restent à définir. Cette
-feuille de route ne les impose pas.
+La Guinée est le pays indiqué pour l'activité. Le prix, la monnaie d'abonnement,
+le moyen de paiement et les éventuelles limites d'utilisateurs restent à définir.
+Le choix du prestataire et les paiements sont en attente ; cette feuille de route
+ne les impose pas.
 
 ## État actuel
 
@@ -47,6 +48,13 @@ L'accès offert concerne la boutique, indépendamment des comptes et de leurs
 droits. Il ne donne aucun accès aux autres boutiques et ne réactive pas une
 boutique suspendue. La gestion de ces états prépare l'abonnement mensuel ; elle
 ne déclenche aucun paiement.
+
+Le gérant peut personnaliser le nom commercial et les coordonnées de sa propre
+boutique : adresse, téléphone et email. Les coordonnées sont facultatives ;
+l'email commercial ne remplace aucun email de connexion. Elles sont utilisées
+dans l'en-tête des factures de cet espace. La [migration des paramètres boutique](migrations/parametres-boutique.md)
+ajoute seulement ces trois champs, vides par défaut, en conservant les données
+et les états existants.
 
 ## Lots de réalisation
 
@@ -84,6 +92,8 @@ boutiques et leurs utilisateurs, de créer une boutique avec son gérant, puis
 de régler son statut et son mode d'accès.
 L'état individuel des comptes complète cette gestion : un accès utilisateur peut
 être suspendu sans supprimer le compte ni modifier sa boutique ou son rôle.
+Les paramètres commerciaux permettent à chaque gérant de personnaliser l'identité
+de son propre espace et les coordonnées présentées sur ses factures.
 Les boutiques peuvent être ouvertes ou suspendues et bénéficier d'un accès
 offert. Les données et utilisateurs restent rattachés à leur boutique ; la
 création publique de boutiques et la souscription relèvent encore des étapes

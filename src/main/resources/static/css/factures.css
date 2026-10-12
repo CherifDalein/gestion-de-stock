@@ -26,8 +26,10 @@ body.stock-document .document-periods .btn { min-height: 40px; padding: 8px 13px
 body.stock-document .document-periods .active { background: #eaf5ee; color: var(--document-green-dark); border-color: #97cbb1; }
 body.stock-document .document-paper { padding: 44px; min-width: 0; background: #fff; border: 1px solid var(--document-border); border-radius: 18px; box-shadow: 0 8px 30px rgb(21 44 37 / 5%); }
 body.stock-document .document-paper-header { display: grid; grid-template-columns: minmax(160px, .8fr) minmax(0, 1.2fr); gap: 28px; align-items: start; padding-bottom: 28px; border-bottom: 2px solid #e5eee8; }
-body.stock-document .document-brand-name { color: var(--document-green-dark); font-size: 1.65rem; line-height: 1.2; font-weight: 800; letter-spacing: -.045em; }
+body.stock-document .document-brand { min-width: 0; overflow-wrap: anywhere; }
+body.stock-document .document-brand-name { display: block; color: var(--document-green-dark); font-size: 1.65rem; line-height: 1.2; font-weight: 800; letter-spacing: -.045em; }
 body.stock-document .document-brand p { margin: 7px 0 0; color: var(--document-muted); font-size: .76rem; }
+body.stock-document .document-brand-address { white-space: pre-line; }
 body.stock-document .document-heading { text-align: right; min-width: 0; }
 body.stock-document .document-heading h1 { margin: 0 0 13px; font-size: 1.5rem; line-height: 1.3; letter-spacing: -.035em; font-weight: 750; overflow-wrap: anywhere; }
 body.stock-document .document-status { display: inline-block; padding: 5px 11px; border-radius: 7px; background: #f0f4f2; font-size: .72rem; line-height: 1.4; font-weight: 650; }

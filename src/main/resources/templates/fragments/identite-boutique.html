@@ -1,0 +1,7 @@
+<div th:fragment="identite" class="document-brand" aria-label="Boutique">
+    <span class="document-brand-name" th:text="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.nom)) ? boutique.nom : 'Stock Pro'}">Stock Pro</span>
+    <p>Document de gestion · GNF</p>
+    <p class="document-brand-address" th:if="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.adresse))}" th:text="${boutique.adresse}"></p>
+    <p th:if="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.telephone))}"><span>Téléphone : </span><span th:text="${boutique.telephone}"></span></p>
+    <p th:if="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.email))}"><span>Email : </span><span th:text="${boutique.email}"></span></p>
+</div>

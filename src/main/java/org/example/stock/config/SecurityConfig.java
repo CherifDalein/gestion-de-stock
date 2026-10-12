@@ -24,7 +24,7 @@ public class SecurityConfig {
                         .requestMatchers("/clients/**", "/ventes/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")
-                        .requestMatchers("/utilisateurs", "/utilisateurs/**", "/register", "/categories/**", "/produits/**", "/fournisseurs/**",
+                        .requestMatchers("/boutique/**", "/utilisateurs", "/utilisateurs/**", "/register", "/categories/**", "/produits/**", "/fournisseurs/**",
                                 "/achats/**", "/caisse/**", "/factures/achat/**", "/factures/fournisseur/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )

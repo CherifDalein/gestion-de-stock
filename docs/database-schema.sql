@@ -9,6 +9,9 @@ USE stock_pro;
 CREATE TABLE IF NOT EXISTS boutique (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nom VARCHAR(255) NOT NULL,
+    adresse VARCHAR(500) NULL,
+    telephone VARCHAR(50) NULL,
+    email VARCHAR(254) NULL,
     date_creation DATETIME(6) NOT NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     acces_offert BOOLEAN NOT NULL DEFAULT FALSE,

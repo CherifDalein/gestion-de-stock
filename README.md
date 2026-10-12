@@ -23,6 +23,8 @@ Appliquer ensuite la [migration de l'administration plateforme](docs/migrations/
 si les trois champs d'accès ne sont pas encore présents.
 Ajouter ensuite le [statut individuel des comptes](docs/migrations/acces-utilisateurs.md)
 si `utilisateur.actif` n'existe pas encore.
+Appliquer enfin la [migration des paramètres de boutique](docs/migrations/parametres-boutique.md)
+si les colonnes de coordonnées de `boutique` sont absentes.
 
 ## Tests
 
@@ -45,6 +47,7 @@ node --test src/test/js/montants.test.cjs
 - [Migration des données existantes vers les boutiques](docs/migrations/boutiques.md)
 - [Administration de la plateforme et gestion des accès](docs/migrations/plateforme.md)
 - [Activation et désactivation des comptes utilisateurs](docs/migrations/acces-utilisateurs.md)
+- [Paramètres de boutique et coordonnées sur les factures](docs/migrations/parametres-boutique.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

@@ -19,10 +19,7 @@
     </header>
     <article class="document-paper" aria-labelledby="documentTitle">
         <header class="document-paper-header">
-            <div class="document-brand">
-                <span class="document-brand-name">Stock Pro</span>
-                <p>Document de gestion · GNF</p>
-            </div>
+            <div th:replace="~{fragments/identite-boutique :: identite}"></div>
             <div class="document-heading">
                 <h1 id="documentTitle" th:text="${'Facture de vente #' + vente.id}"></h1>
                 <span class="document-status" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal > 0 ? 'partiel' : 'a-regler')}"

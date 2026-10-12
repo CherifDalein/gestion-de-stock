@@ -1,0 +1,64 @@
+<div th:fragment="content">
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <section class="record-page">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Votre boutique</p>
+                <h1>Paramètres de la boutique</h1>
+                <p class="record-intro">Personnalisez le nom et les coordonnées affichés sur vos factures.</p>
+            </div>
+            <a class="btn btn-outline-secondary record-back" th:href="@{/}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour au tableau de bord</a>
+        </header>
+
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <form th:action="@{/boutique/parametres}" th:object="${parametresBoutique}" method="post" class="record-layout record-layout--single">
+            <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                <p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p>
+            </div>
+            <section class="record-panel" aria-labelledby="boutiqueIdentityTitle">
+                <div class="record-panel-heading">
+                    <h2 id="boutiqueIdentityTitle">Identité et coordonnées</h2>
+                    <p>Le nom de la boutique est obligatoire. Les coordonnées sont facultatives.</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field record-field--wide">
+                        <label for="boutiqueNom">Nom de la boutique</label>
+                        <input id="boutiqueNom" class="form-control" type="text" th:field="*{nom}" maxlength="255" autocomplete="organization" required
+                               th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'boutiqueNomError' : null}" />
+                        <p id="boutiqueNomError" class="record-field-error" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}" role="alert"></p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="boutiqueAdresse">Adresse <span class="record-optional">(facultatif)</span></label>
+                        <textarea id="boutiqueAdresse" class="form-control" th:field="*{adresse}" rows="4" maxlength="500" autocomplete="street-address"
+                                  th:classappend="${#fields.hasErrors('adresse')} ? 'is-invalid' : ''"
+                                  th:attr="aria-invalid=${#fields.hasErrors('adresse')},aria-describedby=${#fields.hasErrors('adresse') ? 'boutiqueAdresseHelp boutiqueAdresseError' : 'boutiqueAdresseHelp'}"></textarea>
+                        <p id="boutiqueAdresseHelp" class="record-help">Vous pouvez écrire l’adresse sur plusieurs lignes.</p>
+                        <p id="boutiqueAdresseError" class="record-field-error" th:if="${#fields.hasErrors('adresse')}" th:errors="*{adresse}" role="alert"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="boutiqueTelephone">Téléphone <span class="record-optional">(facultatif)</span></label>
+                        <input id="boutiqueTelephone" class="form-control" type="tel" th:field="*{telephone}" maxlength="50" autocomplete="tel"
+                               th:classappend="${#fields.hasErrors('telephone')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('telephone')},aria-describedby=${#fields.hasErrors('telephone') ? 'boutiqueTelephoneError' : null}" />
+                        <p id="boutiqueTelephoneError" class="record-field-error" th:if="${#fields.hasErrors('telephone')}" th:errors="*{telephone}" role="alert"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="boutiqueEmail">Email <span class="record-optional">(facultatif)</span></label>
+                        <input id="boutiqueEmail" class="form-control" type="email" th:field="*{email}" maxlength="254" autocomplete="email"
+                               th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email') ? 'boutiqueEmailError' : null}" />
+                        <p id="boutiqueEmailError" class="record-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}" role="alert"></p>
+                    </div>
+                </div>
+                <div class="record-actions">
+                    <a class="btn btn-outline-secondary" th:href="@{/}">Annuler</a>
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les paramètres</button>
+                </div>
+            </section>
+            <p class="record-note">Les factures affichent les coordonnées courantes de la boutique, y compris lors d’une réimpression. Les champs laissés vides ne sont pas affichés.</p>
+        </form>
+    </section>
+</div>

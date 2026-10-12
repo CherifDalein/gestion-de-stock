@@ -35,6 +35,7 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 <li sec:authorize="hasRole('PLATEFORME_ADMIN')"><a class="dropdown-item" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-store me-2" aria-hidden="true"></i>Administration plateforme</a></li>
+                <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/boutique/parametres}"><i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>Paramètres de la boutique</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/utilisateurs}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>Utilisateurs</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/register}"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Créer un compte caissier</a></li>
                 <li sec:authorize="hasAnyRole('ADMIN', 'PLATEFORME_ADMIN')"><hr class="dropdown-divider" /></li>
@@ -80,7 +81,10 @@
                     <a class="nav-link" th:href="@{/factures/liste}" th:classappend="${#strings.startsWith(page, 'factures/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'factures/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>Historique et factures
                     </a>
-                    <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('ADMIN')">Équipe</div>
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('ADMIN')">Votre boutique</div>
+                    <a class="nav-link" th:href="@{/boutique/parametres}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'boutique/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'boutique/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-sliders" aria-hidden="true"></i></span>Paramètres de la boutique
+                    </a>
                     <a class="nav-link" th:href="@{/utilisateurs}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'utilisateurs/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'utilisateurs/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-users-gear" aria-hidden="true"></i></span>Utilisateurs
                     </a>
