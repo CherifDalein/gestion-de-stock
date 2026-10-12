@@ -43,6 +43,12 @@
                 <div th:if="${param.logout}" class="alert alert-success" role="status">
                     Deconnexion reussie.
                 </div>
+                <div th:if="${param.passwordChanged}" class="alert alert-success" role="status">
+                    Votre mot de passe a été modifié. Connectez-vous avec votre nouveau mot de passe.
+                </div>
+                <div th:if="${param.expired}" class="alert alert-info" role="status">
+                    Votre session a expiré. Connectez-vous à nouveau.
+                </div>
 
                 <div class="auth-field">
                     <label for="inputEmail">Email</label>

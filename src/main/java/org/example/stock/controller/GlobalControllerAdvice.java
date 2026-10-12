@@ -37,12 +37,14 @@ public class GlobalControllerAdvice {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");
             }
             boolean plateforme = "/plateforme".equals(chemin) || chemin.startsWith("/plateforme/");
-            if (plateforme && (!utilisateur.isAdministrateurPlateforme() || utilisateur.getRole() != Role.ADMIN
-                    || authentication.getAuthorities().stream()
-                    .noneMatch(authority -> "ROLE_PLATEFORME_ADMIN".equals(authority.getAuthority())))) {
+            boolean droitPlateforme = utilisateur.isAdministrateurPlateforme() && utilisateur.getRole() == Role.ADMIN
+                    && authentication.getAuthorities().stream()
+                    .anyMatch(authority -> "ROLE_PLATEFORME_ADMIN".equals(authority.getAuthority()));
+            if (plateforme && !droitPlateforme) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration inaccessible");
             }
-            if (!plateforme && !utilisateur.getBoutique().isActif()) {
+            boolean comptePersonnel = "/mon-compte".equals(chemin) || chemin.startsWith("/mon-compte/");
+            if (!plateforme && !(comptePersonnel && droitPlateforme) && !utilisateur.getBoutique().isActif()) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à cette boutique est suspendu");
             }
             model.addAttribute("utilisateur", utilisateur);

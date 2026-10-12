@@ -8,17 +8,21 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.http.HttpMethod;
 import org.example.stock.security.PlateformeAuthenticationSuccessHandler;
+import org.example.stock.security.ValidationSessionFilter;
+import org.example.stock.repository.UtilisateurRepository;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, UtilisateurRepository utilisateurs) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**").permitAll()
                         .requestMatchers("/plateforme", "/plateforme/**").hasRole("PLATEFORME_ADMIN")
+                        .requestMatchers("/mon-compte", "/mon-compte/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/", "/produits").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**").hasAnyRole("ADMIN", "CAISSIER")
@@ -44,6 +48,7 @@ public class SecurityConfig {
                         .permitAll()
                 );
 
+        http.addFilterBefore(new ValidationSessionFilter(utilisateurs), AuthorizationFilter.class);
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

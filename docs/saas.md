@@ -56,6 +56,12 @@ dans l'en-tête des factures de cet espace. La [migration des paramètres boutiq
 ajoute seulement ces trois champs, vides par défaut, en conservant les données
 et les états existants.
 
+Chaque utilisateur dispose de **Mon compte** pour consulter son identité et
+changer son propre mot de passe avec confirmation du mot de passe actuel.
+Le changement ferme la session courante et bloque les autres sessions anciennes,
+sans modifier les rôles ni les accès. Le [parcours du compte](mon-compte-et-recuperation.md)
+décrit les contrôles et la reconnexion.
+
 ## Lots de réalisation
 
 ### 1. Boutiques et isolation des données

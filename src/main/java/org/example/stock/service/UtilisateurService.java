@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.example.stock.security.StockUserDetails;
 
 import java.time.LocalDate;
 import java.util.Locale;
@@ -90,12 +91,7 @@ public class UtilisateurService {
             roles.add(utilisateur.getRole().name());
             if (administrationPlateformeAutorisee(utilisateur)) roles.add("PLATEFORME_ADMIN");
 
-            return org.springframework.security.core.userdetails.User.builder()
-                    .username(utilisateur.getEmail())
-                    .password(utilisateur.getMotDePasse())
-                    .roles(roles.toArray(String[]::new))
-                    .disabled(!connexionAutorisee(utilisateur))
-                    .build();
+            return new StockUserDetails(utilisateur, roles, connexionAutorisee(utilisateur));
         };
     }
 

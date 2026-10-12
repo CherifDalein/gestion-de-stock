@@ -34,6 +34,7 @@
                 </span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                <li sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')"><a class="dropdown-item" th:href="@{/mon-compte}"><i class="fa-solid fa-user-shield me-2" aria-hidden="true"></i>Mon compte</a></li>
                 <li sec:authorize="hasRole('PLATEFORME_ADMIN')"><a class="dropdown-item" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-store me-2" aria-hidden="true"></i>Administration plateforme</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/boutique/parametres}"><i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>Paramètres de la boutique</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/utilisateurs}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>Utilisateurs</a></li>
@@ -91,6 +92,10 @@
                     <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('PLATEFORME_ADMIN')">Plateforme</div>
                     <a class="nav-link" th:href="@{/plateforme/boutiques}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${#strings.startsWith(page, 'plateforme/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'plateforme/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></span>Administration plateforme
+                    </a>
+                    <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')">Votre compte</div>
+                    <a class="nav-link" th:href="@{/mon-compte}" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')" th:classappend="${#strings.startsWith(page, 'compte/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'compte/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>Mon compte
                     </a>
                 </div>
             </div>

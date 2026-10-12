@@ -1,0 +1,85 @@
+<div th:fragment="content">
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <section class="record-page">
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Votre espace personnel</p>
+                <h1>Mon compte</h1>
+                <p class="record-intro">Consultez vos informations et modifiez votre mot de passe.</p>
+            </div>
+            <a class="btn btn-outline-secondary record-back" th:href="@{/}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour au tableau de bord</a>
+        </header>
+
+        <div class="record-layout record-layout--single">
+            <section class="record-panel" aria-labelledby="compteInformationsTitle">
+                <div class="record-panel-heading">
+                    <h2 id="compteInformationsTitle">Vos informations</h2>
+                    <p>Ces informations identifient votre compte et votre boutique.</p>
+                </div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="compteNom">Nom</label>
+                        <input id="compteNom" class="form-control" type="text" th:value="${compte.nom}" readonly />
+                    </div>
+                    <div class="record-field">
+                        <label for="compteEmail">Email de connexion</label>
+                        <input id="compteEmail" class="form-control" type="email" th:value="${compte.email}" readonly />
+                    </div>
+                    <div class="record-field">
+                        <label for="compteBoutique">Boutique</label>
+                        <input id="compteBoutique" class="form-control" type="text" th:value="${compte.nomBoutique}" readonly />
+                    </div>
+                    <div class="record-field">
+                        <label for="compteRole">Rôle dans la boutique</label>
+                        <input id="compteRole" class="form-control" type="text" th:value="${#strings.toString(compte.role) == 'ADMIN' ? 'Gérant' : 'Caissier'}" readonly />
+                    </div>
+                    <div class="record-field" th:if="${compte.dateInscription != null}">
+                        <label for="compteDateInscription">Compte créé le</label>
+                        <input id="compteDateInscription" class="form-control" type="text" th:value="${#temporals.format(compte.dateInscription, 'dd/MM/yyyy')}" readonly />
+                    </div>
+                </div>
+            </section>
+
+            <form th:action="@{/mon-compte/mot-de-passe}" th:object="${changementMotDePasse}" method="post">
+                <section class="record-panel" aria-labelledby="compteMotDePasseTitle">
+                    <div class="record-panel-heading">
+                        <h2 id="compteMotDePasseTitle">Modifier votre mot de passe</h2>
+                        <p>Saisissez votre mot de passe actuel, puis choisissez le nouveau.</p>
+                    </div>
+                    <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}">
+                        <p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p>
+                    </div>
+                    <div class="record-grid">
+                        <div class="record-field record-field--wide">
+                            <label for="ancienMotDePasse">Mot de passe actuel</label>
+                            <input id="ancienMotDePasse" name="ancienMotDePasse" class="form-control" type="password" autocomplete="current-password" required
+                                   th:classappend="${#fields.hasErrors('ancienMotDePasse')} ? 'is-invalid' : ''"
+                                   th:attr="aria-invalid=${#fields.hasErrors('ancienMotDePasse')},aria-describedby=${#fields.hasErrors('ancienMotDePasse') ? 'ancienMotDePasseError' : null}" />
+                            <p id="ancienMotDePasseError" class="record-field-error" th:if="${#fields.hasErrors('ancienMotDePasse')}" th:errors="*{ancienMotDePasse}" role="alert"></p>
+                        </div>
+                        <div class="record-field">
+                            <label for="nouveauMotDePasse">Nouveau mot de passe</label>
+                            <input id="nouveauMotDePasse" name="nouveauMotDePasse" class="form-control" type="password" autocomplete="new-password" minlength="15" maxlength="72" required
+                                   th:classappend="${#fields.hasErrors('nouveauMotDePasse')} ? 'is-invalid' : ''"
+                                   th:attr="aria-invalid=${#fields.hasErrors('nouveauMotDePasse')},aria-describedby=${#fields.hasErrors('nouveauMotDePasse') ? 'nouveauMotDePasseHelp nouveauMotDePasseError' : 'nouveauMotDePasseHelp'}" />
+                            <p id="nouveauMotDePasseHelp" class="record-help">15 caractères minimum, dans la limite de 72 octets en UTF-8. Les caractères accentués et les émojis comptent pour plusieurs octets.</p>
+                            <p id="nouveauMotDePasseError" class="record-field-error" th:if="${#fields.hasErrors('nouveauMotDePasse')}" th:errors="*{nouveauMotDePasse}" role="alert"></p>
+                        </div>
+                        <div class="record-field">
+                            <label for="confirmationMotDePasse">Confirmer le nouveau mot de passe</label>
+                            <input id="confirmationMotDePasse" name="confirmationMotDePasse" class="form-control" type="password" autocomplete="new-password" minlength="15" maxlength="72" required
+                                   th:classappend="${#fields.hasErrors('confirmationMotDePasse')} ? 'is-invalid' : ''"
+                                   th:attr="aria-invalid=${#fields.hasErrors('confirmationMotDePasse')},aria-describedby=${#fields.hasErrors('confirmationMotDePasse') ? 'confirmationMotDePasseError' : null}" />
+                            <p id="confirmationMotDePasseError" class="record-field-error" th:if="${#fields.hasErrors('confirmationMotDePasse')}" th:errors="*{confirmationMotDePasse}" role="alert"></p>
+                        </div>
+                    </div>
+                    <div class="record-actions">
+                        <a class="btn btn-outline-secondary" th:href="@{/}">Annuler</a>
+                        <button class="btn btn-primary" type="submit"><i class="fa-solid fa-lock" aria-hidden="true"></i>Modifier le mot de passe</button>
+                    </div>
+                </section>
+            </form>
+            <p class="record-note">Après la modification, vous serez déconnecté. Reconnectez-vous avec votre nouveau mot de passe.</p>
+        </div>
+    </section>
+</div>
