@@ -31,8 +31,8 @@ class ProduitValidationTests {
     void refuseLesChampsObligatoiresAbsents() {
         assertThat(validator.validate(new Produit()))
                 .extracting(violation -> violation.getPropertyPath().toString())
-                .contains("nom", "reference", "prixVente", "categorie")
-                .doesNotContain("prixAchat", "quantite");
+                .contains("nom", "reference", "categorie")
+                .doesNotContain("prixAchat", "prixVente", "quantite");
     }
 
     @ParameterizedTest

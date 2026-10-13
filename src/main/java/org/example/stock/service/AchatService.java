@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Stream;
 
 @Service
@@ -47,6 +48,8 @@ public class AchatService {
 
             produitBdd.setQuantite(produitBdd.getQuantite() + ligne.getQuantite());
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
+            produitBdd.setPrixVente(ligne.getPrixVenteUnitaire());
+            produitBdd.setPrixDefinis(true);
 
             ligne.setAchat(achat);
             ligne.setProduit(produitBdd);
@@ -104,6 +107,8 @@ public class AchatService {
 
             produit.setQuantite(produit.getQuantite() + nouvelleLigne.getQuantite());
             produit.setPrixAchat(nouvelleLigne.getPrixAchatUnitaire());
+            produit.setPrixVente(nouvelleLigne.getPrixVenteUnitaire());
+            produit.setPrixDefinis(true);
 
             nouvelleLigne.setAchat(ancienAchat);
             nouvelleLigne.setProduit(produit);
@@ -160,6 +165,7 @@ public class AchatService {
         achat.setFournisseur(fournisseurRepository.findByIdAndBoutiqueId(achat.getFournisseur().getId(), boutiqueService.idBoutiqueCourante())
                 .orElseThrow(() -> new IllegalArgumentException("Fournisseur introuvable")));
 
+        Map<Long, BigDecimal> tarifsVente = new HashMap<>();
         for (DetailAchat ligne : achat.getLignes()) {
             if (ligne == null || ligne.getId() != null) {
                 throw new IllegalArgumentException("Une ligne d'achat doit être nouvelle et sans identifiant");
@@ -171,6 +177,14 @@ public class AchatService {
                 throw new RuntimeException("La quantite achetee doit etre superieure a 0.");
             }
             ligne.setPrixAchatUnitaire(Montants.positifOuNul(ligne.getPrixAchatUnitaire(), "Le prix d'achat unitaire"));
+            if (ligne.getPrixVenteUnitaire() == null) {
+                throw new IllegalArgumentException("Le prix de vente unitaire est obligatoire pour chaque ligne d'achat.");
+            }
+            ligne.setPrixVenteUnitaire(Montants.positifOuNul(ligne.getPrixVenteUnitaire(), "Le prix de vente unitaire"));
+            BigDecimal tarifPrecedent = tarifsVente.putIfAbsent(ligne.getProduit().getId(), ligne.getPrixVenteUnitaire());
+            if (tarifPrecedent != null && tarifPrecedent.compareTo(ligne.getPrixVenteUnitaire()) != 0) {
+                throw new IllegalArgumentException("Les lignes d'un même produit doivent avoir le même prix de vente.");
+            }
         }
     }
 

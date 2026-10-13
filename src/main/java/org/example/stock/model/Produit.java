@@ -44,7 +44,11 @@ public class Produit {
     @PositiveOrZero(message = "Le prix de vente ne peut pas être négatif")
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
-    private BigDecimal prixVente;
+    private BigDecimal prixVente = Montants.ZERO;
+
+    // Les produits existants conservent leurs tarifs ; les nouvelles fiches attendent une entrée de stock.
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean prixDefinis = true;
 
     @NotNull(message = "La quantité est obligatoire")
     @PositiveOrZero(message = "La quantité ne peut pas être négative")

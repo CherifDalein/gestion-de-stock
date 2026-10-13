@@ -16,9 +16,9 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 
 ### `mouvement_stock`
 
-Journal des stocks initiaux et corrections d’inventaire : `id` BIGINT auto-incrémenté ; `boutique_id`, `produit_id` BIGINT avec clés étrangères sans cascade ; `acteur_id` BIGINT et `acteur_nom` VARCHAR(255) figés ; `type` VARCHAR(16) (`INITIAL` ou `AJUSTEMENT`) ; `cree_le` DATETIME(6) UTC ; `quantite_avant`, `quantite_apres` BIGINT non négatifs ; `cout_unitaire` DECIMAL(17,2) facultatif (présent pour le stock initial) ; `motif` VARCHAR(500) obligatoire. Index `(boutique_id, produit_id, cree_le, id)` pour l’historique paginé. Les comptes peuvent être supprimés sans effacer leur nom historique ; un produit avec historique est conservé.
+Journal des stocks initiaux et corrections d’inventaire : `id` BIGINT auto-incrémenté ; `boutique_id`, `produit_id` BIGINT avec clés étrangères sans cascade ; `acteur_id` BIGINT et `acteur_nom` VARCHAR(255) figés ; `type` VARCHAR(16) (`INITIAL` ou `AJUSTEMENT`) ; `cree_le` DATETIME(6) UTC ; `quantite_avant`, `quantite_apres` BIGINT non négatifs ; `cout_unitaire` DECIMAL(17,2) facultatif (présent pour le stock initial) ; `prix_vente` DECIMAL(17,2) facultatif (tarif choisi pour un nouveau stock initial, `NULL` pour les historiques antérieurs et les ajustements) ; `motif` VARCHAR(500) obligatoire. Index `(boutique_id, produit_id, cree_le, id)` pour l’historique paginé. Les comptes peuvent être supprimés sans effacer leur nom historique ; un produit avec historique est conservé.
 
-Les fiches produit démarrent à zéro. Le coût d’achat vient du stock initial ou du dernier achat ; seules les informations du catalogue et le prix de vente sont modifiables depuis la fiche. La [migration d’inventaire](migrations/inventaire.md) ajoute le journal sans modifier les seize tables précédentes.
+Les fiches produit démarrent à zéro, sans prix à saisir. L’achat ou le stock initial définit le coût d’achat et le prix de vente. Une fiche sans tarifs permet de modifier uniquement ses informations du catalogue ; une fois les tarifs définis, le prix de vente peut aussi être modifié depuis la fiche. Un produit sans tarifs a `prix_definis=FALSE` et ses deux prix techniques ainsi que sa quantité à zéro. L’interface affiche « À définir » et ce produit ne peut pas être vendu. La [migration d’inventaire](migrations/inventaire.md) ajoute le journal ; la [migration des tarifs](migrations/tarification.md) ajoute le statut et les deux prix de vente historiques sans changer les données précédentes.
 
 Le solde initial de caisse utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL` et `type=OUVERTURE`. Il ne nécessite aucune nouvelle colonne, contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour.
 
@@ -135,6 +135,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `reference`
 - `prix_achat`
 - `prix_vente`
+- `prix_definis` BOOLEAN NOT NULL DEFAULT TRUE : distingue un produit dont les tarifs sont définis, y compris à zéro, d’une nouvelle fiche en attente d’achat ou de stock initial ; le service de création fixe explicitement `FALSE`
 - `quantite`
 - `categorie_id` FK -> `categorie.id`
 - `fournisseur_id` FK -> `fournisseur.id`
@@ -152,6 +153,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `produit_id` FK -> `produit.id`
 - `quantite`
 - `prix_achat_unitaire`
+- `prix_vente_unitaire` DECIMAL(17,2) NULL : prix de vente choisi lors de cet achat ; les lignes antérieures conservent `NULL`, aucun prix actuel du produit n’est recopié dans une ancienne facture
 
 ### `vente`
 - `id` PK
@@ -204,6 +206,7 @@ erDiagram
     BOUTIQUE ||--o{ MOUVEMENT_CAISSE : journalise
     BOUTIQUE ||--o{ OPERATION_CREATION : protege
     BOUTIQUE ||--o{ HISTORIQUE_ABONNEMENT : conserve
+    BOUTIQUE ||--o{ MOUVEMENT_STOCK : inventorie
     CATEGORIE ||--o{ PRODUIT : classe
     FOURNISSEUR ||--o{ PRODUIT : fournit
     FOURNISSEUR ||--o{ ACHAT : concerne
@@ -212,6 +215,7 @@ erDiagram
     CLIENT ||--o{ VENTE : passe
     VENTE ||--o{ DETAIL_VENTE : contient
     PRODUIT ||--o{ DETAIL_VENTE : reference
+    PRODUIT ||--o{ MOUVEMENT_STOCK : conserve
     UTILISATEUR ||--o{ MOUVEMENT_CAISSE : enregistre
     ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
     VENTE o|--o{ MOUVEMENT_CAISSE : reglements
@@ -299,6 +303,7 @@ erDiagram
         VARCHAR reference
         DECIMAL prix_achat
         DECIMAL prix_vente
+        BOOLEAN prix_definis
         BIGINT quantite
         BIGINT categorie_id FK
         BIGINT fournisseur_id FK
@@ -317,6 +322,7 @@ erDiagram
         BIGINT produit_id FK
         INT quantite
         DECIMAL prix_achat_unitaire
+        DECIMAL prix_vente_unitaire
     }
     VENTE {
         BIGINT id PK
@@ -355,6 +361,20 @@ erDiagram
         BIGINT achat_id FK,UK
         BIGINT vente_id FK,UK
     }
+    MOUVEMENT_STOCK {
+        BIGINT id PK
+        BIGINT boutique_id FK
+        BIGINT produit_id FK
+        BIGINT acteur_id
+        VARCHAR acteur_nom
+        VARCHAR type
+        DATETIME cree_le
+        BIGINT quantite_avant
+        BIGINT quantite_apres
+        DECIMAL cout_unitaire
+        DECIMAL prix_vente
+        VARCHAR motif
+    }
 ```
 
 ## Source des tables
@@ -375,6 +395,7 @@ erDiagram
 - `InscriptionBoutique.java`
 - `ParametresPlateforme.java`
 - `HistoriqueAbonnement.java`
+- `MouvementStock.java`
 
 ## Remarques
 
@@ -411,7 +432,7 @@ Les anciens mouvements restent conservés avec `achat_id = NULL` ; aucune associ
 
 ## Mise à jour d'une base existante : montants décimaux
 
-Les neuf colonnes monétaires sont en `DECIMAL(17,2)` : prix d'achat et de vente des produits, totaux et versements des achats/ventes, prix unitaires des lignes et montant des mouvements de caisse. Les prix des produits sont obligatoires. Les colonnes de versement conservent les anciens `NULL`.
+Les colonnes monétaires utilisent `DECIMAL(17,2)` : prix d'achat et de vente des produits, totaux et versements des achats/ventes, prix unitaires des lignes, montant des mouvements de caisse et tarifs d’inventaire. Les prix techniques des produits restent obligatoires ; `prix_definis` distingue les tarifs réels, même gratuits, des fiches en attente. Les colonnes de versement et les prix de vente historiques antérieurs conservent les anciens `NULL`.
 
 Le script de création ne convertit pas les tables existantes. Avant de démarrer l'application sur une ancienne base, suivre le [guide de migration](montants-et-migration.md), qui décrit l'arrêt des instances, la sauvegarde complète et les scripts avec contrôles et copies des tables. Un `bootRun` déjà lancé avec DevTools et `ddl-auto=update` peut demander cette conversion lors d'un rechargement automatique.
 
@@ -475,3 +496,14 @@ d'abonnement facultatives et le journal vide des décisions de plateforme.
 Les quinze tables précédentes gardent leurs anciennes colonnes et données.
 Les boutiques historiques conservent leur accès, sans abonnement ni échéance
 inventés. Une relance conserve les périodes et événements déjà enregistrés.
+
+## Mise à jour d’une base existante : tarifs à l’entrée des marchandises
+
+Après la migration d’inventaire, suivre le [guide des tarifs](migrations/tarification.md).
+Il ajoute uniquement `produit.prix_definis`, `detail_achat.prix_vente_unitaire` et
+`mouvement_stock.prix_vente`. Les dix-sept tables et toutes leurs anciennes colonnes
+restent identiques. Les produits existants conservent leurs prix et reçoivent le
+statut défini, y compris si un prix était zéro. Les anciennes lignes d’achat et
+les anciens mouvements ne reçoivent aucun prix de vente déduit du tarif actuel.
+Une relance conserve les nouvelles fiches sans tarifs et tous les prix historiques
+déjà enregistrés.

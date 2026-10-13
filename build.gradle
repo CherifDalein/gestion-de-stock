@@ -245,3 +245,20 @@ tasks.register('inventaireMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.InventaireMariaDbTest'
 }
+
+['tarificationCheck': '--check', 'tarificationMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute le statut des prix et les tarifs historiques sans changer les stocks, factures ou caisses'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.TarificationMigration'
+        args mode
+    }
+}
+
+tasks.register('tarificationMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les tarifs et leur migration dans des bases MariaDB temporaires locales'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.TarificationMariaDbTest'
+}

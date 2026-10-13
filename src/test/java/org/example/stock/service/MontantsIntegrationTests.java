@@ -66,7 +66,7 @@ class MontantsIntegrationTests {
     void achatEtReglementConserventLesCentimesJusquaLaFacture() throws Exception {
         Achat achat = achat("0.10", 3); achat.setMontantVerse(new BigDecimal("0.10"));
         DetailAchat seconde = new DetailAchat(); seconde.setProduit(produit); seconde.setQuantite(1);
-        seconde.setPrixAchatUnitaire(new BigDecimal("0.20")); achat.getLignes().add(seconde);
+        seconde.setPrixAchatUnitaire(new BigDecimal("0.20")); seconde.setPrixVenteUnitaire(produit.getPrixVente()); achat.getLignes().add(seconde);
         Long id = achatService.enregistrerAchat(achat).getId();
         assertThat(achats.findById(id).orElseThrow().getMontantTotal()).isEqualByComparingTo("0.50");
         assertThat(achats.findById(id).orElseThrow().getResteAPayer()).isEqualByComparingTo("0.40");
@@ -177,11 +177,11 @@ class MontantsIntegrationTests {
 
     @ParameterizedTest
     @ValueSource(strings = {"0.001", "1000000000000000"})
-    void leFormulaireProduitRefuseLaPrecisionOuLaTailleExcessive(String prix) throws Exception {
+    void laCreationProduitRefuseUnPrixDeVenteNonAutorise(String prix) throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Invalide").param("reference", "INVALIDE")
                         .param("categorie.id", produit.getCategorie().getId().toString())
                         .param("prixVente", prix))
-                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("produit", "prixVente"));
+                .andExpect(status().isBadRequest());
         assertThat(produits.count()).isEqualTo(1);
         verifierAucuneOperation();
     }
@@ -225,7 +225,7 @@ class MontantsIntegrationTests {
     private Achat achat(String prix, int quantite) {
         Achat achat = new Achat(); achat.setBoutique(boutique); achat.setFournisseur(fournisseur);
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(produit); ligne.setQuantite(quantite);
-        ligne.setPrixAchatUnitaire(new BigDecimal(prix)); achat.getLignes().add(ligne); return achat;
+        ligne.setPrixAchatUnitaire(new BigDecimal(prix)); ligne.setPrixVenteUnitaire(produit.getPrixVente()); achat.getLignes().add(ligne); return achat;
     }
 
     private Vente vente(int quantite) {

@@ -60,11 +60,11 @@ class InventaireServiceTests {
     @AfterEach void deconnecter(){SecurityContextHolder.clearContext();}
     void connecter(String role){SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(email,"unused",List.of(new SimpleGrantedAuthority("ROLE_"+role))));}
     Produit actuel(){return produits.findById(produit.getId()).orElseThrow();}
-    StockInitialForm initial(long quantite){var f=new StockInitialForm();f.setVersion(actuel().getVersion());f.setQuantite(quantite);f.setCoutUnitaire(new BigDecimal("10"));f.setMotif("Déjà présent");return f;}
+    StockInitialForm initial(long quantite){var f=new StockInitialForm();f.setVersion(actuel().getVersion());f.setQuantite(quantite);f.setCoutUnitaire(new BigDecimal("10"));f.setPrixVente(new BigDecimal("30"));f.setMotif("Déjà présent");return f;}
     AjustementStockForm correction(long quantite){var f=new AjustementStockForm();f.setVersion(actuel().getVersion());f.setQuantite(quantite);f.setMotif("Inventaire physique");return f;}
     OuvertureCaisseForm ouverture(String montant){var f=new OuvertureCaisseForm();f.setMontant(new BigDecimal(montant));return f;}
     long historique(){return mouvements.findByBoutiqueIdAndProduitIdOrderByCreeLeDescIdDesc(boutique.getId(),produit.getId(),org.springframework.data.domain.PageRequest.of(0,20)).getNumberOfElements();}
-    Achat achat(int q){var a=new Achat();a.setFournisseur(fournisseur);a.setMontantVerse(BigDecimal.ZERO);var d=new DetailAchat();d.setProduit(produit);d.setQuantite(q);d.setPrixAchatUnitaire(new BigDecimal("20"));a.getLignes().add(d);return a;}
+    Achat achat(int q){var a=new Achat();a.setFournisseur(fournisseur);a.setMontantVerse(BigDecimal.ZERO);var d=new DetailAchat();d.setProduit(produit);d.setQuantite(q);d.setPrixAchatUnitaire(new BigDecimal("20"));d.setPrixVenteUnitaire(new BigDecimal("30"));a.getLignes().add(d);return a;}
     Vente vente(int q){var v=new Vente();v.setMontantVerse(BigDecimal.ZERO);var d=new DetailVente();d.setProduit(produit);d.setQuantite(q);v.getLignes().add(d);return v;}
 
     @Test void laCreationNeReprendPasLeStockOuLeCoutDuCatalogue() {
@@ -155,7 +155,7 @@ class InventaireServiceTests {
         mvc.perform(get(path).with(user(email).roles("ADMIN"))).andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("stockInitialQuantite")));
         mvc.perform(post(path+"/initial").with(user(email).roles("ADMIN"))).andExpect(status().isForbidden());
         mvc.perform(get(path).with(user(email).roles("CAISSIER"))).andExpect(status().isForbidden());
-        mvc.perform(post(path+"/initial").with(user(email).roles("ADMIN")).with(csrf()).param("version","0").param("quantite","0").param("coutUnitaire","10").param("motif","Origine"))
+        mvc.perform(post(path+"/initial").with(user(email).roles("ADMIN")).with(csrf()).param("version","0").param("quantite","0").param("coutUnitaire","10").param("prixVente","30").param("motif","Origine"))
                 .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("stockInitial","quantite"));
         mvc.perform(post(path+"/ajuster").with(user(email).roles("ADMIN")).with(csrf()).param("version","0").param("quantite","3").param("motif",""))
                 .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("ajustementStock","motif"));

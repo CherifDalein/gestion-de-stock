@@ -167,7 +167,6 @@ class DeuxBoutiquesCrudTests {
         Long id = identifiant(creation);
         MockHttpServletRequestBuilder modification = champs(post("/" + fiche.route + "/modifier/" + id),
                 fiche, "Fiche modifiée");
-        if (creation instanceof Produit produit) modification.param("version", produit.getVersion().toString());
         mvc.perform(modification.with(authentication(authenticationA)).with(csrf()))
                 .andExpect(redirectedUrl("/" + fiche.route));
         assertThat(nom(creation)).isEqualTo("Fiche modifiée");
@@ -364,11 +363,15 @@ class DeuxBoutiquesCrudTests {
                                                 Long categorieId, Long fournisseurId) {
         requete.param("nom", nom);
         if (fiche == Fiche.PRODUIT) {
-            requete.param("reference", "REF-TEST").param("prixVente", "3.20")
+            requete.param("reference", "REF-TEST")
                     .param("categorie", categorieId.toString())
                     .param("fournisseur", fournisseurId.toString());
-            if (requete.buildRequest(new org.springframework.mock.web.MockServletContext()).getRequestURI()
-                    .contains("/modifier/")) requete.param("version", produitA.getVersion().toString());
+            String route = requete.buildRequest(new org.springframework.mock.web.MockServletContext()).getRequestURI();
+            if (route.contains("/modifier/")) {
+                var cible = produits.findById(Long.parseLong(route.substring(route.lastIndexOf('/') + 1))).orElseThrow();
+                requete.param("version", cible.getVersion().toString());
+                if (cible.isPrixDefinis()) requete.param("prixVente", "3.20");
+            }
         }
         return requete;
     }

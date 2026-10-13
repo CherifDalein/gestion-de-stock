@@ -11,7 +11,7 @@
         const match = /^(\d{1,15})(?:\.(\d{1,2}))?$/.exec(String(valeur ?? ''));
         return match ? BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0')) : null;
     };
-    const afficherMontant = valeur => valeur === null ? 'Non renseigné'
+    const afficherMontant = valeur => valeur === null ? 'À définir'
         : `${nombres.format(valeur / 100n)},${String(valeur % 100n).padStart(2, '0')} GNF`;
     const etatStock = quantite => quantite === null ? 'inconnu'
         : quantite === 0n ? 'rupture' : quantite <= 5n ? 'faible' : 'disponible';

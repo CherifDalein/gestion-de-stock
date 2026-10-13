@@ -51,8 +51,10 @@
                                 <option th:each="p : ${produits}"
                                         th:value="${p.id}"
                                         th:data-nom="${p.nom}"
-                                        th:data-prix="${p.prixVente}"
-                                        th:text="${p.nom + ' (' + p.quantite + ' en stock)'}"></option>
+                                        th:data-prix="${p.prixDefinis ? p.prixVente : null}"
+                                        th:data-prix-definis="${p.prixDefinis}"
+                                        th:disabled="${!p.prixDefinis}"
+                                        th:text="${p.nom + (p.prixDefinis ? ' (' + p.quantite + ' en stock)' : ' · Prix à définir')}"></option>
                             </select>
                         </div>
                         <div class="operation-field">
@@ -65,6 +67,7 @@
                             </button>
                         </div>
                     </div>
+                    <p class="operation-field-help">Les produits sans prix ne peuvent pas être vendus. Leurs prix se définissent lors d’un achat ou de la saisie du stock initial.</p>
                     <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
 
                     <div id="panierVide" class="operation-empty">

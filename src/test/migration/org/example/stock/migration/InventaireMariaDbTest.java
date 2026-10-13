@@ -35,6 +35,7 @@ public final class InventaireMariaDbTest {
                     for(String statement:schema.split(";")){statement=statement.strip();if(!statement.isEmpty()&&!statement.startsWith("CREATE DATABASE")&&!statement.startsWith("USE ")&&!statement.startsWith("CREATE TABLE IF NOT EXISTS mouvement_stock"))sql(c,statement);}
                     var avant=InventaireMigration.photographie(c);InventaireMigration.migrer(c,false);exiger(!BoutiquesMigration.tables(c).containsKey("mouvement_stock"),"Check a modifié le schéma");
                     InventaireMigration.migrer(c,true);InventaireMigration.migrer(c,true);exiger(avant.equals(InventaireMigration.photographie(c)),"Migration a modifié les anciennes données");
+                    TarificationMigration.migrer(c,true); // Le service actuel conserve aussi le prix de vente du stock initial.
                     int query=serveur.indexOf('?');String url=query<0?serveur+base:serveur.substring(0,query)+base+serveur.substring(query);
                     var source=new DriverManagerDataSource(url,user,pass);source.setDriverClassName("org.mariadb.jdbc.Driver");
                     try(var contexte=new AnnotationConfigApplicationContext()) {
@@ -55,7 +56,7 @@ public final class InventaireMariaDbTest {
         for(String email:List.of("premier@inventaire.test","second@inventaire.test")){var acteur=new Utilisateur();acteur.setBoutique(boutique);acteur.setNom("Gérant de test");acteur.setEmail(email);acteur.setRole(Role.ADMIN);utilisateurs.saveAndFlush(acteur);}
         var cat=new Categorie();cat.setBoutique(boutique);cat.setNom("Test");cat=categories.saveAndFlush(cat);
         connecter("premier@inventaire.test");var produit=new Produit();produit.setNom("Test");produit.setReference("TEST");produit.setCategorie(cat);produit.setPrixVente(BigDecimal.TEN);produit=service.ajouterProduit(produit);
-        Long id=produit.getId();var initial=new StockInitialForm();initial.setVersion(produit.getVersion());initial.setQuantite(10L);initial.setCoutUnitaire(BigDecimal.TEN);initial.setMotif("Déjà détenu");
+        Long id=produit.getId();var initial=new StockInitialForm();initial.setVersion(produit.getVersion());initial.setQuantite(10L);initial.setCoutUnitaire(BigDecimal.TEN);initial.setPrixVente(new BigDecimal("15.00"));initial.setMotif("Déjà détenu");
         exiger(concurrent(()->inventaire.initialiser(id,initial))==1,"Deux stocks initiaux ont été acceptés");
         connecter("premier@inventaire.test");exiger(produits.findById(id).orElseThrow().getQuantite()==10,"Stock incorrect");
         exiger(inventaire.consulter(id,0).historique().size()==1&&caisse.getSoldeActuel().signum()==0,"Stock initial non atomique ou dépense fictive");

@@ -268,7 +268,7 @@ class DeuxBoutiquesOperationsTests {
     private Achat achat(Produit produit, Fournisseur fournisseur) {
         Achat achat = new Achat(); Fournisseur reference = new Fournisseur(); reference.setId(fournisseur.getId()); achat.setFournisseur(reference);
         achat.setMontantVerse(BigDecimal.ZERO); DetailAchat ligne = new DetailAchat(); ligne.setProduit(referenceProduit(produit));
-        ligne.setQuantite(2); ligne.setPrixAchatUnitaire(new BigDecimal("5")); achat.getLignes().add(ligne); return achat;
+        ligne.setQuantite(2); ligne.setPrixAchatUnitaire(new BigDecimal("5")); ligne.setPrixVenteUnitaire(produit.getPrixVente()); achat.getLignes().add(ligne); return achat;
     }
     private Vente vente(Produit produit, Client client) {
         Vente vente = new Vente(); Client reference = new Client(); reference.setId(client.getId()); vente.setClient(reference);

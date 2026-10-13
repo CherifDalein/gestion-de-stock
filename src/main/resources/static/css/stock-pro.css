@@ -195,7 +195,8 @@ body.stock-app .operation-count { padding: 6px 10px; border-radius: 8px; backgro
 body.stock-app .operation-panel-icon { color: var(--app-green-dark); background: var(--app-tint); border-radius: 10px; padding: 11px; width: 40px; height: 40px; box-sizing: border-box; flex-shrink: 0; }
 body.stock-app .operation-compose { display: grid; align-items: end; gap: 12px; margin-bottom: 20px; padding-bottom: 22px; border-bottom: 1px solid var(--app-border); }
 body.stock-app .operation-compose--sale { grid-template-columns: minmax(0, 1fr) 110px auto; }
-body.stock-app .operation-compose--purchase { grid-template-columns: minmax(0, 1fr) 130px 90px auto; }
+body.stock-app .operation-compose--purchase { grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(90px, .7fr) auto; }
+body.stock-app .operation-compose--purchase .operation-field:first-child { grid-column: 1 / -1; }
 body.stock-app .operation-field { min-width: 0; }
 body.stock-app .operation-field .form-label { margin-bottom: 8px; }
 body.stock-app .operation-field + .operation-field { margin-top: 16px; }
@@ -210,6 +211,7 @@ body.stock-app .operation-empty-icon { color: #6d9981; font-size: 1.5rem; }
 body.stock-app .operation-empty p { max-width: 420px; margin: 0; font-size: .82rem; }
 body.stock-app .operation-cart-table { margin-top: 4px; }
 body.stock-app .operation-cart-table table { margin-bottom: 0; min-width: 570px; }
+body.stock-app #tableLignes { min-width: 760px; }
 body.stock-app .operation-cart-table td:first-child { min-width: 150px; font-weight: 600; overflow-wrap: anywhere; }
 body.stock-app .operation-cart-table td:not(:first-child) { text-align: right; }
 body.stock-app .operation-cart-table td:nth-child(2) { white-space: nowrap; }
@@ -246,7 +248,7 @@ body.stock-app .operation-summary-lines dd { margin: 0; text-align: right; font-
 body.stock-app table.operation-history { min-width: 440px; margin: 0; }
 body.stock-app .operation-history td { font-variant-numeric: tabular-nums; }
 @media (max-width: 1399.98px) and (min-width: 992px) {
-  body.stock-app .operation-compose--purchase { grid-template-columns: minmax(0, 1fr) 90px auto; }
+  body.stock-app .operation-compose--purchase { grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(90px, .7fr) auto; }
   body.stock-app .operation-compose--purchase .operation-field:first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 1199.98px) {
@@ -263,6 +265,7 @@ body.stock-app .operation-history td { font-variant-numeric: tabular-nums; }
   body.stock-app .operation-compose--sale,
   body.stock-app .operation-compose--purchase { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.stock-app .operation-compose .operation-field:first-child { grid-column: 1 / -1; }
+  body.stock-app .operation-compose--purchase .operation-field:nth-child(4),
   body.stock-app .operation-compose--purchase .operation-add { grid-column: 1 / -1; }
   body.stock-app .operation-empty { padding: 28px 16px; }
   body.stock-app .operation-details { grid-template-columns: minmax(0, 1fr); gap: 14px; }

@@ -30,9 +30,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.util.HtmlUtils;
 
 import java.math.BigDecimal;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.HexFormat;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.regex.Pattern;
@@ -131,9 +137,11 @@ class CreationOperationTests {
         String jeton = ouvrir(TypeOperationCreation.ACHAT);
         Achat premier = achat(3); premier.setMontantVerse(new BigDecimal("15.0"));
         premier.getLignes().getFirst().setPrixAchatUnitaire(new BigDecimal("5.0"));
+        premier.getLignes().getFirst().setPrixVenteUnitaire(new BigDecimal("20.0"));
         var resultat = authentifie(EMAIL, () -> service.creerAchat(jeton, premier));
         Achat copie = achat(3); copie.setMontantVerse(new BigDecimal("15.00"));
         copie.getLignes().getFirst().setPrixAchatUnitaire(new BigDecimal("5.00"));
+        copie.getLignes().getFirst().setPrixVenteUnitaire(new BigDecimal("20.00"));
         var rejoue = authentifie(EMAIL, () -> service.creerAchat(jeton, copie));
         assertThat(rejoue.dejaEnregistre()).isTrue();
         assertThat(rejoue.documentId()).isEqualTo(resultat.documentId());
@@ -153,9 +161,101 @@ class CreationOperationTests {
         String jeton = ouvrir(TypeOperationCreation.ACHAT); creer(TypeOperationCreation.ACHAT, jeton, 3);
         Achat prixChange = achat(3); prixChange.getLignes().getFirst().setPrixAchatUnitaire(new BigDecimal("6"));
         conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, prixChange)));
+        Achat tarifChange = achat(3); tarifChange.getLignes().getFirst().setPrixVenteUnitaire(new BigDecimal("21"));
+        conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, tarifChange)));
         Achat versementChange = achat(3); versementChange.setMontantVerse(new BigDecimal("10"));
         conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, versementChange)));
         verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @Test
+    void uneAncienneEmpreinteDAchatAccepteUneCopieExacteSansReecrireLesDonnees() {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        var original = creer(TypeOperationCreation.ACHAT, jeton, 3);
+        Achat copie = achatSansTarif(3);
+        simulerAncienneEmpreinte(jeton, copie, true);
+        vieillir(jeton);
+        String empreinteAvant = operations.findById(jeton).orElseThrow().getEmpreinte();
+        var produitAvant = produits.findById(produit.getId()).orElseThrow();
+        produitAvant.setPrixVente(new BigDecimal("99"));
+        produitAvant = produits.saveAndFlush(produitAvant);
+        Long versionAvant = produitAvant.getVersion();
+        copie.getLignes().getFirst().setPrixAchatUnitaire(new BigDecimal("5.00"));
+        var resultat = authentifie(EMAIL, () -> service.creerAchat(jeton, copie));
+        assertThat(resultat.dejaEnregistre()).isTrue();
+        assertThat(resultat.documentId()).isEqualTo(original.documentId());
+        assertThat(operations.findById(jeton).orElseThrow().getEmpreinte()).isEqualTo(empreinteAvant);
+        var produitApres = produits.findById(produit.getId()).orElseThrow();
+        assertThat(produitApres.getVersion()).isEqualTo(versionAvant);
+        assertThat(produitApres.getPrixVente()).isEqualByComparingTo("99");
+        new TransactionTemplate(transactions).executeWithoutResult(statut ->
+                assertThat(achats.findById(original.documentId()).orElseThrow().getLignes())
+                        .extracting(DetailAchat::getPrixVenteUnitaire).containsOnlyNulls());
+        verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"quantite", "cout", "versement"})
+    void uneAncienneEmpreinteRefuseUnContenuModifie(String champ) {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        creer(TypeOperationCreation.ACHAT, jeton, 3);
+        Achat copie = achatSansTarif(3);
+        simulerAncienneEmpreinte(jeton, copie, true);
+        String empreinteAvant = operations.findById(jeton).orElseThrow().getEmpreinte();
+        switch (champ) {
+            case "quantite" -> copie.getLignes().getFirst().setQuantite(4);
+            case "cout" -> copie.getLignes().getFirst().setPrixAchatUnitaire(new BigDecimal("6"));
+            case "versement" -> copie.setMontantVerse(new BigDecimal("10"));
+            default -> throw new IllegalArgumentException("Champ de test inconnu");
+        }
+        conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, copie)));
+        assertThat(operations.findById(jeton).orElseThrow().getEmpreinte()).isEqualTo(empreinteAvant);
+        verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @ParameterizedTest @ValueSource(strings = {"0", "20"})
+    void uneAncienneEmpreinteNePermetPasDInjecterUnTarifDeVente(String tarif) {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        creer(TypeOperationCreation.ACHAT, jeton, 3);
+        Achat copie = achatSansTarif(3);
+        simulerAncienneEmpreinte(jeton, copie, true);
+        copie.getLignes().getFirst().setPrixVenteUnitaire(new BigDecimal(tarif));
+        conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, copie)));
+        verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @Test
+    void uneAncienneEmpreinteEstRefuseeSiLeDocumentPossedeUnTarifArchive() {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        var original = creer(TypeOperationCreation.ACHAT, jeton, 3);
+        Achat copie = achatSansTarif(3);
+        simulerAncienneEmpreinte(jeton, copie, false);
+        conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, copie)));
+        new TransactionTemplate(transactions).executeWithoutResult(statut ->
+                assertThat(achats.findById(original.documentId()).orElseThrow().getLignes().getFirst().getPrixVenteUnitaire())
+                        .isEqualByComparingTo("20"));
+        verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @Test
+    void uneAncienneEmpreinteEstRefuseeSiUneSeuleLignePossedeUnTarifArchive() {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        var original = creerPanier(TypeOperationCreation.ACHAT, jeton, 1);
+        Achat copie = achatSansTarif(2);
+        copie.getLignes().add(achatSansTarif(1).getLignes().getFirst());
+        simulerAncienneEmpreinte(jeton, copie, true);
+        new TransactionTemplate(transactions).executeWithoutResult(statut ->
+                achats.findById(original.documentId()).orElseThrow().getLignes().getLast().setPrixVenteUnitaire(new BigDecimal("20")));
+        conflit(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, copie)));
+        verifierEffets(TypeOperationCreation.ACHAT, 1, 3);
+    }
+
+    @Test
+    void laCompatibiliteDesAnciennesEmpreintesNeCreeJamaisUnNouvelAchatSansTarifs() {
+        String jeton = ouvrir(TypeOperationCreation.ACHAT);
+        assertThatThrownBy(() -> authentifie(EMAIL, () -> service.creerAchat(jeton, achatSansTarif(3))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("prix de vente unitaire");
+        assertThat(operations.findById(jeton).orElseThrow().getEmpreinte()).isNull();
+        verifierAucunEffet();
     }
 
     @Test
@@ -422,7 +522,56 @@ class CreationOperationTests {
     private Achat achat(int quantite) {
         Achat achat = new Achat(); achat.setBoutique(boutique); Fournisseur reference = new Fournisseur(); reference.setBoutique(boutique); reference.setId(fournisseur.getId());
         achat.setFournisseur(reference); DetailAchat ligne = new DetailAchat(); ligne.setProduit(referenceProduit());
-        ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("5")); achat.getLignes().add(ligne); return achat;
+        ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("5"));
+        ligne.setPrixVenteUnitaire(new BigDecimal("20")); achat.getLignes().add(ligne); return achat;
+    }
+
+    private Achat achatSansTarif(int quantite) {
+        Achat achat = achat(quantite);
+        achat.getLignes().forEach(ligne -> ligne.setPrixVenteUnitaire(null));
+        return achat;
+    }
+
+    private void simulerAncienneEmpreinte(String jeton, Achat saisie, boolean retirerTarifsArchives) {
+        String empreinte = ancienneEmpreinte(saisie);
+        new TransactionTemplate(transactions).executeWithoutResult(statut -> {
+            var operation = operations.findById(jeton).orElseThrow();
+            operation.setEmpreinte(empreinte);
+            if (retirerTarifsArchives) operation.getAchat().getLignes().forEach(ligne -> ligne.setPrixVenteUnitaire(null));
+        });
+    }
+
+    /** Format sauvegardé avant l'ajout du tarif de vente aux lignes d'achat. */
+    private String ancienneEmpreinte(Achat achat) {
+        try {
+            var bytes = new ByteArrayOutputStream();
+            try (var out = new DataOutputStream(bytes)) {
+                out.writeUTF("ACHAT");
+                ancienIdentifiant(out, achat.getFournisseur() == null ? null : achat.getFournisseur().getId());
+                ancienDecimal(out, achat.getMontantVerse());
+                out.writeInt(achat.getLignes() == null ? -1 : achat.getLignes().size());
+                if (achat.getLignes() != null) for (DetailAchat ligne : achat.getLignes()) {
+                    out.writeBoolean(ligne != null);
+                    if (ligne == null) continue;
+                    ancienIdentifiant(out, ligne.getProduit() == null ? null : ligne.getProduit().getId());
+                    ancienIdentifiant(out, ligne.getQuantite() == null ? null : ligne.getQuantite().longValue());
+                    ancienDecimal(out, ligne.getPrixAchatUnitaire());
+                }
+            }
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.toByteArray()));
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new IllegalStateException("Impossible de préparer l'ancienne empreinte de test", e);
+        }
+    }
+
+    private void ancienIdentifiant(DataOutputStream out, Long valeur) throws IOException {
+        out.writeBoolean(valeur != null);
+        if (valeur != null) out.writeLong(valeur);
+    }
+
+    private void ancienDecimal(DataOutputStream out, BigDecimal valeur) throws IOException {
+        out.writeBoolean(valeur != null);
+        if (valeur != null) out.writeUTF(valeur.stripTrailingZeros().toString());
     }
 
     private Vente vente(int quantite) {
@@ -464,7 +613,8 @@ class CreationOperationTests {
         var requete = post(route(type) + "/enregistrer").param("lignes[0].produit.id", produit.getId().toString())
                 .param("lignes[0].quantite", Integer.toString(quantite));
         if (jeton != null) requete.param("jetonCreation", jeton);
-        if (type == TypeOperationCreation.ACHAT) requete.param("fournisseur.id", fournisseur.getId().toString()).param("lignes[0].prixAchatUnitaire", "5");
+        if (type == TypeOperationCreation.ACHAT) requete.param("fournisseur.id", fournisseur.getId().toString())
+                .param("lignes[0].prixAchatUnitaire", "5").param("lignes[0].prixVenteUnitaire", "20");
         return requete;
     }
 

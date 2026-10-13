@@ -45,7 +45,10 @@ public final class InventaireMigration {
     private static void verifier(Connection c,boolean maria)throws SQLException {
         var cols=InscriptionEssaiMigration.colonnes(c,TABLE);
         Set<String> attendues=Set.of("id","boutique_id","produit_id","acteur_id","acteur_nom","type","cree_le","quantite_avant","quantite_apres","cout_unitaire","motif");
-        if(!cols.keySet().equals(attendues))invalide();
+        // La migration suivante ajoute un prix de vente initial facultatif ; les autres écarts restent refusés.
+        Set<String> actuelles=new HashSet<>(cols.keySet());actuelles.remove("prix_vente");
+        if(!actuelles.equals(attendues))invalide();
+        if(cols.containsKey("prix_vente"))TarificationMigration.verifierPrixFacultatif(c,TABLE,"prix_vente",cols.get("prix_vente"));
         for(var nom:attendues)if(cols.get(nom).nullable()!=(nom.equals("cout_unitaire")?DatabaseMetaData.columnNullable:DatabaseMetaData.columnNoNulls))invalide();
         for(var nom:List.of("id","boutique_id","produit_id","acteur_id","quantite_avant","quantite_apres"))if(cols.get(nom).type()!=Types.BIGINT)invalide();
         for(var e:Map.of("acteur_nom",255,"type",16,"motif",500).entrySet())if(cols.get(e.getKey()).type()!=Types.VARCHAR||cols.get(e.getKey()).taille()!=e.getValue())invalide();

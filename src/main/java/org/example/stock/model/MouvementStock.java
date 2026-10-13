@@ -25,5 +25,6 @@ public class MouvementStock {
     @Column(nullable = false) private Long quantiteAvant;
     @Column(nullable = false) private Long quantiteApres;
     @Column(precision = 17, scale = 2) private BigDecimal coutUnitaire;
+    @Column(precision = 17, scale = 2) private BigDecimal prixVente;
     @Column(nullable = false, length = 500) private String motif;
 }

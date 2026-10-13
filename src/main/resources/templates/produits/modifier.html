@@ -5,7 +5,7 @@
             <div>
                 <p class="record-kicker">Catalogue</p>
                 <h1 id="recordTitre">Modifier le produit</h1>
-                <p class="record-intro">Mettez à jour sa fiche, ses prix et la quantité en stock.</p>
+                <p class="record-intro">Mettez à jour sa fiche et, si un tarif existe déjà, son prix de vente.</p>
             </div>
             <a th:href="@{/produits}" class="btn btn-outline-secondary record-back">
                 <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des produits
@@ -59,7 +59,7 @@
                 </div>
             </section>
 
-            <section class="record-panel" aria-labelledby="prixTitre">
+            <section th:if="${stockActuel != null and stockActuel.prixDefinis}" class="record-panel" aria-labelledby="prixTitre">
                 <div class="record-panel-heading">
                     <h2 id="prixTitre">Prix</h2>
                     <p>Les montants sont exprimés en francs guinéens (GNF).</p>
@@ -73,6 +73,8 @@
                     </div>
                 </div>
             </section>
+
+            <section th:if="${stockActuel != null and !stockActuel.prixDefinis}" class="record-panel" aria-labelledby="prixADefinirTitre"><div class="record-panel-heading"><h2 id="prixADefinirTitre">Prix à définir</h2><p>Les prix d’achat et de vente seront renseignés lors du premier achat ou de la saisie du stock initial.</p></div><a class="btn btn-outline-primary" th:href="@{/achats/nouveau}">Enregistrer un achat</a></section>
 
             <section class="record-panel" aria-labelledby="stockTitre"><div class="record-panel-heading"><h2 id="stockTitre">Stock actuel</h2><p><strong th:text="${stockActuel != null ? stockActuel.quantite : '—'}">0</strong> unités. Les achats et les ventes mettent cette quantité à jour.</p><p>Les corrections d’inventaire se font dans la gestion du stock, avec un motif et un historique.</p></div><a class="btn btn-outline-primary" th:href="@{/produits/{id}/stock(id=${produit.id})}">Gérer le stock</a></section>
 

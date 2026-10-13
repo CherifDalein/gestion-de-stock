@@ -103,6 +103,9 @@ class FormIntegrityTests {
             "/produits/ajouter,categorie.nom",
             "/produits/ajouter,fournisseur.nom",
             "/produits/ajouter,version",
+            "/produits/ajouter,prixVente",
+            "/produits/ajouter,prixDefinis",
+            "/produits/modifier/1,prixDefinis",
             "/fournisseurs/enregistrer,produits[0].id",
             "/categories/ajouter,produits[0].id",
             "/clients/enregistrer,role"
@@ -117,7 +120,6 @@ class FormIntegrityTests {
     void leFormulaireProduitCreeUneNouvelleEntiteEtChargeLesRelations() throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Nouveau produit")
                         .param("reference", "REF-NOUVELLE")
-                        .param("prixVente", "20")
                         .param("categorie", categorie.getId().toString())
                         .param("fournisseur", fournisseur.getId().toString()))
                 .andExpect(redirectedUrl("/produits"));
@@ -125,6 +127,10 @@ class FormIntegrityTests {
         assertThat(nouveau.getId()).isNotEqualTo(produit.getId());
         assertThat(nouveau.getCategorie()).isSameAs(categorie);
         assertThat(nouveau.getFournisseur()).isSameAs(fournisseur);
+        assertThat(nouveau.getQuantite()).isZero();
+        assertThat(nouveau.getPrixAchat()).isZero();
+        assertThat(nouveau.getPrixVente()).isZero();
+        assertThat(nouveau.isPrixDefinis()).isFalse();
         assertThat(produit.getQuantite()).isEqualTo(10L);
     }
 
@@ -153,6 +159,7 @@ class FormIntegrityTests {
                         .param("jetonCreation", jeton)
                         .param("lignes[0].produit.id", produit.getId().toString())
                         .param("lignes[0].quantite", "3").param("lignes[0].prixAchatUnitaire", "7")
+                        .param("lignes[0].prixVenteUnitaire", "20")
                         .param("montantVerse", "10"))
                 .andExpect(redirectedUrl("/achats"));
         achats.flush();
@@ -202,10 +209,21 @@ class FormIntegrityTests {
     }
 
     @Test
+    void uneModificationSansPrixNeRemetPasUnTarifExistantAZero() throws Exception {
+        mvc.perform(post("/produits/modifier/" + produit.getId()).with(csrf())
+                        .param("nom", "Nom changé sans prix").param("reference", "REF-INITIALE")
+                        .param("version", produit.getVersion().toString())
+                        .param("categorie", categorie.getId().toString()))
+                .andExpect(status().isOk()).andExpect(model().attributeHasErrors("produit"));
+        assertThat(produit.getPrixVente()).isEqualByComparingTo("20");
+        assertThat(produit.getNom()).isEqualTo("Produit initial");
+    }
+
+    @Test
     void uneCategorieInexistanteEstRefuseeAvantLaCreationDeProduit() throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Produit intrus")
                         .param("reference", "REF-TEST")
-                        .param("prixVente", "20").param("categorie", "999999"))
+                        .param("categorie", "999999"))
                 .andExpect(status().isBadRequest());
         assertThat(produits.count()).isEqualTo(1);
     }

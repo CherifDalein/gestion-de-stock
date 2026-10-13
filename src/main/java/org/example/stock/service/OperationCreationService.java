@@ -62,7 +62,9 @@ public class OperationCreationService {
         String empreinte = empreinte(achat, null);
         if (operation.getAchat() != null) {
             verifierResultat(Achat.class, operation.getAchat().getId());
-            verifierCopie(operation, empreinte);
+            if (!empreinte.equals(operation.getEmpreinte()) && !ancienRejeuIdentique(operation, achat)) {
+                verifierCopie(operation, empreinte);
+            }
             return new ResultatCreation(operation.getAchat().getId(), true);
         }
         verifierValidite(operation);
@@ -135,12 +137,33 @@ public class OperationCreationService {
         }
     }
 
+    private boolean ancienRejeuIdentique(OperationCreation operation, Achat saisie) {
+        if (saisie.getLignes() == null || saisie.getLignes().isEmpty()
+                || saisie.getLignes().stream().anyMatch(ligne -> ligne == null || ligne.getPrixVenteUnitaire() != null)
+                || !empreinte(saisie, null, false).equals(operation.getEmpreinte())) return false;
+        // Une vieille empreinte n'autorise que la copie exacte d'un achat sans tarifs archivés.
+        // La lecture courante sous verrou évite de reprendre une ancienne vue des lignes après une modification.
+        var lignes = entityManager.createQuery("select ligne from DetailAchat ligne where ligne.achat.id = :achatId", DetailAchat.class)
+                .setParameter("achatId", operation.getAchat().getId())
+                .setLockMode(LockModeType.PESSIMISTIC_READ).getResultList();
+        if (lignes.isEmpty()) return false;
+        for (DetailAchat ligne : lignes) {
+            entityManager.refresh(ligne, LockModeType.PESSIMISTIC_READ);
+            if (ligne.getPrixVenteUnitaire() != null) return false;
+        }
+        return true;
+    }
+
     private static CreationOperationException formulaireInvalide() {
         return new CreationOperationException(HttpStatus.CONFLICT, "Ce formulaire n'est plus valide. Ouvrez un nouveau formulaire.");
     }
 
-    /** Empreinte des saisies, avant toute mutation métier ; aucun prix de vente courant n'y entre. */
+    /** Empreinte des saisies, avant toute mutation ; le tarif saisi à l'achat est inclus, jamais le tarif courant d'une vente. */
     private static String empreinte(Achat achat, Vente vente) {
+        return empreinte(achat, vente, true);
+    }
+
+    private static String empreinte(Achat achat, Vente vente, boolean inclureTarifVente) {
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             try (DataOutputStream out = new DataOutputStream(bytes)) {
@@ -156,6 +179,7 @@ public class OperationCreationService {
                         identifiant(out, ligne.getProduit() == null ? null : ligne.getProduit().getId());
                         identifiant(out, ligne.getQuantite() == null ? null : ligne.getQuantite().longValue());
                         decimal(out, ligne.getPrixAchatUnitaire());
+                        if (inclureTarifVente) decimal(out, ligne.getPrixVenteUnitaire());
                     }
                 } else {
                     out.writeInt(vente.getLignes() == null ? -1 : vente.getLignes().size());

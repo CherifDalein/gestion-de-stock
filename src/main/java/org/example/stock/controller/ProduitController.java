@@ -6,6 +6,7 @@ import org.example.stock.service.FournisseurService;
 import org.example.stock.service.UtilisateurService;
 import org.example.stock.service.ProduitModifieException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.web.server.ResponseStatusException;
@@ -79,12 +80,14 @@ public class ProduitController {
     }
 
     @PostMapping("/modifier/{id}")
-    public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model, HttpServletResponse response, RedirectAttributes redirectAttributes) {
+    public String modifierProduit(@PathVariable Long id, @Valid @ModelAttribute("produit") Produit produit, BindingResult result, Model model, HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         produit.setId(id);
         if (produit.getVersion() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Version du produit obligatoire");
         }
+        // Distinguer une absence de saisie d'un tarif explicitement fixé à zéro.
+        if (request.getParameter("prixVente") == null) produit.setPrixVente(null);
         if (!result.hasErrors()) {
             try {
                 produitService.modifierProduit(id, produit);
@@ -94,6 +97,8 @@ public class ProduitController {
                 response.setStatus(HttpStatus.CONFLICT.value());
                 result.reject("produit.modifie", e instanceof ProduitModifieException ? e.getMessage()
                         : "Une autre opération modifie ce produit. Rechargez la fiche et réessayez.");
+            } catch (IllegalArgumentException e) {
+                result.reject("produit.tarif", e.getMessage());
             }
         }
         model.addAttribute("stockActuel", produitService.trouverParId(id));

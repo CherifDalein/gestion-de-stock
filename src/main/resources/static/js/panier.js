@@ -13,6 +13,11 @@ function ajouterAuPanier() {
         return;
     }
 
+    if (selectedOption.disabled || selectedOption.getAttribute('data-prix-definis') !== 'true') {
+        afficherMessageProduit('Les prix de ce produit sont à définir lors d’un achat ou de la saisie du stock initial.');
+        return;
+    }
+
     const pNom = selectedOption.getAttribute('data-nom');
     const pPrix = Montants.lire(selectedOption.getAttribute('data-prix'));
     const qty = Number(qtyInput.value);

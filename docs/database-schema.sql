@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS produit (
     reference VARCHAR(255),
     prix_achat DECIMAL(17,2) NOT NULL,
     prix_vente DECIMAL(17,2) NOT NULL,
+    prix_definis BOOLEAN NOT NULL DEFAULT TRUE,
     quantite BIGINT,
     categorie_id BIGINT,
     fournisseur_id BIGINT,
@@ -126,6 +127,7 @@ CREATE TABLE IF NOT EXISTS detail_achat (
     produit_id BIGINT,
     quantite INT,
     prix_achat_unitaire DECIMAL(17,2),
+    prix_vente_unitaire DECIMAL(17,2) NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_detail_achat_achat
         FOREIGN KEY (achat_id) REFERENCES achat (id),
@@ -250,6 +252,7 @@ CREATE TABLE IF NOT EXISTS mouvement_stock (
     quantite_avant BIGINT NOT NULL,
     quantite_apres BIGINT NOT NULL,
     cout_unitaire DECIMAL(17,2) NULL,
+    prix_vente DECIMAL(17,2) NULL,
     motif VARCHAR(500) NOT NULL,
     CONSTRAINT fk_mouvement_stock_boutique FOREIGN KEY (boutique_id) REFERENCES boutique(id),
     CONSTRAINT fk_mouvement_stock_produit FOREIGN KEY (produit_id) REFERENCES produit(id),

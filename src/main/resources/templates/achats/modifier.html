@@ -38,7 +38,7 @@
                     <div class="operation-panel-header">
                         <div>
                             <h2 id="produitsTitre">Produits de l’achat</h2>
-                            <p>Retirez une ligne pour la remplacer avec un autre prix ou une autre quantité.</p>
+                            <p>Retirez une ligne pour modifier ses prix ou sa quantité. Le prix de vente n’entre pas dans le total à payer au fournisseur.</p>
                         </div>
                         <span id="achatCompteur" class="operation-count" aria-live="polite">0 ligne</span>
                     </div>
@@ -51,14 +51,19 @@
                                 <option th:each="p : ${produits}"
                                         th:value="${p.id}"
                                         th:data-nom="${p.nom}"
-                                        th:data-prix="${p.prixAchat}"
+                                        th:data-prix="${p.prixDefinis ? p.prixAchat : null}"
+                                        th:data-prix-vente="${p.prixDefinis ? p.prixVente : null}"
                                         th:text="${p.nom}"></option>
                             </select>
                         </div>
                         <div class="operation-field">
-                            <label for="inputPrix" class="form-label">Prix unitaire (GNF)</label>
+                            <label for="inputPrix" class="form-label">Coût d’achat (GNF)</label>
                             <input type="number" id="inputPrix" class="form-control" placeholder="0" min="0" step="0.01"
                                    autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputPrixVente" class="form-label">Prix de vente (GNF)</label>
+                            <input type="number" id="inputPrixVente" class="form-control" placeholder="À définir" min="0" step="0.01" autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
                         </div>
                         <div class="operation-field">
                             <label for="inputQtite" class="form-label">Quantité</label>
@@ -83,9 +88,10 @@
                             <thead>
                             <tr>
                                 <th scope="col">Produit</th>
-                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-end">Coût d’achat</th>
+                                <th scope="col" class="text-end">Prix de vente</th>
                                 <th scope="col" class="text-end">Quantité</th>
-                                <th scope="col" class="text-end">Sous-total</th>
+                                <th scope="col" class="text-end">Sous-total achat</th>
                                 <th scope="col" class="text-end">Action</th>
                             </tr>
                             </thead>
@@ -144,13 +150,12 @@
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
             /*[# th:each="ligne : ${achat.lignes}"]*/
-            document.getElementById('selectProduit').value = /*[[${ligne.produit.id}]]*/ '';
-            document.getElementById('inputPrix').value = /*[[${ligne.prixAchatUnitaire.toPlainString()}]]*/ '';
-            document.getElementById('inputQtite').value = /*[[${ligne.quantite}]]*/ '';
-
-            if (typeof ajouterLigne === "function") {
-                ajouterLigne();
-            }
+            chargerLigneAchat(
+                /*[[${ligne.produit.id}]]*/ null,
+                /*[[${ligne.prixAchatUnitaire != null ? ligne.prixAchatUnitaire.toPlainString() : ''}]]*/ '',
+                /*[[${ligne.prixVenteUnitaire != null ? ligne.prixVenteUnitaire.toPlainString() : null}]]*/ null,
+                /*[[${ligne.quantite}]]*/ null
+            );
             /*[/]*/
 
             const montantInitial = /*[[${achat.montantVerse != null ? achat.montantVerse.toPlainString() : '0.00'}]]*/ '0.00';

@@ -47,7 +47,7 @@ class ProduitControllerTests {
     void creationInvalideConserveLesFournisseursSansSauvegarder() throws Exception {
         mvc.perform(produitInvalide("/produits/ajouter"))
                 .andExpect(view().name("dashboard"))
-                .andExpect(model().attributeHasFieldErrors("produit", "prixVente"))
+                .andExpect(model().attributeHasFieldErrors("produit", "nom"))
                 .andExpect(model().attribute("fournisseurs", fournisseurs));
         verify(produitService, never()).ajouterProduit(any());
     }
@@ -65,10 +65,9 @@ class ProduitControllerTests {
     }
 
     private MockHttpServletRequestBuilder produitInvalide(String route) {
-        var requete = post(route).param("nom", "Produit").param("reference", "REF-TEST")
-                .param("prixVente", "-1")
+        var requete = post(route).param("nom", route.contains("/modifier/") ? "Produit" : "").param("reference", "REF-TEST")
                 .param("categorie.id", "1");
-        if (route.contains("/modifier/")) requete.param("version", "0");
+        if (route.contains("/modifier/")) requete.param("version", "0").param("prixVente", "-1");
         return requete;
     }
 }

@@ -313,7 +313,7 @@ class StockConcurrencyTests {
         Achat achat = new Achat(); achat.setBoutique(boutique); achat.setFournisseur(fournisseur); achat.setMontantVerse(verse);
         Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(reference); ligne.setQuantite(quantite);
-        ligne.setPrixAchatUnitaire(new BigDecimal("5.0")); achat.getLignes().add(ligne); return achat;
+        ligne.setPrixAchatUnitaire(new BigDecimal("5.0")); ligne.setPrixVenteUnitaire(produit.getPrixVente()); achat.getLignes().add(ligne); return achat;
     }
 
     private Achat modification(int quantite) {

@@ -146,7 +146,8 @@ public class CreationOperationsMariaDbTest {
         Achat a = new Achat(); Fournisseur f = new Fournisseur(); f.setId(fournisseurId); a.setFournisseur(f);
         a.setMontantVerse(new BigDecimal("5.00").multiply(BigDecimal.valueOf(quantite)));
         DetailAchat ligne = new DetailAchat(); ligne.setProduit(produit()); ligne.setQuantite(quantite);
-        ligne.setPrixAchatUnitaire(new BigDecimal("5.00")); a.getLignes().add(ligne); return a;
+        ligne.setPrixAchatUnitaire(new BigDecimal("5.00")); ligne.setPrixVenteUnitaire(new BigDecimal("10.00"));
+        a.getLignes().add(ligne); return a;
     }
     private Vente vente(int quantite) {
         Vente v = new Vente(); v.setMontantVerse(new BigDecimal("10.00").multiply(BigDecimal.valueOf(quantite)));

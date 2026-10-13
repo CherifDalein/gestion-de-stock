@@ -53,8 +53,10 @@ public class InventaireService {
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
         verifierVersion(produit,formulaire.getVersion());
         if (!initialAutorise(produit)) throw new IllegalArgumentException("Le stock initial est réservé à un produit sans stock ni opération précédente. Utilisez un achat ou un ajustement.");
-        produit.setPrixAchat(formulaire.getCoutUnitaire());
-        ajouter(produit,acteur,TypeMouvementStock.INITIAL,formulaire.getQuantite(),Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire"),formulaire.getMotif());
+        var cout=Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire");
+        var prixVente=Montants.positifOuNul(formulaire.getPrixVente(),"Le prix de vente");
+        produit.setPrixAchat(cout); produit.setPrixVente(prixVente); produit.setPrixDefinis(true);
+        ajouter(produit,acteur,TypeMouvementStock.INITIAL,formulaire.getQuantite(),cout,prixVente,formulaire.getMotif());
     }
     @Transactional
     public void ajuster(Long id, AjustementStockForm formulaire) {
@@ -62,7 +64,8 @@ public class InventaireService {
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
         verifierVersion(produit,formulaire.getVersion());
         if (produit.getQuantite().equals(formulaire.getQuantite())) throw new IllegalArgumentException("La quantité comptée est identique au stock actuel : aucune correction à enregistrer.");
-        ajouter(produit,acteur,TypeMouvementStock.AJUSTEMENT,formulaire.getQuantite(),null,formulaire.getMotif());
+        if (!produit.isPrixDefinis()) throw new IllegalArgumentException("Enregistrez un achat ou le stock initial avec les prix avant de corriger la quantité de ce produit.");
+        ajouter(produit,acteur,TypeMouvementStock.AJUSTEMENT,formulaire.getQuantite(),null,null,formulaire.getMotif());
     }
     private boolean initialAutorise(Produit produit) {
         return produit.getQuantite() != null && produit.getQuantite() == 0
@@ -70,13 +73,13 @@ public class InventaireService {
                 && em.createQuery("select count(d) from DetailAchat d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0
                 && em.createQuery("select count(d) from DetailVente d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0;
     }
-    private void ajouter(Produit produit, Utilisateur acteur, TypeMouvementStock type, Long apres, java.math.BigDecimal cout, String motif) {
+    private void ajouter(Produit produit, Utilisateur acteur, TypeMouvementStock type, Long apres, java.math.BigDecimal cout, java.math.BigDecimal prixVente, String motif) {
         MouvementStock mouvement=new MouvementStock();
         mouvement.setBoutique(produit.getBoutique()); mouvement.setProduit(produit); mouvement.setActeurId(acteur.getId());
         String nom=acteur.getNom()==null||acteur.getNom().isBlank()?"Gérant":acteur.getNom().strip();
         mouvement.setActeurNom(nom.codePointCount(0,nom.length())>255?nom.substring(0,nom.offsetByCodePoints(0,255)):nom);
         mouvement.setType(type); mouvement.setCreeLe(LocalDateTime.ofInstant(clock.instant(),ZoneOffset.UTC));
-        mouvement.setQuantiteAvant(produit.getQuantite()); mouvement.setQuantiteApres(apres); mouvement.setCoutUnitaire(cout); mouvement.setMotif(motif);
+        mouvement.setQuantiteAvant(produit.getQuantite()); mouvement.setQuantiteApres(apres); mouvement.setCoutUnitaire(cout); mouvement.setPrixVente(prixVente); mouvement.setMotif(motif);
         produit.setQuantite(apres); mouvements.saveAndFlush(mouvement);
     }
     private Utilisateur administrateur() {

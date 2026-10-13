@@ -5,18 +5,18 @@ function ajouterLigne() {
     const pId = select.value;
     const pNom = select.options[select.selectedIndex].getAttribute('data-nom');
     const prix = document.getElementById('inputPrix').value;
+    const prixVente = document.getElementById('inputPrixVente').value;
     const qte = document.getElementById('inputQtite').value;
-
     const prixCentimes = Montants.lire(prix);
+    const prixVenteCentimes = Montants.lire(prixVente);
     const quantite = Number(qte);
-    if (!pId || prix.trim() === '' || qte.trim() === '' ||
+    if (!pId || prix.trim() === '' || prixVente.trim() === '' || qte.trim() === '' ||
         prixCentimes === null || prixCentimes < 0n ||
+        prixVenteCentimes === null || prixVenteCentimes < 0n ||
         !Number.isSafeInteger(quantite) || quantite <= 0 || quantite > 2147483647) {
-        afficherMessageProduit('Choisissez un produit, un prix positif ou nul et une quantité entière positive.');
+        afficherMessageProduit('Choisissez un produit, les prix d’achat et de vente positifs ou nuls avec au maximum deux décimales, et une quantité entière positive.');
         return;
     }
-
-    const tbody = document.querySelector('#tableLignes tbody');
     const totalLigne = prixCentimes * BigInt(quantite);
     const totalActuel = [...document.querySelectorAll('.ligne-total')]
         .reduce((total, td) => total + BigInt(td.dataset.centimes), 0n);
@@ -24,35 +24,69 @@ function ajouterLigne() {
         afficherMessageProduit('Le total dépasse le montant maximal autorisé.');
         return;
     }
+    insererLigneAchat(pId, pNom, Montants.formater(prixCentimes),
+        Montants.formater(prixVenteCentimes), String(quantite));
+    afficherMessageProduit();
+    select.value = '';
+    document.getElementById('inputPrix').value = '';
+    document.getElementById('inputPrixVente').value = '';
+    document.getElementById('inputQtite').value = '1';
+    select.focus();
+}
+
+// Conserve les lignes lors d’une modification ou après un rejet du formulaire.
+function chargerLigneAchat(pId, prix, prixVente, qte) {
+    const select = document.getElementById('selectProduit');
+    const option = Array.from(select.options).find(option => option.value === String(pId));
+    const nom = option?.getAttribute('data-nom') || 'Produit indisponible';
+    // Les anciens achats n’ont pas de tarif de vente enregistré : proposer le tarif actuel.
+    const tarif = prixVente === null ? option?.getAttribute('data-prix-vente') || '' : prixVente;
+    insererLigneAchat(pId ?? '', nom, prix ?? '', tarif, qte ?? '', true);
+}
+
+function insererLigneAchat(pId, pNom, prix, prixVente, qte, chargement = false) {
     const row = document.createElement('tr');
     const nomCellule = row.insertCell();
     const nom = document.createElement('span');
     nom.textContent = pNom;
     nomCellule.appendChild(nom);
-
     const champs = [
         {cellule: nomCellule, propriete: 'produit.id', valeur: pId, type: 'hidden'},
-        {cellule: row.insertCell(), propriete: 'prixAchatUnitaire', valeur: Montants.formater(prixCentimes), type: 'number'},
-        {cellule: row.insertCell(), propriete: 'quantite', valeur: quantite, type: 'number'}
+        {cellule: row.insertCell(), propriete: 'prixAchatUnitaire', valeur: prix, type: 'number', libelle: 'Coût d’achat de'},
+        {cellule: row.insertCell(), propriete: 'prixVenteUnitaire', valeur: prixVente, type: 'number', libelle: 'Prix de vente de'},
+        {cellule: row.insertCell(), propriete: 'quantite', valeur: qte, type: 'number', libelle: 'Quantité de'}
     ];
     champs.forEach(champ => {
         const input = document.createElement('input');
         input.type = champ.type;
         input.name = `lignes[${index}].${champ.propriete}`;
         input.value = champ.valeur;
-        input.readOnly = true;
-        input.step = champ.propriete === 'prixAchatUnitaire' ? '0.01' : '1';
         input.className = 'form-control form-control-sm';
         if (champ.type === 'number') {
-            input.setAttribute('aria-label', `${champ.propriete === 'quantite' ? 'Quantité de' : 'Prix unitaire de'} ${pNom}`);
+            const quantite = champ.propriete === 'quantite';
+            const valeur = quantite ? Number(champ.valeur) : Montants.lire(champ.valeur);
+            const valide = quantite
+                ? String(champ.valeur).trim() !== '' && Number.isSafeInteger(valeur) && valeur > 0 && valeur <= 2147483647
+                : valeur !== null && valeur >= 0n;
+            input.readOnly = !chargement || valide;
+            input.required = true;
+            input.min = quantite ? '1' : '0';
+            input.max = quantite ? '2147483647' : '999999999999999.99';
+            input.step = quantite ? '1' : '0.01';
+            input.inputMode = quantite ? 'numeric' : 'decimal';
+            input.setAttribute('aria-label', `${champ.libelle} ${pNom}`);
+            if (champ.propriete === 'prixVenteUnitaire') input.placeholder = 'À définir';
+            if (!input.readOnly) {
+                input.addEventListener('input', () => {
+                    actualiserTotalLigne(row);
+                    calculerTotal();
+                });
+            }
         }
         champ.cellule.appendChild(input);
     });
-
     const totalCellule = row.insertCell();
     totalCellule.className = 'ligne-total fw-bold';
-    totalCellule.dataset.centimes = totalLigne.toString();
-    totalCellule.textContent = Montants.formater(totalLigne);
     const actionCellule = row.insertCell();
     actionCellule.className = 'text-center';
     const button = document.createElement('button');
@@ -62,16 +96,20 @@ function ajouterLigne() {
     button.setAttribute('aria-label', `Retirer ${pNom} de l’achat`);
     button.addEventListener('click', () => supprimerLigne(button));
     actionCellule.appendChild(button);
-    tbody.appendChild(row);
-    afficherMessageProduit();
+    document.querySelector('#tableLignes tbody').appendChild(row);
+    actualiserTotalLigne(row);
     index++;
     calculerTotal();
+}
 
-    // Reset et focus pour la ligne suivante
-    select.value = "";
-    document.getElementById('inputPrix').value = "";
-    document.getElementById('inputQtite').value = "";
-    select.focus();
+function actualiserTotalLigne(row) {
+    const prix = Montants.lire(row.querySelector('input[name$=".prixAchatUnitaire"]').value);
+    const qte = Number(row.querySelector('input[name$=".quantite"]').value);
+    const total = prix !== null && prix >= 0n && Number.isSafeInteger(qte) && qte > 0
+        ? prix * BigInt(qte) : 0n;
+    const cellule = row.querySelector('.ligne-total');
+    cellule.dataset.centimes = total.toString();
+    cellule.textContent = Montants.formater(total);
 }
 
 function supprimerLigne(button) {
@@ -187,7 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (selectProduit) {
         selectProduit.addEventListener('change', function() {
             const prix = this.options[this.selectedIndex].getAttribute('data-prix');
-            document.getElementById('inputPrix').value = prix || "";
+            document.getElementById('inputPrix').value = prix || '';
+            const prixVente = this.options[this.selectedIndex].getAttribute('data-prix-vente');
+            document.getElementById('inputPrixVente').value = prixVente || '';
         });
     }
 
@@ -201,7 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         calculerTotal();
     }
-    ['selectProduit', 'inputPrix', 'inputQtite'].forEach(id => {
+    ['selectProduit', 'inputPrix', 'inputPrixVente', 'inputQtite'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', () => afficherMessageProduit());
     });
 });
@@ -212,6 +252,25 @@ document.addEventListener('submit', function(event) {
         event.preventDefault();
         afficherMessageProduit('Ajoutez au moins un produit avant de valider l’achat.');
         document.getElementById('selectProduit')?.focus();
+        return;
+    }
+    const lignes = Array.from(document.querySelectorAll('#tableLignes tbody tr'));
+    for (const row of lignes) {
+        for (const propriete of ['prixAchatUnitaire', 'prixVenteUnitaire']) {
+            const input = row.querySelector(`input[name$=".${propriete}"]`);
+            const prix = Montants.lire(input.value);
+            if (prix === null || prix < 0n) {
+                event.preventDefault();
+                afficherMessageProduit('Chaque produit doit avoir un coût d’achat et un prix de vente positifs ou nuls avec au maximum deux décimales.');
+                input.focus();
+                return;
+            }
+        }
+    }
+    const total = Montants.lire(document.getElementById('totalGeneral').value);
+    if (total === null || total > Montants.maximum) {
+        event.preventDefault();
+        afficherMessageProduit('Le total dépasse le montant maximal autorisé.');
         return;
     }
     reindexerLignes();

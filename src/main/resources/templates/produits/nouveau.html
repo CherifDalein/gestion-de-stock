@@ -5,7 +5,7 @@
             <div>
                 <p class="record-kicker">Catalogue</p>
                 <h1 id="recordTitre">Nouveau produit</h1>
-                <p class="record-intro">Préparez la fiche du produit et son prix de vente. Le stock sera ajouté séparément.</p>
+                <p class="record-intro">Préparez la fiche du produit. Le stock et les prix seront renseignés à l’entrée des marchandises.</p>
             </div>
             <a th:href="@{/produits}" class="btn btn-outline-secondary record-back">
                 <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des produits
@@ -58,21 +58,7 @@
                 </div>
             </section>
 
-            <section class="record-panel" aria-labelledby="prixTitre">
-                <div class="record-panel-heading">
-                    <h2 id="prixTitre">Prix</h2>
-                    <p>Les montants sont exprimés en francs guinéens (GNF).</p>
-                </div>
-                <div class="record-grid">
-                    <div class="record-field">
-                        <label for="prixVente">Prix de vente (GNF)</label>
-                        <input class="form-control" id="prixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'prixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
-                        <p id="prixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="record-panel" aria-labelledby="stockTitre"><div class="record-panel-heading"><h2 id="stockTitre">Le stock démarre à zéro</h2><p>Après la création, enregistrez un achat pour les nouvelles marchandises. Si vous possédez déjà ce produit, utilisez « Gérer le stock » pour saisir son stock initial, sans dépense de caisse.</p></div></section>
+            <section class="record-panel" aria-labelledby="stockTitre"><div class="record-panel-heading"><h2 id="stockTitre">Le stock démarre à zéro</h2><p>Après la création, enregistrez un achat avec la quantité, le coût d’achat et le prix de vente. Si vous possédez déjà ce produit, utilisez « Gérer le stock » pour saisir son stock initial et ses prix, sans dépense de caisse.</p></div></section>
 
             <div class="record-actions">
                 <a th:href="@{/produits}" class="btn btn-outline-secondary">Annuler</a>

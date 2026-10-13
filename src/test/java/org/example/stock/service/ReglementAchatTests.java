@@ -284,7 +284,8 @@ class ReglementAchatTests {
     private MockHttpServletRequestBuilder modification(int quantite) {
         return post("/achats/modifier/" + achat.getId()).param("fournisseur", achat.getFournisseur().getId().toString())
                 .param("lignes[0].produit.id", produit.getId().toString()).param("lignes[0].quantite", Integer.toString(quantite))
-                .param("lignes[0].prixAchatUnitaire", "10000");
+                .param("lignes[0].prixAchatUnitaire", "10000")
+                .param("lignes[0].prixVenteUnitaire", produit.getPrixVente().toPlainString());
     }
 
     private void vendre(int quantite) {
@@ -295,7 +296,8 @@ class ReglementAchatTests {
 
     private DetailAchat ligne(int quantite) {
         DetailAchat ligne = new DetailAchat(); Produit reference = new Produit(); reference.setBoutique(boutique); reference.setId(produit.getId());
-        ligne.setProduit(reference); ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("10000.0")); return ligne;
+        ligne.setProduit(reference); ligne.setQuantite(quantite); ligne.setPrixAchatUnitaire(new BigDecimal("10000.0"));
+        ligne.setPrixVenteUnitaire(produit.getPrixVente()); return ligne;
     }
 
     private List<Long> idsLignes() {

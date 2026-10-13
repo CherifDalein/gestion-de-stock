@@ -31,12 +31,12 @@ public class FormBindingAdvice {
         }
         String[] champs = switch (binder.getObjectName()) {
             case "achat" -> new String[]{"fournisseur", "fournisseur.id", "montantVerse",
-                    "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire"};
+                    "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire", "lignes[*].prixVenteUnitaire"};
             case "vente" -> new String[]{"client", "client.id", "montantVerse",
                     "lignes[*].produit.id", "lignes[*].quantite"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu"};
             case "inscription" -> new String[]{"nom", "email", "password"};
-            case "produit" -> new String[]{"nom", "reference", "prixVente",
+            case "produit" -> new String[]{"nom", "reference",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
             case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};
@@ -48,7 +48,7 @@ public class FormBindingAdvice {
         }
         if (binder.getObjectName().equals("produit")
                 && request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/")) {
-            champs = Stream.concat(Stream.of(champs), Stream.of("version")).toArray(String[]::new);
+            champs = Stream.concat(Stream.of(champs), Stream.of("version", "prixVente")).toArray(String[]::new);
         }
         boolean creation = (binder.getObjectName().equals("achat")
                 && request.getRequestURI().equals(request.getContextPath() + "/achats/enregistrer"))

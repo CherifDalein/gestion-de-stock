@@ -59,6 +59,12 @@ public class VenteService {
         vente.setBoutique(boutiqueService.boutiqueCourante());
         BigDecimal montantTotalCalcule = Montants.ZERO;
 
+        for (Produit produit : produits.values()) {
+            if (!produit.isPrixDefinis()) {
+                throw new IllegalArgumentException("Les prix de " + produit.getNom() + " doivent être définis lors d'un achat ou du stock initial avant toute vente.");
+            }
+        }
+
         for (DetailVente detail : vente.getLignes()) {
             Produit produit = produits.get(detail.getProduit().getId());
 

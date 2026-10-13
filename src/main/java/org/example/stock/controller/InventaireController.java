@@ -27,7 +27,7 @@ public class InventaireController {
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if(binder instanceof ExtendedServletRequestDataBinder servlet) servlet.addHeaderPredicate(nom->false);
         String[] champs=binder.getObjectName().equals("stockInitial")
-                ?new String[]{"quantite","coutUnitaire","motif","version","_csrf"}
+                ?new String[]{"quantite","coutUnitaire","prixVente","motif","version","_csrf"}
                 :new String[]{"quantite","motif","version","_csrf"};
         boolean soumis=request.getRequestURI().endsWith(binder.getObjectName().equals("stockInitial")?"/initial":"/ajuster");
         if(request.getMethod().equals("POST")&&soumis) {

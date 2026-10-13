@@ -38,6 +38,8 @@ public class ProduitService {
         if (produit.getVersion() != null) throw new IllegalArgumentException("Une création ne peut pas contenir de version");
         produit.setQuantite(0L);
         produit.setPrixAchat(Montants.ZERO);
+        produit.setPrixVente(Montants.ZERO);
+        produit.setPrixDefinis(false);
         produit.setBoutique(boutiqueService.boutiqueCourante());
         chargerRelations(produit);
         return produitRepository.save(produit);
@@ -53,10 +55,17 @@ public class ProduitService {
         }
         Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
         if (!modifications.getVersion().equals(produit.getVersion())) throw new ProduitModifieException();
+        if (produit.isPrixDefinis() && modifications.getPrixVente() == null) {
+            throw new IllegalArgumentException("Le prix de vente est obligatoire pour modifier une fiche dont les tarifs sont déjà définis.");
+        }
+        if (!produit.isPrixDefinis() && modifications.getPrixVente() != null && modifications.getPrixVente().signum() != 0) {
+            throw new IllegalArgumentException("Définissez les prix lors d'un achat ou de l'enregistrement du stock initial.");
+        }
+        if (!produit.isPrixDefinis()) modifications.setPrixVente(Montants.ZERO);
         chargerRelations(modifications);
         produit.setNom(modifications.getNom());
         produit.setReference(modifications.getReference());
-        produit.setPrixVente(modifications.getPrixVente());
+        if (produit.isPrixDefinis()) produit.setPrixVente(modifications.getPrixVente());
         produit.setCategorie(modifications.getCategorie());
         produit.setFournisseur(modifications.getFournisseur());
         return produitRepository.save(produit);

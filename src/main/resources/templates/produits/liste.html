@@ -101,13 +101,13 @@
                     <tbody>
                     <tr th:each="p : ${produits}" data-product-row
                         th:with="etat=${p.quantite == null ? 'inconnu' : (p.quantite == 0 ? 'rupture' : (p.quantite <= 5 ? 'faible' : 'disponible'))}"
-                        th:attr="data-id=${p.id},data-name=${p.nom},data-reference=${p.reference},data-category-id=${p.categorie != null ? p.categorie.id : ''},data-category-name=${p.categorie != null ? p.categorie.nom : 'Sans catégorie'},data-stock-state=${etat},data-quantity=${p.quantite},data-sale-price=${p.prixVente},data-purchase-price=${estAdmin ? p.prixAchat : null},data-supplier=${estAdmin ? (p.fournisseur != null ? p.fournisseur.nom : 'Non défini') : null}">
+                        th:attr="data-id=${p.id},data-name=${p.nom},data-reference=${p.reference},data-category-id=${p.categorie != null ? p.categorie.id : ''},data-category-name=${p.categorie != null ? p.categorie.nom : 'Sans catégorie'},data-stock-state=${etat},data-quantity=${p.quantite},data-sale-price=${p.prixDefinis ? p.prixVente : null},data-purchase-price=${estAdmin and p.prixDefinis ? p.prixAchat : null},data-supplier=${estAdmin ? (p.fournisseur != null ? p.fournisseur.nom : 'Non défini') : null}">
                         <td class="products-reference" th:text="${p.reference}"></td>
                         <td class="products-name" th:text="${p.nom}"></td>
                         <td><span class="products-category" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span></td>
                         <td class="products-supplier" sec:authorize="hasRole('ADMIN')" th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}"></td>
-                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixAchat != null ? #numbers.formatDecimal(p.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></span> <span class="products-currency">GNF</span></td>
-                        <td class="products-price text-end"><span th:text="${p.prixVente != null ? #numbers.formatDecimal(p.prixVente, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></span> <span class="products-currency">GNF</span></td>
+                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
+                        <td class="products-price text-end"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixVente, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
                         <td>
                             <div class="products-stock">
                                 <strong th:text="${p.quantite != null ? #numbers.formatInteger(p.quantite, 1, 'WHITESPACE') : '—'}"></strong>

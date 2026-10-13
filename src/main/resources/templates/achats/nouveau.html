@@ -38,7 +38,7 @@
                     <div class="operation-panel-header">
                         <div>
                             <h2 id="produitsTitre">Produits à recevoir</h2>
-                            <p>Le prix d’achat proposé peut être ajusté pour chaque produit.</p>
+                            <p>Renseignez le coût d’achat et le prix de vente. Les tarifs connus sont proposés et peuvent être ajustés.</p>
                         </div>
                         <span id="achatCompteur" class="operation-count" aria-live="polite">0 ligne</span>
                     </div>
@@ -51,13 +51,18 @@
                                 <option th:each="p : ${produits}"
                                         th:value="${p.id}"
                                         th:data-nom="${p.nom}"
-                                        th:data-prix="${p.prixAchat}"
+                                        th:data-prix="${p.prixDefinis ? p.prixAchat : null}"
+                                        th:data-prix-vente="${p.prixDefinis ? p.prixVente : null}"
                                         th:text="${p.nom}"></option>
                             </select>
                         </div>
                         <div class="operation-field">
-                            <label for="inputPrix" class="form-label">Prix unitaire (GNF)</label>
+                            <label for="inputPrix" class="form-label">Coût d’achat (GNF)</label>
                             <input type="number" id="inputPrix" class="form-control" placeholder="0" min="0" step="0.01">
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputPrixVente" class="form-label">Prix de vente (GNF)</label>
+                            <input type="number" id="inputPrixVente" class="form-control" placeholder="À définir" min="0" step="0.01" autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
                         </div>
                         <div class="operation-field">
                             <label for="inputQtite" class="form-label">Quantité</label>
@@ -76,20 +81,22 @@
                         <h3>Aucun produit ajouté</h3>
                         <p>Ajoutez les produits à recevoir pour préparer l’entrée en stock.</p>
                     </div>
-                    <div id="achatTable" class="table-responsive operation-cart-table" hidden>
+                    <div id="achatTable" class="table-responsive operation-cart-table" hidden tabindex="0" aria-label="Produits de l’achat, tableau défilant">
                         <table class="table table-hover mb-0" id="tableLignes">
                             <thead>
                             <tr>
                                 <th scope="col">Produit</th>
-                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-end">Coût d’achat</th>
+                                <th scope="col" class="text-end">Prix de vente</th>
                                 <th scope="col" class="text-end">Quantité</th>
-                                <th scope="col" class="text-end">Sous-total</th>
+                                <th scope="col" class="text-end">Sous-total achat</th>
                                 <th scope="col" class="text-end">Action</th>
                             </tr>
                             </thead>
                             <tbody></tbody>
                         </table>
                     </div>
+                    <p class="operation-cart-help">Sur petit écran, faites défiler le tableau pour voir toutes les colonnes.</p>
                 </section>
             </div>
 
@@ -134,4 +141,16 @@
     </div>
     <script th:src="@{/js/montants.js}"></script>
     <script th:src="@{/js/achat.js}"></script>
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            /*[# th:each="ligne : ${achat.lignes}"]*/
+            chargerLigneAchat(
+                /*[[${ligne.produit != null ? ligne.produit.id : null}]]*/ null,
+                /*[[${ligne.prixAchatUnitaire != null ? ligne.prixAchatUnitaire.toPlainString() : ''}]]*/ '',
+                /*[[${ligne.prixVenteUnitaire != null ? ligne.prixVenteUnitaire.toPlainString() : null}]]*/ null,
+                /*[[${ligne.quantite}]]*/ null
+            );
+            /*[/]*/
+        });
+    </script>
 </div>
