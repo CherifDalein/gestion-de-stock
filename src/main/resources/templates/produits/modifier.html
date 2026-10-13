@@ -65,11 +65,7 @@
                     <p>Les montants sont exprimés en francs guinéens (GNF).</p>
                 </div>
                 <div class="record-grid">
-                    <div class="record-field">
-                        <label for="inputPrixAchat">Prix d’achat (GNF)</label>
-                        <input class="form-control" id="inputPrixAchat" th:field="*{prixAchat}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixAchat')},aria-describedby=${#fields.hasErrors('prixAchat') ? 'inputPrixAchat-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
-                        <p id="inputPrixAchat-error" class="record-field-error" th:if="${#fields.hasErrors('prixAchat')}" th:errors="*{prixAchat}"></p>
-                    </div>
+                    <div class="record-field"><p class="form-label">Dernier coût d’achat (GNF)</p><p th:text="${stockActuel != null ? #numbers.formatDecimal(stockActuel.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></p><p class="record-help">Mis à jour par les achats ou le stock initial.</p></div>
                     <div class="record-field">
                         <label for="inputPrixVente">Prix de vente (GNF)</label>
                         <input class="form-control" id="inputPrixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'inputPrixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
@@ -78,20 +74,7 @@
                 </div>
             </section>
 
-            <section class="record-panel" aria-labelledby="stockTitre">
-                <div class="record-panel-heading">
-                    <h2 id="stockTitre">Stock</h2>
-                    <p>Vérifiez la quantité enregistrée pour ce produit.</p>
-                </div>
-                <div class="record-grid">
-                    <div class="record-field">
-                        <label for="inputQuantite">Quantité en stock</label>
-                        <input class="form-control" id="inputQuantite" th:field="*{quantite}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('quantite')},aria-describedby=${#fields.hasErrors('quantite') ? 'inputQuantite-help inputQuantite-error' : 'inputQuantite-help'}" required type="number" autocomplete="off" min="0" step="1" inputmode="numeric" placeholder="0" />
-                        <p id="inputQuantite-help" class="record-help">Indiquez un nombre entier d’unités, supérieur ou égal à zéro.</p>
-                        <p id="inputQuantite-error" class="record-field-error" th:if="${#fields.hasErrors('quantite')}" th:errors="*{quantite}"></p>
-                    </div>
-                </div>
-            </section>
+            <section class="record-panel" aria-labelledby="stockTitre"><div class="record-panel-heading"><h2 id="stockTitre">Stock actuel</h2><p><strong th:text="${stockActuel != null ? stockActuel.quantite : '—'}">0</strong> unités. Les achats et les ventes mettent cette quantité à jour.</p><p>Les corrections d’inventaire se font dans la gestion du stock, avec un motif et un historique.</p></div><a class="btn btn-outline-primary" th:href="@{/produits/{id}/stock(id=${produit.id})}">Gérer le stock</a></section>
 
             <div class="record-actions">
                 <a th:href="@{/produits}" class="btn btn-outline-secondary">Annuler</a>

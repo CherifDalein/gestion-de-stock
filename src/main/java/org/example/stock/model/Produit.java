@@ -38,7 +38,7 @@ public class Produit {
     @PositiveOrZero(message = "Le prix d'achat ne peut pas être négatif")
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
-    private BigDecimal prixAchat;
+    private BigDecimal prixAchat = Montants.ZERO;
 
     @NotNull(message = "Le prix de vente est obligatoire")
     @PositiveOrZero(message = "Le prix de vente ne peut pas être négatif")
@@ -48,7 +48,7 @@ public class Produit {
 
     @NotNull(message = "La quantité est obligatoire")
     @PositiveOrZero(message = "La quantité ne peut pas être négative")
-    private Long quantite;
+    private Long quantite = 0L;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categorie_id")

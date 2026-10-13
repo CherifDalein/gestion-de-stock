@@ -116,8 +116,8 @@ class FormIntegrityTests {
     @Test
     void leFormulaireProduitCreeUneNouvelleEntiteEtChargeLesRelations() throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Nouveau produit")
-                        .param("reference", "REF-NOUVELLE").param("prixAchat", "5")
-                        .param("prixVente", "20").param("quantite", "0")
+                        .param("reference", "REF-NOUVELLE")
+                        .param("prixVente", "20")
                         .param("categorie", categorie.getId().toString())
                         .param("fournisseur", fournisseur.getId().toString()))
                 .andExpect(redirectedUrl("/produits"));
@@ -190,8 +190,8 @@ class FormIntegrityTests {
     void laModificationDeProduitChangeUniquementEntiteDesigneeParLaRoute() throws Exception {
         mvc.perform(post("/produits/modifier/" + produit.getId()).with(csrf()).param("nom", "Produit modifié")
                         .param("version", produit.getVersion().toString())
-                        .param("reference", "REF-INITIALE").param("prixAchat", "5")
-                        .param("prixVente", "22").param("quantite", "10")
+                        .param("reference", "REF-INITIALE")
+                        .param("prixVente", "22")
                         .param("categorie", categorie.getId().toString())
                         .param("fournisseur", fournisseur.getId().toString()))
                 .andExpect(redirectedUrl("/produits"));
@@ -204,8 +204,8 @@ class FormIntegrityTests {
     @Test
     void uneCategorieInexistanteEstRefuseeAvantLaCreationDeProduit() throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Produit intrus")
-                        .param("reference", "REF-TEST").param("prixAchat", "5")
-                        .param("prixVente", "20").param("quantite", "0").param("categorie", "999999"))
+                        .param("reference", "REF-TEST")
+                        .param("prixVente", "20").param("categorie", "999999"))
                 .andExpect(status().isBadRequest());
         assertThat(produits.count()).isEqualTo(1);
     }

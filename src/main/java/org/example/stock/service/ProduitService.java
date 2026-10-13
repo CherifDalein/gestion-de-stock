@@ -21,6 +21,7 @@ public class ProduitService {
     @Autowired private FournisseurRepository fournisseurRepository;
     @Autowired private StockLockRepository stockLockRepository;
     @Autowired private BoutiqueService boutiqueService;
+    @Autowired private org.example.stock.repository.MouvementStockRepository mouvementsStock;
 
     public List<Produit> listerTous() {
         return produitRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
@@ -35,6 +36,8 @@ public class ProduitService {
     public Produit ajouterProduit(Produit produit) {
         if (produit.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (produit.getVersion() != null) throw new IllegalArgumentException("Une création ne peut pas contenir de version");
+        produit.setQuantite(0L);
+        produit.setPrixAchat(Montants.ZERO);
         produit.setBoutique(boutiqueService.boutiqueCourante());
         chargerRelations(produit);
         return produitRepository.save(produit);
@@ -53,9 +56,7 @@ public class ProduitService {
         chargerRelations(modifications);
         produit.setNom(modifications.getNom());
         produit.setReference(modifications.getReference());
-        produit.setPrixAchat(modifications.getPrixAchat());
         produit.setPrixVente(modifications.getPrixVente());
-        produit.setQuantite(modifications.getQuantite());
         produit.setCategorie(modifications.getCategorie());
         produit.setFournisseur(modifications.getFournisseur());
         return produitRepository.save(produit);
@@ -81,6 +82,8 @@ public class ProduitService {
 
     @Transactional
     public void supprimerProduit(Long id) {
+        trouverParId(id);
+        if (mouvementsStock.existsByProduitId(id)) throw new IllegalArgumentException("Ce produit possède un historique d’inventaire et doit être conservé.");
         produitRepository.delete(trouverParId(id));
     }
 }

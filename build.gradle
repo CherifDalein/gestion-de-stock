@@ -228,3 +228,20 @@ tasks.register('abonnementServiceMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.AbonnementServiceMariaDbTest'
 }
+
+['inventaireCheck': '--check', 'inventaireMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute le journal d’inventaire sans changer les stocks et caisses existants'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.InventaireMigration'
+        args mode
+    }
+}
+
+tasks.register('inventaireMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration, le stock initial et la caisse en concurrence dans une base MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.InventaireMariaDbTest'
+}

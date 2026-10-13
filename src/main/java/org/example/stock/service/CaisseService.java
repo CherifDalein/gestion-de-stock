@@ -17,6 +17,18 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.validation.Validator;
+import org.example.stock.form.OuvertureCaisseForm;
+import org.example.stock.enums.Role;
+import org.example.stock.model.Emails;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+import java.time.Clock;
+import java.time.ZoneId;
 
 @Service
 public class CaisseService {
@@ -27,13 +39,51 @@ public class CaisseService {
     @Autowired private AchatRepository achatRepository;
     @Autowired private VenteRepository venteRepository;
     @Autowired private UtilisateurRepository utilisateurRepository;
+    @Autowired private EntityManager entityManager;
+    @Autowired private Validator validator;
+    @Autowired @Qualifier("recoveryClock") private Clock clock;
+
+    @Transactional(readOnly=true)
+    public boolean peutInitialiser() {
+        gerant();
+        return !mouvementRepo.existsByBoutiqueId(boutiqueService.idBoutiqueCourante());
+    }
+
+    @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public void initialiser(OuvertureCaisseForm formulaire) {
+        Utilisateur acteur=gerant();
+        entityManager.refresh(acteur,LockModeType.PESSIMISTIC_WRITE);
+        if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
+        var boutique=boutiqueService.boutiqueCourante();
+        entityManager.refresh(boutique,LockModeType.PESSIMISTIC_WRITE);
+        boutiqueService.exigerAppartenance(boutique);
+        if(formulaire==null||!validator.validate(formulaire).isEmpty()) throw new IllegalArgumentException("Le montant et le motif du solde initial doivent être valides.");
+        if(mouvementRepo.existsByBoutiqueId(boutique.getId())) throw new IllegalArgumentException("Le solde initial se renseigne une seule fois, avant le premier mouvement de caisse.");
+        MouvementCaisse mouvement=new MouvementCaisse();
+        mouvement.setBoutique(boutique);mouvement.setUtilisateur(acteur);
+        mouvement.setMontant(Montants.positifOuNul(formulaire.getMontant(),"Le solde initial"));
+        mouvement.setType("OUVERTURE");mouvement.setSource("SOLDE_INITIAL");mouvement.setMotif(formulaire.getMotif());
+        mouvement.setDateMouvement(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
+        mouvementRepo.saveAndFlush(mouvement);
+    }
+
+    private Utilisateur gerant() {
+        var auth=SecurityContextHolder.getContext().getAuthentication();
+        if(auth==null||!auth.isAuthenticated()||auth.getAuthorities().stream().noneMatch(a->a.getAuthority().equals("ROLE_ADMIN"))) throw interdit();
+        var compte=utilisateurRepository.findByEmail(Emails.normaliser(auth.getName())).orElseThrow(CaisseService::interdit);
+        if(!compte.isActif()||compte.getRole()!=Role.ADMIN) throw interdit();
+        boutiqueService.exigerAppartenance(compte.getBoutique());return compte;
+    }
+    private static ResponseStatusException interdit(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Ouverture de caisse réservée au gérant");}
 
     public BigDecimal getSoldeActuel() {
         return normaliser(mouvementRepo.calculerSoldeTotal(boutiqueService.idBoutiqueCourante()));
     }
 
     public BigDecimal getSoldeOuverture(LocalDate date) {
-        return normaliser(mouvementRepo.calculerSoldeAvant(date.atStartOfDay(), boutiqueService.idBoutiqueCourante()));
+        Long boutiqueId=boutiqueService.idBoutiqueCourante();
+        return normaliser(mouvementRepo.calculerSoldeAvant(date.atStartOfDay(), boutiqueId))
+                .add(normaliser(mouvementRepo.calculerInitialDuJour(date.atStartOfDay(),date.plusDays(1).atStartOfDay(),boutiqueId)));
     }
 
     public BigDecimal getEntreesDuJour(LocalDate date) {

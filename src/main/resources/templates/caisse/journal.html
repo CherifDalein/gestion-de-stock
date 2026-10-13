@@ -9,11 +9,13 @@
                 <p class="app-page-subtitle">Suivez vos encaissements, vos décaissements et leur historique.</p>
             </div>
             <div class="caisse-header-actions">
+                <a class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Solde initial</a>
                 <span class="caisse-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></span>
                 <button id="caissePrint" class="btn btn-outline-primary" type="button" hidden aria-describedby="caissePrintHelp"><i class="fas fa-print" aria-hidden="true"></i> Imprimer le journal</button>
             </div>
         </header>
 
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
         <section class="caisse-metrics" aria-label="Situation globale et mouvements du jour">
             <article class="caisse-metric caisse-metric--balance">
                 <div class="caisse-metric-heading"><h2>Solde actuel</h2><span class="caisse-metric-icon"><i class="fas fa-wallet" aria-hidden="true"></i></span></div>
@@ -23,7 +25,7 @@
             <article class="caisse-metric">
                 <div class="caisse-metric-heading"><h2>Solde à l’ouverture</h2><span class="caisse-metric-icon"><i class="fa-regular fa-sun" aria-hidden="true"></i></span></div>
                 <p class="caisse-metric-value" data-caisse-summary="ouverture" th:classappend="${soldeOuverture < 0 ? 'caisse-negative' : ''}" th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
-                <p class="caisse-metric-caption">Solde avant le début de la journée</p>
+                <p class="caisse-metric-caption">Solde avant la journée, avec le montant initial d’ouverture</p>
             </article>
             <article class="caisse-metric">
                 <div class="caisse-metric-heading"><h2>Variation du jour</h2><span class="caisse-metric-icon"><i class="fas fa-arrows-up-down" aria-hidden="true"></i></span></div>
@@ -33,7 +35,7 @@
             <article class="caisse-metric caisse-metric--flow">
                 <div class="caisse-metric-heading"><h2>Entrées du jour</h2><span class="caisse-metric-icon caisse-metric-icon--in"><i class="fas fa-arrow-down" aria-hidden="true"></i></span></div>
                 <p class="caisse-metric-value caisse-positive" data-caisse-summary="entrees" th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
-                <p class="caisse-metric-caption">Encaissements enregistrés depuis le début de la journée</p>
+                <p class="caisse-metric-caption">Encaissements du jour, hors solde initial</p>
             </article>
             <article class="caisse-metric caisse-metric--flow">
                 <div class="caisse-metric-heading"><h2>Sorties du jour</h2><span class="caisse-metric-icon caisse-metric-icon--out"><i class="fas fa-arrow-up" aria-hidden="true"></i></span></div>
@@ -63,7 +65,7 @@
                         <td class="caisse-row-date" th:text="${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
                         <td class="caisse-row-motif" th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></td>
                         <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
-                        <td><span class="caisse-source" th:text="${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée'}"></span></td>
+                        <td><span class="caisse-source" th:text="${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée')}"></span></td>
                         <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
                         <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>
                     </tr>
@@ -107,11 +109,11 @@
                     <tbody>
                     <tr th:each="m : ${mouvements}" data-caisse-row
                         th:with="sens=${m.montant == null ? 'inconnu' : (m.montant > 0 ? 'entree' : (m.montant < 0 ? 'sortie' : 'neutre'))}"
-                        th:attr="data-id=${m.id},data-date=${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'yyyy-MM-dd') + 'T' + #temporals.format(m.dateMouvement, 'HH:mm:ss.SSSSSSSSS') : ''},data-amount=${m.montant != null ? m.montant.toPlainString() : ''},data-source=${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? #strings.trim(m.source) : ''},data-direction=${sens},data-type=${m.type ?: ''}">
+                        th:attr="data-id=${m.id},data-date=${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'yyyy-MM-dd') + 'T' + #temporals.format(m.dateMouvement, 'HH:mm:ss.SSSSSSSSS') : ''},data-amount=${m.montant != null ? m.montant.toPlainString() : ''},data-source=${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? #strings.trim(m.source) : '')},data-direction=${sens},data-type=${m.type ?: ''}">
                         <td class="caisse-row-date" th:text="${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
                         <td class="caisse-row-motif" th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></td>
                         <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
-                        <td><span class="caisse-source" th:text="${m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée'}"></span></td>
+                        <td><span class="caisse-source" th:text="${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée')}"></span></td>
                         <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
                         <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>
                     </tr>

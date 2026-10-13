@@ -179,9 +179,9 @@ class MontantsIntegrationTests {
     @ValueSource(strings = {"0.001", "1000000000000000"})
     void leFormulaireProduitRefuseLaPrecisionOuLaTailleExcessive(String prix) throws Exception {
         mvc.perform(post("/produits/ajouter").with(csrf()).param("nom", "Invalide").param("reference", "INVALIDE")
-                        .param("quantite", "1").param("categorie.id", produit.getCategorie().getId().toString())
-                        .param("prixAchat", prix).param("prixVente", prix))
-                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("produit", "prixAchat", "prixVente"));
+                        .param("categorie.id", produit.getCategorie().getId().toString())
+                        .param("prixVente", prix))
+                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("produit", "prixVente"));
         assertThat(produits.count()).isEqualTo(1);
         verifierAucuneOperation();
     }
@@ -217,7 +217,7 @@ class MontantsIntegrationTests {
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/achats/enregistrer").with(csrf()).param("lignes[0].prixAchatUnitaire", valeur))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/produits/ajouter").with(csrf()).param("prixAchat", valeur))
+        mvc.perform(post("/produits/ajouter").with(csrf()).param("prixVente", valeur))
                 .andExpect(status().isBadRequest());
         verifierAucuneOperation();
     }

@@ -2,6 +2,7 @@
     <div id="stockProduits" class="container-fluid stock-products"
          th:with="estAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, totalProduits=${#lists.size(produits)}, produitsEnStock=${#lists.size(produits.?[quantite != null and quantite > 0])}, produitsFaibles=${#lists.size(produits.?[quantite != null and quantite > 0 and quantite <= 5])}, produitsRupture=${#lists.size(produits.?[quantite != null and quantite == 0])}">
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <header class="products-header">
             <div>
                 <p class="app-page-kicker">Catalogue</p>
@@ -119,6 +120,7 @@
                                 <button type="button" class="btn btn-outline-primary btn-sm app-row-action" data-product-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
                                     <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
+                                <a th:href="@{/produits/{id}/stock(id=${p.id})}" class="btn btn-outline-primary btn-sm app-row-action" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Gérer le stock de ' + p.nom}"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span></a>
                                 <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm app-row-action" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Modifier ' + p.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>

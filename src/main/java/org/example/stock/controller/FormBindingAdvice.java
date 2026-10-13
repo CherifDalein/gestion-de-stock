@@ -36,7 +36,7 @@ public class FormBindingAdvice {
                     "lignes[*].produit.id", "lignes[*].quantite"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu"};
             case "inscription" -> new String[]{"nom", "email", "password"};
-            case "produit" -> new String[]{"nom", "reference", "prixAchat", "prixVente", "quantite",
+            case "produit" -> new String[]{"nom", "reference", "prixVente",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
             case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};

@@ -6,13 +6,21 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les seize tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires, le stockage des liens de réinitialisation, celui des inscriptions publiques et le journal des abonnements. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les dix-sept tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements et celui de l’inventaire. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
 L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma au démarrage sans créer ni modifier les tables. Pour une base contenant déjà des données, suivre la [migration des boutiques](migrations/boutiques.md) après arrêt de l'application et sauvegarde complète. Les `CREATE TABLE IF NOT EXISTS` du fichier de création ne convertissent pas des tables existantes ; ne pas les employer comme migration.
 
 ## Tables
+
+### `mouvement_stock`
+
+Journal des stocks initiaux et corrections d’inventaire : `id` BIGINT auto-incrémenté ; `boutique_id`, `produit_id` BIGINT avec clés étrangères sans cascade ; `acteur_id` BIGINT et `acteur_nom` VARCHAR(255) figés ; `type` VARCHAR(16) (`INITIAL` ou `AJUSTEMENT`) ; `cree_le` DATETIME(6) UTC ; `quantite_avant`, `quantite_apres` BIGINT non négatifs ; `cout_unitaire` DECIMAL(17,2) facultatif (présent pour le stock initial) ; `motif` VARCHAR(500) obligatoire. Index `(boutique_id, produit_id, cree_le, id)` pour l’historique paginé. Les comptes peuvent être supprimés sans effacer leur nom historique ; un produit avec historique est conservé.
+
+Les fiches produit démarrent à zéro. Le coût d’achat vient du stock initial ou du dernier achat ; seules les informations du catalogue et le prix de vente sont modifiables depuis la fiche. La [migration d’inventaire](migrations/inventaire.md) ajoute le journal sans modifier les seize tables précédentes.
+
+Le solde initial de caisse utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL` et `type=OUVERTURE`. Il ne nécessite aucune nouvelle colonne, contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour.
 
 ### `boutique`
 - `id` PK

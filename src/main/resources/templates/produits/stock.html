@@ -1,0 +1,32 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/inventaire.css}">
+    <section class="record-page" aria-labelledby="inventaireTitre">
+        <header class="record-header"><div><p class="record-kicker">Inventaire</p><h1 id="inventaireTitre" th:text="${inventaire.produit.nom}">Stock du produit</h1><p class="record-intro">Stock actuel : <strong th:text="${inventaire.produit.quantite}">0</strong> unités · <span th:text="${inventaire.produit.reference}"></span></p></div><a th:href="@{/produits}" class="btn btn-outline-secondary record-back">Retour aux produits</a></header>
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+        <p class="record-note mb-4">Les nouvelles livraisons se saisissent dans <a th:href="@{/achats/nouveau}">les achats</a>. Le stock initial et les ajustements ci-dessous ne créent ni achat, ni dette fournisseur, ni mouvement de caisse.</p>
+        <form th:if="${inventaire.initialAutorise}" th:action="@{/produits/{id}/stock/initial(id=${inventaire.produit.id})}" th:object="${stockInitial}" method="post" class="record-panel">
+            <div class="record-panel-heading"><h2>Stock initial</h2><p>Pour les marchandises déjà présentes au démarrage. Cette saisie est possible une seule fois, avant toute opération sur le produit.</p></div>
+            <input type="hidden" name="version" th:value="*{version}">
+            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+            <div class="record-grid">
+                <div class="record-field"><label for="stockInitialQuantite">Quantité déjà présente</label><input id="stockInitialQuantite" class="form-control" type="number" th:field="*{quantite}" min="1" step="1" required></div>
+                <div class="record-field"><label for="stockInitialCout">Coût d’achat unitaire (GNF)</label><input id="stockInitialCout" class="form-control" type="number" th:field="*{coutUnitaire}" min="0" step="0.01" required><p class="record-help">Le coût sert de référence au produit ; aucun paiement n’est enregistré.</p></div>
+                <div class="record-field record-field--wide"><label for="stockInitialMotif">Origine du stock initial</label><textarea id="stockInitialMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="500" required></textarea></div>
+            </div><div class="record-actions"><button type="submit" class="btn btn-primary">Enregistrer le stock initial</button></div>
+        </form>
+        <form th:action="@{/produits/{id}/stock/ajuster(id=${inventaire.produit.id})}" th:object="${ajustementStock}" method="post" class="record-panel">
+            <div class="record-panel-heading"><h2>Ajustement d’inventaire</h2><p>Après un comptage, indiquez la quantité réellement présente. Elle remplacera le stock actuel ; l’écart et le motif seront conservés.</p></div>
+            <input type="hidden" name="version" th:value="*{version}">
+            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+            <div class="record-grid"><div class="record-field"><label for="ajustementQuantite">Quantité totale comptée</label><input id="ajustementQuantite" class="form-control" type="number" th:field="*{quantite}" min="0" step="1" required></div><div class="record-field"><label for="ajustementMotif">Motif de la correction</label><textarea id="ajustementMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="500" placeholder="Exemple : deux unités abîmées lors de l’inventaire" required></textarea></div></div>
+            <div class="record-actions"><button type="submit" class="btn btn-outline-primary">Enregistrer la correction</button></div>
+        </form>
+        <section class="app-panel" aria-labelledby="inventaireHistoriqueTitre"><div class="app-panel-heading"><div><h2 id="inventaireHistoriqueTitre">Historique de l’inventaire</h2><p>Stocks initiaux et corrections · dates en UTC. Les achats et les ventes conservent leurs propres documents.</p></div></div>
+            <p th:if="${#lists.isEmpty(inventaire.historique)}">Aucune opération d’inventaire enregistrée. Le stock existant a été conservé.</p>
+            <div th:unless="${#lists.isEmpty(inventaire.historique)}"><p class="record-help" id="inventaireScrollHelp">Sur petit écran, faites défiler le tableau horizontalement.</p><div class="table-responsive" role="region" aria-labelledby="inventaireHistoriqueTitre" aria-describedby="inventaireScrollHelp" tabindex="0"><table class="table table-hover inventaire-table"><thead><tr><th>Date · UTC</th><th>Opération</th><th>Avant</th><th>Après</th><th>Écart</th><th>Coût unitaire</th><th>Auteur</th><th>Motif</th></tr></thead><tbody><tr th:each="m : ${inventaire.historique}"><td th:text="${#temporals.format(m.creeLe,'dd/MM/yyyy HH:mm')}"></td><td th:text="${m.type.libelle}"></td><td th:text="${m.quantiteAvant}"></td><td th:text="${m.quantiteApres}"></td><td th:text="${m.quantiteApres - m.quantiteAvant}"></td><td th:text="${m.coutUnitaire != null ? #numbers.formatDecimal(m.coutUnitaire,1,'WHITESPACE',2,'COMMA') + ' GNF' : '—'}"></td><td th:text="${m.acteurNom}"></td><td class="inventaire-motif" th:text="${m.motif}"></td></tr></tbody></table></div></div>
+            <nav class="record-actions" aria-label="Pages de l’historique" th:if="${inventaire.pagePrecedente or inventaire.pageSuivante}"><a class="btn btn-outline-secondary" th:if="${inventaire.pagePrecedente}" th:href="@{/produits/{id}/stock(id=${inventaire.produit.id},page=${inventaire.page - 1})}">Page précédente</a><span th:text="${'Page ' + (inventaire.page + 1)}"></span><a class="btn btn-outline-secondary" th:if="${inventaire.pageSuivante}" th:href="@{/produits/{id}/stock(id=${inventaire.produit.id},page=${inventaire.page + 1})}">Page suivante</a></nav>
+        </section>
+    </section>
+</div>

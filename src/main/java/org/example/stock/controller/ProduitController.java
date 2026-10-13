@@ -55,13 +55,14 @@ public class ProduitController {
             return "dashboard";
         }
         produitService.ajouterProduit(produit);
-        redirectAttributes.addFlashAttribute("success", "Produit créé avec succès.");
+        redirectAttributes.addFlashAttribute("success", "Produit créé avec un stock à zéro. Enregistrez un achat ou un stock initial pour ajouter les marchandises.");
         return "redirect:/produits";
     }
 
     @PostMapping("/supprimer/{id}")
     public String supprimerProduit(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-        produitService.supprimerProduit(id);
+        try { produitService.supprimerProduit(id); }
+        catch (IllegalArgumentException e) { redirectAttributes.addFlashAttribute("error", e.getMessage()); return "redirect:/produits"; }
         redirectAttributes.addFlashAttribute("success", "Produit supprimé avec succès.");
         return "redirect:/produits";
     }
@@ -70,6 +71,7 @@ public class ProduitController {
     public String afficherFormulaireModif(@PathVariable Long id, Model model) {
         Produit produit = produitService.trouverParId(id);
         model.addAttribute("produit", produit);
+        model.addAttribute("stockActuel", produit);
         model.addAttribute("categories", categorieService.listerToutes());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
         model.addAttribute("view", "produits/modifier");
@@ -94,6 +96,7 @@ public class ProduitController {
                         : "Une autre opération modifie ce produit. Rechargez la fiche et réessayez.");
             }
         }
+        model.addAttribute("stockActuel", produitService.trouverParId(id));
         model.addAttribute("categories", categorieService.listerToutes());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
         model.addAttribute("view", "produits/modifier");

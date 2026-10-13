@@ -364,8 +364,8 @@ class DeuxBoutiquesCrudTests {
                                                 Long categorieId, Long fournisseurId) {
         requete.param("nom", nom);
         if (fiche == Fiche.PRODUIT) {
-            requete.param("reference", "REF-TEST").param("prixAchat", "2.10").param("prixVente", "3.20")
-                    .param("quantite", "6").param("categorie", categorieId.toString())
+            requete.param("reference", "REF-TEST").param("prixVente", "3.20")
+                    .param("categorie", categorieId.toString())
                     .param("fournisseur", fournisseurId.toString());
             if (requete.buildRequest(new org.springframework.mock.web.MockServletContext()).getRequestURI()
                     .contains("/modifier/")) requete.param("version", produitA.getVersion().toString());

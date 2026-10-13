@@ -203,8 +203,8 @@ class StockConcurrencyTests {
         mvc.perform(post("/produits/modifier/" + produit.getId()).with(csrf())
                         .with(user("concurrence@example.test").roles("ADMIN"))
                         .param("version", produit.getVersion().toString()).param("nom", "Ancien formulaire")
-                        .param("reference", produit.getReference()).param("prixAchat", "5").param("prixVente", "20")
-                        .param("quantite", "10").param("categorie", produit.getCategorie().getId().toString()))
+                        .param("reference", produit.getReference()).param("prixVente", "20")
+                        .param("categorie", produit.getCategorie().getId().toString()))
                 .andExpect(status().isConflict()).andExpect(view().name("dashboard"))
                 .andExpect(model().attributeHasErrors("produit"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Rechargez la fiche")));
@@ -216,8 +216,8 @@ class StockConcurrencyTests {
     void uneModificationSansVersionEstRefusee() throws Exception {
         mvc.perform(post("/produits/modifier/" + produit.getId()).with(csrf())
                         .with(user("concurrence@example.test").roles("ADMIN"))
-                        .param("nom", "Sans version").param("reference", "REF").param("prixAchat", "5")
-                        .param("prixVente", "20").param("quantite", "10")
+                        .param("nom", "Sans version").param("reference", "REF")
+                        .param("prixVente", "20")
                         .param("categorie", produit.getCategorie().getId().toString()))
                 .andExpect(status().isBadRequest());
         assertThat(stock()).isEqualTo(10L);

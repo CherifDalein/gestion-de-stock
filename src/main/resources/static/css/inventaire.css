@@ -1,0 +1,5 @@
+.inventaire-table { min-width: 980px; }
+.inventaire-table th, .inventaire-table td { padding: 1rem; vertical-align: top; }
+.inventaire-table th { white-space: nowrap; }
+.inventaire-motif { min-width: 220px; max-width: 400px; overflow-wrap: anywhere; }
+.record-page > .record-panel { margin-bottom: 1.25rem; }

@@ -12,17 +12,21 @@ import java.util.List;
 
 @Repository
 public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse, Long> {
+    boolean existsByBoutiqueId(Long boutiqueId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.dateMouvement < :fin AND m.source = 'SOLDE_INITIAL' AND m.boutique.id = :boutiqueId")
+    BigDecimal calculerInitialDuJour(@Param("date") LocalDateTime date, @Param("fin") LocalDateTime fin, @Param("boutiqueId") Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId")
     BigDecimal calculerSoldeTotal(@Param("boutiqueId") Long boutiqueId);
 
-    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.boutique.id = :boutiqueId")
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND (m.source IS NULL OR m.source <> 'SOLDE_INITIAL') AND m.boutique.id = :boutiqueId")
     BigDecimal calculerFluxTotalDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement < :date AND m.boutique.id = :boutiqueId")
     BigDecimal calculerSoldeAvant(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
 
-    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant > 0 AND m.boutique.id = :boutiqueId")
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant > 0 AND (m.source IS NULL OR m.source <> 'SOLDE_INITIAL') AND m.boutique.id = :boutiqueId")
     BigDecimal calculerEntreesDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant < 0 AND m.boutique.id = :boutiqueId")
