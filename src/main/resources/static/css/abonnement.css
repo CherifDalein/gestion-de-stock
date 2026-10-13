@@ -1,0 +1,44 @@
+body.stock-app .abonnement-page { min-width: 0; }
+body.stock-app .abonnement-situation { margin-bottom: 22px; }
+body.stock-app .abonnement-status { display: inline-flex; align-items: center; flex-shrink: 0; min-height: 30px; padding: 6px 10px; border-radius: 8px; font-size: .76rem; font-weight: 650; white-space: nowrap; }
+body.stock-app .abonnement-status--active { color: #176844; background: #eaf6ee; }
+body.stock-app .abonnement-status--limited { color: #8b601c; background: #fff2d9; }
+body.stock-app .abonnement-description p { margin: 0 0 24px; color: var(--app-muted, #687b70); font-size: .86rem; line-height: 1.65; }
+body.stock-app .abonnement-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 23px 30px; margin: 0; }
+body.stock-app .abonnement-facts > div { min-width: 0; }
+body.stock-app .abonnement-facts dt { margin: 0 0 8px; color: var(--app-muted, #687b70); font-size: .78rem; font-weight: 500; }
+body.stock-app .abonnement-facts dd { margin: 0; color: var(--app-ink, #183a2a); font-size: .88rem; font-weight: 650; line-height: 1.6; overflow-wrap: anywhere; }
+body.stock-app .abonnement-facts dd > span { display: block; }
+body.stock-app .abonnement-facts .abonnement-days { display: flex; align-items: baseline; gap: 8px; }
+body.stock-app .abonnement-days > span { font-size: 2rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+body.stock-app .abonnement-days > small { color: var(--app-muted, #687b70); font-size: .82rem; font-weight: 500; }
+body.stock-app .abonnement-note { margin: 22px 0 0; padding: 13px 15px; border-radius: 10px; background: #f0f7f3; color: var(--app-green-dark, #126448); font-size: .8rem; line-height: 1.6; }
+body.stock-app .abonnement-contact { margin-bottom: 22px; }
+body.stock-app .abonnement-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin: 0 0 24px; }
+body.stock-app .abonnement-actions-grid > form { min-width: 0; display: flex; flex-direction: column; margin: 0; }
+body.stock-app .abonnement-actions-grid .record-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+body.stock-app .abonnement-actions-grid .record-actions { margin-top: auto; padding-top: 22px; }
+body.stock-app .abonnement-history { margin-bottom: 24px; }
+body.stock-app .abonnement-history-table { min-width: 960px; }
+body.stock-app .abonnement-history-table > thead > tr > th { white-space: nowrap; }
+body.stock-app .abonnement-history-table > tbody > tr > th { padding: 14px; vertical-align: middle; border-color: var(--app-border, #dae5de); font-weight: 650; }
+body.stock-app .abonnement-history-date { min-width: 145px; white-space: nowrap; color: var(--app-muted, #687b70); font-size: .78rem; }
+body.stock-app .abonnement-history-action { min-width: 180px; max-width: 220px; font-size: .82rem; }
+body.stock-app .abonnement-history-period { min-width: 190px; font-size: .78rem; }
+body.stock-app :is(.abonnement-history-period > span, .abonnement-history-action > small, .abonnement-history-period > small) { display: block; }
+body.stock-app :is(.abonnement-history-action > small, .abonnement-history-period > small) { margin-top: 5px; color: var(--app-muted, #687b70); font-size: .73rem; font-weight: 400; }
+body.stock-app .abonnement-history-author { min-width: 130px; max-width: 200px; overflow-wrap: anywhere; font-size: .8rem; }
+body.stock-app .abonnement-history-reason { min-width: 160px; max-width: 250px; overflow-wrap: anywhere; white-space: pre-line; font-size: .8rem; }
+body.stock-app .abonnement-pagination { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+body.stock-app .abonnement-pagination > span { color: var(--app-muted, #687b70); font-size: .8rem; }
+body.stock-app .abonnement-table-status { display: flex; align-items: flex-start; flex-direction: column; gap: 5px; }
+body.stock-app .abonnement-table-status > small { color: var(--app-muted, #687b70); font-size: .73rem; white-space: nowrap; }
+
+@media (max-width: 767.98px) {
+  body.stock-app .abonnement-actions-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+}
+@media (max-width: 575.98px) {
+  body.stock-app .abonnement-facts { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  body.stock-app .abonnement-situation > .app-panel-heading { align-items: flex-start; flex-direction: column; }
+  body.stock-app .abonnement-pagination { justify-content: flex-start; }
+}

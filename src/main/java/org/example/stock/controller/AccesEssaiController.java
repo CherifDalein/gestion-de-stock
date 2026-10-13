@@ -27,6 +27,11 @@ public class AccesEssaiController {
         response.setHeader("Cache-Control", "no-store");
         model.addAttribute("nomBoutique", boutique.getNom());
         model.addAttribute("finEssai", boutique.getEssaiFin());
+        var finAcces = boutique.getEssaiFin();
+        if (boutique.getAbonnementFin() != null && (finAcces == null || boutique.getAbonnementFin().isAfter(finAcces))) {
+            finAcces = boutique.getAbonnementFin();
+        }
+        model.addAttribute("finAcces", finAcces);
         return "compte/essai-termine";
     }
 }

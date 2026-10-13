@@ -41,6 +41,7 @@ class PlateformeServiceTests {
 
     @Autowired PlateformeService plateforme;
     @Autowired BoutiqueRepository boutiques;
+    @Autowired org.example.stock.repository.HistoriqueAbonnementRepository historiqueAbonnement;
     @MockitoSpyBean UtilisateurRepository utilisateurs;
     @Autowired PasswordEncoder passwordEncoder;
 
@@ -52,6 +53,7 @@ class PlateformeServiceTests {
     @BeforeEach
     void preparer() {
         SecurityContextHolder.clearContext();
+        historiqueAbonnement.deleteAll();
         utilisateurs.deleteAll();
         boutiques.deleteAll();
         boutiquePlateforme = boutique("Boutique plateforme");

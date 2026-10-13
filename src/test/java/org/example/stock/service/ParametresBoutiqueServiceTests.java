@@ -41,6 +41,7 @@ class ParametresBoutiqueServiceTests {
     @Autowired ParametresBoutiqueService service;
     @Autowired PlateformeService plateforme;
     @Autowired BoutiqueRepository boutiques;
+    @Autowired org.example.stock.repository.HistoriqueAbonnementRepository historiqueAbonnement;
     @Autowired UtilisateurRepository utilisateurs;
     @Autowired EntityManager entityManager;
     @Autowired PlatformTransactionManager transactions;
@@ -51,6 +52,7 @@ class ParametresBoutiqueServiceTests {
     @BeforeEach
     void preparer() {
         SecurityContextHolder.clearContext();
+        historiqueAbonnement.deleteAll();
         utilisateurs.deleteAll(); boutiques.deleteAll();
         boutiqueA = boutique("Boutique A"); boutiqueB = boutique("Boutique B confidentielle");
         gerantA = compte("gerant-a@parametres.test", boutiqueA, Role.ADMIN, false);

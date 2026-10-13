@@ -50,13 +50,14 @@ public class GlobalControllerAdvice {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administration inaccessible");
             }
             boolean comptePersonnel = "/mon-compte".equals(chemin) || chemin.startsWith("/mon-compte/");
-            if (!plateforme && !(comptePersonnel && droitPlateforme) && !utilisateur.getBoutique().isActif()) {
+            boolean consultationAbonnement = "/mon-abonnement".equals(chemin) && utilisateur.getRole() == Role.ADMIN;
+            if (!plateforme && !consultationAbonnement && !(comptePersonnel && droitPlateforme) && !utilisateur.getBoutique().isActif()) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à cette boutique est suspendu");
             }
             model.addAttribute("utilisateur", utilisateur);
             model.addAttribute("boutique", utilisateur.getBoutique());
             if (utilisateur.getBoutique().getEssaiFin() != null && !utilisateur.getBoutique().isAccesOffert()) {
-                model.addAttribute("essaiEnCours", !essais.estExpire(utilisateur.getBoutique()));
+                model.addAttribute("essaiEnCours", essais.joursRestants(utilisateur.getBoutique()) > 0);
                 model.addAttribute("joursEssaiRestants", essais.joursRestants(utilisateur.getBoutique()));
             }
         }

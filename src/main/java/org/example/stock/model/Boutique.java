@@ -52,6 +52,11 @@ public class Boutique {
 
     private LocalDateTime essaiFin;
 
+    /** Période UTC activée manuellement ; null pour les accès existants et les seuls essais. */
+    private LocalDateTime abonnementDebut;
+
+    private LocalDateTime abonnementFin;
+
     @PrePersist
     private void daterCreation() {
         if (dateCreation == null) dateCreation = LocalDateTime.now();

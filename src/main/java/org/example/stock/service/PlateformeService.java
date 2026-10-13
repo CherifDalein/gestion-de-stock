@@ -32,13 +32,15 @@ public class PlateformeService {
     private final UtilisateurRepository utilisateurs;
     private final PasswordEncoder passwordEncoder;
     private final Validator validator;
+    private final GestionAbonnementService abonnements;
 
     public PlateformeService(BoutiqueRepository boutiques, UtilisateurRepository utilisateurs,
-                            PasswordEncoder passwordEncoder, Validator validator) {
+                            PasswordEncoder passwordEncoder, Validator validator, GestionAbonnementService abonnements) {
         this.boutiques = boutiques;
         this.utilisateurs = utilisateurs;
         this.passwordEncoder = passwordEncoder;
         this.validator = validator;
+        this.abonnements = abonnements;
     }
 
     public void verifierAdministrationPlateforme() {
@@ -111,14 +113,7 @@ public class PlateformeService {
 
     @Transactional
     public Boutique modifierAcces(Long id, AccesBoutiqueForm formulaire) {
-        exigerAdministrationPlateforme();
-        if (formulaire == null) throw new IllegalArgumentException("Le formulaire d'accès est obligatoire.");
-        var erreurs = validator.validate(formulaire);
-        if (!erreurs.isEmpty()) throw new IllegalArgumentException("Le statut et le choix de l'accès offert sont obligatoires.");
-        Boutique boutique = chargerBoutique(id);
-        boutique.setActif(formulaire.getActif());
-        boutique.setAccesOffert(formulaire.getAccesOffert());
-        return boutiques.save(boutique);
+        return abonnements.modifierAcces(id, formulaire);
     }
 
     private void exigerAdministrationPlateforme() {

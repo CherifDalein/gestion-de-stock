@@ -35,6 +35,7 @@
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                 <li sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')"><a class="dropdown-item" th:href="@{/mon-compte}"><i class="fa-solid fa-user-shield me-2" aria-hidden="true"></i>Mon compte</a></li>
+                <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/mon-abonnement}"><i class="fa-solid fa-calendar-check me-2" aria-hidden="true"></i>Mon abonnement</a></li>
                 <li sec:authorize="hasRole('PLATEFORME_ADMIN')"><a class="dropdown-item" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-store me-2" aria-hidden="true"></i>Administration plateforme</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/boutique/parametres}"><i class="fa-solid fa-sliders me-2" aria-hidden="true"></i>Paramètres de la boutique</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/utilisateurs}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>Utilisateurs</a></li>
@@ -83,6 +84,9 @@
                         <span class="app-nav-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>Historique et factures
                     </a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('ADMIN')">Votre boutique</div>
+                    <a class="nav-link" th:href="@{/mon-abonnement}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'abonnement/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'abonnement/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-calendar-check" aria-hidden="true"></i></span>Mon abonnement
+                    </a>
                     <a class="nav-link" th:href="@{/boutique/parametres}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'boutique/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'boutique/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-sliders" aria-hidden="true"></i></span>Paramètres de la boutique
                     </a>
@@ -109,7 +113,7 @@
     <button class="app-mobile-backdrop" type="button" tabindex="-1" aria-label="Fermer le menu"></button>
     <div id="layoutSidenav_content">
         <main id="mainContent" tabindex="-1">
-            <div th:if="${essaiEnCours == true}" class="alert alert-success mx-4 mt-4" role="status"><strong>Essai gratuit</strong><span th:text="${' · ' + joursEssaiRestants + (joursEssaiRestants == 1 ? ' jour restant.' : ' jours restants.')}"></span><span th:if="${boutique != null and boutique.essaiFin != null}" th:text="${' Fin le ' + #temporals.format(boutique.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC.'}"></span></div>
+            <div th:if="${essaiEnCours == true and page != 'abonnement/mon-abonnement'}" class="alert alert-success mx-4 mt-4" role="status"><strong>Essai gratuit</strong><span th:text="${' · ' + joursEssaiRestants + (joursEssaiRestants == 1 ? ' jour restant.' : ' jours restants.')}"></span><span th:if="${boutique != null and boutique.essaiFin != null}" th:text="${' Fin le ' + #temporals.format(boutique.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC.'}"></span><a sec:authorize="hasRole('ADMIN')" class="ms-2" th:href="@{/mon-abonnement}">Voir mon abonnement</a></div>
             <div th:if="${page != 'dashboard'}"><div th:replace="~{__${view}__ :: content}"></div></div>
             <div th:if="${page == 'dashboard'}" class="container-fluid px-4">
                 <header class="app-main-header">

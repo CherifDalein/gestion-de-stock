@@ -19,6 +19,8 @@ ne les impose pas.
 
 ## État actuel
 
+La [gestion manuelle des abonnements](abonnements-manuels.md) permet au gérant de consulter sa situation et à l’administration de prolonger un essai, ajouter un mois civil ou gérer un accès offert. Les changements effectifs sont historisés par boutique. Les paiements automatiques restent à intégrer.
+
 L’[inscription autonome et l’essai](inscription-et-essai.md) ajoutent une page d’accueil publique, la validation de l’email, la création du gérant et un essai de 30 jours réglable depuis l’administration de plateforme. Les paiements restent en attente. La durée est fixée pour chaque boutique à sa création ; les accès antérieurs sont conservés.
 
 Le premier lot introduit les boutiques et isole les données côté serveur. Chaque

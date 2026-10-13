@@ -1,11 +1,12 @@
 <div th:fragment="content">
     <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <link th:href="@{/css/abonnement.css}" rel="stylesheet" />
     <section class="platform-page record-page">
         <header class="record-header">
             <div>
                 <p class="record-kicker">Administration plateforme · <span th:text="${'Boutique #' + boutique.id}">Boutique</span></p>
                 <h1 th:text="${boutique.nom}">Boutique</h1>
-                <p class="record-intro">Consultez les utilisateurs et réglez l’accès à cette boutique.</p>
+                <p class="record-intro">Gérez l’abonnement, l’accès et les utilisateurs de cette boutique.</p>
             </div>
             <a class="btn btn-outline-secondary record-back" th:href="@{/plateforme/boutiques}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour aux boutiques</a>
         </header>
@@ -14,7 +15,6 @@
 
         <section class="app-panel" aria-labelledby="platformSummaryTitle">
             <div class="app-panel-heading"><div><h2 id="platformSummaryTitle">Informations de la boutique</h2><p>Le statut et le type d’accès sont indépendants.</p></div></div>
-            <p th:if="${boutique.essaiFin != null}" class="alert alert-info" th:text="${(boutique.accesOffert ? 'Accès offert. Essai initial : ' : (essaiExpire ? 'Essai terminé. Fin : ' : 'Essai en cours. Fin : ')) + #temporals.format(boutique.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC.'}"></p>
             <dl class="platform-summary">
                 <div><dt>Création</dt><dd th:text="${boutique.dateCreation != null ? #temporals.format(boutique.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></dd></div>
                 <div><dt>Statut</dt><dd><span class="platform-status" th:classappend="${boutique.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${boutique.actif ? 'Active' : 'Suspendue'}"></span></dd></div>
@@ -22,6 +22,57 @@
                 <div><dt>Utilisateurs</dt><dd class="platform-number" th:text="${#lists.size(utilisateurs)}">0</dd></div>
             </dl>
         </section>
+
+        <div th:replace="~{fragments/abonnement :: situation(${vueAbonnement.situation})}"></div>
+
+        <div class="abonnement-actions-grid">
+            <form th:if="${vueAbonnement.situation.essaiProlongeable}" th:action="@{/plateforme/boutiques/{id}/abonnement/essai(id=${boutique.id})}" th:object="${prolongationEssai}" method="post" class="record-panel" aria-labelledby="platformProlongationTitle">
+                <div class="record-panel-heading"><h2 id="platformProlongationTitle">Prolonger l’essai</h2><p>Ajoutez des jours gratuits à l’essai. Les jours encore disponibles sont conservés.</p></div>
+                <input id="prolongationJetonAction" type="hidden" name="jetonAction" th:value="*{jetonAction}" />
+                <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}"><p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="prolongationJours">Jours à ajouter</label>
+                        <input id="prolongationJours" class="form-control" type="number" th:field="*{jours}" min="1" max="3650" step="1" required
+                               th:classappend="${#fields.hasErrors('jours')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('jours')},aria-describedby=${#fields.hasErrors('jours') ? 'prolongationJoursHelp prolongationJoursError' : 'prolongationJoursHelp'}" />
+                        <p id="prolongationJoursHelp" class="record-help">Si l’essai est terminé, la prolongation commence à la date de l’enregistrement.</p>
+                        <p id="prolongationJoursError" class="record-field-error" th:if="${#fields.hasErrors('jours')}" th:errors="*{jours}" role="alert"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="prolongationMotif">Motif <span class="record-optional">facultatif</span></label>
+                        <textarea id="prolongationMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="500" placeholder="Exemple : prolongation accordée au client"
+                                  th:classappend="${#fields.hasErrors('motif')} ? 'is-invalid' : ''"
+                                  th:attr="aria-invalid=${#fields.hasErrors('motif')},aria-describedby=${#fields.hasErrors('motif') ? 'prolongationMotifHelp prolongationMotifError' : 'prolongationMotifHelp'}"></textarea>
+                        <p id="prolongationMotifHelp" class="record-help">Le motif est visible par le gérant dans l’historique.</p>
+                        <p id="prolongationMotifError" class="record-field-error" th:if="${#fields.hasErrors('motif')}" th:errors="*{motif}" role="alert"></p>
+                    </div>
+                </div>
+                <div class="record-actions"><button class="btn btn-outline-primary" type="submit"><i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>Prolonger l’essai</button></div>
+            </form>
+            <section th:unless="${vueAbonnement.situation.essaiProlongeable}" class="record-panel" aria-labelledby="platformSansEssaiTitle"><div class="record-panel-heading"><h2 id="platformSansEssaiTitle">Prolonger l’accès</h2><p th:if="${vueAbonnement.situation.essaiDebut != null and vueAbonnement.situation.essaiFin != null}">Un abonnement est déjà prévu ou actif. Ajoutez un mois à cet abonnement pour prolonger l’accès.</p><p th:unless="${vueAbonnement.situation.essaiDebut != null and vueAbonnement.situation.essaiFin != null}">Cette boutique ne possède pas d’essai enregistré. Vous pouvez activer un abonnement ou gérer son accès ci-dessous.</p></div></section>
+
+            <form th:action="@{/plateforme/boutiques/{id}/abonnement/activer(id=${boutique.id})}" th:object="${activationAbonnement}" method="post" class="record-panel" aria-labelledby="platformActivationTitle">
+                <div class="record-panel-heading"><h2 id="platformActivationTitle">Activer un mois d’abonnement</h2><p>Ajoutez un mois calendaire après la période d’essai ou d’abonnement encore disponible. Si l’accès est terminé, le mois commence à la date de l’enregistrement.</p></div>
+                <p class="record-note mb-3" th:if="${vueAbonnement.situation.statut.name() == 'ACCES_EXISTANT'}">Cette boutique conserve actuellement son accès existant. Activer un abonnement fixera une date de fin à cet accès.</p>
+                <p class="record-note mb-3" th:if="${vueAbonnement.situation.accesOffert}">L’accès offert reste prioritaire sur les dates d’abonnement. La boutique conserve son accès gratuit tant que ce réglage est maintenu.</p>
+                <p class="record-note mb-3" th:unless="${vueAbonnement.situation.actif}">Cette boutique est suspendue. L’activation d’un abonnement conserve la suspension : il faut aussi réactiver la boutique pour reprendre les opérations.</p>
+                <input id="activationJetonAction" type="hidden" name="jetonAction" th:value="*{jetonAction}" />
+                <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}"><p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="activationMotif">Motif <span class="record-optional">facultatif</span></label>
+                        <textarea id="activationMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="500" placeholder="Exemple : premier mois accordé"
+                                  th:classappend="${#fields.hasErrors('motif')} ? 'is-invalid' : ''"
+                                  th:attr="aria-invalid=${#fields.hasErrors('motif')},aria-describedby=${#fields.hasErrors('motif') ? 'activationMotifHelp activationMotifError' : 'activationMotifHelp'}"></textarea>
+                        <p id="activationMotifHelp" class="record-help">Le motif est visible par le gérant dans l’historique.</p>
+                        <p id="activationMotifError" class="record-field-error" th:if="${#fields.hasErrors('motif')}" th:errors="*{motif}" role="alert"></p>
+                    </div>
+                </div>
+                <p class="record-help">Cette action enregistre l’activation manuellement. Le statut de suspension et l’accès offert se règlent séparément ci-dessous.</p>
+                <div class="record-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-circle-check" aria-hidden="true"></i>Activer un mois</button></div>
+            </form>
+        </div>
 
         <form th:action="@{/plateforme/boutiques/{id}/acces(id=${boutique.id})}" th:object="${accesBoutique}" method="post" class="record-panel platform-access-form" aria-labelledby="platformAccessTitle">
             <div class="record-panel-heading"><h2 id="platformAccessTitle">Gérer l’accès</h2><p>Les changements s’appliquent après l’enregistrement.</p></div>
@@ -46,12 +97,14 @@
                         <option value="false">Standard</option>
                         <option value="true">Offert</option>
                     </select>
-                    <p id="platformDetailAccesOffertHelp" class="record-help">L’accès offert accorde un accès gratuit à la boutique. Il ne change pas son statut.</p>
+                    <p id="platformDetailAccesOffertHelp" class="record-help">L’accès offert accorde un accès gratuit sans date de fin, par exemple à un proche. Il ne lève pas une suspension. Revenir à Standard rétablit les dates d’essai et d’abonnement enregistrées.</p>
                     <p id="platformDetailAccesOffertError" class="record-field-error" th:if="${#fields.hasErrors('accesOffert')}" th:errors="*{accesOffert}" role="alert"></p>
                 </div>
             </div>
             <div class="record-actions"><button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les accès</button></div>
         </form>
+
+        <div th:replace="~{fragments/abonnement :: historique(${vueAbonnement}, '/plateforme/boutiques/' + boutique.id)}"></div>
 
         <section class="app-panel platform-list-panel" aria-labelledby="platformUsersTitle">
             <div class="app-panel-heading"><div><h2 id="platformUsersTitle">Utilisateurs de la boutique</h2><p>Gérez l’accès de chaque compte. Désactiver un compte conserve les données de la boutique.</p></div><span class="platform-count" th:text="${#lists.size(utilisateurs) + (#lists.size(utilisateurs) == 1 ? ' utilisateur' : ' utilisateurs')}"></span></div>

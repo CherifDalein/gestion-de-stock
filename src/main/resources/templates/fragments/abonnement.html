@@ -1,0 +1,50 @@
+<div xmlns:th="http://www.thymeleaf.org">
+    <section th:fragment="situation(s)" class="app-panel abonnement-situation" aria-labelledby="abonnementSituationTitle">
+        <div class="app-panel-heading">
+            <div><h2 id="abonnementSituationTitle">Situation de l’accès</h2><p>Les dates sont indiquées en UTC.</p></div>
+            <span class="abonnement-status" th:classappend="${s.statut.name() == 'EXPIRE' or s.statut.name() == 'SUSPENDU' ? 'abonnement-status--limited' : 'abonnement-status--active'}" th:text="${s.statut.libelle}">Accès</span>
+        </div>
+        <div class="abonnement-description" th:switch="${s.statut.name()}">
+            <p th:case="'ESSAI'">Votre boutique bénéficie de l’essai gratuit. Retrouvez sa date de fin et les jours restants ci-dessous.</p>
+            <p th:case="'ABONNEMENT'">Votre abonnement est actif. Votre boutique peut continuer ses opérations pendant la période indiquée.</p>
+            <p th:case="'OFFERT'">Votre boutique bénéficie d’un accès gratuit accordé par l’administration, sans date de fin.</p>
+            <p th:case="'ACCES_EXISTANT'">Votre boutique conserve son accès existant, sans date de fin.</p>
+            <p th:case="'SUSPENDU'">L’administration a suspendu l’accès à cette boutique. Ses données sont conservées. Contactez l’administration pour rétablir l’accès.</p>
+            <p th:case="'EXPIRE'">La période d’accès est terminée. Les opérations sont bloquées et vos données sont conservées. Contactez l’administration pour prolonger l’accès.</p>
+        </div>
+        <dl class="abonnement-facts">
+            <div th:if="${s.statut.name() == 'ESSAI' or s.statut.name() == 'ABONNEMENT'}"><dt>Jours restants</dt><dd class="abonnement-days"><span th:text="${s.joursRestants}">0</span><small th:text="${s.joursRestants == 1 ? 'jour' : 'jours'}">jours</small></dd></div>
+            <div><dt>Fin de l’essai</dt><dd th:text="${s.essaiFin != null ? #temporals.format(s.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC' : 'Aucun essai enregistré'}">—</dd></div>
+            <div><dt>Abonnement</dt><dd th:if="${s.abonnementDebut != null and s.abonnementFin != null}"><span th:text="${'Du ' + #temporals.format(s.abonnementDebut, 'dd/MM/yyyy HH:mm')}"></span><span th:text="${'au ' + #temporals.format(s.abonnementFin, 'dd/MM/yyyy HH:mm') + ' UTC'}"></span></dd><dd th:unless="${s.abonnementDebut != null and s.abonnementFin != null}">Aucun abonnement activé</dd></div>
+            <div><dt>Opérations de la boutique</dt><dd th:text="${s.accesAutorise ? 'Accessibles' : 'Bloquées'}">Accessibles</dd></div>
+        </dl>
+        <p class="abonnement-note" th:if="${s.statut.name() == 'ESSAI' and !s.essaiProlongeable and s.abonnementDebut != null and s.abonnementFin != null}" th:text="${'Un abonnement est déjà prévu à partir du ' + #temporals.format(s.abonnementDebut, 'dd/MM/yyyy HH:mm') + ' UTC, à la suite de votre essai.'}"></p>
+        <p class="abonnement-note" th:if="${s.statut.name() == 'SUSPENDU' and s.accesOffert}">L’accès offert reste enregistré. La suspension doit être levée pour reprendre les opérations.</p>
+    </section>
+
+    <section th:fragment="historique(vue, baseUrl)" class="app-panel abonnement-history" aria-labelledby="abonnementHistoriqueTitle">
+        <div class="app-panel-heading"><div><h2 id="abonnementHistoriqueTitle">Historique de l’accès</h2><p>Activations, renouvellements et changements enregistrés par l’administration.</p></div></div>
+        <div class="platform-empty" th:if="${#lists.isEmpty(vue.historique)}"><h3>Aucune modification enregistrée</h3><p>Les prochains changements d’accès apparaîtront ici.</p></div>
+        <div th:unless="${#lists.isEmpty(vue.historique)}">
+            <p id="abonnementHistoriqueScrollHelp" class="platform-table-help">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
+            <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="abonnementHistoriqueTitle" aria-describedby="abonnementHistoriqueScrollHelp" tabindex="0">
+                <table class="table table-hover abonnement-history-table mb-0">
+                    <caption class="visually-hidden">Historique des changements d’accès à cette boutique, dates en UTC</caption>
+                    <thead><tr><th scope="col">Date · UTC</th><th scope="col">Modification</th><th scope="col">Période</th><th scope="col">Enregistrée par</th><th scope="col">Motif</th></tr></thead>
+                    <tbody><tr th:each="evenement : ${vue.historique}">
+                        <td class="abonnement-history-date" th:text="${#temporals.format(evenement.creeLe, 'dd/MM/yyyy HH:mm')}"></td>
+                        <th scope="row" class="abonnement-history-action"><span th:text="${evenement.action.libelle}"></span><small th:if="${evenement.quantite != null}" th:text="${evenement.quantite + (evenement.action.name() == 'PROLONGATION_ESSAI' ? (evenement.quantite == 1 ? ' jour ajouté' : ' jours ajoutés') : (evenement.quantite == 1 ? ' mois ajouté' : ' mois ajoutés'))}"></small></th>
+                        <td class="abonnement-history-period"><span th:if="${evenement.periodeDebut != null}" th:text="${'Du ' + #temporals.format(evenement.periodeDebut, 'dd/MM/yyyy HH:mm')}"></span><span th:if="${evenement.periodeFin != null}" th:text="${'au ' + #temporals.format(evenement.periodeFin, 'dd/MM/yyyy HH:mm')}"></span><span th:if="${evenement.periodeDebut == null and evenement.periodeFin == null}">—</span><small th:if="${evenement.ancienneFin != null}" th:text="${'Fin précédente : ' + #temporals.format(evenement.ancienneFin, 'dd/MM/yyyy HH:mm')}"></small></td>
+                        <td class="abonnement-history-author" th:text="${evenement.acteurNom}"></td>
+                        <td class="abonnement-history-reason" th:text="${evenement.motif != null and evenement.motif != '' ? evenement.motif : '—'}"></td>
+                    </tr></tbody>
+                </table>
+            </div>
+        </div>
+        <nav class="abonnement-pagination" aria-label="Pages de l’historique" th:if="${vue.pagePrecedente or vue.pageSuivante}">
+            <a class="btn btn-outline-secondary app-row-action" th:if="${vue.pagePrecedente}" th:href="@{${baseUrl}(page=${vue.page - 1})}">Page précédente</a>
+            <span th:text="${'Page ' + (vue.page + 1)}">Page 1</span>
+            <a class="btn btn-outline-secondary app-row-action" th:if="${vue.pageSuivante}" th:href="@{${baseUrl}(page=${vue.page + 1})}">Page suivante</a>
+        </nav>
+    </section>
+</div>

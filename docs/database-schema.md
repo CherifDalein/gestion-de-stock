@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les quinze tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires, le stockage des liens de réinitialisation et celui des inscriptions publiques. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les seize tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires, le stockage des liens de réinitialisation, celui des inscriptions publiques et le journal des abonnements. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -22,6 +22,7 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 - `email` VARCHAR(254) NULL : email commercial facultatif, indépendant des emails de connexion
 - `date_creation` DATETIME(6) NOT NULL
 - `essai_debut`, `essai_fin` DATETIME(6) NULL : bornes UTC persistées de l'essai ; toutes deux vides pour les boutiques historiques
+- `abonnement_debut`, `abonnement_fin` DATETIME(6) NULL : bornes UTC de la période activée manuellement ; toutes deux vides avant une première activation
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
 
@@ -99,6 +100,26 @@ d'essai vides ; aucun délai n'est ajouté automatiquement. `acces_offert` reste
 distinct de la suspension manuelle et de l'essai. Voir la
 [migration inscription et essai](migrations/inscription-essai.md).
 
+### `historique_abonnement`
+
+- `id` BIGINT PK, auto-incrémenté
+- `boutique_id` BIGINT NOT NULL FK -> `boutique.id` : espace concerné
+- `acteur_id` BIGINT NOT NULL FK -> `utilisateur.id` : auteur de la décision de plateforme, éventuellement rattaché à une autre boutique
+- `acteur_nom` VARCHAR(255) NOT NULL : nom enregistré lors de l'action
+- `action` VARCHAR(32) NOT NULL : `PROLONGATION_ESSAI`, `ACTIVATION_ABONNEMENT`, `ACCES_OFFERT`, `RETRAIT_ACCES_OFFERT`, `SUSPENSION_BOUTIQUE` ou `REACTIVATION_BOUTIQUE`
+- `cree_le` DATETIME(6) NOT NULL : instant UTC de la décision
+- `periode_debut`, `periode_fin`, `ancienne_fin` DATETIME(6) NULL : période accordée et ancienne échéance pour une prolongation ou activation
+- `motif` VARCHAR(500) NULL : justification facultative
+- `jeton_action` VARCHAR(36) NOT NULL UNIQUE : UUID du formulaire pour reconnaître un renvoi
+- `quantite` INTEGER NULL : jours ajoutés à l'essai ou un mois d'abonnement
+- index non unique `idx_historique_abonnement_boutique_date` sur `(boutique_id, cree_le, id)` pour la pagination
+
+Les décisions et les dates de boutique sont enregistrées dans la même
+transaction. Le journal est consultable par boutique ; les anciennes données
+ne sont pas transformées en événements. Les références sont conservées sans
+suppression en cascade. L'accès offert et la suspension restent indépendants
+des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
+
 ### `produit`
 - `id` PK
 - `version` BIGINT NOT NULL DEFAULT 0 : version JPA pour détecter les modifications concurrentes
@@ -174,6 +195,7 @@ erDiagram
     BOUTIQUE ||--o{ VENTE : enregistre
     BOUTIQUE ||--o{ MOUVEMENT_CAISSE : journalise
     BOUTIQUE ||--o{ OPERATION_CREATION : protege
+    BOUTIQUE ||--o{ HISTORIQUE_ABONNEMENT : conserve
     CATEGORIE ||--o{ PRODUIT : classe
     FOURNISSEUR ||--o{ PRODUIT : fournit
     FOURNISSEUR ||--o{ ACHAT : concerne
@@ -186,6 +208,7 @@ erDiagram
     ACHAT o|--o{ MOUVEMENT_CAISSE : reglements
     VENTE o|--o{ MOUVEMENT_CAISSE : reglements
     UTILISATEUR ||--o{ OPERATION_CREATION : ouvre
+    UTILISATEUR ||--o{ HISTORIQUE_ABONNEMENT : decide
     UTILISATEUR ||--o| REINITIALISATION_MOT_DE_PASSE : recupere
     ACHAT o|--o| OPERATION_CREATION : resultat
     VENTE o|--o| OPERATION_CREATION : resultat
@@ -199,6 +222,8 @@ erDiagram
         DATETIME date_creation
         DATETIME essai_debut
         DATETIME essai_fin
+        DATETIME abonnement_debut
+        DATETIME abonnement_fin
         BOOLEAN actif
         BOOLEAN acces_offert
     }
@@ -216,6 +241,20 @@ erDiagram
     PARAMETRES_PLATEFORME {
         INT id PK
         INT duree_essai_jours
+    }
+    HISTORIQUE_ABONNEMENT {
+        BIGINT id PK
+        BIGINT boutique_id FK
+        BIGINT acteur_id FK
+        VARCHAR acteur_nom
+        VARCHAR action
+        DATETIME cree_le
+        DATETIME periode_debut
+        DATETIME periode_fin
+        DATETIME ancienne_fin
+        VARCHAR motif
+        VARCHAR jeton_action UK
+        INT quantite
     }
     CLIENT {
         BIGINT id PK
@@ -327,6 +366,7 @@ erDiagram
 - `ReinitialisationMotDePasse.java`
 - `InscriptionBoutique.java`
 - `ParametresPlateforme.java`
+- `HistoriqueAbonnement.java`
 
 ## Remarques
 
@@ -418,3 +458,12 @@ colonnes sont conservées, y compris les mots de passe, comptes désactivés,
 coordonnées et demandes de récupération. Les anciennes boutiques gardent leurs
 deux dates d'essai `NULL` et leur accès existant. Une relance conserve aussi les
 essais déjà commencés, la durée configurée et les inscriptions en attente.
+
+## Mise à jour d'une base existante : périodes et historique des abonnements
+
+Après la migration inscription et essai, suivre le
+[guide des abonnements](migrations/abonnement.md). Il ajoute les deux dates
+d'abonnement facultatives et le journal vide des décisions de plateforme.
+Les quinze tables précédentes gardent leurs anciennes colonnes et données.
+Les boutiques historiques conservent leur accès, sans abonnement ni échéance
+inventés. Une relance conserve les périodes et événements déjà enregistrés.

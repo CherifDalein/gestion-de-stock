@@ -43,16 +43,13 @@ public class EssaiBoutiqueService {
     }
 
     public boolean estExpire(Boutique boutique) {
-        if (boutique == null || boutique.isAccesOffert()) return false;
-        if (boutique.getEssaiDebut() == null && boutique.getEssaiFin() == null) return false;
-        // Un couple incomplet ou incohérent ne doit jamais ouvrir l'accès.
-        if (boutique.getEssaiDebut() == null || boutique.getEssaiFin() == null
-                || !boutique.getEssaiFin().isAfter(boutique.getEssaiDebut())) return true;
-        return !maintenant().isBefore(boutique.getEssaiFin());
+        return ReglesAccesCommercial.estExpire(boutique, maintenant());
     }
 
     public long joursRestants(Boutique boutique) {
-        if (boutique == null || boutique.getEssaiFin() == null || estExpire(boutique)) return 0;
+        if (boutique == null || boutique.isAccesOffert() || boutique.getEssaiDebut() == null
+                || boutique.getEssaiFin() == null || !boutique.getEssaiFin().isAfter(boutique.getEssaiDebut())
+                || !maintenant().isBefore(boutique.getEssaiFin())) return 0;
         long secondes = Duration.between(maintenant(), boutique.getEssaiFin()).getSeconds();
         return Math.max(1, (secondes + 86399) / 86400);
     }

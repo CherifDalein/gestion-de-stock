@@ -1,10 +1,11 @@
 <div th:fragment="content">
+    <link th:href="@{/css/abonnement.css}" rel="stylesheet" />
     <section class="platform-page" th:with="total=${#lists.size(boutiques)},actives=${#lists.size(boutiques.?[actif])},offertes=${#lists.size(boutiques.?[accesOffert])}">
         <header class="app-main-header">
             <div>
                 <p class="app-page-kicker">Administration plateforme</p>
                 <h1>Boutiques</h1>
-                <p class="app-page-subtitle">Gérez les boutiques, leurs utilisateurs et leurs accès.</p>
+                <p class="app-page-subtitle">Gérez les boutiques, leurs abonnements et leurs utilisateurs.</p>
             </div>
             <div class="app-actions"><a class="btn btn-outline-primary" th:href="@{/plateforme/parametres}">Durée de l’essai</a><a class="btn btn-primary" th:href="@{/plateforme/boutiques/nouvelle}"><i class="fa-solid fa-plus" aria-hidden="true"></i>Créer une boutique</a></div>
         </header>
@@ -34,7 +35,7 @@
             <div class="app-panel-heading">
                 <div>
                     <h2 id="platformBoutiquesTitle">Liste des boutiques</h2>
-                    <p>Le statut de la boutique et son type d’accès se règlent séparément.</p>
+                    <p>Retrouvez les abonnements, les essais et les accès offerts de chaque boutique.</p>
                 </div>
                 <span class="platform-count" th:text="${total + (total == 1 ? ' boutique' : ' boutiques')}">0 boutique</span>
             </div>
@@ -53,7 +54,7 @@
                         <th scope="col">Création</th>
                         <th scope="col">Utilisateurs</th>
                         <th scope="col">Statut</th>
-                        <th scope="col">Accès</th>
+                        <th scope="col">Abonnement / accès</th>
                         <th scope="col" class="text-end">Actions</th>
                     </tr></thead>
                     <tbody><tr th:each="b : ${boutiques}">
@@ -61,7 +62,7 @@
                         <td class="platform-date" th:text="${b.dateCreation != null ? #temporals.format(b.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
                         <td class="platform-number" th:text="${utilisateursParBoutique[b.id] ?: 0}">0</td>
                         <td><span class="platform-status" th:classappend="${b.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${b.actif ? 'Active' : 'Suspendue'}">Active</span></td>
-                        <td><span class="platform-access" th:classappend="${b.accesOffert ? 'platform-access--offered' : ''}" th:text="${b.accesOffert ? 'Offert' : (b.essaiFin == null ? 'Standard' : (essaisExpires.contains(b.id) ? 'Essai terminé' : 'Essai en cours'))}">Standard</span><small class="d-block mt-1 text-muted text-nowrap" th:if="${b.essaiFin != null and !b.accesOffert}" th:text="${'Fin : ' + #temporals.format(b.essaiFin, 'dd/MM/yyyy') + ' UTC'}"></small></td>
+                        <td th:with="s=${abonnementsParBoutique[b.id]}"><div class="abonnement-table-status"><span class="abonnement-status" th:classappend="${s.statut.name() == 'EXPIRE' or s.statut.name() == 'SUSPENDU' ? 'abonnement-status--limited' : 'abonnement-status--active'}" th:text="${s.statut.libelle}">Accès</span><small th:if="${s.statut.name() == 'ESSAI' and s.essaiFin != null}" th:text="${'Fin : ' + #temporals.format(s.essaiFin, 'dd/MM/yyyy') + ' UTC'}"></small><small th:if="${s.statut.name() == 'ABONNEMENT' and s.abonnementFin != null}" th:text="${'Fin : ' + #temporals.format(s.abonnementFin, 'dd/MM/yyyy') + ' UTC'}"></small><small th:if="${s.statut.name() == 'ESSAI' or s.statut.name() == 'ABONNEMENT'}" th:text="${s.joursRestants + (s.joursRestants == 1 ? ' jour restant' : ' jours restants')}"></small></div></td>
                         <td class="platform-actions-cell"><div class="app-row-actions"><a class="btn btn-outline-primary btn-sm app-row-action" th:href="@{/plateforme/boutiques/{id}(id=${b.id})}" th:attr="aria-label=${'Gérer la boutique ' + b.nom}"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>Gérer</span></a></div></td>
                     </tr></tbody>
                 </table>

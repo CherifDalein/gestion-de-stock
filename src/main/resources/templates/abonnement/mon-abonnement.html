@@ -1,0 +1,13 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <link th:href="@{/css/abonnement.css}" rel="stylesheet" />
+    <section class="record-page abonnement-page">
+        <header class="record-header">
+            <div><p class="record-kicker">Votre boutique</p><h1>Mon abonnement</h1><p class="record-intro">Consultez l’accès de <strong th:text="${vueAbonnement.situation.nomBoutique}">votre boutique</strong> et son historique.</p></div>
+            <a class="btn btn-outline-secondary record-back" th:href="@{/mon-compte}"><i class="fa-solid fa-user-shield" aria-hidden="true"></i>Mon compte</a>
+        </header>
+        <div th:replace="~{fragments/abonnement :: situation(${vueAbonnement.situation})}"></div>
+        <p class="record-note abonnement-contact">Pour activer ou renouveler un abonnement, prolonger un essai ou demander un accès offert, contactez l’administration de Stock Pro. Les changements sont enregistrés manuellement dans cet espace.</p>
+        <div th:replace="~{fragments/abonnement :: historique(${vueAbonnement}, '/mon-abonnement')}"></div>
+    </section>
+</div>

@@ -17,7 +17,7 @@ import java.util.Set;
 @Configuration
 public class EssaiAccessConfiguration implements WebMvcConfigurer {
     private static final Set<String> PUBLICS = Set.of("/accueil", "/login", "/logout", "/error", "/inscription",
-            "/inscription/confirmer", "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe", "/acces-boutique");
+            "/inscription/confirmer", "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe", "/acces-boutique", "/mon-abonnement");
     private final UtilisateurRepository utilisateurs;
     private final EssaiBoutiqueService essais;
 

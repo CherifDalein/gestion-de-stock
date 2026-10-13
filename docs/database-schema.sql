@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     date_creation DATETIME(6) NOT NULL,
     essai_debut DATETIME(6) NULL,
     essai_fin DATETIME(6) NULL,
+    abonnement_debut DATETIME(6) NULL,
+    abonnement_fin DATETIME(6) NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     acces_offert BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
@@ -212,4 +214,27 @@ CREATE TABLE IF NOT EXISTS parametres_plateforme (
     id INTEGER NOT NULL,
     duree_essai_jours INTEGER NOT NULL,
     PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Journal des décisions administratives ; aucune écriture historique n'est inventée.
+CREATE TABLE IF NOT EXISTS historique_abonnement (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    acteur_id BIGINT NOT NULL,
+    acteur_nom VARCHAR(255) NOT NULL,
+    action VARCHAR(32) NOT NULL,
+    cree_le DATETIME(6) NOT NULL,
+    periode_debut DATETIME(6) NULL,
+    periode_fin DATETIME(6) NULL,
+    ancienne_fin DATETIME(6) NULL,
+    motif VARCHAR(500) NULL,
+    jeton_action VARCHAR(36) NOT NULL,
+    quantite INTEGER NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_historique_abonnement_jeton UNIQUE (jeton_action),
+    CONSTRAINT fk_historique_abonnement_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_historique_abonnement_acteur
+        FOREIGN KEY (acteur_id) REFERENCES utilisateur (id),
+    INDEX idx_historique_abonnement_boutique_date (boutique_id, cree_le, id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

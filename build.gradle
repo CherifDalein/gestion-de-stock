@@ -204,3 +204,27 @@ tasks.register('inscriptionEssaiMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.InscriptionEssaiMariaDbTest'
 }
+
+['abonnementCheck': '--check', 'abonnementMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Vérifie ou ajoute les périodes et le journal des abonnements sans modifier les accès existants'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.AbonnementMigration'
+        args mode
+    }
+}
+
+tasks.register('abonnementMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les périodes et le journal des abonnements dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.AbonnementMariaDbTest'
+}
+
+tasks.register('abonnementServiceMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les renouvellements et leurs accès concurrents avec les vrais services sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.AbonnementServiceMariaDbTest'
+}

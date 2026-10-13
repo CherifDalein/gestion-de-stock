@@ -41,7 +41,7 @@ public class BoutiqueService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à cette boutique est suspendu");
         }
         if (essais.estExpire(boutique)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'essai gratuit de cette boutique est terminé");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'essai gratuit ou l'abonnement de cette boutique est arrivé à expiration");
         }
         return boutique;
     }
