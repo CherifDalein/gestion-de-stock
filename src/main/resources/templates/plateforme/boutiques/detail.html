@@ -14,6 +14,7 @@
 
         <section class="app-panel" aria-labelledby="platformSummaryTitle">
             <div class="app-panel-heading"><div><h2 id="platformSummaryTitle">Informations de la boutique</h2><p>Le statut et le type d’accès sont indépendants.</p></div></div>
+            <p th:if="${boutique.essaiFin != null}" class="alert alert-info" th:text="${(boutique.accesOffert ? 'Accès offert. Essai initial : ' : (essaiExpire ? 'Essai terminé. Fin : ' : 'Essai en cours. Fin : ')) + #temporals.format(boutique.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC.'}"></p>
             <dl class="platform-summary">
                 <div><dt>Création</dt><dd th:text="${boutique.dateCreation != null ? #temporals.format(boutique.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></dd></div>
                 <div><dt>Statut</dt><dd><span class="platform-status" th:classappend="${boutique.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${boutique.actif ? 'Active' : 'Suspendue'}"></span></dd></div>

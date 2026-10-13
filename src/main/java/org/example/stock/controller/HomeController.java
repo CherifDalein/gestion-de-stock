@@ -4,6 +4,8 @@ import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
 import org.example.stock.service.CaisseService;
 import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.EssaiBoutiqueService;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +23,13 @@ public class HomeController {
     @Autowired CaisseService caisseService;
     @Autowired VenteRepository venteRepository;
     @Autowired BoutiqueService boutiqueService;
+    @Autowired EssaiBoutiqueService essais;
+
+    @GetMapping("/accueil")
+    public String accueil(Model model) {
+        model.addAttribute("dureeEssaiJours", essais.dureeEssaiJours());
+        return "accueil";
+    }
 
     @GetMapping("/plateforme")
     public String plateforme() {
@@ -29,6 +38,12 @@ public class HomeController {
 
     @GetMapping("/")
     public String dashboard(Model model, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) return accueil(model);
+        if (authentication.getAuthorities().stream().noneMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+                || "ROLE_CAISSIER".equals(a.getAuthority()))) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+        }
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
         if (authentication.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             model.addAttribute("view", "dashboard");

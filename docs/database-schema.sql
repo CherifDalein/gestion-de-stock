@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     telephone VARCHAR(50) NULL,
     email VARCHAR(254) NULL,
     date_creation DATETIME(6) NOT NULL,
+    essai_debut DATETIME(6) NULL,
+    essai_fin DATETIME(6) NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     acces_offert BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
@@ -193,4 +195,21 @@ CREATE TABLE IF NOT EXISTS reinitialisation_mot_de_passe (
     CONSTRAINT uk_reinitialisation_mdp_jeton UNIQUE (empreinte_jeton),
     CONSTRAINT fk_reinitialisation_mdp_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Une demande confirme seulement l'email ; aucune boutique ni aucun mot de passe n'existe encore.
+CREATE TABLE IF NOT EXISTS inscription_boutique (
+    email VARCHAR(254) NOT NULL,
+    empreinte_jeton VARCHAR(64) NOT NULL,
+    cree_le DATETIME(6) NOT NULL,
+    expire_le DATETIME(6) NOT NULL,
+    PRIMARY KEY (email),
+    CONSTRAINT uk_inscription_boutique_jeton UNIQUE (empreinte_jeton)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Aucun INSERT : sans réglage enregistré, la configuration stock.trial.days fournit 30 jours.
+CREATE TABLE IF NOT EXISTS parametres_plateforme (
+    id INTEGER NOT NULL,
+    duree_essai_jours INTEGER NOT NULL,
+    PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

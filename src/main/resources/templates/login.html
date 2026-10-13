@@ -49,6 +49,9 @@
                 <div th:if="${param.passwordReset}" class="alert alert-success" role="status">
                     Votre mot de passe a été réinitialisé. Connectez-vous avec votre nouveau mot de passe.
                 </div>
+                <div th:if="${param.boutiqueCreated}" class="alert alert-success" role="status">
+                    Votre boutique a été créée et votre essai gratuit a commencé. Connectez-vous pour accéder à votre espace.
+                </div>
                 <div th:if="${param.expired}" class="alert alert-info" role="status">
                     Votre session a expiré. Connectez-vous à nouveau.
                 </div>
@@ -65,7 +68,9 @@
                 <button type="submit" class="auth-submit">Se connecter<span aria-hidden="true">→</span></button>
             </form>
             <div class="auth-card-footer">
-                Pour obtenir un compte, contactez votre administrateur.
+                <a class="auth-back-link" th:href="@{/inscription}">Créer ma boutique<span aria-hidden="true">→</span></a>
+                <p class="mb-0">Pour rejoindre une boutique existante, contactez son gérant.</p>
+                <a class="auth-back-link" th:href="@{/accueil}"><span aria-hidden="true">←</span>Retour à l’accueil</a>
             </div>
         </div>
     </section>

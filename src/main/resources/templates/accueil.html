@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15805d">
+    <meta name="description" content="Gérez le stock, les achats, les ventes et la caisse de votre boutique avec Stock Pro. Créez votre espace et commencez votre essai gratuit.">
+    <title>Stock Pro · Votre boutique, en toute clarté</title>
+    <link th:href="@{/css/accueil.css}" rel="stylesheet">
+</head>
+<body class="stock-landing">
+<a class="landing-skip" href="#contenu">Aller au contenu</a>
+<header class="landing-header">
+    <div class="landing-container landing-nav">
+        <a class="landing-brand" th:href="@{/accueil}" aria-label="Stock Pro, accueil">
+            <span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg></span>
+            <span>Stock Pro</span>
+        </a>
+        <nav class="landing-nav-links" aria-label="Navigation principale">
+            <a class="landing-nav-section" href="#fonctionnalites">Fonctionnalités</a>
+            <a class="landing-nav-section" href="#comment-commencer">Comment commencer</a>
+            <a class="landing-login" th:href="@{/login}">Se connecter<span aria-hidden="true">↗</span></a>
+        </nav>
+    </div>
+</header>
+
+<main id="contenu">
+    <section class="landing-hero landing-container" aria-labelledby="hero-titre">
+        <div class="landing-hero-copy">
+            <p class="landing-eyebrow"><span aria-hidden="true"></span>Pour les boutiques et leurs équipes</p>
+            <h1 id="hero-titre">Votre stock.<br>Vos ventes.<br><em>Une vue claire.</em></h1>
+            <p class="landing-hero-description">Des achats aux règlements, retrouvez toute l’activité de votre boutique dans un même espace. Moins de recherches, plus de visibilité au quotidien.</p>
+            <div class="landing-hero-actions">
+                <a class="landing-button landing-button-primary" th:href="@{/inscription}">Créer ma boutique<span aria-hidden="true">→</span></a>
+                <a class="landing-text-link" href="#fonctionnalites">Découvrir Stock Pro<span aria-hidden="true">↓</span></a>
+            </div>
+            <p class="landing-trial-caption"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Essai gratuit de <strong th:text="${dureeEssaiJours}">30</strong> jours pour votre boutique</span></p>
+        </div>
+
+        <div class="landing-preview-wrap">
+            <figure class="landing-preview" aria-label="Exemple illustratif de l’espace de gestion Stock Pro">
+                <figcaption class="landing-preview-top"><span><span class="landing-preview-dot" aria-hidden="true"></span>Votre espace de gestion</span><span class="landing-example-label">Aperçu illustratif</span></figcaption>
+                <div class="landing-preview-heading"><div><p>Boutique démo</p><h2>Vue d’ensemble</h2></div><span class="landing-preview-avatar" aria-hidden="true">BD</span></div>
+                <div class="landing-preview-stats">
+                    <div><span class="landing-preview-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v14H4zM3 3h18v3H3zM9 10h6"/></svg></span><p>Produits suivis</p><strong>24</strong><span class="landing-stat-note">Un catalogue organisé</span></div>
+                    <div><span class="landing-preview-stat-icon landing-icon-mint" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 7h6M9 11h6M9 15h3"/></svg></span><p>Ventes du jour</p><strong>8</strong><span class="landing-stat-note">Chaque opération suivie</span></div>
+                </div>
+                <div class="landing-preview-stock"><div class="landing-preview-section-heading"><h3>Votre stock, en un coup d’œil</h3><span aria-hidden="true">↗</span></div>
+                    <div class="landing-preview-row"><span><span class="landing-product-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10v18H7zM7 7h10M10 11h4M10 15h4"/></svg></span><span>Riz<br><small>Produits alimentaires</small></span></span><span class="landing-preview-quantity">18 <span>Disponible</span></span></div>
+                    <div class="landing-preview-row"><span><span class="landing-product-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6v4l3 4v10H6V11l3-4V3ZM6 13h12"/></svg></span><span>Huile<br><small>Produits alimentaires</small></span></span><span class="landing-preview-quantity">12 <span>Disponible</span></span></div>
+                    <div class="landing-preview-row"><span><span class="landing-product-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h10l2 18H5L7 3ZM7 7h10M9 11h6M9 15h6"/></svg></span><span>Sucre<br><small>Produits alimentaires</small></span></span><span class="landing-preview-quantity">6 <span>Disponible</span></span></div>
+                </div>
+                <div class="landing-preview-footer"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 4 4L19 6"/></svg></span>Stock, ventes et règlements réunis</div>
+            </figure>
+            <div class="landing-team-note"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M15 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM21 20v-2a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74"/></svg></span><div><strong>Une boutique, une équipe</strong><p>Un espace pour le gérant et ses caissiers.</p></div></div>
+        </div>
+    </section>
+
+    <section class="landing-features-section" id="fonctionnalites" aria-labelledby="fonctionnalites-titre">
+        <div class="landing-container">
+            <div class="landing-section-heading"><p class="landing-eyebrow">Tout se retrouve au même endroit</p><h2 id="fonctionnalites-titre">Gardez le fil de votre activité.</h2><p>Les outils utiles pour gérer votre boutique, de l’arrivée des produits à l’encaissement.</p></div>
+            <div class="landing-feature-grid">
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v14H4zM3 3h18v3H3zM9 10h6"/></svg></span><h3>Produits et stock</h3><p>Organisez votre catalogue et consultez les quantités disponibles pour chaque produit.</p></article>
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 7h12v12H3zM15 11h3l3 4v4h-6M3 11h12M6 19a2 2 0 1 0 4 0M16 19a2 2 0 1 0 4 0M7 3h4"/></svg></span><h3>Achats et fournisseurs</h3><p>Enregistrez vos achats, vos fournisseurs et les règlements associés à chaque opération.</p></article>
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 3h2l3 12h11l2-8H6M9 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM18 21a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z"/></svg></span><h3>Ventes et clients</h3><p>Retrouvez vos ventes, les comptes clients et les montants qui restent à régler.</p></article>
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3ZM9 7h6M9 11h6M9 15h3"/></svg></span><h3>Factures à votre nom</h3><p>Préparez vos factures avec les coordonnées de votre boutique et imprimez-les.</p></article>
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 10h18v11H3zM5 3h14v7H5zM8 6h8M3 15h18M16 18h2"/></svg></span><h3>Suivi de la caisse</h3><p>Consultez les entrées, les sorties et le journal de caisse pour suivre vos mouvements.</p></article>
+                <article class="landing-feature"><span class="landing-feature-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M15 20v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM21 20v-2a4 4 0 0 0-3-3.87M16 4.13a3 3 0 0 1 0 5.74"/></svg></span><h3>Vos utilisateurs</h3><p>Créez les comptes de votre équipe et gérez leur accès depuis votre boutique.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-start landing-container" id="comment-commencer" aria-labelledby="commencer-titre">
+        <div class="landing-section-heading"><p class="landing-eyebrow">Votre boutique en quelques étapes</p><h2 id="commencer-titre">Un espace qui vous appartient.</h2><p>Créez votre boutique, puis ajoutez vos produits et les membres de votre équipe.</p></div>
+        <ol class="landing-steps">
+            <li><span class="landing-step-number" aria-hidden="true">01</span><div><h3>Validez votre email</h3><p>Recevez un lien personnel à l’adresse que vous utiliserez pour vous connecter.</p></div></li>
+            <li><span class="landing-step-number" aria-hidden="true">02</span><div><h3>Créez votre boutique</h3><p>Indiquez son nom, votre nom et choisissez votre mot de passe.</p></div></li>
+            <li><span class="landing-step-number" aria-hidden="true">03</span><div><h3>Commencez votre essai</h3><p>Découvrez Stock Pro pendant <strong th:text="${dureeEssaiJours}">30</strong> jours et gérez vos premières opérations.</p></div></li>
+        </ol>
+    </section>
+
+    <section class="landing-trial landing-container" aria-labelledby="essai-titre">
+        <div><p class="landing-eyebrow">Prenez le temps de découvrir Stock Pro</p><h2 id="essai-titre"><span th:text="${dureeEssaiJours}">30</span> jours pour essayer,<br>avec votre boutique.</h2><p>L’essai commence à la création de votre boutique. Votre espace accueille votre compte de gérant et les utilisateurs de votre équipe.</p></div>
+        <a class="landing-button landing-button-light" th:href="@{/inscription}">Commencer mon essai<span aria-hidden="true">→</span></a>
+    </section>
+
+    <section class="landing-faq landing-container" aria-labelledby="questions-titre">
+        <div class="landing-section-heading"><p class="landing-eyebrow">Avant de commencer</p><h2 id="questions-titre">Quelques réponses utiles.</h2></div>
+        <div class="landing-faq-list">
+            <details><summary>L’essai concerne-t-il chaque utilisateur ?<span aria-hidden="true">+</span></summary><p>L’essai concerne votre boutique. Vous pouvez y créer plusieurs comptes pour travailler avec votre équipe, chacun avec son propre accès.</p></details>
+            <details><summary>Quand commencent les <span th:text="${dureeEssaiJours}">30</span> jours d’essai ?<span aria-hidden="true">+</span></summary><p>L’essai démarre lorsque vous terminez la création de votre boutique, après avoir validé votre adresse email.</p></details>
+            <details><summary>Puis-je personnaliser mes factures ?<span aria-hidden="true">+</span></summary><p>Oui. Ajoutez le nom et les coordonnées de votre boutique dans ses paramètres pour les retrouver sur vos factures.</p></details>
+        </div>
+    </section>
+</main>
+
+<footer class="landing-footer"><div class="landing-container"><a class="landing-brand" th:href="@{/accueil}"><span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg></span><span>Stock Pro</span></a><p>Votre boutique, en toute clarté.</p><a th:href="@{/login}">Accéder à mon espace<span aria-hidden="true">↗</span></a></div></footer>
+</body>
+</html>

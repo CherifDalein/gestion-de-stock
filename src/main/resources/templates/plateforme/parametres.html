@@ -1,0 +1,15 @@
+<div th:fragment="content" xmlns:th="http://www.thymeleaf.org">
+    <section class="container-fluid px-4">
+        <header class="app-main-header"><div><p class="app-page-kicker">Administration plateforme</p><h1>Paramètres de la plateforme</h1><p class="app-page-subtitle">Réglez la durée de l’essai offert aux nouvelles boutiques.</p></div><a class="btn btn-outline-primary" th:href="@{/plateforme/boutiques}">Retour aux boutiques</a></header>
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <section class="app-panel" aria-labelledby="essaiTitle">
+            <h2 id="essaiTitle" class="h5">Essai gratuit</h2>
+            <p>La durée s’applique aux prochaines boutiques créées depuis la page d’inscription. Les essais déjà commencés gardent leur date de fin.</p>
+            <form th:action="@{/plateforme/parametres}" th:object="${parametresPlateforme}" method="post">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert"><p class="mb-0" th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p></div>
+                <div class="mb-4" style="max-width:24rem"><label class="form-label" for="dureeEssaiJours">Durée en jours</label><input class="form-control" id="dureeEssaiJours" type="number" min="1" max="3650" required th:field="*{dureeEssaiJours}" aria-describedby="dureeEssaiAide" th:attr="aria-invalid=${#fields.hasErrors('dureeEssaiJours')}" th:classappend="${#fields.hasErrors('dureeEssaiJours')} ? 'is-invalid' : ''"><p id="dureeEssaiAide" class="form-text">Entre 1 et 3 650 jours. L’essai commence à la création de la boutique.</p><p class="text-danger" role="alert" th:if="${#fields.hasErrors('dureeEssaiJours')}" th:errors="*{dureeEssaiJours}"></p></div>
+                <button type="submit" class="btn btn-primary">Enregistrer la durée</button>
+            </form>
+        </section>
+    </section>
+</div>

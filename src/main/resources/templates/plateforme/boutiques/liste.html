@@ -6,7 +6,7 @@
                 <h1>Boutiques</h1>
                 <p class="app-page-subtitle">Gérez les boutiques, leurs utilisateurs et leurs accès.</p>
             </div>
-            <a class="btn btn-primary" th:href="@{/plateforme/boutiques/nouvelle}"><i class="fa-solid fa-plus" aria-hidden="true"></i>Créer une boutique</a>
+            <div class="app-actions"><a class="btn btn-outline-primary" th:href="@{/plateforme/parametres}">Durée de l’essai</a><a class="btn btn-primary" th:href="@{/plateforme/boutiques/nouvelle}"><i class="fa-solid fa-plus" aria-hidden="true"></i>Créer une boutique</a></div>
         </header>
 
         <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
@@ -21,7 +21,7 @@
             <article class="app-metric-card">
                 <h2 class="app-metric-label">Actives</h2>
                 <p class="app-metric-value" th:text="${actives}">0</p>
-                <p class="platform-metric-help">Utilisateurs autorisés à accéder à leur boutique</p>
+                <p class="platform-metric-help">Boutiques sans suspension manuelle</p>
             </article>
             <article class="app-metric-card">
                 <h2 class="app-metric-label">Accès offerts</h2>
@@ -61,7 +61,7 @@
                         <td class="platform-date" th:text="${b.dateCreation != null ? #temporals.format(b.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
                         <td class="platform-number" th:text="${utilisateursParBoutique[b.id] ?: 0}">0</td>
                         <td><span class="platform-status" th:classappend="${b.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${b.actif ? 'Active' : 'Suspendue'}">Active</span></td>
-                        <td><span class="platform-access" th:classappend="${b.accesOffert ? 'platform-access--offered' : ''}" th:text="${b.accesOffert ? 'Offert' : 'Standard'}">Standard</span></td>
+                        <td><span class="platform-access" th:classappend="${b.accesOffert ? 'platform-access--offered' : ''}" th:text="${b.accesOffert ? 'Offert' : (b.essaiFin == null ? 'Standard' : (essaisExpires.contains(b.id) ? 'Essai terminé' : 'Essai en cours'))}">Standard</span><small class="d-block mt-1 text-muted text-nowrap" th:if="${b.essaiFin != null and !b.accesOffert}" th:text="${'Fin : ' + #temporals.format(b.essaiFin, 'dd/MM/yyyy') + ' UTC'}"></small></td>
                         <td class="platform-actions-cell"><div class="app-row-actions"><a class="btn btn-outline-primary btn-sm app-row-action" th:href="@{/plateforme/boutiques/{id}(id=${b.id})}" th:attr="aria-label=${'Gérer la boutique ' + b.nom}"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span>Gérer</span></a></div></td>
                     </tr></tbody>
                 </table>

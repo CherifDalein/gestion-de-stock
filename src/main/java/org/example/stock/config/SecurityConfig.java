@@ -22,9 +22,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**").permitAll()
                         .requestMatchers("/mot-de-passe-oublie", "/reinitialiser-mot-de-passe").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/accueil").permitAll()
+                        .requestMatchers("/inscription", "/inscription/confirmer").permitAll()
                         .requestMatchers("/plateforme", "/plateforme/**").hasRole("PLATEFORME_ADMIN")
                         .requestMatchers("/mon-compte", "/mon-compte/**").hasAnyRole("ADMIN", "CAISSIER")
-                        .requestMatchers(HttpMethod.GET, "/", "/produits").hasAnyRole("ADMIN", "CAISSIER")
+                        .requestMatchers(HttpMethod.GET, "/acces-boutique", "/produits").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",

@@ -90,9 +90,10 @@
                         <span class="app-nav-icon"><i class="fa-solid fa-users-gear" aria-hidden="true"></i></span>Utilisateurs
                     </a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('PLATEFORME_ADMIN')">Plateforme</div>
-                    <a class="nav-link" th:href="@{/plateforme/boutiques}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${#strings.startsWith(page, 'plateforme/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'plateforme/') ? 'page' : null}">
+                    <a class="nav-link" th:href="@{/plateforme/boutiques}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${#strings.startsWith(page, 'plateforme/boutiques/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'plateforme/boutiques/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></span>Administration plateforme
                     </a>
+                    <a class="nav-link" th:href="@{/plateforme/parametres}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${page == 'plateforme/parametres' ? 'active' : ''}" th:attr="aria-current=${page == 'plateforme/parametres' ? 'page' : null}"><span class="app-nav-icon"><i class="fa-solid fa-sliders" aria-hidden="true"></i></span>Paramètres de la plateforme</a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')">Votre compte</div>
                     <a class="nav-link" th:href="@{/mon-compte}" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')" th:classappend="${#strings.startsWith(page, 'compte/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'compte/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-user-shield" aria-hidden="true"></i></span>Mon compte
@@ -108,6 +109,7 @@
     <button class="app-mobile-backdrop" type="button" tabindex="-1" aria-label="Fermer le menu"></button>
     <div id="layoutSidenav_content">
         <main id="mainContent" tabindex="-1">
+            <div th:if="${essaiEnCours == true}" class="alert alert-success mx-4 mt-4" role="status"><strong>Essai gratuit</strong><span th:text="${' · ' + joursEssaiRestants + (joursEssaiRestants == 1 ? ' jour restant.' : ' jours restants.')}"></span><span th:if="${boutique != null and boutique.essaiFin != null}" th:text="${' Fin le ' + #temporals.format(boutique.essaiFin, 'dd/MM/yyyy HH:mm') + ' UTC.'}"></span></div>
             <div th:if="${page != 'dashboard'}"><div th:replace="~{__${view}__ :: content}"></div></div>
             <div th:if="${page == 'dashboard'}" class="container-fluid px-4">
                 <header class="app-main-header">

@@ -19,6 +19,8 @@ ne les impose pas.
 
 ## État actuel
 
+L’[inscription autonome et l’essai](inscription-et-essai.md) ajoutent une page d’accueil publique, la validation de l’email, la création du gérant et un essai de 30 jours réglable depuis l’administration de plateforme. Les paiements restent en attente. La durée est fixée pour chaque boutique à sa création ; les accès antérieurs sont conservés.
+
 Le premier lot introduit les boutiques et isole les données côté serveur. Chaque
 compte appartient à une boutique ; les rôles ADMIN et CAISSIER donnent des droits
 dans cet espace. Les listes, documents, relations, règlements, factures, verrous

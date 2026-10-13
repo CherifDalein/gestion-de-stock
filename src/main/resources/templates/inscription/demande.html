@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15805d">
+    <title>Créer ma boutique · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+    <link th:href="@{/css/inscription.css}" rel="stylesheet">
+</head>
+<body class="stock-auth stock-signup">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <a class="auth-brand" th:href="@{/accueil}" aria-label="Stock Pro, accueil">
+            <span class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg></span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </a>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre boutique, votre espace</p>
+            <h1 id="auth-intro-title">Tout commence<br>avec votre email.</h1>
+            <p class="auth-intro-description">Créez votre boutique et découvrez Stock Pro avec votre équipe pendant <strong th:text="${dureeEssaiJours}">30</strong> jours gratuits.</p>
+            <ol class="signup-steps" aria-label="Étapes de création">
+                <li class="signup-step-current" aria-current="step"><span aria-hidden="true">1</span><div><strong>Validez votre email</strong><p>Recevez votre lien de création.</p></div></li>
+                <li><span aria-hidden="true">2</span><div><strong>Créez votre boutique</strong><p>Choisissez son nom et votre mot de passe.</p></div></li>
+                <li><span aria-hidden="true">3</span><div><strong>Commencez votre essai</strong><p>Ajoutez vos produits et votre équipe.</p></div></li>
+            </ol>
+        </div>
+        <p class="auth-intro-footer">Une boutique. Plusieurs utilisateurs. Un même espace.</p>
+    </section>
+
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow">Étape 1 sur 2</p>
+                <h2 id="auth-form-title" th:text="${demandeEnvoyee} ? 'Consultez vos emails' : 'Créer ma boutique'">Créer ma boutique</h2>
+                <p th:if="${demandeEnvoyee != true}">Indiquez l’adresse email que vous utiliserez pour vous connecter.</p>
+                <p th:if="${demandeEnvoyee}">Le lien reçu vous permettra de terminer votre inscription.</p>
+            </div>
+            <div th:if="${demandeEnvoyee}" class="alert alert-success" role="status">
+                Si cette adresse peut être utilisée pour une inscription, vous recevrez un lien pour créer votre boutique.
+            </div>
+            <form th:if="${demandeEnvoyee != true}" th:action="@{/inscription}" th:object="${demandeInscription}" method="post" class="auth-form">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></li></ul>
+                </div>
+                <div class="auth-field">
+                    <label for="emailInscription">Votre email</label>
+                    <input id="emailInscription" class="form-control" type="email" th:field="*{email}" maxlength="254" autocomplete="email" placeholder="vous@exemple.fr" required
+                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('email')},aria-describedby=${#fields.hasErrors('email') ? 'emailInscriptionHelp emailInscriptionError' : 'emailInscriptionHelp'}">
+                    <p id="emailInscriptionHelp" class="auth-field-help">Vous recevrez un lien personnel pour créer votre boutique.</p>
+                    <p id="emailInscriptionError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}" role="alert"></p>
+                </div>
+                <button type="submit" class="auth-submit">Recevoir mon lien<span aria-hidden="true">→</span></button>
+                <p class="signup-trial-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Votre essai de <strong th:text="${dureeEssaiJours}">30</strong> jours commence à la création de votre boutique.</span></p>
+            </form>
+            <div th:if="${demandeEnvoyee}" class="signup-next-instructions">
+                <p>Consultez votre boîte de réception et vos courriers indésirables. Utilisez le lien reçu pour choisir le nom de votre boutique et votre mot de passe.</p>
+                <p>Vous avez déjà un compte à cette adresse ? Connectez-vous à votre espace.</p>
+                <a class="auth-back-link" th:href="@{/inscription}">Faire une nouvelle demande<span aria-hidden="true">→</span></a>
+            </div>
+            <div class="auth-card-footer">
+                Vous avez déjà un compte ? <a class="auth-back-link" th:href="@{/login}">Se connecter<span aria-hidden="true">→</span></a>
+                <a class="auth-back-link signup-home-link" th:href="@{/accueil}"><span aria-hidden="true">←</span>Retour à l’accueil</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,30 @@
+/* The public signup journey shares the existing sign-in design. */
+.stock-signup .auth-brand { text-decoration: none; }
+.stock-signup .auth-brand:focus-visible { outline: 3px solid var(--auth-green); outline-offset: 5px; }
+.stock-signup .auth-intro-description strong { font-weight: 650; }
+.stock-signup .auth-form-panel { padding-block: 44px; }
+.stock-signup .signup-steps { display: grid; gap: 25px; margin: 34px 0 0; padding: 0; list-style: none; }
+.stock-signup .signup-steps li { display: flex; align-items: flex-start; gap: 14px; }
+.stock-signup .signup-steps li > span { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid #d2dfd6; border-radius: 50%; color: var(--auth-muted); background: rgba(255, 255, 255, .65); font-size: .77rem; font-weight: 650; }
+.stock-signup .signup-steps .signup-step-current > span { border-color: var(--auth-green); color: #fff; background: var(--auth-green); }
+.stock-signup .signup-steps .signup-step-done > span { border-color: #c2dece; color: var(--auth-green-dark); background: #dcefe3; }
+.stock-signup .signup-steps strong { display: block; margin-top: 3px; font-size: .85rem; font-weight: 650; }
+.stock-signup .signup-steps p { margin: 5px 0 0; color: var(--auth-muted); font-size: .76rem; line-height: 1.6; }
+.stock-signup .signup-trial-note { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; color: var(--auth-muted); font-size: .74rem; line-height: 1.7; }
+.stock-signup .signup-trial-note svg { width: 17px; height: 17px; flex-shrink: 0; margin-top: 3px; stroke: var(--auth-green); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.stock-signup .signup-trial-note strong { font-weight: 650; }
+.stock-signup .signup-next-instructions { color: var(--auth-muted); font-size: .84rem; line-height: 1.8; }
+.stock-signup .signup-next-instructions p { margin: 0 0 16px; }
+.stock-signup .signup-email-confirmed { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 24px; border: 1px solid #dbe8df; border-radius: 10px; background: #f3f8f5; }
+.stock-signup .signup-email-icon { display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px; color: var(--auth-green-dark); background: #e5f0e9; }
+.stock-signup .signup-email-icon svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.stock-signup .signup-email-confirmed > div { min-width: 0; }
+.stock-signup .signup-email-confirmed > div > span { display: block; margin-bottom: 4px; color: var(--auth-muted); font-size: .71rem; }
+.stock-signup .signup-email-confirmed strong { display: block; overflow-wrap: anywhere; font-size: .84rem; font-weight: 600; }
+.stock-signup .signup-home-link { display: flex; justify-content: center; width: fit-content; margin-inline: auto; }
+.stock-signup .auth-card-footer > .auth-back-link { min-height: 44px; margin-top: 0; }
+@media (max-width: 767px) {
+    .stock-signup .signup-steps { display: none; }
+    .stock-signup .auth-form-panel { padding-block: 30px; }
+    .stock-signup .signup-trial-note { font-size: .72rem; }
+}

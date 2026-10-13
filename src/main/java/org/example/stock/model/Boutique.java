@@ -47,6 +47,11 @@ public class Boutique {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean accesOffert;
 
+    /** Dates UTC de l'essai public ; null pour les boutiques créées avant son introduction. */
+    private LocalDateTime essaiDebut;
+
+    private LocalDateTime essaiFin;
+
     @PrePersist
     private void daterCreation() {
         if (dateCreation == null) dateCreation = LocalDateTime.now();

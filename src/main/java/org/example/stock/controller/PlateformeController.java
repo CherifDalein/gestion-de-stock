@@ -8,6 +8,7 @@ import org.example.stock.form.AccesUtilisateurForm;
 import org.example.stock.service.AccesUtilisateurService;
 import org.example.stock.service.EmailDejaUtiliseException;
 import org.example.stock.service.PlateformeService;
+import org.example.stock.service.EssaiBoutiqueService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -34,10 +35,12 @@ import java.util.stream.Stream;
 public class PlateformeController {
     private final PlateformeService plateforme;
     private final AccesUtilisateurService accesUtilisateurs;
+    private final EssaiBoutiqueService essais;
 
-    public PlateformeController(PlateformeService plateforme, AccesUtilisateurService accesUtilisateurs) {
+    public PlateformeController(PlateformeService plateforme, AccesUtilisateurService accesUtilisateurs, EssaiBoutiqueService essais) {
         this.plateforme = plateforme;
         this.accesUtilisateurs = accesUtilisateurs;
+        this.essais = essais;
     }
 
     @InitBinder({"formulaire", "accesBoutique", "accesUtilisateur"})
@@ -64,7 +67,10 @@ public class PlateformeController {
 
     @GetMapping
     public String liste(Model model) {
-        model.addAttribute("boutiques", plateforme.listerBoutiques());
+        var boutiques = plateforme.listerBoutiques();
+        model.addAttribute("boutiques", boutiques);
+        model.addAttribute("essaisExpires", boutiques.stream().filter(essais::estExpire)
+                .map(org.example.stock.model.Boutique::getId).collect(java.util.stream.Collectors.toSet()));
         model.addAttribute("utilisateursParBoutique", plateforme.compterUtilisateursParBoutique());
         model.addAttribute("view", "plateforme/boutiques/liste");
         return "dashboard";
@@ -108,6 +114,7 @@ public class PlateformeController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model model) {
         var boutique = plateforme.trouverBoutique(id);
+        model.addAttribute("essaiExpire", essais.estExpire(boutique));
         AccesBoutiqueForm acces = new AccesBoutiqueForm();
         acces.setActif(boutique.isActif());
         acces.setAccesOffert(boutique.isAccesOffert());

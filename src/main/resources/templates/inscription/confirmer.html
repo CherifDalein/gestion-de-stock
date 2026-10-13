@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#15805d">
+    <meta name="referrer" content="no-referrer">
+    <title>Votre nouvelle boutique · Stock Pro</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/auth.css}" rel="stylesheet">
+    <link th:href="@{/css/inscription.css}" rel="stylesheet">
+</head>
+<body class="stock-auth stock-signup">
+<main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-intro-title">
+        <a class="auth-brand" th:href="@{/accueil}" aria-label="Stock Pro, accueil">
+            <span class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg></span>
+            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
+        </a>
+        <div class="auth-intro-content">
+            <p class="auth-eyebrow">Votre boutique, votre espace</p>
+            <h1 id="auth-intro-title">Prêt à gérer<br>votre boutique ?</h1>
+            <p class="auth-intro-description">Votre compte de gérant vous permettra de gérer vos produits, vos opérations et les accès de votre équipe.</p>
+            <ol class="signup-steps" aria-label="Étapes de création">
+                <li th:class="${lienInvalide} ? '' : 'signup-step-done'"><span aria-hidden="true" th:text="${lienInvalide} ? '1' : '✓'">✓</span><div><strong th:text="${lienInvalide} ? 'Validez votre email' : 'Votre email est validé'">Votre email est validé</strong><p>Votre adresse servira à vous connecter.</p></div></li>
+                <li class="signup-step-current" aria-current="step"><span aria-hidden="true">2</span><div><strong>Créez votre boutique</strong><p>Choisissez son nom et votre mot de passe.</p></div></li>
+                <li><span aria-hidden="true">3</span><div><strong>Commencez votre essai</strong><p><span th:text="${dureeEssaiJours}">30</span> jours pour découvrir Stock Pro.</p></div></li>
+            </ol>
+        </div>
+        <p class="auth-intro-footer">Une gestion simple, au quotidien.</p>
+    </section>
+
+    <section class="auth-form-panel" aria-labelledby="auth-form-title">
+        <div class="auth-card">
+            <div class="auth-card-heading">
+                <p class="auth-eyebrow" th:text="${lienInvalide} ? 'Créer ma boutique' : 'Étape 2 sur 2'">Étape 2 sur 2</p>
+                <h2 id="auth-form-title" th:text="${lienInvalide} ? 'Un nouveau lien est nécessaire' : 'Votre nouvelle boutique'">Votre nouvelle boutique</h2>
+                <p th:if="${lienInvalide != true}">Complétez ces informations pour commencer votre essai gratuit.</p>
+            </div>
+            <div th:if="${lienInvalide}" class="alert alert-danger" role="alert">
+                Ce lien est invalide, a expiré ou a déjà été utilisé. Faites une nouvelle demande pour créer votre boutique.
+            </div>
+            <a th:if="${lienInvalide}" class="auth-back-link" th:href="@{/inscription}">Recevoir un nouveau lien<span aria-hidden="true">→</span></a>
+            <form th:if="${lienInvalide != true}" th:action="@{/inscription/confirmer}" th:object="${confirmationInscription}" method="post" class="auth-form">
+                <input type="hidden" name="jeton" th:value="*{jeton}">
+                <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                    <ul class="mb-0"><li th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></li></ul>
+                </div>
+                <div class="signup-email-confirmed"><span class="signup-email-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3 5h18v14H3zM3 5l9 7 9-7"/></svg></span><div><span>Email de connexion</span><strong th:text="${emailInscription}">vous@exemple.fr</strong></div></div>
+                <div class="auth-field">
+                    <label for="nomBoutique">Nom de votre boutique</label>
+                    <input id="nomBoutique" class="form-control" type="text" th:field="*{nomBoutique}" maxlength="255" autocomplete="organization" placeholder="Le nom de votre boutique" required
+                           th:classappend="${#fields.hasErrors('nomBoutique')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('nomBoutique')},aria-describedby=${#fields.hasErrors('nomBoutique') ? 'nomBoutiqueError' : null}">
+                    <p id="nomBoutiqueError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('nomBoutique')}" th:errors="*{nomBoutique}" role="alert"></p>
+                </div>
+                <div class="auth-field">
+                    <label for="nom">Votre nom</label>
+                    <input id="nom" class="form-control" type="text" th:field="*{nom}" maxlength="255" autocomplete="name" placeholder="Votre nom" required
+                           th:classappend="${#fields.hasErrors('nom')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('nom')},aria-describedby=${#fields.hasErrors('nom') ? 'nomError' : null}">
+                    <p id="nomError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('nom')}" th:errors="*{nom}" role="alert"></p>
+                </div>
+                <div class="auth-field">
+                    <label for="nouveauMotDePasse">Votre mot de passe</label>
+                    <input id="nouveauMotDePasse" class="form-control" type="password" name="nouveauMotDePasse" autocomplete="new-password" minlength="15" maxlength="72" required
+                           th:classappend="${#fields.hasErrors('nouveauMotDePasse')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('nouveauMotDePasse')},aria-describedby=${#fields.hasErrors('nouveauMotDePasse') ? 'nouveauMotDePasseHelp nouveauMotDePasseError' : 'nouveauMotDePasseHelp'}">
+                    <p id="nouveauMotDePasseHelp" class="auth-field-help">Au moins 15 caractères et au maximum 72 octets en UTF-8. Les accents et les émojis comptent pour plusieurs octets. Une phrase de passe est facile à retenir.</p>
+                    <p id="nouveauMotDePasseError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('nouveauMotDePasse')}" th:errors="*{nouveauMotDePasse}" role="alert"></p>
+                </div>
+                <div class="auth-field">
+                    <label for="confirmationMotDePasse">Confirmer votre mot de passe</label>
+                    <input id="confirmationMotDePasse" class="form-control" type="password" name="confirmationMotDePasse" autocomplete="new-password" minlength="15" maxlength="72" required
+                           th:classappend="${#fields.hasErrors('confirmationMotDePasse')} ? 'is-invalid' : ''"
+                           th:attr="aria-invalid=${#fields.hasErrors('confirmationMotDePasse')},aria-describedby=${#fields.hasErrors('confirmationMotDePasse') ? 'confirmationMotDePasseError' : null}">
+                    <p id="confirmationMotDePasseError" class="auth-field-help text-danger" th:if="${#fields.hasErrors('confirmationMotDePasse')}" th:errors="*{confirmationMotDePasse}" role="alert"></p>
+                </div>
+                <button type="submit" class="auth-submit">Créer ma boutique<span aria-hidden="true">→</span></button>
+                <p class="signup-trial-note"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Votre essai gratuit de <strong th:text="${dureeEssaiJours}">30</strong> jours commence à la création de votre boutique.</span></p>
+            </form>
+            <div class="auth-card-footer">
+                <a class="auth-back-link" th:href="@{/login}">Vous avez déjà un compte ? Se connecter<span aria-hidden="true">→</span></a>
+                <a class="auth-back-link signup-home-link" th:href="@{/accueil}"><span aria-hidden="true">←</span>Retour à l’accueil</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

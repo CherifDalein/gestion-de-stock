@@ -14,7 +14,8 @@ import java.util.Set;
 
 /** Refuse les sessions authentifiées avant un changement de mot de passe, sans registre local de sessions. */
 public final class ValidationSessionFilter extends OncePerRequestFilter {
-    private static final Set<String> PUBLICS = Set.of("/login", "/error", "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe");
+    private static final Set<String> PUBLICS = Set.of("/", "/accueil", "/login", "/error", "/inscription", "/inscription/confirmer",
+            "/mot-de-passe-oublie", "/reinitialiser-mot-de-passe");
     private final UtilisateurRepository utilisateurs;
 
     public ValidationSessionFilter(UtilisateurRepository utilisateurs) {

@@ -3,6 +3,7 @@ package org.example.stock.controller;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.enums.Role;
 import org.example.stock.repository.UtilisateurRepository;
+import org.example.stock.service.EssaiBoutiqueService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +20,9 @@ public class GlobalControllerAdvice {
     @Autowired
     private UtilisateurRepository utilisateurRepository;
 
+    @Autowired
+    private EssaiBoutiqueService essais;
+
     @ModelAttribute
     public void addAttributes(Model model, Authentication authentication, HttpServletRequest request) {
         String chemin = request.getServletPath();
@@ -27,6 +31,7 @@ public class GlobalControllerAdvice {
         }
         if ("/login".equals(chemin) || "/error".equals(chemin)
                 || "/mot-de-passe-oublie".equals(chemin) || "/reinitialiser-mot-de-passe".equals(chemin)) return;
+        if ("/accueil".equals(chemin) || "/inscription".equals(chemin) || "/inscription/confirmer".equals(chemin)) return;
         if (authentication != null && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             Utilisateur utilisateur = utilisateurRepository.findByEmail(authentication.getName())
@@ -50,6 +55,10 @@ public class GlobalControllerAdvice {
             }
             model.addAttribute("utilisateur", utilisateur);
             model.addAttribute("boutique", utilisateur.getBoutique());
+            if (utilisateur.getBoutique().getEssaiFin() != null && !utilisateur.getBoutique().isAccesOffert()) {
+                model.addAttribute("essaiEnCours", !essais.estExpire(utilisateur.getBoutique()));
+                model.addAttribute("joursEssaiRestants", essais.joursRestants(utilisateur.getBoutique()));
+            }
         }
     }
 }

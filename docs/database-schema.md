@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les treize tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires et le stockage des liens de réinitialisation. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les quinze tables du schéma actuel, dont `boutique`, les neuf références `boutique_id` obligatoires, le stockage des liens de réinitialisation et celui des inscriptions publiques. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -21,6 +21,7 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 - `telephone` VARCHAR(50) NULL : téléphone commercial facultatif
 - `email` VARCHAR(254) NULL : email commercial facultatif, indépendant des emails de connexion
 - `date_creation` DATETIME(6) NOT NULL
+- `essai_debut`, `essai_fin` DATETIME(6) NULL : bornes UTC persistées de l'essai ; toutes deux vides pour les boutiques historiques
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
 
@@ -72,6 +73,31 @@ transaction que le changement de mot de passe lors de son utilisation. Un
 changement depuis Mon compte invalide aussi les liens précédemment émis. La
 [migration dédiée](migrations/reinitialisation-mdp.md) ajoute uniquement cette
 table vide ; elle conserve les douze tables et les comptes existants.
+
+### `inscription_boutique`
+
+- `email` VARCHAR(254) PK : email valide et normalisé de la demande
+- `empreinte_jeton` VARCHAR(64) NOT NULL UNIQUE : SHA-256 du lien de confirmation, jamais le lien utilisable
+- `cree_le`, `expire_le` DATETIME(6) NOT NULL : dates UTC de la demande et de sa limite
+
+Cette demande est indépendante des comptes et des liens de récupération. Elle
+ne contient aucun mot de passe et aucune clé étrangère vers une boutique.
+L'utilisation du lien crée la boutique et son gérant dans une seule transaction,
+puis supprime la demande. Un email de compte existant ne devient pas un nouvel
+espace et n'acquiert aucun droit supplémentaire.
+
+### `parametres_plateforme`
+
+- `id` INTEGER PK : valeur unique applicative `1`, sans auto-incrément
+- `duree_essai_jours` INTEGER NOT NULL : durée des nouveaux essais, de 1 à 3650 jours
+
+La ligne est facultative. Tant qu'aucun réglage n'est enregistré, la configuration
+`stock.trial.days` fournit la durée, 30 jours par défaut. La date de fin est fixée
+lors de la création effective de chaque boutique : modifier la durée globale ne
+change aucun essai déjà commencé. Les boutiques historiques gardent leurs dates
+d'essai vides ; aucun délai n'est ajouté automatiquement. `acces_offert` reste
+distinct de la suspension manuelle et de l'essai. Voir la
+[migration inscription et essai](migrations/inscription-essai.md).
 
 ### `produit`
 - `id` PK
@@ -171,6 +197,8 @@ erDiagram
         VARCHAR telephone
         VARCHAR email
         DATETIME date_creation
+        DATETIME essai_debut
+        DATETIME essai_fin
         BOOLEAN actif
         BOOLEAN acces_offert
     }
@@ -178,6 +206,16 @@ erDiagram
         BIGINT id PK
         BIGINT boutique_id FK
         VARCHAR nom
+    }
+    INSCRIPTION_BOUTIQUE {
+        VARCHAR email PK
+        VARCHAR empreinte_jeton UK
+        DATETIME cree_le
+        DATETIME expire_le
+    }
+    PARAMETRES_PLATEFORME {
+        INT id PK
+        INT duree_essai_jours
     }
     CLIENT {
         BIGINT id PK
@@ -286,6 +324,9 @@ erDiagram
 - `Produit.java`
 - `Utilisateur.java`
 - `Vente.java`
+- `ReinitialisationMotDePasse.java`
+- `InscriptionBoutique.java`
+- `ParametresPlateforme.java`
 
 ## Remarques
 
@@ -366,3 +407,14 @@ Après la migration des accès plateforme, suivre le [guide des accès utilisate
 ## Mise à jour d'une base existante : coordonnées des boutiques
 
 Après la migration des accès utilisateurs, suivre le [guide des paramètres boutique](migrations/parametres-boutique.md). Il ajoute les trois coordonnées facultatives de `boutique` : adresse, téléphone et email. Les noms, dates, états, droits et toutes les anciennes colonnes des douze tables restent identiques. Les anciennes boutiques reçoivent des coordonnées `NULL` ; aucune adresse n'est déduite d'un compte ou d'un partenaire. Un schéma déjà conforme conserve les coordonnées saisies lors des relances.
+
+## Mise à jour d'une base existante : inscription publique et essais
+
+Après la migration des liens de réinitialisation, suivre le
+[guide inscription et essai](migrations/inscription-essai.md). Il ajoute les deux
+dates d'essai facultatives à `boutique` et crée les tables vides des inscriptions
+et des paramètres de plateforme. Les treize tables et toutes leurs anciennes
+colonnes sont conservées, y compris les mots de passe, comptes désactivés,
+coordonnées et demandes de récupération. Les anciennes boutiques gardent leurs
+deux dates d'essai `NULL` et leur accès existant. Une relance conserve aussi les
+essais déjà commencés, la durée configurée et les inscriptions en attente.
