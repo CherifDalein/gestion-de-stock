@@ -16,9 +16,11 @@ L'application utilise par défaut `ddl-auto=validate` : elle vérifie le schéma
 
 ### `mouvement_stock`
 
-Journal des stocks initiaux et corrections d’inventaire : `id` BIGINT auto-incrémenté ; `boutique_id`, `produit_id` BIGINT avec clés étrangères sans cascade ; `acteur_id` BIGINT et `acteur_nom` VARCHAR(255) figés ; `type` VARCHAR(16) (`INITIAL` ou `AJUSTEMENT`) ; `cree_le` DATETIME(6) UTC ; `quantite_avant`, `quantite_apres` BIGINT non négatifs ; `cout_unitaire` DECIMAL(17,2) facultatif (présent pour le stock initial) ; `prix_vente` DECIMAL(17,2) facultatif (tarif choisi pour un nouveau stock initial, `NULL` pour les historiques antérieurs et les ajustements) ; `motif` VARCHAR(500) obligatoire. Index `(boutique_id, produit_id, cree_le, id)` pour l’historique paginé. Les comptes peuvent être supprimés sans effacer leur nom historique ; un produit avec historique est conservé.
+Journal des stocks initiaux et anciennes corrections d’inventaire : `id` BIGINT auto-incrémenté ; `boutique_id`, `produit_id` BIGINT avec clés étrangères sans cascade ; `acteur_id` BIGINT et `acteur_nom` VARCHAR(255) figés ; `type` VARCHAR(16) (`INITIAL` ou `AJUSTEMENT`) ; `cree_le` DATETIME(6) UTC ; `quantite_avant`, `quantite_apres` BIGINT non négatifs ; `cout_unitaire` DECIMAL(17,2) facultatif (présent pour le stock initial) ; `prix_vente` DECIMAL(17,2) facultatif (tarif choisi pour un nouveau stock initial, `NULL` pour les historiques antérieurs et les ajustements) ; `motif` VARCHAR(500) obligatoire. Index `(boutique_id, produit_id, cree_le, id)` pour l’historique paginé. Les comptes peuvent être supprimés sans effacer leur nom historique ; un produit avec historique est conservé.
 
 Les fiches produit démarrent à zéro, sans prix à saisir. L’achat ou le stock initial définit le coût d’achat et le prix de vente. Une fiche sans tarifs permet de modifier uniquement ses informations du catalogue ; une fois les tarifs définis, le prix de vente peut aussi être modifié depuis la fiche. Un produit sans tarifs a `prix_definis=FALSE` et ses deux prix techniques ainsi que sa quantité à zéro. L’interface affiche « À définir » et ce produit ne peut pas être vendu. La [migration d’inventaire](migrations/inventaire.md) ajoute le journal ; la [migration des tarifs](migrations/tarification.md) ajoute le statut et les deux prix de vente historiques sans changer les données précédentes.
+
+Le stock initial et le solde initial de caisse sont réservés à la préparation de la boutique. La fermeture explicite, le premier achat, la première vente ou un mouvement opérationnel de caisse ferme définitivement cette phase. Les corrections manuelles ne sont plus disponibles ; leurs événements historiques sont conservés. Voir la [migration du démarrage](migrations/demarrage-boutique.md).
 
 Le solde initial de caisse utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL` et `type=OUVERTURE`. Il ne nécessite aucune nouvelle colonne, contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour.
 
@@ -33,6 +35,7 @@ Le solde initial de caisse utilise `mouvement_caisse`, avec `source=SOLDE_INITIA
 - `abonnement_debut`, `abonnement_fin` DATETIME(6) NULL : bornes UTC de la période activée manuellement ; toutes deux vides avant une première activation
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
+- `initialisation_terminee` BOOLEAN NOT NULL DEFAULT FALSE : fermeture irréversible du démarrage, commune au stock initial et au solde initial de caisse ; le premier achat, la première vente ou un mouvement opérationnel de caisse ferme aussi cette phase
 
 Les neuf tables racines (`utilisateur`, `categorie`, `client`, `fournisseur`,
 `produit`, `achat`, `vente`, `mouvement_caisse`, `operation_creation`) portent
@@ -238,6 +241,7 @@ erDiagram
         DATETIME abonnement_fin
         BOOLEAN actif
         BOOLEAN acces_offert
+        BOOLEAN initialisation_terminee
     }
     CATEGORIE {
         BIGINT id PK

@@ -85,18 +85,21 @@ class InventaireServiceTests {
         produitService.modifierProduit(produit.getId(),modif);
         assertThat(actuel().getNom()).isEqualTo("Renommé");assertThat(actuel().getQuantite()).isEqualTo(10);assertThat(actuel().getPrixAchat()).isEqualByComparingTo("10");
     }
-    @Test void correctionJournaliseeNeChangeNiCaisseNiPrix() {
-        inventaire.initialiser(produit.getId(),initial(10));inventaire.ajuster(produit.getId(),correction(8));
-        var h=inventaire.consulter(produit.getId(),0).historique();assertThat(h).hasSize(2);
-        assertThat(h.getFirst().getQuantiteAvant()).isEqualTo(10);assertThat(h.getFirst().getQuantiteApres()).isEqualTo(8);assertThat(h.getFirst().getMotif()).isEqualTo("Inventaire physique");
+    @Test void correctionManuelleEstRefuseeSansChangerStockHistoriqueCaisseOuPrix() {
+        inventaire.initialiser(produit.getId(),initial(10));
+        assertThatThrownBy(()->inventaire.ajuster(produit.getId(),correction(8))).hasMessageContaining("désactivée");
+        var h=inventaire.consulter(produit.getId(),0).historique();assertThat(h).hasSize(1);
+        assertThat(actuel().getQuantite()).isEqualTo(10);
         assertThat(actuel().getPrixAchat()).isEqualByComparingTo("10");assertThat(caisseService.getSoldeActuel()).isZero();
-        assertThatThrownBy(()->produitService.supprimerProduit(produit.getId())).hasMessageContaining("historique");
+        assertThatThrownBy(()->produitService.supprimerProduit(produit.getId())).hasMessageContaining("stock");
+        assertThat(actuel().getQuantite()).isEqualTo(10);assertThat(historique()).isEqualTo(1);
     }
     @Test void unFormulaireRepeteOuPerimeNeRemodifiePasLeStock() {
         var f=initial(10);inventaire.initialiser(produit.getId(),f);
         assertThatThrownBy(()->inventaire.initialiser(produit.getId(),f)).isInstanceOf(ProduitModifieException.class);
-        var c=correction(8);inventaire.ajuster(produit.getId(),c);assertThatThrownBy(()->inventaire.ajuster(produit.getId(),c)).isInstanceOf(ProduitModifieException.class);
-        assertThat(actuel().getQuantite()).isEqualTo(8);assertThat(historique()).isEqualTo(2);
+        var c=correction(8);assertThatThrownBy(()->inventaire.ajuster(produit.getId(),c)).hasMessageContaining("désactivée");
+        assertThatThrownBy(()->inventaire.ajuster(produit.getId(),c)).hasMessageContaining("désactivée");
+        assertThat(actuel().getQuantite()).isEqualTo(10);assertThat(historique()).isEqualTo(1);
     }
     @Test void unStockInitialNePeutPasEtreRecreeApresConsommation() {
         inventaire.initialiser(produit.getId(),initial(2));venteService.effectuerVente(vente(2));
@@ -106,9 +109,9 @@ class InventaireServiceTests {
         achatService.enregistrerAchat(achat(2));venteService.effectuerVente(vente(2));
         assertThatThrownBy(()->inventaire.initialiser(produit.getId(),initial(4))).hasMessageContaining("réservé");assertThat(historique()).isZero();
     }
-    @Test void correctionSansMotifOuSansDifferenceEstRefusee() {
+    @Test void correctionEstToujoursRefuseeMemeSansDifference() {
         var f=correction(2);f.setMotif(" ");assertThatThrownBy(()->inventaire.ajuster(produit.getId(),f)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(()->inventaire.ajuster(produit.getId(),correction(0))).hasMessageContaining("identique");assertThat(historique()).isZero();assertThat(actuel().getQuantite()).isZero();
+        assertThatThrownBy(()->inventaire.ajuster(produit.getId(),correction(0))).hasMessageContaining("désactivée");assertThat(historique()).isZero();assertThat(actuel().getQuantite()).isZero();
     }
     @ParameterizedTest @ValueSource(strings={"-1","0.001","1000000000000000"})
     void coutInitialInvalideNeCreeRien(String cout) {
@@ -123,7 +126,7 @@ class InventaireServiceTests {
         caisseService.enregistrerEntree(new BigDecimal("5000"),"Vente de test","VENTE",null);
         assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("35000");assertThat(caisseService.getEntreesDuJour(today)).isEqualByComparingTo("5000");assertThat(caisseService.getSoldeCloture(today)).isEqualByComparingTo("35000");
         assertThat(caisseService.getSoldeOuverture(today.plusDays(1))).isEqualByComparingTo("35000");
-        assertThatThrownBy(()->caisseService.initialiser(ouverture("30000"))).hasMessageContaining("une seule fois");assertThat(caisseService.listerTous()).hasSize(2);
+        assertThatThrownBy(()->caisseService.initialiser(ouverture("30000"))).hasMessageContaining("démarrage");assertThat(caisseService.listerTous()).hasSize(2);
     }
     @Test void initialZeroEstEnregistreEtNonRepetable() {
         caisseService.initialiser(ouverture("0"));assertThat(caisseService.listerTous()).hasSize(1);assertThat(caisseService.peutInitialiser()).isFalse();
@@ -131,7 +134,7 @@ class InventaireServiceTests {
     }
     @Test void uneCaisseExistanteNeRecoitPasUnFauxSoldeInitial() {
         caisseService.enregistrerEntree(BigDecimal.TEN,"Existant","VENTE",null);
-        assertThatThrownBy(()->caisseService.initialiser(ouverture("30000"))).hasMessageContaining("premier mouvement");assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("10");
+        assertThatThrownBy(()->caisseService.initialiser(ouverture("30000"))).hasMessageContaining("démarrage");assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("10");
     }
     @Test void caissierEtRoleForgeSontRefusesAussiParLesServices() {
         connecter("CAISSIER");assertThatThrownBy(()->inventaire.consulter(produit.getId(),0)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
@@ -158,7 +161,7 @@ class InventaireServiceTests {
         mvc.perform(post(path+"/initial").with(user(email).roles("ADMIN")).with(csrf()).param("version","0").param("quantite","0").param("coutUnitaire","10").param("prixVente","30").param("motif","Origine"))
                 .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("stockInitial","quantite"));
         mvc.perform(post(path+"/ajuster").with(user(email).roles("ADMIN")).with(csrf()).param("version","0").param("quantite","3").param("motif",""))
-                .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("ajustementStock","motif"));
+                .andExpect(status().isGone());
         mvc.perform(post("/caisse/ouverture").with(user(email).roles("ADMIN")).with(csrf()).param("montant","-1").param("motif","Origine"))
                 .andExpect(status().isOk()).andExpect(model().attributeHasFieldErrors("ouvertureCaisse","montant"));
         mvc.perform(post("/caisse/ouverture").with(user(email).roles("ADMIN")).with(csrf()).param("montant","1").param("source","VENTE")).andExpect(status().isBadRequest());

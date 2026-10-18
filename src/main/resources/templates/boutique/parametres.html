@@ -60,5 +60,25 @@
             </section>
             <p class="record-note">Les factures affichent les coordonnées courantes de la boutique, y compris lors d’une réimpression. Les champs laissés vides ne sont pas affichés.</p>
         </form>
+
+        <section class="record-panel boutique-start" aria-labelledby="boutiqueDemarrageTitre">
+            <div class="record-panel-heading">
+                <h2 id="boutiqueDemarrageTitre">Démarrage de la boutique</h2>
+                <p th:if="${initialisationOuverte}">Avant vos premières opérations, renseignez les marchandises et l’argent déjà présents dans la boutique.</p>
+                <p th:unless="${initialisationOuverte}">Le démarrage est terminé. Les stocks initiaux et le solde initial de caisse ne peuvent plus être ajoutés.</p>
+            </div>
+            <div th:if="${initialisationOuverte}">
+                <div class="boutique-start-links">
+                    <a class="btn btn-outline-primary" th:href="@{/produits}"><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Renseigner les stocks initiaux</a>
+                    <a class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Renseigner le solde initial</a>
+                </div>
+                <p class="record-note" id="boutiqueDemarrageAide">Vérifiez tous vos stocks initiaux et votre solde de caisse avant de terminer. La première opération d’achat, de vente ou de caisse termine également le démarrage. Ensuite, les quantités évoluent uniquement avec les achats et les ventes ; les nouvelles fiches produit restent créables avec un stock à zéro.</p>
+                <form th:action="@{/boutique/demarrage/terminer}" method="post" class="record-actions" aria-describedby="boutiqueDemarrageAide"
+                      onsubmit="return confirm('Terminer le démarrage de la boutique ? Vous ne pourrez plus ajouter de stock initial ni de solde initial de caisse. Cette action est définitive.');">
+                    <button class="btn btn-primary" type="submit"><i class="fas fa-check" aria-hidden="true"></i> Terminer le démarrage</button>
+                </form>
+            </div>
+            <p th:unless="${initialisationOuverte}" class="record-note">Vous pouvez toujours créer des fiches produit avec un stock à zéro. Enregistrez ensuite un achat pour approvisionner la boutique ; les ventes diminuent les quantités disponibles.</p>
+        </section>
     </section>
 </div>

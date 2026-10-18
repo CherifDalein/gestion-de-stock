@@ -4,12 +4,14 @@
 avec une quantité nulle et des prix « À définir ». L’achat et le stock initial
 demandent la quantité, le coût d’achat unitaire et le prix de vente. Ces tarifs
 deviennent ceux du produit ; les prochains achats peuvent reprendre puis modifier
-le prix de vente actuel. Les ventes et ajustements de quantité restent impossibles
-tant que la première entrée n’a pas défini les prix.
+le prix de vente actuel. Les ventes restent impossibles tant que la première
+entrée n’a pas défini les prix.
 
 Une fois les tarifs définis, le prix de vente peut également être modifié depuis
 la fiche produit. Le coût d’achat et la quantité restent gérés par les achats,
-le stock initial et les corrections d’inventaire.
+et le stock initial réservé au démarrage. Les corrections manuelles d’inventaire
+ne sont plus disponibles ; leurs anciens événements restent consultables. Voir
+la [fermeture du démarrage des boutiques](demarrage-boutique.md).
 
 Les factures de vente précédentes gardent leur prix unitaire. Le nouveau prix
 de vente choisi lors d’un achat est aussi enregistré dans sa ligne, pour conserver

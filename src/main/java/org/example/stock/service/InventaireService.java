@@ -32,11 +32,13 @@ public class InventaireService {
     private final EntityManager em;
     private final Validator validator;
     private final Clock clock;
+    private final InitialisationBoutiqueService initialisation;
     public InventaireService(ProduitService produits, BoutiqueService boutiques, UtilisateurRepository utilisateurs,
                             StockLockRepository verrous, MouvementStockRepository mouvements, EntityManager em,
-                            Validator validator, @Qualifier("recoveryClock") Clock clock) {
+                            Validator validator, @Qualifier("recoveryClock") Clock clock, InitialisationBoutiqueService initialisation) {
         this.produits=produits; this.boutiques=boutiques; this.utilisateurs=utilisateurs; this.verrous=verrous;
         this.mouvements=mouvements; this.em=em; this.validator=validator; this.clock=clock;
+        this.initialisation=initialisation;
     }
     public record VueInventaire(Produit produit, boolean initialAutorise, List<MouvementStock> historique,
                                 int page, boolean pagePrecedente, boolean pageSuivante) {}
@@ -50,9 +52,10 @@ public class InventaireService {
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void initialiser(Long id, StockInitialForm formulaire) {
         Utilisateur acteur=verrouillerAdministrateur(); valider(formulaire);
+        initialisation.verrouillerEtExigerOuverte();
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
         verifierVersion(produit,formulaire.getVersion());
-        if (!initialAutorise(produit)) throw new IllegalArgumentException("Le stock initial est réservé à un produit sans stock ni opération précédente. Utilisez un achat ou un ajustement.");
+        if (!initialAutorise(produit)) throw new IllegalArgumentException("Le stock initial est réservé au démarrage de la boutique et à un produit sans stock ni opération précédente. Utilisez un achat.");
         var cout=Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire");
         var prixVente=Montants.positifOuNul(formulaire.getPrixVente(),"Le prix de vente");
         produit.setPrixAchat(cout); produit.setPrixVente(prixVente); produit.setPrixDefinis(true);
@@ -60,15 +63,12 @@ public class InventaireService {
     }
     @Transactional
     public void ajuster(Long id, AjustementStockForm formulaire) {
-        Utilisateur acteur=verrouillerAdministrateur(); valider(formulaire);
-        Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
-        verifierVersion(produit,formulaire.getVersion());
-        if (produit.getQuantite().equals(formulaire.getQuantite())) throw new IllegalArgumentException("La quantité comptée est identique au stock actuel : aucune correction à enregistrer.");
-        if (!produit.isPrixDefinis()) throw new IllegalArgumentException("Enregistrez un achat ou le stock initial avec les prix avant de corriger la quantité de ce produit.");
-        ajouter(produit,acteur,TypeMouvementStock.AJUSTEMENT,formulaire.getQuantite(),null,null,formulaire.getMotif());
+        administrateur();
+        produits.trouverParId(id);
+        throw new IllegalArgumentException("La modification manuelle du stock est désactivée. Après le démarrage de la boutique, seuls les achats et les ventes font varier les quantités.");
     }
     private boolean initialAutorise(Produit produit) {
-        return produit.getQuantite() != null && produit.getQuantite() == 0
+        return initialisation.estOuverte() && produit.getQuantite() != null && produit.getQuantite() == 0
                 && !mouvements.existsByProduitId(produit.getId())
                 && em.createQuery("select count(d) from DetailAchat d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0
                 && em.createQuery("select count(d) from DetailVente d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0;

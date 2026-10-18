@@ -42,11 +42,12 @@ public class CaisseService {
     @Autowired private EntityManager entityManager;
     @Autowired private Validator validator;
     @Autowired @Qualifier("recoveryClock") private Clock clock;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @Transactional(readOnly=true)
     public boolean peutInitialiser() {
         gerant();
-        return !mouvementRepo.existsByBoutiqueId(boutiqueService.idBoutiqueCourante());
+        return initialisation.estOuverte() && !mouvementRepo.existsByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
@@ -54,9 +55,7 @@ public class CaisseService {
         Utilisateur acteur=gerant();
         entityManager.refresh(acteur,LockModeType.PESSIMISTIC_WRITE);
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
-        var boutique=boutiqueService.boutiqueCourante();
-        entityManager.refresh(boutique,LockModeType.PESSIMISTIC_WRITE);
-        boutiqueService.exigerAppartenance(boutique);
+        var boutique=initialisation.verrouillerEtExigerOuverte();
         if(formulaire==null||!validator.validate(formulaire).isEmpty()) throw new IllegalArgumentException("Le montant et le motif du solde initial doivent être valides.");
         if(mouvementRepo.existsByBoutiqueId(boutique.getId())) throw new IllegalArgumentException("Le solde initial se renseigne une seule fois, avant le premier mouvement de caisse.");
         MouvementCaisse mouvement=new MouvementCaisse();
@@ -129,6 +128,7 @@ public class CaisseService {
     }
 
     private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente) {
+        verifierSourceOperationnelle(source);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (vente != null) {
             vente = venteRepository.findByIdAndBoutiqueId(vente.getId(), boutiqueService.idBoutiqueCourante())
@@ -142,6 +142,7 @@ public class CaisseService {
         }
 
         montant = Montants.valider(montant, "Le montant de caisse");
+        initialisation.verrouillerEtClorePourActivite();
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
         mouvement.setDateMouvement(LocalDateTime.now());
@@ -170,6 +171,7 @@ public class CaisseService {
     }
 
     private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat) {
+        verifierSourceOperationnelle(source);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (achat != null) {
             achat = achatRepository.findByIdAndBoutiqueId(achat.getId(), boutiqueService.idBoutiqueCourante())
@@ -180,6 +182,7 @@ public class CaisseService {
         }
 
         montant = Montants.valider(montant, "Le montant de caisse");
+        initialisation.verrouillerEtClorePourActivite();
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
         mouvement.setDateMouvement(LocalDateTime.now());
@@ -202,6 +205,12 @@ public class CaisseService {
 
     private BigDecimal normaliser(BigDecimal valeur) {
         return Montants.ouZero(valeur);
+    }
+
+    private void verifierSourceOperationnelle(String source) {
+        if (source != null && "SOLDE_INITIAL".equalsIgnoreCase(source.strip())) {
+            throw new IllegalArgumentException("Le solde initial se renseigne uniquement par le formulaire d'ouverture de caisse, pendant le démarrage de la boutique.");
+        }
     }
 
     private Utilisateur utilisateurDeLaBoutique(Utilisateur utilisateur) {

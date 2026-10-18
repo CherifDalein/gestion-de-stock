@@ -262,3 +262,20 @@ tasks.register('tarificationMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.TarificationMariaDbTest'
 }
+
+['initialisationBoutiqueCheck': '--check', 'initialisationBoutiqueMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Réserve les stocks et la caisse initiaux au démarrage sans changer les anciennes opérations'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.InitialisationBoutiqueMigration'
+        args mode
+    }
+}
+
+tasks.register('initialisationBoutiqueMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la fermeture du démarrage dans des bases MariaDB temporaires locales'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.InitialisationBoutiqueMariaDbTest'
+}

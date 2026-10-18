@@ -29,6 +29,7 @@ public class VenteService {
     @Autowired private CaisseService caisseService;
     @Autowired private ClientRepository clientRepository;
     @Autowired private BoutiqueService boutiqueService;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -54,6 +55,7 @@ public class VenteService {
             }
         }
 
+        initialisation.verrouillerEtClorePourActivite();
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         vente.setBoutique(boutiqueService.boutiqueCourante());
@@ -109,6 +111,7 @@ public class VenteService {
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
         montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
+        initialisation.verrouillerEtClorePourActivite();
         Vente vente = stockLockRepository.verrouillerVente(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(vente.getMontantVerse()), "Le montant déjà versé");
         BigDecimal total = Montants.positifOuNul(vente.getMontantTotal(), "Le total de la vente");

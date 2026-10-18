@@ -296,7 +296,7 @@ class PrixEntreeStockServiceTests {
         formulaire.setQuantite(5L);
         formulaire.setMotif("Comptage");
         assertThatThrownBy(() -> inventaire.ajuster(produit.getId(), formulaire))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("avec les prix");
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("désactivée");
         sansEntree();
     }
 

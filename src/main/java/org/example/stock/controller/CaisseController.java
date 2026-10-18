@@ -2,6 +2,7 @@ package org.example.stock.controller;
 
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.example.stock.service.CaisseService;
+import org.example.stock.service.InitialisationBoutiqueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +28,7 @@ public class CaisseController {
 
     @Autowired
     private CaisseService caisseService;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @Autowired
     private MouvementCaisseRepository mouvementRepo;
@@ -43,6 +45,7 @@ public class CaisseController {
     public String ouverture(Model model) {
         if(!model.containsAttribute("ouvertureCaisse")) model.addAttribute("ouvertureCaisse",new OuvertureCaisseForm());
         model.addAttribute("initialAutorise",caisseService.peutInitialiser());model.addAttribute("soldeTotal",caisseService.getSoldeActuel());
+        model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         model.addAttribute("view","caisse/ouverture");return "dashboard";
     }
     @PostMapping("/ouverture")
@@ -67,6 +70,7 @@ public class CaisseController {
         model.addAttribute("sortiesJour", caisseService.getSortiesDuJour(aujourdHui));
         model.addAttribute("bilanJour", caisseService.getNetDuJour(aujourdHui));
         model.addAttribute("soldeCloture", caisseService.getSoldeCloture(aujourdHui));
+        model.addAttribute("initialAutorise", caisseService.peutInitialiser());
         model.addAttribute("view", "caisse/journal");
         return "dashboard";
     }

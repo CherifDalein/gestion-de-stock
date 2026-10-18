@@ -102,7 +102,7 @@
                 </dl>
 
                 <form th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}"
-                      th:action="@{/ventes/regler/{id}(id=${venteReglement.id})}" th:object="${reglementVente}" method="post">
+                      th:action="@{/ventes/regler/{id}(id=${venteReglement.id})}" th:object="${reglementVente}" method="post" id="formReglementVente">
                     <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
                         <ul class="mb-2"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
                         <a th:href="@{/ventes/regler/{id}(id=${venteReglement.id})}">Recharger et vérifier les versements</a>
@@ -115,12 +115,13 @@
                            th:attr="aria-invalid=${#fields.hasErrors('montant')}"
                            aria-describedby="montantReglementHelp" inputmode="decimal" required />
                     <p id="montantReglementHelp" class="operation-note">Saisissez uniquement ce nouveau versement. Il sera ajouté au montant déjà payé.</p>
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                        <i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le versement
-                    </button>
                 </form>
                 <p th:if="${venteReglement.resteAPayer == 0}" class="alert alert-success mb-0" role="status">Cette vente est entièrement réglée.</p>
             </aside>
+            <div th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}" class="operation-actions">
+                <a th:href="@{/ventes}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" form="formReglementVente" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le versement</button>
+            </div>
         </div>
     </div>
 </div>

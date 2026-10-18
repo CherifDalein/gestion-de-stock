@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.example.stock.form.ParametresBoutiqueForm;
 import org.example.stock.service.ParametresBoutiqueService;
+import org.example.stock.service.InitialisationBoutiqueService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,9 +25,11 @@ import java.util.Set;
 @RequestMapping("/boutique/parametres")
 public class ParametresBoutiqueController {
     private final ParametresBoutiqueService parametres;
+    private final InitialisationBoutiqueService initialisation;
 
-    public ParametresBoutiqueController(ParametresBoutiqueService parametres) {
+    public ParametresBoutiqueController(ParametresBoutiqueService parametres, InitialisationBoutiqueService initialisation) {
         this.parametres = parametres;
+        this.initialisation = initialisation;
     }
 
     @InitBinder("parametresBoutique")
@@ -61,6 +64,7 @@ public class ParametresBoutiqueController {
     }
 
     private String afficherFormulaire(Model model) {
+        model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         model.addAttribute("view", "boutique/parametres");
         return "dashboard";
     }

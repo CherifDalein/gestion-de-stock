@@ -34,6 +34,9 @@ body.stock-app .record-note { margin: 0; padding: 15px 18px; border: 1px solid v
 body.stock-app .record-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 2px; }
 body.stock-app .record-actions .btn { min-height: 46px; white-space: normal; text-align: center; }
 body.stock-app .record-panel > .record-actions { margin-top: 24px; }
+body.stock-app .boutique-start { margin-top: 28px; }
+body.stock-app .boutique-start-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+body.stock-app .boutique-start form.record-actions { margin-top: 20px; }
 body.stock-app .record-page :is(a, button, input, select, textarea):focus-visible { outline: 3px solid #8ac4a6; outline-offset: 3px; }
 
 /* The edit purchase keeps the same cart and settlement hooks as a new purchase. */

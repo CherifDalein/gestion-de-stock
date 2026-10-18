@@ -31,11 +31,13 @@ public class AchatService {
     @Autowired private CaisseService caisseService;
     @Autowired private FournisseurRepository fournisseurRepository;
     @Autowired private BoutiqueService boutiqueService;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
+        initialisation.verrouillerEtClorePourActivite();
         achat.setBoutique(boutiqueService.boutiqueCourante());
         achat.setDateAchat(LocalDateTime.now());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
@@ -73,6 +75,7 @@ public class AchatService {
         if (achatModifie.getMontantVerse() != null) {
             throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
         }
+        initialisation.verrouillerEtClorePourActivite();
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
 
         validerAchat(achatModifie);
@@ -127,6 +130,7 @@ public class AchatService {
         if (montantVerseAttendu == null || montantVerseAttendu.signum() < 0) {
             throw new IllegalArgumentException("Rechargez le formulaire de règlement.");
         }
+        initialisation.verrouillerEtClorePourActivite();
         Achat achat = stockLockRepository.verrouillerAchat(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(achat.getMontantVerse()), "Le montant déjà versé");
         BigDecimal total = Montants.positifOuNul(achat.getMontantTotal(), "Le total de l'achat");

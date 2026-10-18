@@ -26,6 +26,11 @@ si `utilisateur.actif` n'existe pas encore.
 Appliquer enfin la [migration des paramètres de boutique](docs/migrations/parametres-boutique.md)
 si les colonnes de coordonnées de `boutique` sont absentes.
 
+Pour une base déjà à jour avec les stocks et les tarifs, appliquer ensuite la
+[migration du démarrage de boutique](docs/migrations/demarrage-boutique.md), après
+sauvegarde. Elle réserve les stocks et le solde initiaux à la préparation de la
+boutique, puis conserve les achats et ventes comme seules variations de stock.
+
 ## Tests
 
 ```sh
@@ -48,6 +53,7 @@ node --test src/test/js/montants.test.cjs
 - [Administration de la plateforme et gestion des accès](docs/migrations/plateforme.md)
 - [Activation et désactivation des comptes utilisateurs](docs/migrations/acces-utilisateurs.md)
 - [Paramètres de boutique et coordonnées sur les factures](docs/migrations/parametres-boutique.md)
+- [Démarrage de boutique, stock et solde initiaux](docs/migrations/demarrage-boutique.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import jakarta.persistence.EntityManager;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.ProduitRepository;
@@ -22,6 +23,7 @@ public class ProduitService {
     @Autowired private StockLockRepository stockLockRepository;
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private org.example.stock.repository.MouvementStockRepository mouvementsStock;
+    @Autowired private EntityManager entityManager;
 
     public List<Produit> listerTous() {
         return produitRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
@@ -91,8 +93,19 @@ public class ProduitService {
 
     @Transactional
     public void supprimerProduit(Long id) {
-        trouverParId(id);
+        Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
+        if (produit.getQuantite() != null && produit.getQuantite() != 0) {
+            throw new IllegalArgumentException("Ce produit possède encore du stock et doit être conservé. Seuls les achats et les ventes peuvent faire varier les quantités.");
+        }
         if (mouvementsStock.existsByProduitId(id)) throw new IllegalArgumentException("Ce produit possède un historique d’inventaire et doit être conservé.");
-        produitRepository.delete(trouverParId(id));
+        if (possedeLigne("DetailAchat", id) || possedeLigne("DetailVente", id)) {
+            throw new IllegalArgumentException("Ce produit figure dans un achat ou une vente et doit être conservé pour préserver l’historique.");
+        }
+        produitRepository.delete(produit);
+    }
+
+    private boolean possedeLigne(String entite, Long produitId) {
+        return !entityManager.createQuery("select ligne.id from " + entite + " ligne where ligne.produit.id = :produitId", Long.class)
+                .setParameter("produitId", produitId).setMaxResults(1).getResultList().isEmpty();
     }
 }

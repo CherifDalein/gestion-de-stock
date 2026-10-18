@@ -169,7 +169,7 @@ body.stock-app .journal-table > thead > tr > th { white-space: nowrap; }
 body.stock-app .journal-table > tbody > tr > td:nth-child(2),
 body.stock-app .journal-table > tbody > tr > td:nth-child(n+4):nth-child(-n+7) { white-space: nowrap; }
 body.stock-app .journal-table > tbody > tr > td:nth-child(3) { min-width: 150px; max-width: 240px; overflow-wrap: anywhere; }
-body.stock-app .journal-row-actions { flex-wrap: nowrap; justify-content: center; min-width: max-content; }
+body.stock-app .journal-row-actions { flex-direction: row; flex-wrap: nowrap; justify-content: center; min-width: max-content; }
 body.stock-app .journal-table-wrap:focus-visible,
 body.stock-app .journal-table-wrap .datatable-container:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
 body.stock-app .dropdown-menu { border-color: var(--app-border); border-radius: 12px; padding: 7px; box-shadow: 0 10px 35px rgb(21 44 37 / 10%); }
@@ -227,7 +227,13 @@ body.stock-app .operation-total-value small { margin-left: 5px; font-size: .7rem
 body.stock-app .operation-currency { margin-left: 5px; font-size: .7rem; letter-spacing: .02em; white-space: nowrap; }
 body.stock-app .operation-summary :is(.form-control, .form-select) { font-variant-numeric: tabular-nums; }
 body.stock-app .operation-summary #resteAPayer { font-weight: 650; background: #f7faf8; }
-body.stock-app .operation-summary .btn[type=submit] { width: 100%; margin-top: 6px; }
+body.stock-app .operation-actions { grid-column: 1 / -1; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: stretch; justify-content: flex-end; gap: 12px; min-width: 0; padding-top: 2px; }
+body.stock-app .operation-actions > .btn { min-height: 46px; min-width: 0; margin: 0; white-space: normal; text-align: center; }
+body.stock-app .operation-actions > a { flex: 0 0 auto; }
+body.stock-app .operation-actions > button { flex: 0 1 auto; }
+body.stock-app .operation-start-note { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 22px; padding: 15px 18px; border: 1px solid var(--app-border); border-radius: 11px; background: #f7faf8; color: var(--app-muted); font-size: .82rem; line-height: 1.65; }
+body.stock-app .operation-start-note > i { margin-top: 5px; color: var(--app-green-dark); }
+body.stock-app .operation-start-note a { color: var(--app-green-dark); font-weight: 650; }
 body.stock-app .operation-payment-status { padding: 11px 13px; margin: 16px 0; border-radius: 9px; background: #f4f7f6; color: var(--app-muted); font-size: .8rem; font-weight: 550; }
 body.stock-app .operation-payment-status[data-etat=complet] { background: var(--app-tint); color: var(--app-green-dark); }
 body.stock-app .operation-payment-status[data-etat=partiel],

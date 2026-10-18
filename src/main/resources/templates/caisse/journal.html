@@ -9,7 +9,7 @@
                 <p class="app-page-subtitle">Suivez vos encaissements, vos décaissements et leur historique.</p>
             </div>
             <div class="caisse-header-actions">
-                <a class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Solde initial</a>
+                <a th:if="${initialAutorise}" class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Solde initial</a>
                 <span class="caisse-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></span>
                 <button id="caissePrint" class="btn btn-outline-primary" type="button" hidden aria-describedby="caissePrintHelp"><i class="fas fa-print" aria-hidden="true"></i> Imprimer le journal</button>
             </div>

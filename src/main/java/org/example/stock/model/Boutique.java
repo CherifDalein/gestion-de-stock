@@ -47,6 +47,10 @@ public class Boutique {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean accesOffert;
 
+    /** Après le démarrage, seules les opérations commerciales font varier le stock. */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean initialisationTerminee;
+
     /** Dates UTC de l'essai public ; null pour les boutiques créées avant son introduction. */
     private LocalDateTime essaiDebut;
 

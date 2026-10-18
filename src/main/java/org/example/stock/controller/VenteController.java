@@ -8,6 +8,7 @@ import org.example.stock.service.ReglementVenteObsoleteException;
 import org.example.stock.enums.TypeOperationCreation;
 import org.example.stock.service.OperationCreationService;
 import org.example.stock.service.CreationOperationException;
+import org.example.stock.service.InitialisationBoutiqueService;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ public class VenteController {
     @Autowired private ClientService clientService;
     @Autowired private CaisseService caisseService;
     @Autowired private OperationCreationService creations;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @GetMapping
     public String listeVentes(Model model) {
@@ -52,6 +54,7 @@ public class VenteController {
         model.addAttribute("jetonCreation", creations.ouvrir(TypeOperationCreation.VENTE));
         model.addAttribute("clients", clientService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
+        model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         model.addAttribute("view", "ventes/nouveau");
         return "dashboard";
     }
@@ -77,6 +80,7 @@ public class VenteController {
             }
             model.addAttribute("clients", clientService.listerTous());
             model.addAttribute("produits", produitService.listerTous());
+            model.addAttribute("initialisationOuverte", initialisation.estOuverte());
 
             model.addAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie le stock. Réessayez la vente." : e.getMessage());

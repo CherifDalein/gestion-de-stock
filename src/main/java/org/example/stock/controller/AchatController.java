@@ -10,6 +10,7 @@ import org.example.stock.form.ReglementAchatForm;
 import org.example.stock.enums.TypeOperationCreation;
 import org.example.stock.service.OperationCreationService;
 import org.example.stock.service.CreationOperationException;
+import org.example.stock.service.InitialisationBoutiqueService;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,7 @@ public class AchatController {
     @Autowired private FournisseurService fournisseurService;
     @Autowired private CaisseService caisseService;
     @Autowired private OperationCreationService creations;
+    @Autowired private InitialisationBoutiqueService initialisation;
 
     @GetMapping
     public String listeVentes(Model model) {
@@ -56,6 +58,7 @@ public class AchatController {
         model.addAttribute("jetonCreation", creations.ouvrir(TypeOperationCreation.ACHAT));
         model.addAttribute("produits", produitService.listerTous());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
+        model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         model.addAttribute("view", "achats/nouveau");
         return "dashboard";
     }
@@ -82,6 +85,7 @@ public class AchatController {
             model.addAttribute("achat", achat);
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("fournisseurs", fournisseurService.listerTous());
+            model.addAttribute("initialisationOuverte", initialisation.estOuverte());
             model.addAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie le stock. Réessayez l'achat." : e.getMessage());
             model.addAttribute("view", "achats/nouveau");

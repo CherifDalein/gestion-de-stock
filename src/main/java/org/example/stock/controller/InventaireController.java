@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.example.stock.form.*;
 import org.example.stock.service.InventaireService;
+import org.example.stock.service.InitialisationBoutiqueService;
 import org.example.stock.service.ProduitModifieException;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
@@ -22,14 +23,15 @@ import java.util.Arrays;
 @RequestMapping("/produits/{id}/stock")
 public class InventaireController {
     private final InventaireService inventaire;
-    public InventaireController(InventaireService inventaire) { this.inventaire=inventaire; }
-    @InitBinder({"stockInitial", "ajustementStock"})
+    private final InitialisationBoutiqueService initialisation;
+    public InventaireController(InventaireService inventaire, InitialisationBoutiqueService initialisation) {
+        this.inventaire=inventaire; this.initialisation=initialisation;
+    }
+    @InitBinder("stockInitial")
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if(binder instanceof ExtendedServletRequestDataBinder servlet) servlet.addHeaderPredicate(nom->false);
-        String[] champs=binder.getObjectName().equals("stockInitial")
-                ?new String[]{"quantite","coutUnitaire","prixVente","motif","version","_csrf"}
-                :new String[]{"quantite","motif","version","_csrf"};
-        boolean soumis=request.getRequestURI().endsWith(binder.getObjectName().equals("stockInitial")?"/initial":"/ajuster");
+        String[] champs={"quantite","coutUnitaire","prixVente","motif","version","_csrf"};
+        boolean soumis=request.getRequestURI().endsWith("/initial");
         if(request.getMethod().equals("POST")&&soumis) {
             for(var param:request.getParameterMap().entrySet()) {
                 if(Arrays.stream(champs).noneMatch(c->c.equals(param.getKey()))||param.getValue().length!=1)
@@ -44,11 +46,9 @@ public class InventaireController {
     }
     private String remplir(Long id, int page, Model model) {
         var vue=inventaire.consulter(id,page);model.addAttribute("inventaire",vue);
+        model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         if(!model.containsAttribute("stockInitial")) {
             var form=new StockInitialForm();form.setVersion(vue.produit().getVersion());form.setMotif("Marchandises déjà présentes au démarrage");model.addAttribute("stockInitial",form);
-        }
-        if(!model.containsAttribute("ajustementStock")) {
-            var form=new AjustementStockForm();form.setVersion(vue.produit().getVersion());form.setQuantite(vue.produit().getQuantite());model.addAttribute("ajustementStock",form);
         }
         model.addAttribute("view","produits/stock");return "dashboard";
     }
@@ -64,14 +64,9 @@ public class InventaireController {
         return remplir(id,0,model);
     }
     @PostMapping("/ajuster")
-    public String ajuster(@PathVariable Long id,@Valid @ModelAttribute("ajustementStock") AjustementStockForm form, BindingResult erreurs,
-                         Model model, HttpServletResponse response, RedirectAttributes redirect) {
-        FormBindingAdvice.verifier(erreurs);
-        if(!erreurs.hasErrors()) {
-            try {inventaire.ajuster(id,form);redirect.addFlashAttribute("success","Ajustement du stock enregistré dans l’historique.");return "redirect:/produits/"+id+"/stock";}
-            catch(ProduitModifieException|ConcurrencyFailureException e) { response.setStatus(409);model.addAttribute("error","Le stock a changé. Rechargez cette page avant de réessayer."); }
-            catch(IllegalArgumentException e) { model.addAttribute("error",e.getMessage()); }
-        }
-        return remplir(id,0,model);
+    public String ajuster(@PathVariable Long id) {
+        inventaire.consulter(id,0);
+        throw new ResponseStatusException(HttpStatus.GONE,
+                "Les ajustements manuels sont désactivés. Le stock évolue uniquement par les achats et les ventes.");
     }
 }

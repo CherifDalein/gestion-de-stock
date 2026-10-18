@@ -54,6 +54,7 @@ class StockConcurrencyTests {
     @Autowired EntityManager entityManager;
     @Autowired MockMvc mvc;
     @MockitoSpyBean StockLockRepository verrous;
+    @MockitoSpyBean InitialisationBoutiqueService initialisation;
     Produit produit;
     Fournisseur fournisseur;
 
@@ -146,11 +147,27 @@ class StockConcurrencyTests {
     @Test
     void unReglementPendantUneVenteNeVerrouilleNiNeModifieLeStock() throws Exception {
         Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, new BigDecimal("0.0"))).getId());
+        assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isTrue();
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(18)),
                 () -> achatService.reglerAchat(id, new BigDecimal("50"), BigDecimal.ZERO), true, false)).isNull();
         assertThat(stock()).isEqualTo(2L);
         assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualByComparingTo("50.0");
         assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("310.0");
+    }
+
+    @Test
+    void apresLeDemarrageDeuxVentesDeProduitsDistinctsNeSeBloquentPas() throws Exception {
+        authentifie(() -> { initialisation.terminer(); return null; });
+        assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isTrue();
+        Produit second = creerProduit(produit.getCategorie(), "SECOND", 10L);
+        Vente venteSecond = new Vente(); venteSecond.getLignes().add(ligneVente(second.getId(), 4));
+        assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(3)),
+                () -> venteService.effectuerVente(venteSecond), false, false)).isNull();
+        assertThat(stock()).isEqualTo(7L);
+        assertThat(produits.findById(second.getId()).orElseThrow().getQuantite()).isEqualTo(6L);
+        assertThat(ventes.count()).isEqualTo(2);
+        assertThat(caisse.count()).isEqualTo(2);
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("140.0");
     }
 
     @Test
@@ -256,6 +273,10 @@ class StockConcurrencyTests {
             return invocation.callRealMethod();
         };
         StockLockRepository cible = AopTestUtils.getUltimateTargetObject(verrous);
+        // Les opérations commerciales attendent d'abord la boutique ; une modification de fiche
+        // attend directement le produit. Observer l'entrée des deux chemins sans retenir le commit.
+        InitialisationBoutiqueService cibleInitialisation = AopTestUtils.getUltimateTargetObject(initialisation);
+        doAnswer(observer).when(cibleInitialisation).verrouillerEtClorePourActivite();
         if (document) doAnswer(observer).when(cible).verrouillerAchat(any());
         else doAnswer(observer).when(cible).verrouillerProduits(any());
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {

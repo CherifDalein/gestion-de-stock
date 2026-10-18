@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS boutique (
     abonnement_fin DATETIME(6) NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     acces_offert BOOLEAN NOT NULL DEFAULT FALSE,
+    initialisation_terminee BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
 );
 

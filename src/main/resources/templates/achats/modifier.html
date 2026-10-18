@@ -137,11 +137,12 @@
                         <i class="fas fa-circle-info" aria-hidden="true"></i>
                         <p>Vérifiez les lignes et le récapitulatif avant d’enregistrer les modifications.</p>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-check me-2" aria-hidden="true"></i> Enregistrer les modifications
-                    </button>
                 </section>
             </aside>
+            <div class="operation-actions">
+                <a th:href="@{/achats}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Enregistrer les modifications</button>
+            </div>
         </form>
     </div>
 
