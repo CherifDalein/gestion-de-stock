@@ -14,7 +14,8 @@
 
         <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
-        <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm" class="operation-layout">
+        <form th:action="@{/achats/modifier/{id}(id=${achat.id})}" th:object="${achat}" method="post" id="achatForm" class="operation-form">
+            <div class="operation-layout">
             <div class="operation-workspace">
                 <section class="operation-panel" aria-labelledby="fournisseurTitre">
                     <div class="operation-panel-header">
@@ -139,6 +140,7 @@
                     </div>
                 </section>
             </aside>
+            </div>
             <div class="operation-actions">
                 <a th:href="@{/achats}" class="btn btn-outline-secondary">Annuler</a>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Enregistrer les modifications</button>

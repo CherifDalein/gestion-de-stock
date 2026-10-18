@@ -18,6 +18,7 @@
 
         <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
 
+        <div class="operation-form">
         <div class="operation-layout">
             <div class="operation-workspace">
                 <section class="operation-panel" aria-labelledby="documentHeading">
@@ -118,6 +119,7 @@
                 </form>
                 <p th:if="${venteReglement.resteAPayer == 0}" class="alert alert-success mb-0" role="status">Cette vente est entièrement réglée.</p>
             </aside>
+        </div>
             <div th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}" class="operation-actions">
                 <a th:href="@{/ventes}" class="btn btn-outline-secondary">Annuler</a>
                 <button type="submit" form="formReglementVente" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le versement</button>

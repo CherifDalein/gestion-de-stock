@@ -15,9 +15,10 @@
         <a th:if="${creationConflit}" th:href="@{/achats/nouveau}" class="btn btn-primary mb-3">Ouvrir un nouvel achat</a>
         <p th:if="${initialisationOuverte}" class="operation-start-note"><i class="fas fa-circle-info" aria-hidden="true"></i><span>Valider le premier achat termine le démarrage de toute la boutique. Vérifiez que tous les stocks initiaux et le solde initial de caisse sont renseignés avant de continuer. <a sec:authorize="hasRole('ADMIN')" th:href="@{/boutique/parametres}">Vérifier le démarrage</a></span></p>
 
-        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm" class="operation-layout">
+        <form th:action="@{/achats/enregistrer}" th:object="${achat}" method="post" id="achatForm" class="operation-form">
             <input type="hidden" name="jetonCreation" th:value="${jetonCreation}">
 
+            <div class="operation-layout">
             <div class="operation-workspace">
                 <section class="operation-panel" aria-labelledby="fournisseurTitre">
                     <div class="operation-panel-header">
@@ -135,6 +136,7 @@
                     </div>
                 </section>
             </aside>
+            </div>
             <div class="operation-actions">
                 <a th:href="@{/achats}" class="btn btn-outline-secondary">Annuler</a>
                 <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Valider l’entrée en stock</button>
