@@ -69,9 +69,9 @@ public final class InventaireMigration {
         Map<String,List<List<Object>>> resultat=new TreeMap<>();
         for(var table:BoutiquesMigration.tables(c).entrySet()) {
             if(table.getKey().equals(TABLE))continue;
-            String ordre=switch(table.getKey()){case "operation_creation"->"jeton";case "inscription_boutique"->"email";case "reinitialisation_mot_de_passe"->"utilisateur_id";default->"id";};
+            String ordre=PhotographieJdbc.ordre(c,table.getKey());
             String nom=table.getValue();if(!nom.matches("[A-Za-z0-9_]+"))throw new IllegalStateException("Nom de table inattendu");
-            List<List<Object>> rows=new ArrayList<>();try(var s=c.createStatement();var r=s.executeQuery("SELECT * FROM "+nom+" ORDER BY "+ordre)){while(r.next()){List<Object> row=new ArrayList<>();for(int i=1;i<=r.getMetaData().getColumnCount();i++)row.add(r.getObject(i));rows.add(row);}}
+            List<List<Object>> rows=new ArrayList<>();try(var s=c.createStatement();var r=s.executeQuery("SELECT * FROM "+nom+" ORDER BY "+ordre)){while(r.next()){List<Object> row=new ArrayList<>();for(int i=1;i<=r.getMetaData().getColumnCount();i++)row.add(PhotographieJdbc.valeur(r,i));rows.add(row);}}
             resultat.put(table.getKey(),rows);
         }
         return resultat;

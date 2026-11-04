@@ -125,13 +125,12 @@ public final class InitialisationBoutiqueMigration {
         var resultat = new TreeMap<String, List<List<Object>>>();
         for (String nom : BoutiquesMigration.tables(c).keySet()) {
             var lignes = new ArrayList<List<Object>>();
-            String ordre = switch (nom) { case "operation_creation" -> "jeton"; case "inscription_boutique" -> "email";
-                case "reinitialisation_mot_de_passe" -> "utilisateur_id"; default -> "id"; };
+            String ordre = PhotographieJdbc.ordre(c, nom);
             try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table(c, nom) + " ORDER BY " + ordre)) {
                 while (r.next()) {
                     var ligne = new ArrayList<Object>();
                     for (int i = 1; i <= r.getMetaData().getColumnCount(); i++)
-                        if (!(nom.equals("boutique") && CHAMP.equalsIgnoreCase(r.getMetaData().getColumnName(i)))) ligne.add(r.getObject(i));
+                        if (!(nom.equals("boutique") && CHAMP.equalsIgnoreCase(r.getMetaData().getColumnName(i)))) ligne.add(PhotographieJdbc.valeur(r, i));
                     lignes.add(ligne);
                 }
             }

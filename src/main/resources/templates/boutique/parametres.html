@@ -1,11 +1,12 @@
 <div th:fragment="content">
     <link th:href="@{/css/formulaires.css}" rel="stylesheet" />
+    <link th:href="@{/css/identite-boutique.css}" rel="stylesheet" />
     <section class="record-page">
         <header class="record-header">
             <div>
                 <p class="record-kicker">Votre boutique</p>
                 <h1>Paramètres de la boutique</h1>
-                <p class="record-intro">Personnalisez le nom et les coordonnées affichés sur vos factures.</p>
+                <p class="record-intro">Personnalisez le logo, le nom et les coordonnées affichés sur vos factures.</p>
             </div>
             <a class="btn btn-outline-secondary record-back" th:href="@{/}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i>Retour au tableau de bord</a>
         </header>
@@ -13,10 +14,45 @@
         <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
 
-        <form th:action="@{/boutique/parametres}" th:object="${parametresBoutique}" method="post" class="record-layout record-layout--single">
+        <form th:action="@{/boutique/parametres}" th:object="${parametresBoutique}" method="post" enctype="multipart/form-data" class="record-layout record-layout--single">
             <div class="record-errors" role="alert" th:if="${#fields.hasGlobalErrors()}">
                 <p th:each="erreur : ${#fields.globalErrors()}" th:text="${erreur}"></p>
             </div>
+            <section class="record-panel" aria-labelledby="boutiqueLogoTitle">
+                <div class="record-panel-heading">
+                    <h2 id="boutiqueLogoTitle">Logo de la boutique</h2>
+                    <p>Votre logo apparaît en haut de vos factures.</p>
+                </div>
+                <div class="boutique-logo-editor">
+                    <div class="boutique-logo-preview" th:classappend="${logoBoutiquePresent == true} ? '' : 'boutique-logo-preview--empty'">
+                        <img th:if="${logoBoutiquePresent == true}" th:src="@{/boutique/logo}" alt="Logo actuel de votre boutique" class="boutique-logo-image" />
+                        <div th:unless="${logoBoutiquePresent == true}" class="boutique-logo-empty">
+                            <i class="fa-solid fa-store" aria-hidden="true"></i>
+                            <span>Aucun logo</span>
+                        </div>
+                    </div>
+                    <div class="record-field boutique-logo-controls">
+                        <label for="boutiqueLogo" th:text="${logoBoutiquePresent == true ? 'Remplacer le logo' : 'Choisir un logo'}">Choisir un logo</label>
+                        <input id="boutiqueLogo" class="form-control" type="file" name="logo" accept="image/png,image/jpeg" aria-describedby="boutiqueLogoHelp boutiqueLogoSelectionHelp"
+                               th:classappend="${#fields.hasErrors('logo')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('logo')},aria-describedby=${'boutiqueLogoHelp boutiqueLogoSelectionHelp' + (#fields.hasErrors('*') ? ' boutiqueLogoRetryHelp' : '') + (#fields.hasErrors('logo') ? ' boutiqueLogoError' : '')}" />
+                        <p id="boutiqueLogoHelp" class="record-help">Image PNG ou JPEG, jusqu’à 2 Mo. Les proportions et la transparence des images PNG sont conservées.</p>
+                        <p id="boutiqueLogoSelectionHelp" class="record-help" th:if="${logoBoutiquePresent == true}">Sans nouveau fichier, votre logo actuel est conservé. Pour le remplacer, choisissez une image puis enregistrez les paramètres.</p>
+                        <p id="boutiqueLogoSelectionHelp" class="record-help" th:unless="${logoBoutiquePresent == true}">Choisissez une image puis enregistrez les paramètres pour ajouter votre logo.</p>
+                        <p id="boutiqueLogoRetryHelp" class="record-help" th:if="${#fields.hasErrors('*')}">Si une erreur est signalée, sélectionnez à nouveau votre image avant d’enregistrer.</p>
+                        <p id="boutiqueLogoError" class="record-field-error" th:if="${#fields.hasErrors('logo')}" th:errors="*{logo}" role="alert"></p>
+                        <div class="boutique-logo-remove" th:if="${logoBoutiquePresent == true}">
+                            <label for="supprimerLogo">
+                                <input id="supprimerLogo" class="form-check-input" type="checkbox" th:field="*{supprimerLogo}"
+                                       th:attr="aria-invalid=${#fields.hasErrors('supprimerLogo')},aria-describedby=${#fields.hasErrors('supprimerLogo') ? 'boutiqueLogoRemoveHelp boutiqueLogoRemoveError' : 'boutiqueLogoRemoveHelp'}" />
+                                <span>Supprimer le logo actuel</span>
+                            </label>
+                            <p id="boutiqueLogoRemoveHelp" class="record-help">La suppression sera appliquée à l’enregistrement. Laissez le choix de fichier vide pour supprimer le logo.</p>
+                            <p id="boutiqueLogoRemoveError" class="record-field-error" th:if="${#fields.hasErrors('supprimerLogo')}" th:errors="*{supprimerLogo}" role="alert"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
             <section class="record-panel" aria-labelledby="boutiqueIdentityTitle">
                 <div class="record-panel-heading">
                     <h2 id="boutiqueIdentityTitle">Identité et coordonnées</h2>
@@ -39,13 +75,21 @@
                         <p id="boutiqueAdresseError" class="record-field-error" th:if="${#fields.hasErrors('adresse')}" th:errors="*{adresse}" role="alert"></p>
                     </div>
                     <div class="record-field">
-                        <label for="boutiqueTelephone">Téléphone <span class="record-optional">(facultatif)</span></label>
+                        <label for="boutiqueTelephone">Téléphone principal <span class="record-optional">(facultatif)</span></label>
                         <input id="boutiqueTelephone" class="form-control" type="tel" th:field="*{telephone}" maxlength="50" autocomplete="tel"
                                th:classappend="${#fields.hasErrors('telephone')} ? 'is-invalid' : ''"
                                th:attr="aria-invalid=${#fields.hasErrors('telephone')},aria-describedby=${#fields.hasErrors('telephone') ? 'boutiqueTelephoneError' : null}" />
                         <p id="boutiqueTelephoneError" class="record-field-error" th:if="${#fields.hasErrors('telephone')}" th:errors="*{telephone}" role="alert"></p>
                     </div>
                     <div class="record-field">
+                        <label for="boutiqueTelephoneSecondaire">Deuxième téléphone <span class="record-optional">(facultatif)</span></label>
+                        <input id="boutiqueTelephoneSecondaire" class="form-control" type="tel" th:field="*{telephoneSecondaire}" maxlength="50" autocomplete="tel"
+                               th:classappend="${#fields.hasErrors('telephoneSecondaire')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('telephoneSecondaire')},aria-describedby=${#fields.hasErrors('telephoneSecondaire') ? 'boutiqueTelephoneSecondaireHelp boutiqueTelephoneSecondaireError' : 'boutiqueTelephoneSecondaireHelp'}" />
+                        <p id="boutiqueTelephoneSecondaireHelp" class="record-help">Ajoutez un autre numéro de contact si votre boutique en utilise deux.</p>
+                        <p id="boutiqueTelephoneSecondaireError" class="record-field-error" th:if="${#fields.hasErrors('telephoneSecondaire')}" th:errors="*{telephoneSecondaire}" role="alert"></p>
+                    </div>
+                    <div class="record-field record-field--wide">
                         <label for="boutiqueEmail">Email <span class="record-optional">(facultatif)</span></label>
                         <input id="boutiqueEmail" class="form-control" type="email" th:field="*{email}" maxlength="254" autocomplete="email"
                                th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
@@ -58,7 +102,7 @@
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les paramètres</button>
                 </div>
             </section>
-            <p class="record-note">Les factures affichent les coordonnées courantes de la boutique, y compris lors d’une réimpression. Les champs laissés vides ne sont pas affichés.</p>
+            <p class="record-note">Les factures affichent le logo et les coordonnées courantes de la boutique, y compris lors d’une réimpression. Les champs laissés vides ne sont pas affichés.</p>
         </form>
 
         <section class="record-panel boutique-start" aria-labelledby="boutiqueDemarrageTitre">

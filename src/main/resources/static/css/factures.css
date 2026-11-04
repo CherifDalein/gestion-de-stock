@@ -27,6 +27,7 @@ body.stock-document .document-periods .active { background: #eaf5ee; color: var(
 body.stock-document .document-paper { padding: 44px; min-width: 0; background: #fff; border: 1px solid var(--document-border); border-radius: 18px; box-shadow: 0 8px 30px rgb(21 44 37 / 5%); }
 body.stock-document .document-paper-header { display: grid; grid-template-columns: minmax(160px, .8fr) minmax(0, 1.2fr); gap: 28px; align-items: start; padding-bottom: 28px; border-bottom: 2px solid #e5eee8; }
 body.stock-document .document-brand { min-width: 0; overflow-wrap: anywhere; }
+body.stock-document .document-brand-logo { display: block; width: auto; height: auto; max-width: min(180px, 100%); max-height: 88px; margin-bottom: 15px; object-fit: contain; }
 body.stock-document .document-brand-name { display: block; color: var(--document-green-dark); font-size: 1.65rem; line-height: 1.2; font-weight: 800; letter-spacing: -.045em; }
 body.stock-document .document-brand p { margin: 7px 0 0; color: var(--document-muted); font-size: .76rem; }
 body.stock-document .document-brand-address { white-space: pre-line; }
@@ -102,6 +103,8 @@ body.stock-document .document-footer { margin-top: 30px; padding-top: 18px; bord
   body.stock-document .document-paper { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
   body.stock-document .document-paper-header { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 20px; padding-bottom: 18px; }
   body.stock-document .document-brand-name { font-size: 18pt; }
+  body.stock-document .document-brand { break-inside: avoid; page-break-inside: avoid; }
+  body.stock-document .document-brand-logo { max-width: 42mm; max-height: 23mm; margin-bottom: 3mm; }
   body.stock-document .document-brand p { font-size: 8pt; }
   body.stock-document .document-heading { text-align: right; }
   body.stock-document .document-heading h1 { font-size: 16pt; }

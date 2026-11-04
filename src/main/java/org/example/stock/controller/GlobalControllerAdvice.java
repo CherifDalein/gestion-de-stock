@@ -4,6 +4,7 @@ import org.example.stock.model.Utilisateur;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.UtilisateurRepository;
+import org.example.stock.repository.LogoBoutiqueRepository;
 import org.example.stock.service.EssaiBoutiqueService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,9 @@ public class GlobalControllerAdvice {
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private LogoBoutiqueRepository logos;
 
     @Autowired
     private EssaiBoutiqueService essais;
@@ -62,6 +66,7 @@ public class GlobalControllerAdvice {
             }
             model.addAttribute("utilisateur", utilisateur);
             model.addAttribute("boutique", utilisateur.getBoutique());
+            model.addAttribute("logoBoutiquePresent", logos.existsById(utilisateur.getBoutique().getId()));
             if (utilisateur.getBoutique().getEssaiFin() != null && !utilisateur.getBoutique().isAccesOffert()) {
                 model.addAttribute("essaiEnCours", essais.joursRestants(utilisateur.getBoutique()) > 0);
                 model.addAttribute("joursEssaiRestants", essais.joursRestants(utilisateur.getBoutique()));

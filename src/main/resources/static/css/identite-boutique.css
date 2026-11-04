@@ -1,0 +1,19 @@
+/* Boutique identity settings; the file input remains usable without JavaScript. */
+body.stock-app .boutique-logo-editor { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: start; gap: 24px; }
+body.stock-app .boutique-logo-preview { display: flex; align-items: center; justify-content: center; width: 132px; min-height: 132px; padding: 14px; border: 1px solid var(--app-border, #dae5de); border-radius: 14px; background: #fff; }
+body.stock-app .boutique-logo-preview--empty { background: #f7faf8; border-style: dashed; }
+body.stock-app .boutique-logo-image { display: block; width: auto; height: auto; max-width: 100%; max-height: 104px; object-fit: contain; }
+body.stock-app .boutique-logo-empty { display: grid; justify-items: center; gap: 10px; color: var(--app-muted, #687b70); font-size: .76rem; text-align: center; }
+body.stock-app .boutique-logo-empty > i { font-size: 1.7rem; color: #6d9981; }
+body.stock-app .boutique-logo-controls { min-width: 0; }
+body.stock-app .boutique-logo-controls input[type=file] { display: block; max-width: 100%; min-width: 0; padding: 10px; font-size: .8rem; }
+body.stock-app .boutique-logo-controls input[type=file]::file-selector-button { margin: -10px 12px -10px -10px; padding: 13px 12px; border: 0; border-right: 1px solid var(--app-border, #dae5de); background: var(--app-tint, #eaf5ee); color: var(--app-green-dark, #126448); font: inherit; font-weight: 650; cursor: pointer; }
+body.stock-app .boutique-logo-remove { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--app-border, #dae5de); }
+body.stock-app .boutique-logo-remove > label { display: flex; align-items: flex-start; gap: 10px; margin: 0; color: var(--app-ink, #183a2a); font-size: .82rem; font-weight: 600; cursor: pointer; }
+body.stock-app .boutique-logo-remove .form-check-input { flex: 0 0 auto; margin: 2px 0 0; }
+@media (max-width: 575.98px) {
+  body.stock-app .boutique-logo-editor { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  body.stock-app .boutique-logo-preview { width: 116px; min-height: 116px; }
+  body.stock-app .boutique-logo-image { max-height: 88px; }
+  body.stock-app .boutique-logo-controls input[type=file] { font-size: .75rem; }
+}

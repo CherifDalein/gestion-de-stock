@@ -46,6 +46,10 @@ public class Boutique {
     @Column(length = 50)
     private String telephone;
 
+    @Size(max = 50, message = "Le second téléphone accepte au maximum 50 caractères")
+    @Column(length = 50)
+    private String telephoneSecondaire;
+
     @Email(message = "Le format de l'email est invalide")
     @Size(max = 254, message = "L'email accepte au maximum 254 caractères")
     @Column(length = 254)

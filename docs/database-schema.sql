@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS boutique (
     nom VARCHAR(255) NOT NULL,
     adresse VARCHAR(500) NULL,
     telephone VARCHAR(50) NULL,
+    telephone_secondaire VARCHAR(50) NULL,
     email VARCHAR(254) NULL,
     date_creation DATETIME(6) NOT NULL,
     essai_debut DATETIME(6) NULL,
@@ -22,6 +23,15 @@ CREATE TABLE IF NOT EXISTS boutique (
     initialisation_terminee BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (id)
 );
+
+CREATE TABLE IF NOT EXISTS logo_boutique (
+    boutique_id BIGINT NOT NULL,
+    contenu LONGBLOB NOT NULL,
+    revision VARCHAR(36) NOT NULL,
+    PRIMARY KEY (boutique_id),
+    CONSTRAINT fk_logo_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS categorie (
     id BIGINT NOT NULL AUTO_INCREMENT,

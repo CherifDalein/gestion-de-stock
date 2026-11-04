@@ -59,6 +59,7 @@ node --test src/test/js/montants.test.cjs
 - [Administration de la plateforme et gestion des accès](docs/migrations/plateforme.md)
 - [Activation et désactivation des comptes utilisateurs](docs/migrations/acces-utilisateurs.md)
 - [Paramètres de boutique et coordonnées sur les factures](docs/migrations/parametres-boutique.md)
+- [Logo et coordonnées propres à chaque boutique](docs/identite-boutique.md)
 - [Démarrage de boutique, stock et solde initiaux](docs/migrations/demarrage-boutique.md)
 - [Caisse, Orange Money, banque et transferts](docs/tresorerie.md)
 - [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)

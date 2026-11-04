@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import org.example.stock.form.ParametresBoutiqueForm;
 import org.example.stock.service.ParametresBoutiqueService;
 import org.example.stock.service.InitialisationBoutiqueService;
+import org.example.stock.service.LogoBoutiqueInvalideException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.ExtendedServletRequestDataBinder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.util.WebUtils;
 
 import java.util.Set;
 
@@ -35,11 +38,20 @@ public class ParametresBoutiqueController {
     @InitBinder("parametresBoutique")
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
-        Set<String> autorises = Set.of("nom", "adresse", "telephone", "email", "_csrf");
+        Set<String> autorises = Set.of("nom", "adresse", "telephone", "telephoneSecondaire", "email", "logo", "supprimerLogo", "_supprimerLogo", "_csrf");
         if (request.getMethod().equals("POST")) {
             for (String parametre : request.getParameterMap().keySet()) {
-                if (!autorises.contains(parametre)) {
+                if (!autorises.contains(parametre) || request.getParameterValues(parametre).length != 1
+                        || parametre.equals("logo")) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");
+                }
+            }
+            var multipart = WebUtils.getNativeRequest(request, MultipartHttpServletRequest.class);
+            if (multipart != null) {
+                for (var fichier : multipart.getMultiFileMap().entrySet()) {
+                    if (!fichier.getKey().equals("logo") || fichier.getValue().size() != 1) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul fichier de logo doit être envoyé");
+                    }
                 }
             }
         }
@@ -58,7 +70,12 @@ public class ParametresBoutiqueController {
         parametres.verifierGestionBoutiqueCourante();
         FormBindingAdvice.verifier(result);
         if (result.hasErrors()) return afficherFormulaire(model);
-        parametres.modifierPourBoutiqueCourante(formulaire);
+        try {
+            parametres.modifierPourBoutiqueCourante(formulaire);
+        } catch (LogoBoutiqueInvalideException exception) {
+            result.rejectValue("logo", "logo.invalide", exception.getMessage());
+            return afficherFormulaire(model);
+        }
         redirectAttributes.addFlashAttribute("success", "Les paramètres de votre boutique ont été enregistrés.");
         return "redirect:/boutique/parametres";
     }

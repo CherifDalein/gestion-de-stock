@@ -301,13 +301,12 @@ public final class TresorerieMigration {
         for (String nom : BoutiquesMigration.tables(c).keySet()) {
             if (NOUVELLES_TABLES.contains(nom)) continue;
             List<List<Object>> lignes = new ArrayList<>();
-            String ordre = switch (nom) { case "operation_creation" -> "jeton"; case "inscription_boutique" -> "email";
-                case "reinitialisation_mot_de_passe" -> "utilisateur_id"; default -> "id"; };
+            String ordre = PhotographieJdbc.ordre(c, nom);
             try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table(c, nom) + " ORDER BY " + ordre)) {
                 while (r.next()) {
                     List<Object> ligne = new ArrayList<>();
                     for (int i = 1; i <= r.getMetaData().getColumnCount(); i++)
-                        if (!(nom.equals("mouvement_caisse") && Set.of("compte", "operation_tresorerie_id").contains(r.getMetaData().getColumnName(i).toLowerCase(Locale.ROOT)))) ligne.add(r.getObject(i));
+                        if (!(nom.equals("mouvement_caisse") && Set.of("compte", "operation_tresorerie_id").contains(r.getMetaData().getColumnName(i).toLowerCase(Locale.ROOT)))) ligne.add(PhotographieJdbc.valeur(r, i));
                     lignes.add(ligne);
                 }
             }
@@ -328,7 +327,7 @@ public final class TresorerieMigration {
         if (!existe(c, nom)) return List.of();
         List<List<Object>> lignes = new ArrayList<>();
         try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table(c, nom) + " ORDER BY id")) {
-            while (r.next()) { List<Object> ligne = new ArrayList<>(); for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) ligne.add(r.getObject(i)); lignes.add(ligne); }
+            while (r.next()) { List<Object> ligne = new ArrayList<>(); for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) ligne.add(PhotographieJdbc.valeur(r, i)); lignes.add(ligne); }
         }
         return lignes;
     }

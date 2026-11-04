@@ -37,6 +37,7 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `nom` VARCHAR(255) NOT NULL
 - `adresse` VARCHAR(500) NULL : adresse commerciale facultative
 - `telephone` VARCHAR(50) NULL : téléphone commercial facultatif
+- `telephone_secondaire` VARCHAR(50) NULL : second téléphone commercial facultatif
 - `email` VARCHAR(254) NULL : email commercial facultatif, indépendant des emails de connexion
 - `date_creation` DATETIME(6) NOT NULL
 - `essai_debut`, `essai_fin` DATETIME(6) NULL : bornes UTC persistées de l'essai ; toutes deux vides pour les boutiques historiques
@@ -44,6 +45,10 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
 - `initialisation_terminee` BOOLEAN NOT NULL DEFAULT FALSE : fermeture irréversible du démarrage, commune au stock initial et au solde initial de caisse ; le premier achat, la première vente ou un mouvement opérationnel de caisse ferme aussi cette phase
+
+### `logo_boutique`
+
+Un logo facultatif par boutique : `boutique_id` BIGINT, clé primaire et clé étrangère vers `boutique.id` sans cascade, `contenu` LONGBLOB NOT NULL et `revision` VARCHAR(36) NOT NULL. Le contenu est un PNG normalisé de 512 pixels de côté et 384 Kio au maximum, sans métadonnées du fichier d'origine. Les fichiers d'entrée PNG/JPEG peuvent faire deux Mio avant conversion ; les dimensions sont réduites si nécessaire pour respecter la taille conservée. La révision est un UUID renouvelé à chaque remplacement. Les boutiques existantes et nouvelles n'ont aucun logo par défaut. La lecture exige un compte authentifié de la boutique ; l'import et la suppression sont réservés à son gérant. Voir la [migration de l'identité boutique](migrations/identite-boutique.md).
 
 Les neuf tables racines (`utilisateur`, `categorie`, `client`, `fournisseur`,
 `produit`, `achat`, `vente`, `mouvement_caisse`, `operation_creation`) portent

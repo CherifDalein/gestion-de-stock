@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import org.springframework.web.multipart.MultipartFile;
 
 /** Coordonnées publiques de la boutique, sans identifiant ni propriétés d'accès. */
 @Getter
@@ -18,6 +19,13 @@ public class ParametresBoutiqueForm {
     @Size(max = 50, message = "Le téléphone accepte au maximum 50 caractères")
     private String telephone;
 
+    @Size(max = 50, message = "Le second téléphone accepte au maximum 50 caractères")
+    private String telephoneSecondaire;
+
+    private MultipartFile logo;
+
+    private boolean supprimerLogo;
+
     @Email(message = "Le format de l'email est invalide")
     @Size(max = 254, message = "L'email accepte au maximum 254 caractères")
     private String email;
@@ -25,6 +33,9 @@ public class ParametresBoutiqueForm {
     public void setNom(String nom) { this.nom = nom == null ? null : nom.strip(); }
     public void setAdresse(String adresse) { this.adresse = facultatif(adresse); }
     public void setTelephone(String telephone) { this.telephone = facultatif(telephone); }
+    public void setTelephoneSecondaire(String telephoneSecondaire) { this.telephoneSecondaire = facultatif(telephoneSecondaire); }
+    public void setLogo(MultipartFile logo) { this.logo = logo; }
+    public void setSupprimerLogo(boolean supprimerLogo) { this.supprimerLogo = supprimerLogo; }
     public void setEmail(String email) { this.email = facultatif(email); }
 
     private static String facultatif(String valeur) {
