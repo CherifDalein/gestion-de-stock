@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les dix-sept tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements et celui de l’inventaire. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les dix-neuf tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -22,7 +22,15 @@ Les fiches produit démarrent à zéro, sans prix à saisir. L’achat ou le sto
 
 Le stock initial et le solde initial de caisse sont réservés à la préparation de la boutique. La fermeture explicite, le premier achat, la première vente ou un mouvement opérationnel de caisse ferme définitivement cette phase. Les corrections manuelles ne sont plus disponibles ; leurs événements historiques sont conservés. Voir la [migration du démarrage](migrations/demarrage-boutique.md).
 
-Le solde initial de caisse utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL` et `type=OUVERTURE`. Il ne nécessite aucune nouvelle colonne, contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour.
+Le solde initial de chaque compte utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL`, `type=OUVERTURE` et son `compte`. Il contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour. Chaque compte peut être initialisé une fois pendant le démarrage.
+
+### `compte_tresorerie_boutique`
+
+Identifiants de verrou pour les trois comptes `CAISSE`, `ORANGE_MONEY` et `BANQUE` de chaque boutique : `id` BIGINT auto-incrémenté, `boutique_id` BIGINT NOT NULL avec clé étrangère sans cascade, `compte` VARCHAR(32) NOT NULL, contrainte unique `(boutique_id, compte)`. Les soldes sont calculés depuis `mouvement_caisse` ; cette table ne contient aucun montant. Les nouvelles boutiques reçoivent les trois lignes lors de leur création ; la migration les ajoute aux boutiques existantes.
+
+### `operation_tresorerie`
+
+En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique_id` et `utilisateur_id` BIGINT NOT NULL avec clés étrangères sans cascade, `jeton` VARCHAR(36) NOT NULL UNIQUE, `type` VARCHAR(32) (`TRANSFERT` ou `DEPENSE`), `compte_source` VARCHAR(32) NOT NULL, `compte_destination` VARCHAR(32) facultatif (vide uniquement pour une dépense), `montant` DECIMAL(17,2) strictement positif, `motif` VARCHAR(255) NOT NULL et `date_operation` DATETIME(6) NOT NULL. Index `(boutique_id, date_operation, id)`. Une opération de transfert produit deux mouvements de sens opposés dans une seule transaction ; elle ne change pas le solde total. Voir la [migration trésorerie](migrations/tresorerie.md).
 
 ### `boutique`
 - `id` PK
@@ -182,6 +190,8 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `utilisateur_id` FK -> `utilisateur.id`
 - `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
 - `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
+- `compte` VARCHAR(32) NOT NULL DEFAULT 'CAISSE' : espèces, Orange Money ou banque pour ce mouvement
+- `operation_tresorerie_id` FK optionnelle -> `operation_tresorerie.id`, pour les transferts et dépenses
 
 ### `operation_creation`
 

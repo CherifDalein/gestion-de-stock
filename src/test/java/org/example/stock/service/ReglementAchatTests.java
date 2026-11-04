@@ -1,12 +1,14 @@
 package org.example.stock.service;
 
 import org.example.stock.enums.Role;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.MockMvcPrint;
@@ -252,7 +254,7 @@ class ReglementAchatTests {
             invocation.callRealMethod();
             caisse.flush();
             throw new IllegalStateException("Erreur de caisse simulée");
-        }).when(cible).enregistrerSortieAchat(any(BigDecimal.class), anyString(), any(Achat.class), any(Utilisateur.class));
+        }).when(cible).enregistrerSortieAchat(any(BigDecimal.class), anyString(), any(Achat.class), any(Utilisateur.class), any(CompteTresorerie.class));
         assertThatThrownBy(() -> achatService.reglerAchat(achat.getId(), new BigDecimal("10000"), new BigDecimal("50000")))
                 .hasMessage("Erreur de caisse simulée");
         verifierInitial();
@@ -275,6 +277,42 @@ class ReglementAchatTests {
                 .isEqualByComparingTo("999999999999999.99");
         assertThat(achats.findById(achat.getId()).orElseThrow().getResteAPayer()).isZero();
         assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-999999999999999.99");
+    }
+
+    @ParameterizedTest
+    @EnumSource(CompteTresorerie.class)
+    void chaqueVersementFournisseurUtiliseLeCompteChoisi(CompteTresorerie compte) throws Exception {
+        mvc.perform(versement("10000", "50000").param("comptePaiement", compte.name()).with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        var mouvements = caisse.findByAchatIdOrderByDateMouvementDescIdDesc(achat.getId());
+        assertThat(mouvements).hasSize(2);
+        assertThat(mouvements.getFirst().getCompte()).isEqualTo(compte);
+        assertThat(mouvements.getLast().getCompte()).isEqualTo(CompteTresorerie.CAISSE);
+        assertThat(mouvements.getFirst().getMontant()).isEqualByComparingTo("-10000");
+        assertThat(achats.findById(achat.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("60000");
+        assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(10L);
+        String html = mvc.perform(get("/achats/regler/" + achat.getId())).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(html).contains(compte.getLibelle());
+        mvc.perform(versement("10000", "50000").param("comptePaiement", "BANQUE").with(csrf()))
+                .andExpect(status().isConflict());
+        assertThat(caisse.count()).isEqualTo(2);
+    }
+
+    @Test
+    void leCompteDePaiementNePeutPasEtreReecritEnModifiantLAchat() throws Exception {
+        mvc.perform(modification(10).param("comptePaiement", "BANQUE").with(csrf()))
+                .andExpect(status().isBadRequest());
+        verifierInitial();
+    }
+
+    @Test
+    void unCompteFournisseurInvalideOuAmbiguNeModifieNiDetteNiSolde() throws Exception {
+        mvc.perform(versement("10000", "50000").param("comptePaiement", "INCONNU").with(csrf()))
+                .andExpect(status().isBadRequest());
+        mvc.perform(versement("10000", "50000").param("comptePaiement", "CAISSE", "BANQUE").with(csrf()))
+                .andExpect(status().isBadRequest());
+        verifierInitial();
     }
 
     private MockHttpServletRequestBuilder versement(String montant, String attendu) {

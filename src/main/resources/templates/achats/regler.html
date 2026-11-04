@@ -63,6 +63,7 @@
                             <tr>
                                 <th scope="col">Date</th>
                                 <th scope="col" class="text-end">Montant payé</th>
+                                <th scope="col">Compte débité</th>
                                 <th scope="col">Enregistré par</th>
                             </tr>
                             </thead>
@@ -70,6 +71,7 @@
                             <tr th:each="r : ${reglements}">
                                 <td th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></td>
                                 <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-nowrap" th:text="${r.compte.libelle}"></td>
                                 <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
                             </tr>
                             </tbody>
@@ -108,6 +110,13 @@
                         <a th:href="@{/achats/regler/{id}(id=${achatReglement.id})}">Recharger et vérifier les versements</a>
                     </div>
                     <input type="hidden" th:field="*{montantVerseAttendu}" />
+                    <div class="operation-field mb-3">
+                        <label for="comptePaiement" class="form-label">Compte utilisé pour le paiement</label>
+                        <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                        <p id="comptePaiementAide" class="operation-field-help">Le nouveau versement est retiré du compte choisi.</p>
+                    </div>
                     <label for="montantReglement" class="form-label fw-semibold">Somme payée maintenant (GNF)</label>
                     <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
                            th:max="${achatReglement.resteAPayer}" class="form-control form-control-lg"

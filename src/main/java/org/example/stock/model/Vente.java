@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.stock.enums.CompteTresorerie;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,10 @@ public class Vente {
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal montantVerse;
+
+    /** Compte de l'encaissement saisi, indépendant de ceux des règlements suivants. */
+    @Transient
+    private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Client client;

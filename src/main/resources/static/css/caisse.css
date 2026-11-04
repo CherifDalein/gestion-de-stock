@@ -38,13 +38,15 @@
 #stockCaisse .caisse-scroll-hint { margin: 0; padding: 0 24px 12px; font-size: .72rem; color: var(--app-muted); }
 #stockCaisse .caisse-table-wrap { width: 100%; border-top: 1px solid var(--app-border); }
 #stockCaisse .caisse-table-wrap:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
-#stockCaisse .caisse-table { min-width: 880px; table-layout: auto; }
+#stockCaisse .caisse-table { min-width: 1000px; table-layout: auto; }
 #stockCaisse .caisse-table > thead > tr > th { white-space: nowrap; }
 #stockCaisse .caisse-table > :is(thead, tbody) > tr > :first-child { padding-left: 24px; }
 #stockCaisse .caisse-table > :is(thead, tbody) > tr > :last-child { padding-right: 24px; }
 #stockCaisse .caisse-row-date { white-space: nowrap; color: var(--app-muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
 #stockCaisse .caisse-row-motif { min-width: 180px; max-width: 360px; font-weight: 650; overflow-wrap: anywhere; }
 #stockCaisse .caisse-row-author { min-width: 110px; max-width: 200px; font-size: .8rem; overflow-wrap: anywhere; }
+#stockCaisse .caisse-operation-reference { display: block; margin-top: 4px; color: var(--app-muted); font-size: .7rem; font-weight: 400; }
+#stockCaisse .caisse-row-account { min-width: 130px; font-size: .78rem; font-weight: 600; }
 #stockCaisse .caisse-row-amount { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .82rem; font-weight: 700; }
 #stockCaisse .caisse-source { display: inline-block; padding: 4px 8px; background: #f3f6f4; border-radius: 6px; color: #52685d; font-size: .7rem; overflow-wrap: anywhere; }
 #stockCaisse .caisse-direction { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #f3f6f4; color: #52685d; font-size: .7rem; font-weight: 650; white-space: nowrap; }
@@ -131,13 +133,14 @@
     #stockCaisse .caisse-table tr { break-inside: avoid; page-break-inside: avoid; }
     #stockCaisse .caisse-table > :is(thead, tbody) > tr > :is(th, td) { padding: 2.5mm 1.5mm; vertical-align: top; border-bottom: 1px solid #dfe8e3; box-shadow: none; background: transparent; }
     #stockCaisse .caisse-table th { white-space: normal !important; font-size: 7pt; }
-    #stockCaisse .caisse-table th:nth-child(1) { width: 17%; }
-    #stockCaisse .caisse-table th:nth-child(2) { width: 24%; }
-    #stockCaisse .caisse-table th:nth-child(3) { width: 14%; }
-    #stockCaisse .caisse-table th:nth-child(4) { width: 11%; }
-    #stockCaisse .caisse-table th:nth-child(5) { width: 12%; }
-    #stockCaisse .caisse-table th:nth-child(6) { width: 22%; }
-    #stockCaisse .caisse-table :is(.caisse-row-date, .caisse-row-motif, .caisse-row-author, .caisse-row-amount) { min-width: 0; max-width: none; font-size: 8pt; white-space: normal; overflow-wrap: anywhere; }
+    #stockCaisse .caisse-table th:nth-child(1) { width: 16%; }
+    #stockCaisse .caisse-table th:nth-child(2) { width: 22%; }
+    #stockCaisse .caisse-table th:nth-child(3) { width: 12%; }
+    #stockCaisse .caisse-table th:nth-child(4) { width: 12%; }
+    #stockCaisse .caisse-table th:nth-child(5) { width: 10%; }
+    #stockCaisse .caisse-table th:nth-child(6) { width: 10%; }
+    #stockCaisse .caisse-table th:nth-child(7) { width: 18%; }
+    #stockCaisse .caisse-table :is(.caisse-row-date, .caisse-row-motif, .caisse-row-author, .caisse-row-account, .caisse-row-amount) { min-width: 0; max-width: none; font-size: 8pt; white-space: normal; overflow-wrap: anywhere; }
     #stockCaisse :is(.caisse-source, .caisse-direction) { padding: 0; background: transparent; color: inherit; font-size: 7pt; white-space: normal; overflow-wrap: anywhere; }
     /* Plain labels are repeated reliably by Chrome; controls in thead are not. */
     #stockCaisse .caisse-sort { display: none; }

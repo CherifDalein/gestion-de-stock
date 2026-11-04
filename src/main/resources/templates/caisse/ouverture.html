@@ -1,14 +1,52 @@
 <div th:fragment="content">
     <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
     <section class="record-page" aria-labelledby="ouvertureTitre">
-        <header class="record-header"><div><p class="record-kicker">Démarrage de la boutique</p><h1 id="ouvertureTitre">Solde initial de caisse</h1><p class="record-intro">Renseignez l’argent déjà présent dans la caisse avant de commencer à enregistrer les opérations.</p></div><a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back">Retour au journal</a></header>
+        <header class="record-header">
+            <div><p class="record-kicker">Démarrage de la boutique</p><h1 id="ouvertureTitre">Soldes initiaux de trésorerie</h1><p class="record-intro">Renseignez l’argent déjà disponible en caisse, sur Orange Money et à la banque avant vos premières opérations.</p></div>
+            <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back">Retour au journal</a>
+        </header>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
-        <p class="record-note mb-4">Cette saisie se fait une seule fois, pendant le démarrage de la boutique et avant le premier mouvement de caisse. Terminez vos stocks initiaux et votre solde initial avant votre premier achat ou votre première vente. Le solde initial contribue au solde actuel, sans être compté comme un encaissement du jour. Les jours suivants, le solde à l’ouverture est calculé automatiquement.</p>
-        <form th:if="${initialAutorise}" th:action="@{/caisse/ouverture}" th:object="${ouvertureCaisse}" method="post" class="record-panel">
-            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
-            <div class="record-grid"><div class="record-field"><label for="ouvertureMontant">Argent déjà en caisse (GNF)</label><input id="ouvertureMontant" class="form-control" th:field="*{montant}" type="number" min="0" step="0.01" required><p class="record-help">Saisissez zéro si vous démarrez avec une caisse vide.</p></div><div class="record-field"><label for="ouvertureMotif">Motif</label><textarea id="ouvertureMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="255" required></textarea></div></div>
-            <div class="record-actions"><button type="submit" class="btn btn-primary">Enregistrer le solde initial</button></div>
+        <p class="record-note mb-4">Chaque compte se renseigne une seule fois, pendant le démarrage de la boutique. Terminez vos stocks et vos soldes initiaux avant votre premier achat, votre première vente, votre premier transfert ou votre première dépense. Ces soldes contribuent au total disponible, sans être comptés comme des encaissements du jour.</p>
+        <form th:if="${initialAutorise}" th:action="@{/caisse/ouverture}" th:object="${ouvertureCaisse}" method="post" class="operation-form tresorerie-form">
+            <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+            <section class="record-panel" aria-labelledby="ouvertureCompteTitre">
+                <div class="record-panel-heading"><h2 id="ouvertureCompteTitre">Initialiser un compte</h2><p>Seuls les comptes encore disponibles au démarrage sont proposés.</p></div>
+                <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="comptePaiement">Compte à initialiser</label>
+                        <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required th:attr="aria-invalid=${#fields.hasErrors('comptePaiement')}">
+                            <option th:each="compte : ${comptesInitialisables}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                    </div>
+                    <div class="record-field">
+                        <label for="ouvertureMontant">Argent déjà disponible (GNF)</label>
+                        <input id="ouvertureMontant" class="form-control" th:field="*{montant}" type="number" min="0" max="999999999999999.99" step="0.01" inputmode="decimal" required aria-describedby="ouvertureMontantAide" th:attr="aria-invalid=${#fields.hasErrors('montant')}">
+                        <p id="ouvertureMontantAide" class="record-help">Saisissez zéro si ce compte est vide au démarrage.</p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="ouvertureMotif">Motif</label>
+                        <textarea id="ouvertureMotif" class="form-control" th:field="*{motif}" rows="2" maxlength="255" required th:attr="aria-invalid=${#fields.hasErrors('motif')}"></textarea>
+                    </div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Enregistrer le solde initial</button>
+            </div>
         </form>
-        <section th:unless="${initialAutorise}" class="record-panel"><div class="record-panel-heading"><h2>Solde initial indisponible</h2><p th:unless="${initialisationOuverte}">Le démarrage de la boutique est terminé : le solde initial ne peut plus être ajouté.</p><p th:if="${initialisationOuverte}">La caisse est déjà initialisée ou un mouvement a été enregistré : le solde initial ne peut plus être ajouté.</p><p>Consultez le journal pour retrouver les opérations.</p><p>Solde actuel : <strong th:text="${#numbers.formatDecimal(soldeTotal,1,'WHITESPACE',2,'COMMA') + ' GNF'}"></strong></p></div></section>
+        <div th:unless="${initialAutorise}">
+            <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+            <section class="record-panel">
+                <div class="record-panel-heading">
+                    <h2>Soldes initiaux indisponibles</h2>
+                    <p th:unless="${initialisationOuverte}">Le démarrage de la boutique est terminé : les soldes initiaux ne peuvent plus être ajoutés.</p>
+                    <p th:if="${initialisationOuverte}">Tous les comptes sont déjà initialisés.</p>
+                    <p>Consultez le journal pour retrouver les opérations.</p>
+                    <p>Solde total de la boutique : <strong th:text="${#numbers.formatDecimal(soldeTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
+                </div>
+            </section>
+        </div>
     </section>
 </div>

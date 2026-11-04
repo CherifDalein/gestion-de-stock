@@ -36,7 +36,8 @@ public class InitialisationBoutiqueService {
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void terminer() {
         Utilisateur acteur = administrateur();
-        em.refresh(acteur, LockModeType.PESSIMISTIC_WRITE);
+        // La lecture partagée protège les droits sans bloquer les clés étrangères d'un encaissement en cours.
+        em.refresh(acteur, LockModeType.PESSIMISTIC_READ);
         if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();
         boutiques.exigerAppartenance(acteur.getBoutique());
         verrouillerBoutiqueCourante().setInitialisationTerminee(true);

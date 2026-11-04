@@ -106,7 +106,7 @@ public class VenteController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu());
+                venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement());
                 redirectAttributes.addFlashAttribute("success", "Versement client enregistré avec succès.");
                 return "redirect:/ventes/regler/" + id;
             } catch (ReglementVenteObsoleteException | ConcurrencyFailureException e) {

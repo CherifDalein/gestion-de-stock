@@ -1,0 +1,10 @@
+<section th:fragment="soldes" class="tresorerie-accounts" aria-label="Soldes des comptes de la boutique">
+    <article class="tresorerie-account" th:each="compte : ${comptesTresorerie}">
+        <div class="tresorerie-account-heading">
+            <h2 th:text="${compte.libelle}"></h2>
+            <span class="tresorerie-account-icon"><i class="fa-solid" th:classappend="${compte.name() == 'CAISSE' ? 'fa-money-bill-wave' : (compte.name() == 'ORANGE_MONEY' ? 'fa-mobile-screen-button' : 'fa-building-columns')}" aria-hidden="true"></i></span>
+        </div>
+        <p class="tresorerie-account-value" th:classappend="${soldesParCompte.get(compte) < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(soldesParCompte.get(compte), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+        <p class="tresorerie-account-caption">Solde actuel du compte</p>
+    </article>
+</section>

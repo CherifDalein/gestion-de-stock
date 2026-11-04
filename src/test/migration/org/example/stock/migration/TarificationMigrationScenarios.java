@@ -13,7 +13,7 @@ final class TarificationMigrationScenarios {
 
     static void schema(Connection c, boolean vide) throws Exception {
         boolean maria = c.getMetaData().getDatabaseProductName().equals("MariaDB");
-        String contenu = Files.readString(Path.of("docs/database-schema.sql"))
+        String contenu = SchemaHistorique.sansTresorerie(Files.readString(Path.of("docs/database-schema.sql")))
                 .replaceAll("(?m)^--[^\\r\\n]*", "")
                 .replaceAll("(?m)^\\s*prix_definis BOOLEAN NOT NULL DEFAULT TRUE,\\s*$", "")
                 .replaceAll("(?m)^\\s*prix_vente_unitaire DECIMAL\\(17,2\\) NULL,\\s*$", "")

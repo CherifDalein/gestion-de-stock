@@ -7,32 +7,41 @@ const scripts = path.resolve(__dirname, '../../main/resources/static/js');
 
 function environnement(script) {
     class Element {
-        constructor() { this.children = []; this.dataset = {}; this.value = ''; this.className = ''; this.classList = { add() {}, remove() {} }; }
+        constructor(tagName = 'div') { this.tagName = tagName; this.children = []; this.dataset = {}; this.value = ''; this.className = ''; this.classList = { add() {}, remove() {} }; }
         appendChild(child) { child.parent = this; this.children.push(child); }
-        insertCell() { const cell = new Element(); this.appendChild(cell); return cell; }
+        insertCell() { const cell = new Element('td'); this.appendChild(cell); return cell; }
         addEventListener() {}
         setAttribute() {}
         setCustomValidity(value) { this.validationMessage = value; }
         focus() {}
         remove() { this.parent.children.splice(this.parent.children.indexOf(this), 1); }
-        querySelectorAll() {
-            return this.children.flatMap(child => [child, ...child.querySelectorAll()]).filter(child => child.name);
+        querySelectorAll(selector) {
+            const descendants = this.children.flatMap(child => [child, ...child.descendants()]);
+            if (selector === '.ligne-total') return descendants.filter(child => child.className.split(' ').includes('ligne-total'));
+            if (selector === 'input[name]') return descendants.filter(child => child.tagName === 'input' && child.name);
+            const attribute = /^input\[name([*$])="([^"]+)"\]$/.exec(selector);
+            if (attribute) return descendants.filter(child => child.tagName === 'input' && child.name &&
+                (attribute[1] === '$' ? child.name.endsWith(attribute[2]) : child.name.includes(attribute[2])));
+            throw new Error(`Sélecteur absent du faux DOM : ${selector}`);
         }
+        descendants() { return this.children.flatMap(child => [child, ...child.descendants()]); }
+        querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
     }
-    const elements = Object.fromEntries(['inputPrix', 'inputQtite', 'inputQuantite', 'totalGeneral', 'montantVerse',
+    const elements = Object.fromEntries(['inputPrix', 'inputPrixVente', 'inputQtite', 'inputQuantite', 'totalGeneral', 'montantVerse',
         'resteAPayer', 'totalVente', 'inputTotalTotal', 'panierBody'].map(id => [id, new Element()]));
     const body = new Element();
     const option = { value: '1', text: 'Produit (10 en stock)',
-        getAttribute: name => ({ 'data-nom': 'Produit', 'data-prix': option.prix })[name], prix: '0.10' };
+        getAttribute: name => ({ 'data-nom': 'Produit', 'data-prix': option.prix,
+            'data-prix-vente': option.prix, 'data-prix-definis': 'true' })[name], prix: '0.10' };
     elements.selectProduit = new Element(); elements.selectProduit.options = [option]; elements.selectProduit.selectedIndex = 0;
     const alerts = [];
     const document = {
         addEventListener() {},
-        createElement: () => new Element(),
+        createElement: tagName => new Element(tagName),
         getElementById: id => elements[id] || elements.panierBody.children.find(row => row.id === id),
         querySelector: () => body,
         querySelectorAll: selector => selector === '.ligne-total'
-            ? body.children.flatMap(row => row.children).filter(cell => cell.className.includes('ligne-total'))
+            ? body.querySelectorAll('.ligne-total')
             : body.children
     };
     const context = vm.createContext({ document, alert: message => alerts.push(message) });
@@ -54,7 +63,7 @@ test('les montants conservent les centimes au-delà de la précision de Number',
 test('le panier achat calcule le total et le reste sans arrondi', () => {
     const { context, elements, body } = environnement('achat.js');
     for (const [prix, quantite] of [['0.10', '3'], ['0.20', '1']]) {
-        elements.selectProduit.value = '1'; elements.inputPrix.value = prix; elements.inputQtite.value = quantite;
+        elements.selectProduit.value = '1'; elements.inputPrix.value = prix; elements.inputPrixVente.value = prix; elements.inputQtite.value = quantite;
         vm.runInContext('ajouterLigne()', context);
     }
     assert.equal(elements.totalGeneral.value, '0.50');
@@ -64,7 +73,7 @@ test('le panier achat calcule le total et le reste sans arrondi', () => {
     body.children[0].remove(); vm.runInContext('reindexerLignes(); calculerTotal()', context);
     assert.equal(elements.totalGeneral.value, '0.20');
     assert.equal(elements.resteAPayer.value, '0.10');
-    assert.equal(body.children[0].querySelectorAll()[0].name, 'lignes[0].produit.id');
+    assert.equal(body.children[0].querySelectorAll('input[name]')[0].name, 'lignes[0].produit.id');
 });
 
 test('le panier vente conserve le versement manuel après suppression', () => {
@@ -85,14 +94,17 @@ test('le total maximal conserve .99 et un dépassement ne change pas le panier o
     for (const script of ['achat.js', 'panier.js']) {
         const env = environnement(script); const { context, elements, option, alerts } = env;
         elements.selectProduit.value = '1'; elements.inputPrix.value = '999999999999999.99';
+        elements.inputPrixVente.value = '999999999999999.99';
         option.prix = '999999999999999.99'; elements.inputQtite.value = '1'; elements.inputQuantite.value = '1';
         vm.runInContext(script === 'achat.js' ? 'ajouterLigne()' : 'ajouterAuPanier()', context);
         assert.equal((script === 'achat.js' ? elements.totalGeneral : elements.inputTotalTotal).value, '999999999999999.99');
         elements.selectProduit.value = '1'; elements.inputPrix.value = '0.01'; option.prix = '0.01';
+        elements.inputPrixVente.value = '0.01';
         elements.inputQtite.value = '1'; elements.inputQuantite.value = '1';
         const stock = option.text;
         vm.runInContext(script === 'achat.js' ? 'ajouterLigne()' : 'ajouterAuPanier()', context);
         assert.equal(alerts.length, 1); assert.equal(option.text, stock);
         assert.equal((script === 'achat.js' ? env.body : elements.panierBody).children.length, 1);
+        assert.equal((script === 'achat.js' ? elements.totalGeneral : elements.inputTotalTotal).value, '999999999999999.99');
     }
 });

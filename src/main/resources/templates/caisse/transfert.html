@@ -1,0 +1,47 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
+    <section class="record-page" aria-labelledby="transfertTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Trésorerie</p><h1 id="transfertTitre">Transférer des fonds</h1><p class="record-intro">Déplacez de l’argent entre la caisse, Orange Money et la banque de votre boutique.</p></div>
+            <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au journal</a>
+        </header>
+        <form th:action="@{/caisse/transfert}" th:object="${transfertTresorerie}" method="post" class="operation-form tresorerie-form">
+        <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+        <p class="record-note tresorerie-form-note">Le compte de départ est débité et le compte d’arrivée est crédité du même montant. Le solde total de la boutique reste identique. Enregistrez ici les transferts effectués entre vos comptes.</p>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+            <input type="hidden" th:field="*{jetonOperation}">
+            <section class="record-panel" aria-labelledby="transfertComptesTitre">
+                <div class="record-panel-heading"><h2 id="transfertComptesTitre">Détails du transfert</h2><p>Choisissez deux comptes différents et vérifiez le montant disponible.</p></div>
+                <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="compteSource">Compte de départ</label>
+                        <select id="compteSource" class="form-select" th:field="*{compteSource}" required th:attr="aria-invalid=${#fields.hasErrors('compteSource')}">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                    </div>
+                    <div class="record-field">
+                        <label for="compteDestination">Compte d’arrivée</label>
+                        <select id="compteDestination" class="form-select" th:field="*{compteDestination}" required th:attr="aria-invalid=${#fields.hasErrors('compteDestination')}">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                    </div>
+                    <div class="record-field">
+                        <label for="montant">Montant à transférer (GNF)</label>
+                        <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required aria-describedby="transfertMontantAide" th:attr="aria-invalid=${#fields.hasErrors('montant')}">
+                        <p id="transfertMontantAide" class="record-help">Le compte de départ doit disposer du montant à transférer.</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="motif">Motif du transfert</label>
+                        <textarea id="motif" class="form-control" th:field="*{motif}" rows="3" maxlength="255" required placeholder="Exemple : dépôt des espèces sur le compte bancaire" th:attr="aria-invalid=${#fields.hasErrors('motif')}"></textarea>
+                    </div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-right-left" aria-hidden="true"></i> Enregistrer le transfert</button>
+            </div>
+        </form>
+    </section>
+</div>

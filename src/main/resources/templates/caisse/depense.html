@@ -1,0 +1,41 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
+    <section class="record-page" aria-labelledby="depenseTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Trésorerie</p><h1 id="depenseTitre">Enregistrer une dépense</h1><p class="record-intro">Renseignez une sortie d’argent liée au fonctionnement de la boutique.</p></div>
+            <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au journal</a>
+        </header>
+        <form th:action="@{/caisse/depense}" th:object="${depenseTresorerie}" method="post" class="operation-form tresorerie-form">
+        <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+        <p class="record-note tresorerie-form-note">Le montant est retiré du compte choisi et conservé dans le journal. Pour payer des marchandises ou un fournisseur, utilisez les achats et leurs règlements.</p>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+            <input type="hidden" th:field="*{jetonOperation}">
+            <section class="record-panel" aria-labelledby="depenseDetailsTitre">
+                <div class="record-panel-heading"><h2 id="depenseDetailsTitre">Détails de la dépense</h2><p>Choisissez le compte utilisé et indiquez la raison de la sortie.</p></div>
+                <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="compteSource">Compte utilisé pour le paiement</label>
+                        <select id="compteSource" class="form-select" th:field="*{compteSource}" required th:attr="aria-invalid=${#fields.hasErrors('compteSource')}">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                    </div>
+                    <div class="record-field">
+                        <label for="montant">Montant de la dépense (GNF)</label>
+                        <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required aria-describedby="depenseMontantAide" th:attr="aria-invalid=${#fields.hasErrors('montant')}">
+                        <p id="depenseMontantAide" class="record-help">Le compte choisi doit disposer du montant de la dépense.</p>
+                    </div>
+                    <div class="record-field record-field--wide">
+                        <label for="motif">Motif de la dépense</label>
+                        <textarea id="motif" class="form-control" th:field="*{motif}" rows="3" maxlength="255" required placeholder="Exemple : loyer de la boutique" th:attr="aria-invalid=${#fields.hasErrors('motif')}"></textarea>
+                    </div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer la dépense</button>
+            </div>
+        </form>
+    </section>
+</div>

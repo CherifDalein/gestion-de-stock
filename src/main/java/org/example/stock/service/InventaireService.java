@@ -90,7 +90,7 @@ public class InventaireService {
         boutiques.exigerAppartenance(compte.getBoutique()); return compte;
     }
     private Utilisateur verrouillerAdministrateur() {
-        Utilisateur acteur=administrateur(); em.refresh(acteur,LockModeType.PESSIMISTIC_WRITE);
+        Utilisateur acteur=administrateur(); em.refresh(acteur,LockModeType.PESSIMISTIC_READ);
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
         boutiques.exigerAppartenance(acteur.getBoutique()); return acteur;
     }

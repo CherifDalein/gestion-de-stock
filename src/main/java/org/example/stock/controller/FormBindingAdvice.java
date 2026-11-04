@@ -30,11 +30,11 @@ public class FormBindingAdvice {
             servletBinder.addHeaderPredicate(nom -> false);
         }
         String[] champs = switch (binder.getObjectName()) {
-            case "achat" -> new String[]{"fournisseur", "fournisseur.id", "montantVerse",
+            case "achat" -> new String[]{"fournisseur", "fournisseur.id", "montantVerse", "comptePaiement",
                     "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire", "lignes[*].prixVenteUnitaire"};
-            case "vente" -> new String[]{"client", "client.id", "montantVerse",
+            case "vente" -> new String[]{"client", "client.id", "montantVerse", "comptePaiement",
                     "lignes[*].produit.id", "lignes[*].quantite"};
-            case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu"};
+            case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement"};
             case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
@@ -44,7 +44,7 @@ public class FormBindingAdvice {
         };
         if (binder.getObjectName().equals("achat")
                 && request.getRequestURI().startsWith(request.getContextPath() + "/achats/modifier/")) {
-            champs = Arrays.stream(champs).filter(champ -> !champ.equals("montantVerse")).toArray(String[]::new);
+            champs = Arrays.stream(champs).filter(champ -> !champ.equals("montantVerse") && !champ.equals("comptePaiement")).toArray(String[]::new);
         }
         if (binder.getObjectName().equals("produit")
                 && request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/")) {
@@ -57,6 +57,9 @@ public class FormBindingAdvice {
         // Paramètre de transport lu séparément par le contrôleur, jamais une propriété persistante.
         if (creation) champs = Stream.concat(Stream.of(champs), Stream.of("jetonCreation")).toArray(String[]::new);
         for (String parametre : request.getMethod().equals("POST") ? request.getParameterMap().keySet() : java.util.Set.<String>of()) {
+            if (parametre.equals("comptePaiement") && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul compte de paiement doit être choisi");
+            }
             if (!parametre.equals("_csrf") && Arrays.stream(champs).noneMatch(champ -> correspond(champ, parametre))) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");
             }

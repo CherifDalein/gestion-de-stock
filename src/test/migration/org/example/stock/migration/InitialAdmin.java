@@ -71,6 +71,7 @@ public class InitialAdmin {
                         try (var ids = s.getGeneratedKeys()) { ids.next(); boutiqueId = ids.getLong(1); }
                     }
                 }
+                provisionnerTresorerieSiPresente(c, boutiqueId);
                 try (var s = c.prepareStatement("INSERT INTO utilisateur(nom,email,mot_de_passe,date_inscription,role,boutique_id) VALUES(?,?,?,?,?,?)")) {
                 s.setString(1, formulaire.getNom()); s.setString(2, formulaire.getEmail());
                 s.setString(3, new LengthCheckedBcryptPasswordEncoder().encode(password));
@@ -85,6 +86,23 @@ public class InitialAdmin {
             }
         } finally {
             if (verrouSql) try (var s = c.prepareStatement("SELECT RELEASE_LOCK(?)")) { s.setString(1, verrou); s.executeQuery().close(); }
+        }
+    }
+
+    /** Le bootstrap JDBC doit effectuer le même provisionnement que la cascade JPA des nouvelles boutiques. */
+    private static void provisionnerTresorerieSiPresente(Connection c, Long boutiqueId) throws SQLException {
+        String nom = BoutiquesMigration.tables(c).get("compte_tresorerie_boutique");
+        // Compatibilité avec les installations en cours de migration des versions précédentes.
+        if (nom == null) return;
+        if (!nom.matches("[A-Za-z0-9_]+")) throw new IllegalStateException("Nom de table de trésorerie inattendu");
+        String guillemet = c.getMetaData().getIdentifierQuoteString().strip();
+        String table = guillemet + nom + guillemet;
+        String sql = "INSERT INTO " + table + "(boutique_id,compte) SELECT ?,? WHERE NOT EXISTS (SELECT 1 FROM " + table + " WHERE boutique_id=? AND compte=?)";
+        try (var s = c.prepareStatement(sql)) {
+            for (String compte : List.of("CAISSE", "ORANGE_MONEY", "BANQUE")) {
+                s.setLong(1, boutiqueId); s.setString(2, compte); s.setLong(3, boutiqueId); s.setString(4, compte);
+                s.executeUpdate();
+            }
         }
     }
 }

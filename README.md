@@ -31,6 +31,12 @@ Pour une base déjà à jour avec les stocks et les tarifs, appliquer ensuite la
 sauvegarde. Elle réserve les stocks et le solde initiaux à la préparation de la
 boutique, puis conserve les achats et ventes comme seules variations de stock.
 
+Pour séparer les espèces, Orange Money et la banque, appliquer la
+[migration de trésorerie](docs/migrations/tresorerie.md) après sauvegarde.
+Les anciens mouvements restent affectés à la caisse, avec leurs montants
+et leurs liens d'origine. Le [guide de trésorerie](docs/tresorerie.md) décrit
+les paiements, les transferts et les dépenses.
+
 ## Tests
 
 ```sh
@@ -54,6 +60,8 @@ node --test src/test/js/montants.test.cjs
 - [Activation et désactivation des comptes utilisateurs](docs/migrations/acces-utilisateurs.md)
 - [Paramètres de boutique et coordonnées sur les factures](docs/migrations/parametres-boutique.md)
 - [Démarrage de boutique, stock et solde initiaux](docs/migrations/demarrage-boutique.md)
+- [Caisse, Orange Money, banque et transferts](docs/tresorerie.md)
+- [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

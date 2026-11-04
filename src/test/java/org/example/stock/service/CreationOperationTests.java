@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationCreation;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -491,6 +492,64 @@ class CreationOperationTests {
                 .andExpect(status().isConflict()).andExpect(view().name("dashboard"))
                 .andExpect(model().attributeExists("error"));
         verifierEffets(type, 1, 3);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ACHAT,CAISSE", "ACHAT,ORANGE_MONEY", "ACHAT,BANQUE", "VENTE,CAISSE", "VENTE,ORANGE_MONEY", "VENTE,BANQUE"})
+    void leCompteChoisiEstArchiveEtUnRejeuNePeutPasLeChanger(TypeOperationCreation type, CompteTresorerie compte) throws Exception {
+        String jeton = ouvrir(type);
+        mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", compte.name())
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
+        assertThat(caisse.findAll()).singleElement().extracting(MouvementCaisse::getCompte).isEqualTo(compte);
+        var montant = caisse.calculerSoldeTotal();
+        mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", compte.name())
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
+        CompteTresorerie autre = compte == CompteTresorerie.CAISSE ? CompteTresorerie.BANQUE : CompteTresorerie.CAISSE;
+        mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", autre.name())
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isConflict());
+        assertThat(caisse.count()).isOne();
+        assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo(montant);
+        verifierEffets(type, 1, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource(TypeOperationCreation.class)
+    void unAncienFormulaireSansCompteGardeLaCaisseEtSonEmpreinte(TypeOperationCreation type) throws Exception {
+        String jeton = ouvrir(type);
+        creer(type, jeton, 3);
+        String empreinte = operations.findById(jeton).orElseThrow().getEmpreinte();
+        mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", "CAISSE")
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
+        assertThat(operations.findById(jeton).orElseThrow().getEmpreinte()).isEqualTo(empreinte);
+        assertThat(caisse.findAll()).singleElement().extracting(MouvementCaisse::getCompte).isEqualTo(CompteTresorerie.CAISSE);
+        verifierEffets(type, 1, 3);
+    }
+
+    @ParameterizedTest
+    @EnumSource(TypeOperationCreation.class)
+    void uneOperationACreditNeCrediteNiNeDebiteLeCompteSelectionne(TypeOperationCreation type) throws Exception {
+        mvc.perform(formulaire(type, ouvrir(type), 3).param("montantVerse", "0").param("comptePaiement", "BANQUE")
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
+        assertThat(caisse.count()).isZero();
+        assertThat(stock()).isEqualTo(type == TypeOperationCreation.ACHAT ? 13L : 7L);
+        assertThat(achats.count()).isEqualTo(type == TypeOperationCreation.ACHAT ? 1 : 0);
+        assertThat(ventes.count()).isEqualTo(type == TypeOperationCreation.VENTE ? 1 : 0);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"ACHAT,inconnu", "VENTE,inconnu", "ACHAT,1", "VENTE,1"})
+    void unCompteInconnuEstRefuseAvantTouteEcriture(TypeOperationCreation type, String compte) throws Exception {
+        mvc.perform(formulaire(type, ouvrir(type), 3).param("comptePaiement", compte)
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isBadRequest());
+        verifierAucunEffet();
+    }
+
+    @ParameterizedTest
+    @EnumSource(TypeOperationCreation.class)
+    void plusieursComptesPourUnMemePaiementSontRefuses(TypeOperationCreation type) throws Exception {
+        mvc.perform(formulaire(type, ouvrir(type), 3).param("comptePaiement", "CAISSE", "BANQUE")
+                .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isBadRequest());
+        verifierAucunEffet();
     }
 
     private Utilisateur utilisateur(String email) {

@@ -5,6 +5,7 @@ import org.example.stock.model.DetailAchat;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Montants;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.StockLockRepository;
@@ -35,6 +36,7 @@ public class AchatService {
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
+        if (achat.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le paiement.");
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
         initialisation.verrouillerEtClorePourActivite();
@@ -65,7 +67,7 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
 
         String motif = "Achat #" + achatEnregistre.getId() + " - Fournisseur: " + achatEnregistre.getFournisseur().getNom();
-        caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel);
+        caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel, achat.getComptePaiement());
 
         return achatEnregistre;
     }
@@ -123,6 +125,12 @@ public class AchatService {
 
     @Transactional
     public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        reglerAchat(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+    }
+
+    @Transactional
+    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) {
             throw new IllegalArgumentException("Le versement doit être positif et comporter au maximum 2 décimales.");
@@ -148,7 +156,7 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
-        caisseService.enregistrerSortieAchat(montant, motif, achat, actuel);
+        caisseService.enregistrerSortieAchat(montant, motif, achat, actuel, comptePaiement);
     }
 
     public List<Achat> listerTous() {

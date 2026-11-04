@@ -5,6 +5,7 @@ import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
@@ -33,6 +34,7 @@ public class VenteService {
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
+        if (vente.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le paiement.");
         if (vente.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
@@ -93,7 +95,7 @@ public class VenteService {
         String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
                 (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
 
-        caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel);
+        caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel, vente.getComptePaiement());
 
         return venteEnregistree;
     }
@@ -108,6 +110,12 @@ public class VenteService {
 
     @Transactional
     public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        reglerVente(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+    }
+
+    @Transactional
+    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
         montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
@@ -129,7 +137,7 @@ public class VenteService {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Vente #" + id + " - Client: "
                 + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
-        caisseService.enregistrerEntreeVente(montant, motif, vente, actuel);
+        caisseService.enregistrerEntreeVente(montant, motif, vente, actuel, comptePaiement);
     }
 
     private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {

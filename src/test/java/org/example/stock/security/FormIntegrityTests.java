@@ -321,7 +321,7 @@ class FormIntegrityTests {
         var accueil = mvc.perform(get("/")).andExpect(status().isOk())
                 .andExpect(model().attributeExists("soldeCaisse", "soldeOuverture", "entreesJour", "sortiesJour"))
                 .andReturn().getResponse().getContentAsString();
-        assertThat(accueil).contains("Caisse Centrale", "href=\"/achats\"", "href=\"/fournisseurs\"", "href=\"/caisse/journal\"");
+        assertThat(accueil).contains("Solde total de la boutique", "href=\"/achats\"", "href=\"/fournisseurs\"", "href=\"/caisse/journal\"");
         var catalogue = mvc.perform(get("/produits")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(catalogue).contains("Prix d’achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/",

@@ -149,6 +149,36 @@ CREATE TABLE IF NOT EXISTS detail_vente (
         FOREIGN KEY (produit_id) REFERENCES produit (id)
 );
 
+CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    compte VARCHAR(32) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_compte_tresorerie_boutique UNIQUE (boutique_id, compte),
+    CONSTRAINT fk_compte_tresorerie_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS operation_tresorerie (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    jeton VARCHAR(36) NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    compte_source VARCHAR(32) NOT NULL,
+    compte_destination VARCHAR(32) NULL,
+    montant DECIMAL(17,2) NOT NULL,
+    motif VARCHAR(255) NOT NULL,
+    date_operation DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_operation_tresorerie_jeton UNIQUE (jeton),
+    CONSTRAINT fk_operation_tresorerie_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_operation_tresorerie_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    INDEX idx_operation_tresorerie_boutique_date (boutique_id, date_operation, id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS mouvement_caisse (
     id BIGINT NOT NULL AUTO_INCREMENT,
     boutique_id BIGINT NOT NULL,
@@ -160,7 +190,11 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     utilisateur_id BIGINT,
     achat_id BIGINT,
     vente_id BIGINT,
+    compte VARCHAR(32) NOT NULL DEFAULT 'CAISSE',
+    operation_tresorerie_id BIGINT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT fk_mouvement_operation_tresorerie
+        FOREIGN KEY (operation_tresorerie_id) REFERENCES operation_tresorerie (id),
     CONSTRAINT fk_mouvement_caisse_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_mouvement_caisse_utilisateur

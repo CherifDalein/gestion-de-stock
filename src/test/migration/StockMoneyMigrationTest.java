@@ -23,7 +23,7 @@ class StockMoneyMigrationTest {
                 execute("CREATE DATABASE " + database);
                 try {
                     execute("USE " + database);
-                    String schema = Files.readString(Path.of("docs/database-schema.sql"));
+                    String schema = org.example.stock.migration.SchemaHistorique.sansTresorerie(Files.readString(Path.of("docs/database-schema.sql")));
                     schema = schema.substring(schema.indexOf("CREATE TABLE"));
                     executeScript(schema.replace("DECIMAL(17,2)", "DOUBLE"));
                     execute("INSERT INTO produit (id,prix_achat,prix_vente,quantite) VALUES (1,0.10,0.20,10)");

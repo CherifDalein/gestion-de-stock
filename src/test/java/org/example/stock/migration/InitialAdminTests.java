@@ -32,6 +32,46 @@ class InitialAdminTests {
         }
     }
 
+    @Test
+    void lePremierAdministrateurProvisionneLesTroisComptesDuSchemaActuel() throws Exception {
+        try (var c = base()) {
+            creerTableTresorerie(c);
+            InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique")).isEqualTo("3");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique t JOIN utilisateur u ON u.boutique_id=t.boutique_id")).isEqualTo("3");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(DISTINCT compte) FROM compte_tresorerie_boutique WHERE compte IN('CAISSE','ORANGE_MONEY','BANQUE')")).isEqualTo("3");
+            assertThatThrownBy(() -> InitialAdmin.creer(c, "autre@example.test", "MotDePasseTest42")).hasMessageContaining("Des comptes existent");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique")).isEqualTo("3");
+        }
+    }
+
+    @Test
+    void uneBoutiqueExistanteConserveSesComptesEtRecoitSeulementLesManquants() throws Exception {
+        try (var c = base()) {
+            creerTableTresorerie(c);
+            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP)");
+            AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,compte) VALUES(99,42,'CAISSE')");
+            InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE boutique_id=42")).isEqualTo("3");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT id FROM compte_tresorerie_boutique WHERE compte='CAISSE'")).isEqualTo("99");
+        }
+    }
+
+    @Test
+    void unEchecDeCreationAnnuleAussiLaBoutiqueEtSesTroisComptes() throws Exception {
+        try (var c = base()) {
+            creerTableTresorerie(c);
+            AccountEmailMigration.executer(c, "ALTER TABLE utilisateur ADD CONSTRAINT refus_admin_test CHECK(role<>'ADMIN')");
+            assertThatThrownBy(() -> InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42")).isInstanceOf(SQLException.class);
+            for (String nom : java.util.List.of("boutique", "compte_tresorerie_boutique", "utilisateur"))
+                assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM " + nom)).isEqualTo("0");
+        }
+    }
+
+    private static void creerTableTresorerie(Connection c) throws SQLException {
+        AccountEmailMigration.executer(c, "CREATE TABLE compte_tresorerie_boutique(id BIGINT AUTO_INCREMENT PRIMARY KEY,boutique_id BIGINT NOT NULL REFERENCES boutique(id),compte VARCHAR(32) NOT NULL,CONSTRAINT uk_compte_tresorerie_boutique UNIQUE(boutique_id,compte))");
+    }
+
     static Connection base() throws SQLException {
         var c = DriverManager.getConnection("jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MariaDB;DATABASE_TO_LOWER=TRUE", "sa", "");
         AccountEmailMigration.executer(c, "CREATE TABLE boutique(id BIGINT AUTO_INCREMENT PRIMARY KEY,nom VARCHAR(255) NOT NULL,date_creation TIMESTAMP NOT NULL)");

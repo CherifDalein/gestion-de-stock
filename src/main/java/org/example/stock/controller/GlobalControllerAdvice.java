@@ -2,6 +2,7 @@ package org.example.stock.controller;
 
 import org.example.stock.model.Utilisateur;
 import org.example.stock.enums.Role;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.service.EssaiBoutiqueService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,6 +17,11 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 
 @ControllerAdvice
 public class GlobalControllerAdvice {
+
+    @ModelAttribute("comptesTresorerie")
+    public CompteTresorerie[] comptesTresorerie() {
+        return CompteTresorerie.values();
+    }
 
     @Autowired
     private UtilisateurRepository utilisateurRepository;

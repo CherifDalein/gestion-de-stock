@@ -13,7 +13,7 @@
 
         <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <a th:if="${creationConflit}" th:href="@{/ventes/nouveau}" class="btn btn-primary mb-3">Ouvrir une nouvelle vente</a>
-        <p th:if="${initialisationOuverte}" class="operation-start-note"><i class="fas fa-circle-info" aria-hidden="true"></i><span>Valider la première vente termine le démarrage de toute la boutique. Vérifiez que tous les stocks initiaux et le solde initial de caisse sont renseignés avant de continuer. <a sec:authorize="hasRole('ADMIN')" th:href="@{/boutique/parametres}">Vérifier le démarrage</a></span></p>
+        <p th:if="${initialisationOuverte}" class="operation-start-note"><i class="fas fa-circle-info" aria-hidden="true"></i><span>Valider la première vente termine le démarrage de toute la boutique. Vérifiez que tous les stocks initiaux et les soldes initiaux de trésorerie sont renseignés avant de continuer. <a sec:authorize="hasRole('ADMIN')" th:href="@{/boutique/parametres}">Vérifier le démarrage</a></span></p>
 
         <form th:action="@{/ventes/enregistrer}" th:object="${vente}" method="post" id="formVente" class="operation-form">
             <input type="hidden" name="jetonCreation" th:value="${jetonCreation}">
@@ -107,6 +107,13 @@
                         <span>Total de la vente</span>
                         <div class="operation-total-value"><strong id="totalVente">0</strong> <span class="operation-currency">GNF</span></div>
                         <input type="hidden" id="inputTotalTotal">
+                    </div>
+                    <div class="operation-field">
+                        <label for="comptePaiement" class="form-label">Mode de paiement</label>
+                        <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                        <p id="comptePaiementAide" class="operation-field-help">La somme reçue est ajoutée à ce compte. À crédit, aucun encaissement n’est enregistré.</p>
                     </div>
                     <div class="operation-field">
                         <label for="montantVerse" class="form-label">Somme reçue maintenant (GNF)</label>

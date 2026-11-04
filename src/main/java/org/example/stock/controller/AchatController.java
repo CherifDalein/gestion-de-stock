@@ -137,7 +137,7 @@ public class AchatController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu());
+                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement());
                 redirectAttributes.addFlashAttribute("success", "Versement fournisseur enregistré avec succès.");
                 return "redirect:/achats/regler/" + id;
             } catch (ReglementAchatObsoleteException | ConcurrencyFailureException e) {

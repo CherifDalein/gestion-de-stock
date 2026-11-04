@@ -5,11 +5,15 @@ import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.stock.enums.CompteTresorerie;
 import java.math.BigDecimal;
 
 @Getter
 @Setter
 public class ReglementVenteForm {
+    @NotNull(message = "Choisissez le compte qui reçoit le versement")
+    private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
+
     @NotNull(message = "Le montant du versement est obligatoire")
     @DecimalMin(value = "0", inclusive = false, message = "Le versement doit être supérieur à zéro")
     @Digits(integer = 15, fraction = 2, message = "Le versement accepte au maximum 15 chiffres et 2 décimales")

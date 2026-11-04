@@ -32,6 +32,7 @@
         if (!page || !table) return;
         const lignes = Array.from(table.querySelectorAll('tr[data-caisse-row]'));
         const recherche = document.getElementById('caisseSearch');
+        const compte = document.getElementById('caisseCompte');
         const source = document.getElementById('caisseSource');
         const direction = document.getElementById('caisseDirection');
         const dateDu = document.getElementById('caisseDateFrom');
@@ -51,11 +52,13 @@
         const boutonsTri = Array.from(page.querySelectorAll('[data-caisse-sort]'));
         const taillesAutorisees = new Set(['10', '25', '50', 'all']);
         const tailleInitiale = taillesAutorisees.has(taillePage?.value) ? taillePage.value : '25';
+        const comptesAutorises = new Set(Array.from(compte?.options ?? []).map(option => option.value).filter(Boolean));
         const donnees = lignes.map((ligne, ordre) => {
             const date = ligne.dataset.date?.trim() ?? '';
             return {
                 ligne, ordre, date, jour: date.slice(0, 10),
                 montant: centimes(ligne.dataset.amount), source: ligne.dataset.source?.trim() ?? '',
+                compte: ligne.dataset.compte ?? '',
                 direction: ligne.dataset.direction ?? 'inconnu',
                 recherche: normaliser([ligne.textContent, date, ligne.dataset.type].join(' '))
             };
@@ -95,6 +98,7 @@
             const au = dateAu?.value ?? '';
             return {
                 mots: normaliser(recherche?.value).split(' ').filter(Boolean),
+                compte: comptesAutorises.has(compte?.value) ? compte.value : '',
                 source: sourcesAutorisees.has(source?.value) ? sourcesAutorisees.get(source.value) : null,
                 direction: Object.hasOwn(libellesSens, direction?.value) ? direction.value : '',
                 du, au, invalide: Boolean((du && !dateValide(du)) || (au && !dateValide(au)) || (du && au && du > au))
@@ -109,6 +113,7 @@
             if (imprimer) imprimer.disabled = periodeInvalide;
             mouvementsFiltres = donnees.filter(mouvement => !periodeInvalide
                 && filtre.mots.every(mot => mouvement.recherche.includes(mot))
+                && (!filtre.compte || mouvement.compte === filtre.compte)
                 && (filtre.source === null || mouvement.source === filtre.source)
                 && (!filtre.direction || mouvement.direction === filtre.direction)
                 && ((!filtre.du && !filtre.au) || (dateValide(mouvement.jour)
@@ -147,7 +152,7 @@
 
         const filtrer = () => { numeroPage = 1; afficher(); };
         recherche?.addEventListener('input', filtrer);
-        [source, direction, taillePage].forEach(champ => champ?.addEventListener('change', filtrer));
+        [compte, source, direction, taillePage].forEach(champ => champ?.addEventListener('change', filtrer));
         [dateDu, dateAu].forEach(champ => champ?.addEventListener('input', filtrer));
         boutonsTri.forEach(bouton => {
             if (!['date', 'montant'].includes(bouton.dataset.caisseSort)) return;
@@ -167,7 +172,7 @@
         });
         page.querySelectorAll('#caisseReset, [data-reset-caisse]').forEach(bouton => {
             bouton.addEventListener('click', () => {
-                [recherche, source, direction, dateDu, dateAu].forEach(champ => { if (champ) champ.value = ''; });
+                [recherche, compte, source, direction, dateDu, dateAu].forEach(champ => { if (champ) champ.value = ''; });
                 if (taillePage) taillePage.value = tailleInitiale;
                 cleTri = 'date';
                 sensTri = -1;
@@ -187,6 +192,7 @@
             if (selectionDemandee) {
                 const filtre = criteres();
                 if (recherche?.value.trim()) criteresImprimes.push(`Recherche : ${recherche.value.trim()}`);
+                if (filtre.compte) criteresImprimes.push(`Compte : ${compte.selectedOptions[0]?.textContent ?? filtre.compte}`);
                 if (filtre.source !== null) criteresImprimes.push(`Source : ${filtre.source || 'Non renseignée'}`);
                 if (filtre.direction) criteresImprimes.push(`Sens : ${libellesSens[filtre.direction]}`);
                 if (filtre.du) criteresImprimes.push(`Du ${filtre.du.split('-').reverse().join('/')}`);

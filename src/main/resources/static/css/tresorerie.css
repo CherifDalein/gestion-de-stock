@@ -1,0 +1,23 @@
+/* Shared account balances and treasury operation forms. */
+body.stock-app .tresorerie-accounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+body.stock-app .tresorerie-account { min-width: 0; padding: 22px; border: 1px solid var(--app-border); border-radius: 14px; background: #fff; box-shadow: 0 3px 14px rgb(21 44 37 / 3%); }
+body.stock-app .tresorerie-account-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+body.stock-app .tresorerie-account-heading h2 { margin: 0; color: var(--app-muted); font-size: .84rem; font-weight: 650; }
+body.stock-app .tresorerie-account-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px; background: var(--app-tint); color: var(--app-green-dark); }
+body.stock-app .tresorerie-account-value { margin: 15px 0 7px; color: var(--app-ink); font-size: clamp(1.15rem, 1.7vw, 1.7rem); font-weight: 750; letter-spacing: -.035em; font-variant-numeric: tabular-nums; line-height: 1.35; overflow-wrap: anywhere; }
+body.stock-app .tresorerie-account-caption { margin: 0; color: var(--app-muted); font-size: .74rem; }
+body.stock-app .tresorerie-form-note { margin-bottom: 24px; }
+body.stock-app .tresorerie-form .record-errors { margin-bottom: 22px; }
+body.stock-app .tresorerie-form .record-panel { margin-top: 0; }
+body.stock-app .tresorerie-form .operation-actions > a { display: inline-flex; align-items: center; justify-content: center; }
+@media (max-width: 767.98px) {
+  body.stock-app .tresorerie-accounts { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  body.stock-app .tresorerie-account { padding: 18px 20px; }
+  body.stock-app .tresorerie-account-value { font-size: 1.55rem; }
+}
+@media print {
+  body.stock-app .tresorerie-accounts { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8pt; margin-bottom: 12pt; }
+  body.stock-app .tresorerie-account { break-inside: avoid; padding: 8pt; box-shadow: none; }
+  body.stock-app .tresorerie-account-value { font-size: 12pt; }
+  body.stock-app .tresorerie-account-icon { display: none; }
+}

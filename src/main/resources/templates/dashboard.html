@@ -63,7 +63,7 @@
                         <span class="app-nav-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span>Achats
                     </a>
                     <a class="nav-link" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'caisse/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'caisse/') ? 'page' : null}">
-                        <span class="app-nav-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>Caisse
+                        <span class="app-nav-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>Trésorerie
                     </a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading">Catalogue</div>
                     <a class="nav-link" th:href="@{/produits}" th:classappend="${#strings.startsWith(page, 'produits/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'produits/') ? 'page' : null}">
@@ -139,11 +139,11 @@
                     <h2 class="h5">Espace de vente</h2>
                     <p class="mb-0 text-muted">Enregistrez une vente, consultez vos produits et retrouvez vos clients depuis les accès rapides ci-dessous.</p>
                 </section>
-                <section sec:authorize="hasRole('ADMIN')" aria-label="Situation de la caisse">
+                <section sec:authorize="hasRole('ADMIN')" aria-label="Situation de la trésorerie">
                     <div class="app-metric-grid">
                         <article class="app-metric-card app-metric-card--primary">
                             <span class="app-metric-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
-                            <h2 class="app-metric-label">Caisse Centrale</h2>
+                            <h2 class="app-metric-label">Solde total de la boutique</h2>
                             <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
                             <a class="app-metric-foot" th:href="@{/caisse/journal}">Consulter le journal <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
                         </article>
@@ -167,7 +167,7 @@
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
-                            <h2 class="app-metric-label">Caisse du jour</h2>
+                            <h2 class="app-metric-label">Variation de trésorerie du jour</h2>
                             <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Entrées moins sorties du jour</p>
                         </article>
@@ -187,7 +187,7 @@
                         <a class="app-shortcut" th:href="@{/clients}"><span class="app-shortcut-icon"><i class="fa-solid fa-user-group" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Clients</strong><small>Gérer les coordonnées de vos clients</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         <a class="app-shortcut" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Approvisionnements</strong><small>Consulter les achats et règlements</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         <a class="app-shortcut" th:href="@{/factures/liste}"><span class="app-shortcut-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Historique et factures</strong><small>Retrouver les documents de vente</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-                        <a class="app-shortcut" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal de caisse</strong><small>Suivre les entrées et les sorties</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal de trésorerie</strong><small>Caisse, Orange Money et Banque</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                 </section>
             </div>

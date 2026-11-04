@@ -279,3 +279,27 @@ tasks.register('initialisationBoutiqueMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.InitialisationBoutiqueMariaDbTest'
 }
+
+['tresorerieCheck': '--check', 'tresorerieMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute les comptes de trésorerie et les transferts sans réécrire les soldes et historiques existants'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.TresorerieMigration'
+        args mode
+    }
+}
+
+tasks.register('tresorerieMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration de trésorerie dans des bases MariaDB temporaires locales'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.TresorerieMariaDbTest'
+}
+
+tasks.register('tresorerieServiceMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les paiements et transferts concurrents avec les vrais services sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.TresorerieServiceMariaDbTest'
+}

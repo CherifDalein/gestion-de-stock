@@ -3,6 +3,7 @@ package org.example.stock.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.enums.TypeOperationCreation;
+import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.OperationCreationRepository;
 import org.example.stock.repository.UtilisateurRepository;
@@ -189,6 +190,12 @@ public class OperationCreationService {
                         identifiant(out, ligne.getProduit() == null ? null : ligne.getProduit().getId());
                         identifiant(out, ligne.getQuantite() == null ? null : ligne.getQuantite().longValue());
                     }
+                }
+                // Le compte espèces conserve l'empreinte historique ; un autre compte change le contenu du formulaire.
+                CompteTresorerie compte = achat != null ? achat.getComptePaiement() : vente.getComptePaiement();
+                if (compte != CompteTresorerie.CAISSE) {
+                    out.writeUTF("COMPTE_PAIEMENT");
+                    out.writeUTF(compte == null ? "" : compte.name());
                 }
             }
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.toByteArray()));

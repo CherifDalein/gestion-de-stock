@@ -9,6 +9,9 @@ import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import org.example.stock.enums.CompteTresorerie;
 
 /** Espace propriétaire des données d'une boutique. */
 @Entity
@@ -16,6 +19,16 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class Boutique {
+    /** Provisionnés avec la boutique, jamais créés à la volée pendant un encaissement. */
+    @OneToMany(mappedBy = "boutique", cascade = CascadeType.ALL)
+    private List<CompteTresorerieBoutique> comptesTresorerie = new ArrayList<>();
+
+    public Boutique() {
+        for (CompteTresorerie compte : CompteTresorerie.values()) {
+            comptesTresorerie.add(new CompteTresorerieBoutique(this, compte));
+        }
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

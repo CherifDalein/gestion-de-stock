@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.stock.enums.CompteTresorerie;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,6 +22,15 @@ public class MouvementCaisse {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "boutique_id", nullable = false)
     private Boutique boutique;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 32)
+    private CompteTresorerie compte = CompteTresorerie.CAISSE;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "operation_tresorerie_id", foreignKey = @ForeignKey(name = "fk_mouvement_operation_tresorerie"))
+    private OperationTresorerie operationTresorerie;
 
     private LocalDateTime dateMouvement;
     @Column(precision = 17, scale = 2)

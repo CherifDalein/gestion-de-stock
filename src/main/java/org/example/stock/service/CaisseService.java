@@ -17,6 +17,18 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Objects;
+import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeOperationTresorerie;
+import org.example.stock.form.OperationTresorerieForm;
+import org.example.stock.form.TransfertTresorerieForm;
+import org.example.stock.form.DepenseTresorerieForm;
+import org.example.stock.model.OperationTresorerie;
+import org.example.stock.repository.CompteTresorerieBoutiqueRepository;
+import org.example.stock.repository.OperationTresorerieRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.validation.Validator;
@@ -43,23 +55,62 @@ public class CaisseService {
     @Autowired private Validator validator;
     @Autowired @Qualifier("recoveryClock") private Clock clock;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private CompteTresorerieBoutiqueRepository comptes;
+    @Autowired private OperationTresorerieRepository operations;
+
+    @Transactional(readOnly = true)
+    public void verifierGestionTresorerie() { gerant(); }
 
     @Transactional(readOnly=true)
     public boolean peutInitialiser() {
+        return peutInitialiser(CompteTresorerie.CAISSE);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean peutInitialiser(CompteTresorerie compte) {
         gerant();
-        return initialisation.estOuverte() && !mouvementRepo.existsByBoutiqueId(boutiqueService.idBoutiqueCourante());
+        exigerCompte(compte);
+        return initialisation.estOuverte()
+                && !mouvementRepo.existsByBoutiqueIdAndCompte(boutiqueService.idBoutiqueCourante(), compte);
+    }
+
+    @Transactional(readOnly = true)
+    public List<CompteTresorerie> getComptesInitialisables() {
+        gerant();
+        if (!initialisation.estOuverte()) return List.of();
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        return java.util.Arrays.stream(CompteTresorerie.values())
+                .filter(compte -> !mouvementRepo.existsByBoutiqueIdAndCompte(boutiqueId, compte)).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<CompteTresorerie, BigDecimal> getSoldesParCompte() {
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        Map<CompteTresorerie, BigDecimal> soldes = new EnumMap<>(CompteTresorerie.class);
+        for (CompteTresorerie compte : CompteTresorerie.values()) {
+            soldes.put(compte, normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compte)));
+        }
+        return soldes;
+    }
+
+    @Transactional(readOnly = true)
+    public BigDecimal getSoldeCompte(CompteTresorerie compte) {
+        exigerCompte(compte);
+        return normaliser(mouvementRepo.calculerSoldeCompte(boutiqueService.idBoutiqueCourante(), compte));
     }
 
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void initialiser(OuvertureCaisseForm formulaire) {
         Utilisateur acteur=gerant();
-        entityManager.refresh(acteur,LockModeType.PESSIMISTIC_WRITE);
+        entityManager.refresh(acteur,LockModeType.PESSIMISTIC_READ);
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
         var boutique=initialisation.verrouillerEtExigerOuverte();
         if(formulaire==null||!validator.validate(formulaire).isEmpty()) throw new IllegalArgumentException("Le montant et le motif du solde initial doivent être valides.");
-        if(mouvementRepo.existsByBoutiqueId(boutique.getId())) throw new IllegalArgumentException("Le solde initial se renseigne une seule fois, avant le premier mouvement de caisse.");
+        CompteTresorerie compte = formulaire.getComptePaiement();
+        verrouillerComptes(boutique.getId(), compte);
+        if(mouvementRepo.existsByBoutiqueIdAndCompte(boutique.getId(), compte)) throw new IllegalArgumentException("Le solde initial de ce compte se renseigne une seule fois, avant son premier mouvement.");
         MouvementCaisse mouvement=new MouvementCaisse();
-        mouvement.setBoutique(boutique);mouvement.setUtilisateur(acteur);
+        mouvement.setBoutique(boutique);mouvement.setUtilisateur(acteur);mouvement.setCompte(compte);
         mouvement.setMontant(Montants.positifOuNul(formulaire.getMontant(),"Le solde initial"));
         mouvement.setType("OUVERTURE");mouvement.setSource("SOLDE_INITIAL");mouvement.setMotif(formulaire.getMotif());
         mouvement.setDateMouvement(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
@@ -73,7 +124,7 @@ public class CaisseService {
         if(!compte.isActif()||compte.getRole()!=Role.ADMIN) throw interdit();
         boutiqueService.exigerAppartenance(compte.getBoutique());return compte;
     }
-    private static ResponseStatusException interdit(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Ouverture de caisse réservée au gérant");}
+    private static ResponseStatusException interdit(){return new ResponseStatusException(HttpStatus.FORBIDDEN,"Gestion de la trésorerie réservée au gérant");}
 
     public BigDecimal getSoldeActuel() {
         return normaliser(mouvementRepo.calculerSoldeTotal(boutiqueService.idBoutiqueCourante()));
@@ -115,20 +166,26 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerEntree(montant, motif, source, utilisateur, null);
+        enregistrerEntree(montant, motif, source, utilisateur, null, CompteTresorerie.CAISSE);
     }
 
     @Transactional
     public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur) {
-        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente);
+        enregistrerEntreeVente(montant, motif, vente, utilisateur, CompteTresorerie.CAISSE);
+    }
+
+    @Transactional
+    public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente, compte);
     }
 
     public List<MouvementCaisse> listerReglementsVente(Long venteId) {
         return mouvementRepo.findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(venteId, boutiqueService.idBoutiqueCourante());
     }
 
-    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente) {
+    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
+        exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (vente != null) {
             vente = venteRepository.findByIdAndBoutiqueId(vente.getId(), boutiqueService.idBoutiqueCourante())
@@ -143,7 +200,10 @@ public class CaisseService {
 
         montant = Montants.valider(montant, "Le montant de caisse");
         initialisation.verrouillerEtClorePourActivite();
+        // Un encaissement positif ne peut pas épuiser un compte : il reste indépendant
+        // des autres ventes. Seules les sorties doivent exclure un contrôle de fonds.
         MouvementCaisse mouvement = new MouvementCaisse();
+        mouvement.setCompte(compte);
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
         mouvement.setDateMouvement(LocalDateTime.now());
         mouvement.setMontant(montant.abs());
@@ -158,20 +218,26 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerSortie(montant, motif, source, utilisateur, null);
+        enregistrerSortie(montant, motif, source, utilisateur, null, CompteTresorerie.CAISSE);
     }
 
     @Transactional
     public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur) {
-        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat);
+        enregistrerSortieAchat(montant, motif, achat, utilisateur, CompteTresorerie.CAISSE);
+    }
+
+    @Transactional
+    public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat, compte);
     }
 
     public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
         return mouvementRepo.findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(achatId, boutiqueService.idBoutiqueCourante());
     }
 
-    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat) {
+    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
+        exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (achat != null) {
             achat = achatRepository.findByIdAndBoutiqueId(achat.getId(), boutiqueService.idBoutiqueCourante())
@@ -183,7 +249,9 @@ public class CaisseService {
 
         montant = Montants.valider(montant, "Le montant de caisse");
         initialisation.verrouillerEtClorePourActivite();
+        verrouillerComptesEnLecture(boutiqueService.idBoutiqueCourante(), compte);
         MouvementCaisse mouvement = new MouvementCaisse();
+        mouvement.setCompte(compte);
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
         mouvement.setDateMouvement(LocalDateTime.now());
 
@@ -203,11 +271,110 @@ public class CaisseService {
         mouvementRepo.save(mouvement);
     }
 
+    /** Retourne true pour la répétition exacte d'un formulaire déjà traité. */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public boolean transferer(TransfertTresorerieForm formulaire) {
+        return executerOperation(formulaire, TypeOperationTresorerie.TRANSFERT,
+                formulaire == null ? null : formulaire.getCompteDestination());
+    }
+
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
+    public boolean depenser(DepenseTresorerieForm formulaire) {
+        return executerOperation(formulaire, TypeOperationTresorerie.DEPENSE, null);
+    }
+
+    private boolean executerOperation(OperationTresorerieForm formulaire, TypeOperationTresorerie type,
+                                      CompteTresorerie destination) {
+        Utilisateur acteur = gerant();
+        entityManager.refresh(acteur, LockModeType.PESSIMISTIC_READ);
+        if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();
+        boutiqueService.exigerAppartenance(acteur.getBoutique());
+        if (formulaire == null || !validator.validate(formulaire).isEmpty()) {
+            throw new IllegalArgumentException("Les comptes, le montant et le motif de l'opération doivent être valides.");
+        }
+        if (type == TypeOperationTresorerie.TRANSFERT && formulaire.getCompteSource() == destination) {
+            throw new IllegalArgumentException("Choisissez deux comptes différents pour le transfert.");
+        }
+        var boutique = boutiqueService.boutiqueCourante();
+        if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;
+        // Même ordre que les achats/ventes : clôture du démarrage, puis comptes.
+        initialisation.verrouillerEtClorePourActivite();
+        verrouillerComptes(boutique.getId(), formulaire.getCompteSource(), destination);
+        if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;
+        BigDecimal montant = Montants.positifOuNul(formulaire.getMontant(), "Le montant");
+        if (montant.signum() <= 0) throw new IllegalArgumentException("Le montant doit être supérieur à zéro.");
+        // READ_COMMITTED relit le solde après l'attente des comptes verrouillés.
+        BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutique.getId(), formulaire.getCompteSource()));
+        if (solde.compareTo(montant) < 0) {
+            throw new IllegalArgumentException("Solde insuffisant sur le compte " + formulaire.getCompteSource().getLibelle() + ".");
+        }
+        OperationTresorerie operation = new OperationTresorerie();
+        operation.setBoutique(boutique); operation.setUtilisateur(acteur);
+        operation.setJeton(formulaire.getJetonOperation()); operation.setType(type);
+        operation.setCompteSource(formulaire.getCompteSource()); operation.setCompteDestination(destination);
+        operation.setMontant(montant); operation.setMotif(formulaire.getMotif());
+        operation.setDateOperation(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
+        operations.saveAndFlush(operation);
+        enregistrerEcriture(operation, formulaire.getCompteSource(), montant.negate(), "SORTIE");
+        if (destination != null) enregistrerEcriture(operation, destination, montant, "ENTREE");
+        mouvementRepo.flush();
+        return false;
+    }
+
+    private boolean repetition(OperationTresorerieForm formulaire, TypeOperationTresorerie type,
+                               CompteTresorerie destination, Utilisateur acteur, Long boutiqueId) {
+        var precedent = operations.findByJeton(formulaire.getJetonOperation()).orElse(null);
+        if (precedent == null) return false;
+        if (!Objects.equals(precedent.getBoutique().getId(), boutiqueId)
+                || !Objects.equals(precedent.getUtilisateur().getId(), acteur.getId())
+                || precedent.getType() != type || precedent.getCompteSource() != formulaire.getCompteSource()
+                || precedent.getCompteDestination() != destination
+                || precedent.getMontant().compareTo(formulaire.getMontant()) != 0
+                || !Objects.equals(precedent.getMotif(), formulaire.getMotif())) {
+            throw new OperationTresorerieConflitException();
+        }
+        return true;
+    }
+
+    private void enregistrerEcriture(OperationTresorerie operation, CompteTresorerie compte,
+                                     BigDecimal montant, String type) {
+        MouvementCaisse mouvement = new MouvementCaisse();
+        mouvement.setBoutique(operation.getBoutique()); mouvement.setUtilisateur(operation.getUtilisateur());
+        mouvement.setCompte(compte); mouvement.setMontant(montant); mouvement.setType(type);
+        mouvement.setSource(operation.getType().name()); mouvement.setMotif(operation.getMotif());
+        mouvement.setDateMouvement(operation.getDateOperation()); mouvement.setOperationTresorerie(operation);
+        mouvementRepo.save(mouvement);
+    }
+
+    private void verrouillerComptes(Long boutiqueId, CompteTresorerie... comptesRequis) {
+        verrouillerComptes(boutiqueId, false, comptesRequis);
+    }
+
+    private void verrouillerComptesEnLecture(Long boutiqueId, CompteTresorerie... comptesRequis) {
+        verrouillerComptes(boutiqueId, true, comptesRequis);
+    }
+
+    private void verrouillerComptes(Long boutiqueId, boolean lecture, CompteTresorerie... comptesRequis) {
+        EnumSet<CompteTresorerie> ordre = EnumSet.noneOf(CompteTresorerie.class);
+        for (CompteTresorerie compte : comptesRequis) if (compte != null) ordre.add(compte);
+        for (CompteTresorerie compte : ordre) {
+            (lecture ? comptes.verrouillerLecture(boutiqueId, compte) : comptes.verrouiller(boutiqueId, compte)).orElseThrow(() -> new IllegalStateException(
+                    "Les comptes de la boutique ne sont pas initialisés. La migration trésorerie est nécessaire."));
+        }
+    }
+
+    private static void exigerCompte(CompteTresorerie compte) {
+        if (compte == null) throw new IllegalArgumentException("Choisissez un compte de paiement.");
+    }
+
     private BigDecimal normaliser(BigDecimal valeur) {
         return Montants.ouZero(valeur);
     }
 
     private void verifierSourceOperationnelle(String source) {
+        if (source != null && "TRANSFERT".equalsIgnoreCase(source.strip())) {
+            throw new IllegalArgumentException("Un transfert doit être enregistré avec ses deux écritures liées.");
+        }
         if (source != null && "SOLDE_INITIAL".equalsIgnoreCase(source.strip())) {
             throw new IllegalArgumentException("Le solde initial se renseigne uniquement par le formulaire d'ouverture de caisse, pendant le démarrage de la boutique.");
         }
