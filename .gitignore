@@ -40,3 +40,8 @@ out/
 /.local-backups/
 # Paramètres SMTP locaux et mot de passe d'application.
 /stock-mail-local.properties
+# Journaux d'exécution locaux et cookies de session de test.
+/bootrun*.log
+/cookie.txt
+# Notes privées d'accès administrateur.
+/stock-admin-*.txt
