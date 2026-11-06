@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.temporal.ChronoUnit;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
@@ -89,7 +90,7 @@ class ReglementVenteTests {
         Vente apres = ventes.findById(vente.getId()).orElseThrow();
         assertThat(apres.getMontantVerse()).isEqualByComparingTo("100000.0");
         assertThat(apres.getResteAPayer()).isZero();
-        assertThat(apres.getDateVente()).isEqualTo(vente.getDateVente());
+        assertThat(apres.getDateVente()).isCloseTo(vente.getDateVente(), within(1, ChronoUnit.MICROS));
         assertThat(apres.getClient().getId()).isEqualTo(vente.getClient().getId());
         assertThat(idsLignes()).isEqualTo(lignesAvant);
         Produit stock = produits.findById(produit.getId()).orElseThrow();

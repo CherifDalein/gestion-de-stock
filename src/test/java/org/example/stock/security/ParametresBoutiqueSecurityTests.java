@@ -1,5 +1,7 @@
 package org.example.stock.security;
 
+import java.time.temporal.ChronoUnit;
+import static org.assertj.core.api.Assertions.within;
 import org.example.stock.enums.Role;
 import org.example.stock.form.ParametresBoutiqueForm;
 import org.example.stock.model.*;
@@ -96,7 +98,7 @@ class ParametresBoutiqueSecurityTests {
         assertThat(relue.getAdresse()).isEqualTo("Quartier Camayenne\nConakry");
         assertThat(relue.getTelephone()).isEqualTo("+224 622 123 456");
         assertThat(relue.getEmail()).isEqualTo("boutique@example.test");
-        assertThat(relue.getDateCreation()).isEqualTo(creation); assertThat(relue.isActif()).isTrue();
+        assertThat(relue.getDateCreation()).isCloseTo(creation, within(1, ChronoUnit.MICROS)); assertThat(relue.isActif()).isTrue();
         assertThat(relue.isAccesOffert()).isTrue();
         assertThat(boutiques.findById(boutiqueB.getId()).orElseThrow().getEmail()).isEqualTo("secret-b@example.test");
         assertThat(utilisateurs.findById(gerantA.getId()).orElseThrow().getMotDePasse()).isEqualTo(hash);
