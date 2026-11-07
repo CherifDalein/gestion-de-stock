@@ -337,3 +337,10 @@ tasks.register('lot1MariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.Lot1MariaDbTest'
 }
+
+tasks.register('coutMoyenServiceMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie le coût moyen pondéré, les corrections d’achat et les opérations concurrentes avec les vrais services sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.CoutMoyenServiceMariaDbTest'
+}

@@ -33,12 +33,14 @@ public class InventaireService {
     private final Validator validator;
     private final Clock clock;
     private final InitialisationBoutiqueService initialisation;
+    private final CoutMoyenService coutMoyen;
     public InventaireService(ProduitService produits, BoutiqueService boutiques, UtilisateurRepository utilisateurs,
                             StockLockRepository verrous, MouvementStockRepository mouvements, EntityManager em,
-                            Validator validator, @Qualifier("recoveryClock") Clock clock, InitialisationBoutiqueService initialisation) {
+                            Validator validator, @Qualifier("recoveryClock") Clock clock, InitialisationBoutiqueService initialisation,
+                            CoutMoyenService coutMoyen) {
         this.produits=produits; this.boutiques=boutiques; this.utilisateurs=utilisateurs; this.verrous=verrous;
         this.mouvements=mouvements; this.em=em; this.validator=validator; this.clock=clock;
-        this.initialisation=initialisation;
+        this.initialisation=initialisation; this.coutMoyen=coutMoyen;
     }
     public record VueInventaire(Produit produit, boolean initialAutorise, List<MouvementStock> historique,
                                 int page, boolean pagePrecedente, boolean pageSuivante) {}
@@ -55,20 +57,27 @@ public class InventaireService {
         initialisation.verrouillerEtExigerOuverte();
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
         verifierVersion(produit,formulaire.getVersion());
+        refuserService(produit, "un stock initial");
         if (!initialAutorise(produit)) throw new IllegalArgumentException("Le stock initial est réservé au démarrage de la boutique et à un produit sans stock ni opération précédente. Utilisez un achat.");
         var cout=Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire");
         var prixVente=Montants.positifOuNul(formulaire.getPrixVente(),"Le prix de vente");
         produit.setPrixAchat(cout); produit.setPrixVente(prixVente); produit.setPrixDefinis(true);
+        coutMoyen.enregistrerEntree(produit,formulaire.getQuantite(),cout);
         ajouter(produit,acteur,TypeMouvementStock.INITIAL,formulaire.getQuantite(),cout,prixVente,formulaire.getMotif());
     }
     @Transactional
     public void ajuster(Long id, AjustementStockForm formulaire) {
         administrateur();
-        produits.trouverParId(id);
+        refuserService(produits.trouverParId(id), "un ajustement d'inventaire");
         throw new IllegalArgumentException("La modification manuelle du stock est désactivée. Après le démarrage de la boutique, seuls les achats et les ventes font varier les quantités.");
     }
+    private static void refuserService(Produit produit, String operation) {
+        if (produit.estService()) {
+            throw new IllegalArgumentException("« " + produit.getNom() + " » est un service : il se vend sans stock et ne peut pas recevoir " + operation + ".");
+        }
+    }
     private boolean initialAutorise(Produit produit) {
-        return initialisation.estOuverte() && produit.getQuantite() != null && produit.getQuantite() == 0
+        return !produit.estService() && initialisation.estOuverte() && produit.getQuantite() != null && produit.getQuantite() == 0
                 && !mouvements.existsByProduitId(produit.getId())
                 && em.createQuery("select count(d) from DetailAchat d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0
                 && em.createQuery("select count(d) from DetailVente d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0;

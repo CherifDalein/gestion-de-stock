@@ -37,6 +37,22 @@ body.stock-app .record-panel > .record-actions { margin-top: 24px; }
 body.stock-app .boutique-start { margin-top: 28px; }
 body.stock-app .boutique-start-links { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
 body.stock-app .boutique-start form.record-actions { margin-top: 20px; }
+/* Choix de la nature d'une fiche produit (article en stock ou service). */
+body.stock-app .record-choice-panel { margin: 0; }
+body.stock-app .record-choice-panel > legend { float: none; width: auto; padding: 0; font-size: inherit; }
+body.stock-app .record-legend { display: block; margin: 0 0 7px; color: var(--app-ink, #183a2a); font-size: 1.05rem; font-weight: 700; }
+body.stock-app .record-choice-help { margin: -14px 0 18px; }
+body.stock-app .record-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+body.stock-app .record-choice { display: flex; align-items: flex-start; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--app-border, #dae5de); border-radius: 12px; background: #fbfdfc; cursor: pointer; }
+body.stock-app .record-choice:has(input:checked) { border-color: #2f8a63; background: #f1f8f4; box-shadow: 0 0 0 2px rgb(47 138 99 / 12%); }
+body.stock-app .record-choice input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: #1f7a55; }
+body.stock-app .record-choice strong { display: block; color: var(--app-ink, #183a2a); font-size: .88rem; }
+body.stock-app .record-choice small { display: block; margin-top: 4px; color: var(--app-muted, #687b70); font-size: .77rem; line-height: 1.55; }
+body.stock-app .record-nature-note strong { color: var(--app-ink, #183a2a); }
+@media (max-width: 575.98px) {
+  body.stock-app .record-choices { grid-template-columns: minmax(0, 1fr); }
+}
+
 body.stock-app .record-page :is(a, button, input, select, textarea):focus-visible { outline: 3px solid #8ac4a6; outline-offset: 3px; }
 
 /* The edit purchase keeps the same cart and settlement hooks as a new purchase. */

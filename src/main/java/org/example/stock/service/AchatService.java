@@ -33,6 +33,7 @@ public class AchatService {
     @Autowired private FournisseurRepository fournisseurRepository;
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private CoutMoyenService coutMoyen;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
@@ -41,15 +42,18 @@ public class AchatService {
         validerAchat(achat);
         initialisation.verrouillerEtClorePourActivite();
         achat.setBoutique(boutiqueService.boutiqueCourante());
-        achat.setDateAchat(LocalDateTime.now());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
+        refuserServices(produits);
+        // Daté sous le verrou des produits, comme une vente : l'ordre des dates est celui du coût moyen.
+        achat.setDateAchat(LocalDateTime.now());
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achat);
 
         for (DetailAchat ligne : achat.getLignes()) {
             Produit produitBdd = produits.get(ligne.getProduit().getId());
 
+            coutMoyen.enregistrerEntree(produitBdd, ligne.getQuantite(), ligne.getPrixAchatUnitaire());
             produitBdd.setQuantite(produitBdd.getQuantite() + ligne.getQuantite());
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
             produitBdd.setPrixVente(ligne.getPrixVenteUnitaire());
@@ -84,6 +88,7 @@ public class AchatService {
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(Stream.concat(
                 ancienAchat.getLignes().stream(), achatModifie.getLignes().stream())
                 .map(ligne -> ligne.getProduit().getId()).toList());
+        refuserServices(produits);
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achatModifie);
         BigDecimal montantDejaVerse = Montants.ouZero(ancienAchat.getMontantVerse());
@@ -121,6 +126,7 @@ public class AchatService {
         }
 
         achatRepository.save(ancienAchat);
+        coutMoyen.recalculer(produits.values());
     }
 
     @Transactional
@@ -196,6 +202,15 @@ public class AchatService {
             BigDecimal tarifPrecedent = tarifsVente.putIfAbsent(ligne.getProduit().getId(), ligne.getPrixVenteUnitaire());
             if (tarifPrecedent != null && tarifPrecedent.compareTo(ligne.getPrixVenteUnitaire()) != 0) {
                 throw new IllegalArgumentException("Les lignes d'un même produit doivent avoir le même prix de vente.");
+            }
+        }
+    }
+
+    /** Un service n'a pas de stock : il ne peut jamais entrer par un achat. */
+    private void refuserServices(Map<Long, Produit> produits) {
+        for (Produit produit : produits.values()) {
+            if (produit.estService()) {
+                throw new IllegalArgumentException("« " + produit.getNom() + " » est un service : il se vend sans stock et ne peut pas figurer dans un achat.");
             }
         }
     }

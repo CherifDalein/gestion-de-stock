@@ -1,9 +1,11 @@
 package org.example.stock.repository;
 
+import org.example.stock.enums.NatureProduit;
 import org.example.stock.model.Produit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,4 +14,5 @@ public interface ProduitRepository extends JpaRepository<Produit, Long> {
     List<Produit> findAllByBoutiqueId(Long boutiqueId);
     Optional<Produit> findByIdAndBoutiqueId(Long id, Long boutiqueId);
     boolean existsByIdAndBoutiqueId(Long id, Long boutiqueId);
+    List<Produit> findAllByIdInAndBoutiqueIdAndNature(Collection<Long> ids, Long boutiqueId, NatureProduit nature);
 }

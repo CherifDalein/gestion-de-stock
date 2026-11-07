@@ -55,8 +55,11 @@
                                         th:data-nom="${p.nom}"
                                         th:data-prix="${p.prixDefinis ? p.prixVente : null}"
                                         th:data-prix-definis="${p.prixDefinis}"
+                                        th:data-service="${p.estService()}"
+                                        th:data-stock="${p.estService() ? null : p.quantite}"
+                                        th:data-unite="${p.unite}"
                                         th:disabled="${!p.prixDefinis}"
-                                        th:text="${p.nom + (p.prixDefinis ? ' (' + p.quantite + ' en stock)' : ' · Prix à définir')}"></option>
+                                        th:text="${p.estService() ? p.nom + ' · Service' : p.nom + (p.prixDefinis ? ' (' + p.quantite + (p.unite != null ? ' ' + p.unite : '') + ' en stock)' : ' · Prix à définir')}"></option>
                             </select>
                         </div>
                         <div class="operation-field">
@@ -69,7 +72,7 @@
                             </button>
                         </div>
                     </div>
-                    <p class="operation-field-help">Les produits sans prix ne peuvent pas être vendus. Leurs prix se définissent lors d’un achat, ou avec le stock initial pendant le démarrage de la boutique.</p>
+                    <p class="operation-field-help">Les services se vendent sans stock. Les produits sans prix ne peuvent pas être vendus. Leurs prix se définissent lors d’un achat, ou avec le stock initial pendant le démarrage de la boutique.</p>
                     <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
 
                     <div id="panierVide" class="operation-empty">

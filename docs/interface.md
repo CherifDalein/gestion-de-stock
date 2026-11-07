@@ -19,6 +19,9 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   lignes, état du panier et indication du paiement.
 - `templates/produits/liste.html` et `static/js/produits.js` : inventaire,
   recherche, filtres de stock, consultation et confirmation de suppression.
+- `templates/produits/nouveau.html`, `templates/produits/modifier.html`,
+  `templates/produits/unites.html` et `static/js/produit-fiche.js` : fiche
+  produit ou service, unité, seuil d’alerte et prix d’un service.
 - `templates/clients/liste.html`, `templates/fournisseurs/liste.html` et
   `static/js/partenaires.js` : répertoires, recherche des coordonnées, documents
   associés et confirmation de suppression.
@@ -119,10 +122,28 @@ ventes partiellement ou entièrement réglés dans une base H2 temporaire. Aucun
 formulaire métier n’a été envoyé à la base locale pendant ces vérifications.
 
 L’inventaire présente les compteurs du catalogue, les produits en stock, les
-stocks faibles et les ruptures. Le seuil existant est conservé : 1 à 5 unités
-correspondent à un stock faible, 0 à une rupture. La recherche ignore la casse et
-les accents et se combine avec les filtres de catégorie et de stock. Les
-compteurs portent sur tout le catalogue, indépendamment des filtres appliqués.
+stocks faibles et les ruptures. Depuis le lot 1, l’état de chaque ligne et les
+compteurs sont calculés par le serveur avec le seuil d’alerte propre au produit
+(5 par défaut) : stock faible quand 0 < quantité ≤ seuil, rupture à 0. Les
+services portent un badge « Service », sans quantité ni lien vers le stock, et
+n’entrent ni dans « En stock » ni dans les alertes ; le filtre « Services » les
+isole. L’unité (sac, kg, carton…) suit la quantité. `produits.js` lit l’état
+calculé (`data-stock-state`) au lieu de le recalculer. La recherche ignore la
+casse et les accents et se combine avec les filtres de catégorie et de stock.
+Les compteurs portent sur tout le catalogue, indépendamment des filtres appliqués.
+
+Les formulaires de création et de modification de fiche (`produits/nouveau.html`,
+`produits/modifier.html`) ajoutent l’unité, proposée par une liste
+`<datalist>` (`produits/unites.html`) avec saisie libre de 30 caractères au plus,
+et le seuil d’alerte pour un article en stock. À la création, deux cartes de
+choix fixent la nature : article en stock ou service. Le script
+`produit-fiche.js` affiche les champs de la nature choisie et désactive les
+autres, qui ne sont donc pas envoyés ; sans JavaScript, la nature « article en
+stock » reste utilisable. Un service saisit son prix de vente et un coût
+facultatif. En modification, la nature est affichée en lecture seule. Les
+paniers d’achat et de vente, le détail des ventes, les factures et les relevés
+cumulés affichent l’unité à côté de la quantité ; le formulaire d’achat ne
+propose pas les services. Voir [les règles du lot 1](lot-1.md).
 
 Le script local `produits.js` gère la recherche, le tri et la pagination sans
 Simple DataTables. Le tri des quantités et des prix utilise `BigInt` pour conserver
