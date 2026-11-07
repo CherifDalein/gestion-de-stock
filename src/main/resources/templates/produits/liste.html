@@ -94,8 +94,9 @@
                         <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="nom" disabled>Produit</button></th>
                         <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="categorie" disabled>Catégorie</button></th>
                         <th scope="col" sec:authorize="hasRole('ADMIN')">Fournisseur</th>
-                        <th scope="col" class="text-end" aria-sort="none" sec:authorize="hasRole('ADMIN')"><button type="button" class="products-sort" data-sort="prixAchat" disabled>Prix d’achat</button></th>
+                        <th scope="col" class="text-end" aria-sort="none" sec:authorize="hasRole('ADMIN')"><button type="button" class="products-sort" data-sort="coutMoyen" disabled>Coût moyen</button></th>
                         <th scope="col" class="text-end" aria-sort="none"><button type="button" class="products-sort" data-sort="prixVente" disabled>Prix de vente</button></th>
+                        <th scope="col" class="text-end" aria-sort="none" sec:authorize="hasRole('ADMIN')"><button type="button" class="products-sort" data-sort="marge" disabled>Marge unitaire</button></th>
                         <th scope="col" aria-sort="none"><button type="button" class="products-sort" data-sort="quantite" disabled>Stock</button></th>
                         <th scope="col" class="text-end">Actions</th>
                     </tr>
@@ -103,13 +104,15 @@
                     <tbody>
                     <tr th:each="p : ${produits}" data-product-row
                         th:with="etat=${p.etatStock()}, service=${p.estService()}"
-                        th:attr="data-id=${p.id},data-name=${p.nom},data-reference=${p.reference},data-category-id=${p.categorie != null ? p.categorie.id : ''},data-category-name=${p.categorie != null ? p.categorie.nom : 'Sans catégorie'},data-stock-state=${etat},data-quantity=${service ? null : p.quantite},data-unit=${p.unite},data-threshold=${service ? null : p.seuilAlerte},data-sale-price=${p.prixDefinis ? p.prixVente : null},data-purchase-price=${estAdmin and p.prixDefinis ? p.prixAchat : null},data-supplier=${estAdmin ? (p.fournisseur != null ? p.fournisseur.nom : 'Non défini') : null}">
+                        th:attr="data-id=${p.id},data-name=${p.nom},data-reference=${p.reference},data-category-id=${p.categorie != null ? p.categorie.id : ''},data-category-name=${p.categorie != null ? p.categorie.nom : 'Sans catégorie'},data-stock-state=${etat},data-quantity=${service ? null : p.quantite},data-unit=${p.unite},data-threshold=${service ? null : p.seuilAlerte},data-sale-price=${p.prixDefinis ? p.prixVente : null},data-cost=${estAdmin and p.prixDefinis ? p.coutMoyen : null},data-last-purchase-price=${estAdmin and p.prixDefinis and !service ? p.prixAchat : null},data-margin=${estAdmin ? p.margeUnitaire : null},data-margin-rate=${estAdmin ? p.tauxMarge : null},data-supplier=${estAdmin ? (p.fournisseur != null ? p.fournisseur.nom : 'Non défini') : null}">
                         <td class="products-reference" th:text="${p.reference}"></td>
                         <td class="products-name" th:text="${p.nom}"></td>
                         <td><span class="products-category" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span></td>
                         <td class="products-supplier" sec:authorize="hasRole('ADMIN')" th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}"></td>
-                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}" th:title="${service ? 'Coût fixe du service' : null}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
+                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.coutMoyen, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}" th:title="${service ? 'Coût fixe du service' : 'Coût moyen pondéré de tous les achats en stock'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
                         <td class="products-price text-end"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixVente, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
+                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')" th:classappend="${p.margeUnitaire != null and p.margeUnitaire.signum() < 0} ? 'text-danger'"
+                            th:text="${p.margeUnitaire != null ? #numbers.formatDecimal(p.margeUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + #numbers.formatDecimal(p.tauxMarge, 1, 'WHITESPACE', 1, 'COMMA') + ' %)' : '—'}"></td>
                         <td>
                             <div class="products-stock">
                                 <span class="products-stock-quantity">
@@ -181,7 +184,9 @@
                 <div><dt>État du stock</dt><dd data-detail="etat"></dd></div>
                 <div><dt>Seuil d’alerte</dt><dd data-detail="seuil"></dd></div>
                 <div><dt>Prix de vente</dt><dd data-detail="prixVente"></dd></div>
-                <div sec:authorize="hasRole('ADMIN')"><dt>Prix d’achat</dt><dd data-detail="prixAchat"></dd></div>
+                <div sec:authorize="hasRole('ADMIN')"><dt>Coût moyen pondéré</dt><dd data-detail="coutMoyen"></dd></div>
+                <div sec:authorize="hasRole('ADMIN')"><dt>Dernier prix d’achat</dt><dd data-detail="prixAchat"></dd></div>
+                <div sec:authorize="hasRole('ADMIN')"><dt>Marge unitaire</dt><dd data-detail="marge"></dd></div>
                 <div sec:authorize="hasRole('ADMIN')"><dt>Fournisseur</dt><dd data-detail="fournisseur"></dd></div>
             </dl>
             <div class="product-dialog-footer"><button type="button" class="btn btn-primary" data-close-dialog>Fermer</button></div>

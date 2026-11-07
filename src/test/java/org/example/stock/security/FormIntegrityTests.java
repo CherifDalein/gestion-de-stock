@@ -309,7 +309,7 @@ class FormIntegrityTests {
                 .andReturn().getResponse().getContentAsString();
         assertThat(catalogue).contains("Produit initial", "Prix de vente")
                 .doesNotContain("Prix d’achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/",
-                        "data-purchase-price", "data-supplier", "data-detail=\"prixAchat\"", "data-detail=\"fournisseur\"", "id=\"produitDeleteDialog\"");
+                        "data-purchase-price", "data-cost", "data-margin", "data-last-purchase-price", "Coût moyen", "Marge unitaire", "data-supplier", "data-detail=\"prixAchat\"", "data-detail=\"fournisseur\"", "id=\"produitDeleteDialog\"");
         var repertoire = mvc.perform(get("/clients")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(repertoire).contains("/clients/modifier/", "href=\"/clients/nouveau\"")
@@ -324,8 +324,8 @@ class FormIntegrityTests {
         assertThat(accueil).contains("Solde total de la boutique", "href=\"/achats\"", "href=\"/fournisseurs\"", "href=\"/caisse/journal\"");
         var catalogue = mvc.perform(get("/produits")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(catalogue).contains("Prix d’achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/",
-                "data-purchase-price", "data-supplier", "data-detail=\"prixAchat\"", "data-detail=\"fournisseur\"", "id=\"produitDeleteDialog\"");
+        assertThat(catalogue).contains("Coût moyen", "Marge unitaire", "Dernier prix d’achat", "Fournisseur initial", "/produits/nouveau", "/produits/modifier/", "/produits/supprimer/",
+                "data-cost", "data-margin", "data-last-purchase-price", "data-supplier", "data-detail=\"coutMoyen\"", "data-detail=\"prixAchat\"", "data-detail=\"marge\"", "data-detail=\"fournisseur\"", "id=\"produitDeleteDialog\"");
     }
 
     @Test

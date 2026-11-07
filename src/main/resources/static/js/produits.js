@@ -11,8 +11,18 @@
         const match = /^(\d{1,15})(?:\.(\d{1,2}))?$/.exec(String(valeur ?? ''));
         return match ? BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0')) : null;
     };
+    // Montant signé en centimes : une marge peut être négative.
+    const lireMontantSigne = valeur => {
+        const texte = String(valeur ?? '');
+        const negatif = texte.startsWith('-');
+        const absolu = lireMontant(negatif ? texte.slice(1) : texte);
+        return absolu === null ? null : (negatif ? -absolu : absolu);
+    };
     const afficherMontant = valeur => valeur === null ? 'À définir'
-        : `${nombres.format(valeur / 100n)},${String(valeur % 100n).padStart(2, '0')} GNF`;
+        : `${valeur < 0n ? '-' : ''}${nombres.format((valeur < 0n ? -valeur : valeur) / 100n)},${String((valeur < 0n ? -valeur : valeur) % 100n).padStart(2, '0')} GNF`;
+    // « 40 000,00 GNF (26,7 %) » ; « — » quand la marge n'existe pas (prix à définir ou prix de vente nul).
+    const afficherMarge = (marge, taux) => marge === null ? '—'
+        : `${afficherMontant(marge)}${/^-?\d{1,17}(?:\.\d)?$/.test(String(taux ?? '')) ? ` (${String(taux).replace('.', ',')} %)` : ''}`;
     // L'état est calculé par le serveur avec le seuil d'alerte propre à chaque produit.
     const libellesStock = Object.freeze({
         disponible: 'Disponible', faible: 'Stock faible', rupture: 'Rupture de stock',
@@ -39,7 +49,7 @@
         const aucunResultat = document.getElementById('produitsNoResults');
         const boutonsStock = Array.from(page.querySelectorAll('[data-stock-filter]'));
         const boutonsTri = Array.from(page.querySelectorAll('[data-sort]'));
-        const trisAutorises = new Set(['reference', 'nom', 'categorie', 'prixAchat', 'prixVente', 'quantite']);
+        const trisAutorises = new Set(['reference', 'nom', 'categorie', 'coutMoyen', 'prixVente', 'marge', 'quantite']);
         const stocksAutorises = new Set(['', 'en-stock', 'disponible', 'faible', 'rupture', 'a-surveiller', 'service']);
         const taillesAutorisees = new Set(['10', '25', '50', 'all']);
         const tailleInitiale = taillesAutorisees.has(taillePage?.value) ? taillePage.value : '25';
@@ -52,7 +62,8 @@
                 categorie: data.categoryName || 'Sans catégorie', categorieId: data.categoryId ?? '',
                 fournisseur: data.supplier || 'Non défini', quantite, unite: data.unit ?? '',
                 seuil: lireQuantite(data.threshold),
-                prixAchat: lireMontant(data.purchasePrice), prixVente: lireMontant(data.salePrice),
+                coutMoyen: lireMontant(data.cost), prixAchat: lireMontant(data.lastPurchasePrice),
+                prixVente: lireMontant(data.salePrice), marge: lireMontantSigne(data.margin), tauxMarge: data.marginRate ?? '',
                 etat,
                 recherche: normaliser([data.name, data.reference, data.categoryName || 'Sans catégorie', data.supplier].join(' '))
             };
@@ -197,7 +208,9 @@
                         : `${nombres.format(produit.quantite)}${produit.unite ? ` ${produit.unite}` : ''}`,
                     etat: libellesStock[produit.etat],
                     seuil: produit.etat === 'service' || produit.seuil === null ? '—' : nombres.format(produit.seuil), prixVente: afficherMontant(produit.prixVente),
-                    prixAchat: afficherMontant(produit.prixAchat), fournisseur: produit.fournisseur
+                    coutMoyen: afficherMontant(produit.coutMoyen),
+                    prixAchat: produit.etat === 'service' ? '—' : afficherMontant(produit.prixAchat),
+                    marge: afficherMarge(produit.marge, produit.tauxMarge), fournisseur: produit.fournisseur
                 };
                 const titre = document.getElementById('produitDetailsTitle');
                 if (titre) titre.textContent = produit.nom;
@@ -254,6 +267,9 @@
         if (pagination) pagination.hidden = false;
         afficher();
     }
+
+    // Fonctions pures exposées pour les tests Node (aucun effet sur la page).
+    globalThis.ProduitsCalculs = Object.freeze({ lireMontantSigne, afficherMontant, afficherMarge });
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialiser);
     else initialiser();
