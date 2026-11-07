@@ -8,6 +8,10 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.stock.enums.NatureProduit;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -53,6 +57,24 @@ public class Produit {
     @NotNull(message = "La quantité est obligatoire")
     @PositiveOrZero(message = "La quantité ne peut pas être négative")
     private Long quantite = 0L;
+
+    /** Lot 1 : les produits existants et nouveaux restent des articles en stock. */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 16)
+    private NatureProduit nature = NatureProduit.STOCK;
+
+    /** Unité de vente facultative (pièce, kg, sac…) ; aucune unité n'est inventée pour l'existant. */
+    @Size(max = 30, message = "L'unité accepte au maximum 30 caractères")
+    @Column(length = 30)
+    private String unite;
+
+    @Column(nullable = false)
+    private Long seuilAlerte = 5L;
+
+    /** Coût moyen pondéré ; la migration l'initialise avec le prix d'achat des produits existants. */
+    @Column(nullable = false, precision = 17, scale = 2)
+    private BigDecimal coutMoyen = Montants.ZERO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categorie_id")

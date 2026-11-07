@@ -7,11 +7,13 @@ import lombok.Setter;
 import org.example.stock.enums.CompteTresorerie;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_vente_boutique_numero", columnNames = {"boutique_id", "numero"}))
 @Getter
 @Setter
 public class Vente {
@@ -24,6 +26,18 @@ public class Vente {
     private Boutique boutique;
 
     private LocalDateTime dateVente;
+
+    /** Numéro de facture unique par boutique ; facultatif jusqu'à sa génération par une tâche suivante. */
+    @Column(length = 30)
+    private String numero;
+
+    /** Échéance du reste à payer ; vide pour un document soldé. */
+    private LocalDate dateEcheance;
+
+    /** Part du montant réglée par une avance existante du partenaire. */
+    @Column(nullable = false, precision = 17, scale = 2)
+    private BigDecimal avanceUtilisee = Montants.ZERO;
+
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal montantTotal;

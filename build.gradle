@@ -320,3 +320,20 @@ tasks.register('identiteBoutiqueMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.IdentiteBoutiqueMariaDbTest'
 }
+
+['lot1Check': '--check', 'lot1Migrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute les colonnes du lot 1 et numérote les documents historiques sans modifier stocks, montants ni mouvements'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.Lot1Migration'
+        args mode
+    }
+}
+
+tasks.register('lot1MariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration du lot 1 et la validation Hibernate dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.Lot1MariaDbTest'
+}
