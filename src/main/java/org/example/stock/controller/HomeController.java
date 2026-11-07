@@ -3,9 +3,12 @@ package org.example.stock.controller;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
 import org.example.stock.service.CaisseService;
+import org.example.stock.service.IncoherenceAvanceException;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EssaiBoutiqueService;
 import org.example.stock.service.TableauDeBordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,6 +25,8 @@ import java.util.Locale;
 
 @Controller
 public class HomeController {
+    private static final Logger LOG = LoggerFactory.getLogger(HomeController.class);
+
 
     @Autowired UtilisateurRepository utilisateurRepository;
     @Autowired CaisseService caisseService;
@@ -70,6 +75,14 @@ public class HomeController {
         model.addAttribute("indicateursMois", tableauDeBord.indicateursDuMois(aujourdHui));
         model.addAttribute("libelleMois", MOIS_EN_COURS.format(aujourdHui));
         model.addAttribute("valeurStock", tableauDeBord.valeurStock());
+        // Créances et dettes : calculées pour le gérant seulement.
+        // Une incohérence de solde ne doit pas priver le gérant du reste du tableau de bord.
+        try {
+            model.addAttribute("creancesDettes", tableauDeBord.creancesEtDettes());
+        } catch (IncoherenceAvanceException e) {
+            LOG.error("Créances et dettes incohérentes pour la boutique courante", e);
+            model.addAttribute("creancesDettesIncoherentes", true);
+        }
         TableauDeBordService.AnneeChoisie choix = TableauDeBordService.choisirAnnee(annee, aujourdHui);
         model.addAttribute("anneeCorrigee", choix.corrigee());
         model.addAttribute("evolution", tableauDeBord.evolutionMensuelle(choix.annee(), aujourdHui));

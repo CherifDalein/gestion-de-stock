@@ -60,6 +60,8 @@ public final class TableauDeBordMariaDbTest {
     private final AchatRepository achats;
     private final VenteRepository ventes;
     private final OperationTresorerieRepository operations;
+    private final ClientRepository clients;
+    private final MouvementCaisseRepository mouvements;
     private int scenarios;
 
     private TableauDeBordMariaDbTest(AnnotationConfigApplicationContext contexte) {
@@ -72,6 +74,8 @@ public final class TableauDeBordMariaDbTest {
         achats = contexte.getBean(AchatRepository.class);
         ventes = contexte.getBean(VenteRepository.class);
         operations = contexte.getBean(OperationTresorerieRepository.class);
+        clients = contexte.getBean(ClientRepository.class);
+        mouvements = contexte.getBean(MouvementCaisseRepository.class);
     }
 
     public static void main(String[] args) {
@@ -194,6 +198,107 @@ public final class TableauDeBordMariaDbTest {
         exiger(tableau.produitsASurveiller().produits().stream().noneMatch(p -> p.nom().endsWith(" A")),
                 "B voit un produit de A.");
         reussi("isolation des deux boutiques");
+
+        verifierCreancesEtDettes();
+    }
+
+    /**
+     * Créances, dettes, avances et retards : les requêtes agrégées (SUM/CASE, GROUP BY, jointures, LEFT JOIN) sur MariaDB,
+     * avec des centimes, l'échéance du jour (pas en retard) et une seconde boutique qui ne doit jamais apparaître.
+     */
+    private void verifierCreancesEtDettes() {
+        LocalDate aujourdHui = LocalDate.now();
+        Env c = environnement("C");
+        Env d = environnement("D");
+        Client x = client(c, "Client X", "0", null);
+        vente(c, x, "100000", "30000", "0", aujourdHui.minusDays(30));                  // reste 70 000, en retard
+        vente(c, x, "40000", "0", "0", aujourdHui.plusDays(5));                           // reste 40 000
+        vente(c, x, "10000", "0", "0", aujourdHui);                                       // échéance du jour : pas en retard
+        Client y = client(c, "Client Y", "200000.50", aujourdHui.minusDays(60));
+        reglement(c, y, null, "50000.25", "SOLDE_CLIENT");                               // reste 150 000,25 en retard
+        Client z = client(c, "Client Z", "-20000", null);                                // avance de départ 20 000
+        vente(c, z, "10000", "60000", "0", null);                                        // surplus 50 000 : avance 70 000
+        vente(c, null, "30000", "0", "0", aujourdHui.minusDays(5));                      // vente sans client en retard
+        Fournisseur sidi = fournisseur(c, "Sidi", "0", null);
+        achat(c, sidi, "80000", "20000", aujourdHui.minusDays(20));                      // reste 60 000, en retard
+        Fournisseur kaba = fournisseur(c, "Kaba", "-90000", aujourdHui.minusDays(3));
+        reglement(c, null, kaba, "-40000", "SOLDE_FOURNISSEUR");                         // reste 50 000, en retard
+        Fournisseur diallo = fournisseur(c, "Diallo", "30000", null);                    // avance de départ 30 000
+        achat(c, diallo, "10000", "15000", null);                                        // surplus 5 000 : avance 35 000
+        achat(c, null, "7000", "0", aujourdHui.minusDays(1));                            // achat sans fournisseur en retard
+        // Autre boutique : tout en gros retard.
+        Client secret = client(d, "Client secret", "999000", aujourdHui.minusDays(300));
+        vente(d, secret, "888000", "0", "0", aujourdHui.minusDays(200));
+        achat(d, fournisseur(d, "Fournisseur secret", "-666000", aujourdHui.minusDays(300)), "555000", "0", aujourdHui.minusDays(200));
+
+        connecter(c.gerant());
+        var cd = tableau.creancesEtDettes();
+        exigerMontant(cd.creances(), "300000.25", "créances");
+        exigerMontant(cd.creancesEnRetard(), "250000.25", "créances en retard");
+        exigerMontant(cd.dettes(), "117000", "dettes");
+        exigerMontant(cd.dettesEnRetard(), "117000", "dettes en retard");
+        exigerMontant(cd.avancesClients(), "70000", "avances des clients");
+        exigerMontant(cd.avancesFournisseurs(), "35000", "avances chez les fournisseurs");
+        exigerMontant(cd.positionNette(), "148000.25", "position nette");
+        reussi("créances, dettes, avances et position nette");
+
+        var clientsRetard = cd.clientsEnRetard();
+        exiger(clientsRetard.partenaires().stream().map(p -> p.nom()).toList().equals(List.of("Client Y", "Client X")),
+                "Ordre des clients en retard inattendu : " + clientsRetard.partenaires());
+        exigerMontant(clientsRetard.partenaires().get(0).montant(), "150000.25", "retard de Client Y");
+        exiger(clientsRetard.partenaires().get(0).plusAncienneEcheance().equals(aujourdHui.minusDays(60)), "Échéance de Client Y inattendue.");
+        exigerMontant(clientsRetard.partenaires().get(1).montant(), "70000", "retard de Client X");
+        exiger(clientsRetard.partenaires().get(1).plusAncienneEcheance().equals(aujourdHui.minusDays(30)), "Échéance de Client X inattendue.");
+        exigerMontant(clientsRetard.sansPartenaire(), "30000", "ventes sans client en retard");
+        var fournisseursRetard = cd.fournisseursEnRetard();
+        exiger(fournisseursRetard.partenaires().stream().map(p -> p.nom()).toList().equals(List.of("Sidi", "Kaba")),
+                "Ordre des fournisseurs en retard inattendu : " + fournisseursRetard.partenaires());
+        exiger(fournisseursRetard.partenaires().get(1).plusAncienneEcheance().equals(aujourdHui.minusDays(3)), "Échéance de Kaba inattendue.");
+        exigerMontant(fournisseursRetard.sansPartenaire(), "7000", "achats sans fournisseur en retard");
+        reussi("listes de retards triées, plus ancienne échéance, montants sans partenaire");
+
+        connecter(d.gerant());
+        var autre = tableau.creancesEtDettes();
+        exigerMontant(autre.creances(), "1887000", "créances de la boutique D");
+        exigerMontant(autre.dettes(), "1221000", "dettes de la boutique D");
+        exiger(autre.clientsEnRetard().partenaires().size() == 1 && autre.clientsEnRetard().partenaires().get(0).nom().equals("Client secret"),
+                "La boutique D voit un client d'une autre boutique.");
+        exiger(autre.fournisseursEnRetard().partenaires().stream().noneMatch(p -> List.of("Sidi", "Kaba").contains(p.nom())),
+                "La boutique D voit un fournisseur d'une autre boutique.");
+        reussi("isolation des boutiques pour les créances et les dettes");
+    }
+
+    private Client client(Env e, String nom, String soldeInitial, LocalDate echeance) {
+        var client = new Client(); client.setBoutique(e.boutique()); client.setNom(nom);
+        client.setSoldeInitial(new BigDecimal(soldeInitial)); client.setEcheanceSoldeInitial(echeance);
+        return clients.saveAndFlush(client);
+    }
+
+    private Fournisseur fournisseur(Env e, String nom, String soldeInitial, LocalDate echeance) {
+        var fournisseur = new Fournisseur(); fournisseur.setBoutique(e.boutique()); fournisseur.setNom(nom);
+        fournisseur.setSoldeInitial(new BigDecimal(soldeInitial)); fournisseur.setEcheanceSoldeInitial(echeance);
+        return fournisseurs.saveAndFlush(fournisseur);
+    }
+
+    private void vente(Env e, Client client, String total, String verse, String avanceUtilisee, LocalDate echeance) {
+        var vente = new Vente(); vente.setBoutique(e.boutique()); vente.setClient(client); vente.setDateVente(LocalDateTime.now().minusDays(90));
+        vente.setMontantTotal(new BigDecimal(total)); vente.setMontantVerse(new BigDecimal(verse));
+        vente.setAvanceUtilisee(new BigDecimal(avanceUtilisee)); vente.setDateEcheance(echeance);
+        ventes.saveAndFlush(vente);
+    }
+
+    private void achat(Env e, Fournisseur fournisseur, String total, String verse, LocalDate echeance) {
+        var achat = new Achat(); achat.setBoutique(e.boutique()); achat.setFournisseur(fournisseur); achat.setDateAchat(LocalDateTime.now().minusDays(90));
+        achat.setMontantTotal(new BigDecimal(total)); achat.setMontantVerse(new BigDecimal(verse)); achat.setDateEcheance(echeance);
+        achats.saveAndFlush(achat);
+    }
+
+    private void reglement(Env e, Client client, Fournisseur fournisseur, String montant, String source) {
+        var mouvement = new MouvementCaisse(); mouvement.setBoutique(e.boutique()); mouvement.setClient(client); mouvement.setFournisseur(fournisseur);
+        mouvement.setDateMouvement(LocalDateTime.now().minusDays(10)); mouvement.setMontant(new BigDecimal(montant));
+        mouvement.setType(montant.startsWith("-") ? "SORTIE" : "ENTREE"); mouvement.setSource(source); mouvement.setMotif("Règlement du solde de départ");
+        mouvement.setUtilisateur(e.gerant());
+        mouvements.saveAndFlush(mouvement);
     }
 
     private record Env(Boutique boutique, Utilisateur gerant, Produit riz, Produit huile, Produit service) {}
@@ -305,7 +410,9 @@ public final class TableauDeBordMariaDbTest {
     @Profile("tableau-de-bord-mariadb-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class})
+    @Import({TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class,
+            org.example.stock.service.SoldePartenaireService.class, org.example.stock.repository.SoldePartenaireRepository.class,
+            org.example.stock.service.EcheanceService.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

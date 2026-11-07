@@ -403,6 +403,7 @@ Une année sans données affiche douze mois à zéro et aucun graphique.
 | Bénéfices, dépenses, chiffres du mois | oui | non |
 | Valeur du stock | oui | non |
 | Évolution mensuelle | oui | non ; `annee` est ignoré |
+| Créances, dettes, avances, position nette, clients et fournisseurs en retard | oui | non ; rien n'est calculé |
 
 Pour un caissier, les indicateurs réservés ne sont **pas calculés** et ne sont
 pas placés dans le modèle (`indicateursJour`, `indicateursMois`,
@@ -410,14 +411,49 @@ pas placés dans le modèle (`indicateursJour`, `indicateursMois`,
 La liste des produits à surveiller n'expose que le nom, la référence, la
 quantité, l'unité, le seuil et l'état.
 
-La seconde partie du tableau de bord (créances et dettes en retard) dispose
-d'un emplacement réservé dans `templates/fragments/tableau-de-bord.html` ; il
-n'affiche rien tant que cette partie n'est pas livrée.
+Les créances et les dettes (voir plus bas) sont réservées au gérant de la même
+manière : pour un caissier, l'attribut `creancesDettes` n'est ni calculé ni
+placé dans le modèle (`SoldePartenaireService` n'est même pas appelé) et la page
+ne contient aucun de ces chiffres ni aucun nom de client ou de fournisseur.
+
+### Créances et dettes (gérant seulement)
+
+Ces chiffres sont calculés par `TableauDeBordService.creancesEtDettes()` à partir
+de `SoldePartenaireService` : aucun autre calcul de solde n'existe. Ils portent
+sur la boutique du compte connecté et sur la date du jour de `EcheanceService`
+(la même que les badges « En retard » des ventes et des achats). Une échéance
+est **en retard** quand elle est strictement antérieure à aujourd'hui : une
+facture qui échoit aujourd'hui n'est pas encore en retard. Les montants en
+retard ne comptent que le reste à payer (total − versé − avance utilisée).
+
+| Chiffre | Définition |
+|---|---|
+| Créances clients | Σ des restes à payer de toutes les ventes de la boutique (ventes sans client comprises) + Σ des restes des soldes de départ « il me doit » (solde de départ − règlements). |
+| dont en retard | Même somme, limitée aux factures dont l'échéance est dépassée et aux soldes de départ dont l'échéance est dépassée. |
+| Dettes fournisseurs | Σ des restes à payer de tous les achats (achats sans fournisseur compris) + Σ des restes des soldes de départ « je lui dois ». |
+| dont en retard | Même règle que pour les créances. |
+| Avances (clients) | Σ des avances disponibles de chaque client : argent reçu d'avance (avance de départ + trop-payés − avance déjà utilisée). Chaque solde reste distinct : l'avance d'un client n'est **jamais** déduite de la créance d'un autre. |
+| Avances chez les fournisseurs | Σ des avances disponibles de la boutique chez chaque fournisseur (avance de départ + trop-payés − avance déjà utilisée). |
+| Position nette | Créances − dettes − avances des clients + avances chez les fournisseurs. Positive : l'ensemble des comptes tiers est en faveur de la boutique. La ligne d'explication sous le chiffre rappelle la formule. |
+| Clients en retard | Jusqu'à 10 clients nommés (`TableauDeBordService.LIMITE_RETARDS`), du montant en retard le plus grand au plus petit (puis plus ancienne échéance, puis nom). Pour chacun : nom, montant en retard (factures échues + reste du solde de départ échu), plus ancienne échéance dépassée, et lien vers son relevé cumulé `/factures/client/{id}/cumule`. Le nombre de clients non listés est indiqué. |
+| Fournisseurs à payer en retard | Même liste pour les fournisseurs, avec le lien `/factures/fournisseur/{id}/cumule`. |
+| Ventes sans client en retard | Restes échus des ventes sans client (client de passage) : ils comptent dans les créances et dans leur part en retard, mais n'ont pas de ligne nominative. Ce montant est affiché à part, uniquement s'il n'est pas nul. Les achats sans fournisseur sont traités de la même façon (« Achats sans fournisseur en retard »). |
+
+Quand une liste est vide, la page affiche « Aucun client en retard » ou
+« Aucun fournisseur à payer en retard ». Les noms sont insérés par Thymeleaf
+(`th:text`), jamais comme HTML.
+
+Les listes de retards s'appuient sur deux requêtes agrégées de
+`SoldePartenaireRepository` (`retardsParPartenaire`, avec `SUM`, `MIN` et
+`GROUP BY` sur les factures échues et sur les soldes de départ échus, puis
+`retardFacturesSansPartenaire`) ; les avances totales reprennent
+`soldesClients()` et `soldesFournisseurs()`. Aucune migration n'est nécessaire.
 
 ### Vérifications
 
 ```sh
 ./gradlew test --tests '*TableauDeBordTests'
+./gradlew test --tests '*TableauDeBordCreancesDettesTests'
 ./gradlew tableauDeBordMariaDbTest
 ```
 
@@ -426,7 +462,12 @@ données fixe (ventes à coûts figés, une ligne sans coût, un service, dépen
 achats et transferts qui ne comptent pas, opérations hors période et d'une
 autre boutique), et vérifient la valeur du stock, les produits à surveiller,
 l'évolution d'une année avec et sans données, les années invalides, le modèle
-et la page du caissier, et l'isolation des boutiques. Le test MariaDB crée puis
+et la page du caissier, et l'isolation des boutiques. `TableauDeBordCreancesDettesTests`
+fixe la date par l'horloge `recoveryClock` et vérifie, sur un jeu de données fixe
+à deux boutiques (plus une boutique vide), chaque chiffre des créances et des
+dettes, l'échéance du jour, l'ordre et la limite de 10 des listes, les messages
+de liste vide, l'absence de tout calcul et de tout chiffre pour le caissier. Le
+test MariaDB reprend ces requêtes agrégées avec des centimes. Il crée puis
 supprime uniquement un schéma temporaire `stock_tableau_de_bord_test_*` ; la
 variable `TABLEAU_DE_BORD_TEST_DB_URL=jdbc:mariadb://127.0.0.1:13306/` peut
 sélectionner un serveur local isolé.

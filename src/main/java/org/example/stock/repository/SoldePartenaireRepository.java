@@ -41,7 +41,11 @@ public class SoldePartenaireRepository {
     /** Total et part dont l'échéance est strictement antérieure au jour donné. */
     public record Totaux(BigDecimal total, BigDecimal enRetard) {}
 
+    /** Montant en retard d'un partenaire de la boutique et plus ancienne échéance dépassée. */
+    public record RetardPartenaire(Long id, String nom, BigDecimal montant, LocalDate plusAncienneEcheance) {}
+
     private static final String RESTE = "GREATEST(COALESCE(montant_total,0) - COALESCE(montant_verse,0) - COALESCE(avance_utilisee,0), 0)";
+    private static final String RESTE_F = "GREATEST(COALESCE(f.montant_total,0) - COALESCE(f.montant_verse,0) - COALESCE(f.avance_utilisee,0), 0)";
     private static final String SURPLUS = "GREATEST(COALESCE(montant_verse,0) - COALESCE(montant_total,0), 0)";
 
     private final EntityManager entityManager;
@@ -144,6 +148,54 @@ public class SoldePartenaireRepository {
                         + " FROM mouvement_caisse m JOIN " + type.table + " p ON p.id = m." + type.colonne + " WHERE m.boutique_id = :boutique AND m.source = :source")
                 .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).setParameter("source", type.source).getSingleResult();
         return new Totaux(montant(soldes[0]).subtract(montant(regles[0])), montant(soldes[1]).subtract(montant(regles[1])));
+    }
+
+    /**
+     * Montants en retard par partenaire (factures dont l'échéance est strictement antérieure au jour donné, plus reste du
+     * solde de départ échu), avec la plus ancienne échéance dépassée. Deux requêtes agrégées ; seuls les partenaires
+     * dont le montant en retard est positif sont rendus, sans ordre.
+     */
+    public List<RetardPartenaire> retardsParPartenaire(Partenaire type, Long boutiqueId, LocalDate aujourdHui) {
+        Map<Long, String> noms = new LinkedHashMap<>();
+        Map<Long, BigDecimal> montants = new LinkedHashMap<>();
+        Map<Long, LocalDate> echeances = new LinkedHashMap<>();
+        for (Object ligne : entityManager.createNativeQuery("SELECT f." + type.colonne + ", p.nom, SUM(" + RESTE_F + "), MIN(f.date_echeance) FROM " + type.factures
+                        + " f JOIN " + type.table + " p ON p.id = f." + type.colonne + " WHERE f.boutique_id = :boutique AND p.boutique_id = :boutique AND f.date_echeance < :jour AND "
+                        + RESTE_F + " > 0 GROUP BY f." + type.colonne + ", p.nom")
+                .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).getResultList()) {
+            Object[] c = (Object[]) ligne;
+            long id = ((Number) c[0]).longValue();
+            noms.put(id, String.valueOf(c[1])); montants.put(id, montant(c[2])); echeances.put(id, date(c[3]));
+        }
+        String du = type == Partenaire.CLIENT ? "GREATEST(p.solde_initial, 0)" : "GREATEST(-p.solde_initial, 0)";
+        for (Object ligne : entityManager.createNativeQuery("SELECT p.id, p.nom, " + du + " - COALESCE(SUM(ABS(m.montant)),0), p.echeance_solde_initial FROM " + type.table
+                        + " p LEFT JOIN mouvement_caisse m ON m." + type.colonne + " = p.id AND m.boutique_id = :boutique AND m.source = :source"
+                        + " WHERE p.boutique_id = :boutique AND p.echeance_solde_initial < :jour AND " + du + " > 0"
+                        + " GROUP BY p.id, p.nom, p.solde_initial, p.echeance_solde_initial")
+                .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).setParameter("source", type.source).getResultList()) {
+            Object[] c = (Object[]) ligne;
+            BigDecimal reste = montant(c[2]);
+            if (reste.signum() <= 0) continue;
+            long id = ((Number) c[0]).longValue();
+            noms.put(id, String.valueOf(c[1]));
+            montants.merge(id, reste, BigDecimal::add);
+            LocalDate echeance = date(c[3]);
+            echeances.merge(id, echeance, (a, b) -> a.isBefore(b) ? a : b);
+        }
+        List<RetardPartenaire> resultat = new ArrayList<>();
+        montants.forEach((id, montant) -> resultat.add(new RetardPartenaire(id, noms.get(id), montant, echeances.get(id))));
+        return resultat;
+    }
+
+    /** Σ des restes en retard des factures sans partenaire (vente sans client, achat sans fournisseur). */
+    public BigDecimal retardFacturesSansPartenaire(Partenaire type, Long boutiqueId, LocalDate aujourdHui) {
+        return montant(entityManager.createNativeQuery("SELECT COALESCE(SUM(" + RESTE + "),0) FROM " + type.factures + " WHERE boutique_id = :boutique AND "
+                        + type.colonne + " IS NULL AND date_echeance < :jour")
+                .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).getSingleResult());
+    }
+
+    private static LocalDate date(Object valeur) {
+        return valeur instanceof java.sql.Date d ? d.toLocalDate() : valeur instanceof LocalDate l ? l : LocalDate.parse(valeur.toString().substring(0, 10));
     }
 
     private static BigDecimal montant(Object valeur) {
