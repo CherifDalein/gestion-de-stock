@@ -45,3 +45,5 @@ out/
 /cookie.txt
 # Notes privées d'accès administrateur.
 /stock-admin-*.txt
+# Fichiers système macOS.
+.DS_Store
