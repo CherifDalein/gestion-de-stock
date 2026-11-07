@@ -12,12 +12,14 @@ public final class SchemaHistorique {
             "nature VARCHAR(16) NOT NULL DEFAULT 'STOCK',", "unite VARCHAR(30) NULL,", "seuil_alerte BIGINT NOT NULL DEFAULT 5,",
             "cout_moyen DECIMAL(17,2) NOT NULL DEFAULT 0,", "numero VARCHAR(30) NULL,", "date_echeance DATE NULL,",
             "avance_utilisee DECIMAL(17,2) NOT NULL DEFAULT 0,",
+            "client_id BIGINT NULL,", "fournisseur_id BIGINT NULL,",
             "CONSTRAINT uk_vente_boutique_numero UNIQUE (boutique_id, numero),", "CONSTRAINT uk_achat_boutique_numero UNIQUE (boutique_id, numero),");
     private SchemaHistorique() {}
 
     public static String sansLot1(String schema) {
         String resultat = schema;
         for (String ligne : LIGNES_LOT1) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
+        resultat = resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_mouvement_caisse_(?:client|fournisseur)\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
         // mouvement_stock possède aussi un cout_unitaire : seul celui de detail_vente appartient au lot 1.
         return resultat.replaceAll("(?s)(CREATE TABLE IF NOT EXISTS detail_vente \\(.*?)\\R[ \\t]*cout_unitaire DECIMAL\\(17,2\\) NULL,", "$1");
     }

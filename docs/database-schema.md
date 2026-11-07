@@ -212,6 +212,8 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `utilisateur_id` FK -> `utilisateur.id`
 - `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
 - `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
+- `client_id` BIGINT NULL, FK `fk_mouvement_caisse_client` -> `client.id` : règlement du solde de départ d'un client (`source=SOLDE_CLIENT`)
+- `fournisseur_id` BIGINT NULL, FK `fk_mouvement_caisse_fournisseur` -> `fournisseur.id` : règlement du solde de départ d'un fournisseur (`source=SOLDE_FOURNISSEUR`)
 - `compte` VARCHAR(32) NOT NULL DEFAULT 'CAISSE' : espèces, Orange Money ou banque pour ce mouvement
 - `operation_tresorerie_id` FK optionnelle -> `operation_tresorerie.id`, pour les transferts et dépenses
 
