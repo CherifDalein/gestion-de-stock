@@ -26,4 +26,10 @@ public final class Montants {
     public static BigDecimal ouZero(BigDecimal montant) {
         return montant == null ? ZERO : montant;
     }
+
+    /** Quotient exact arrondi une seule fois au centime (HALF_UP), par exemple pour une moyenne pondérée. */
+    public static BigDecimal diviser(BigDecimal dividende, long diviseur) {
+        if (diviseur <= 0) throw new IllegalArgumentException("Le diviseur d'un montant doit être positif.");
+        return dividende.divide(BigDecimal.valueOf(diviseur), 2, RoundingMode.HALF_UP);
+    }
 }

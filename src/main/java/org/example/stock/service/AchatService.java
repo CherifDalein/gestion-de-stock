@@ -33,6 +33,7 @@ public class AchatService {
     @Autowired private FournisseurRepository fournisseurRepository;
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private CoutMoyenService coutMoyen;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
@@ -41,16 +42,18 @@ public class AchatService {
         validerAchat(achat);
         initialisation.verrouillerEtClorePourActivite();
         achat.setBoutique(boutiqueService.boutiqueCourante());
-        achat.setDateAchat(LocalDateTime.now());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         refuserServices(produits);
+        // Daté sous le verrou des produits, comme une vente : l'ordre des dates est celui du coût moyen.
+        achat.setDateAchat(LocalDateTime.now());
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achat);
 
         for (DetailAchat ligne : achat.getLignes()) {
             Produit produitBdd = produits.get(ligne.getProduit().getId());
 
+            coutMoyen.enregistrerEntree(produitBdd, ligne.getQuantite(), ligne.getPrixAchatUnitaire());
             produitBdd.setQuantite(produitBdd.getQuantite() + ligne.getQuantite());
             produitBdd.setPrixAchat(ligne.getPrixAchatUnitaire());
             produitBdd.setPrixVente(ligne.getPrixVenteUnitaire());
@@ -123,6 +126,7 @@ public class AchatService {
         }
 
         achatRepository.save(ancienAchat);
+        coutMoyen.recalculer(produits.values());
     }
 
     @Transactional

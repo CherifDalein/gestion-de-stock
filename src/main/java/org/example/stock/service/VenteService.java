@@ -35,6 +35,7 @@ public class VenteService {
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private ProduitRepository produitRepository;
+    @Autowired private CoutMoyenService coutMoyen;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -86,6 +87,7 @@ public class VenteService {
             }
 
             detail.setPrixUnitaire(Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
+            detail.setCoutUnitaire(coutMoyen.coutUnitaireVente(produit));
             detail.setVente(vente);
             detail.setProduit(produit);
             montantTotalCalcule = montantTotalCalcule.add(detail.getPrixUnitaire().multiply(BigDecimal.valueOf(detail.getQuantite())));
