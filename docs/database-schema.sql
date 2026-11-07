@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS boutique (
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     acces_offert BOOLEAN NOT NULL DEFAULT FALSE,
     initialisation_terminee BOOLEAN NOT NULL DEFAULT FALSE,
+    delai_clients_jours INT NOT NULL DEFAULT 30,
+    delai_fournisseurs_jours INT NOT NULL DEFAULT 30,
+    prochain_numero_vente BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_achat BIGINT NOT NULL DEFAULT 1,
     PRIMARY KEY (id)
 );
 
@@ -50,6 +54,8 @@ CREATE TABLE IF NOT EXISTS client (
     telephone VARCHAR(255),
     email VARCHAR(255),
     adresse VARCHAR(255),
+    solde_initial DECIMAL(17,2) NOT NULL DEFAULT 0,
+    echeance_solde_initial DATE NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_client_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id)
@@ -62,6 +68,8 @@ CREATE TABLE IF NOT EXISTS fournisseur (
     telephone VARCHAR(255),
     email VARCHAR(255),
     adresse VARCHAR(255),
+    solde_initial DECIMAL(17,2) NOT NULL DEFAULT 0,
+    echeance_solde_initial DATE NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_fournisseur_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id)
@@ -93,6 +101,10 @@ CREATE TABLE IF NOT EXISTS produit (
     prix_vente DECIMAL(17,2) NOT NULL,
     prix_definis BOOLEAN NOT NULL DEFAULT TRUE,
     quantite BIGINT,
+    nature VARCHAR(16) NOT NULL DEFAULT 'STOCK',
+    unite VARCHAR(30) NULL,
+    seuil_alerte BIGINT NOT NULL DEFAULT 5,
+    cout_moyen DECIMAL(17,2) NOT NULL DEFAULT 0,
     categorie_id BIGINT,
     fournisseur_id BIGINT,
     PRIMARY KEY (id),
@@ -111,7 +123,11 @@ CREATE TABLE IF NOT EXISTS achat (
     montant_total DECIMAL(17,2),
     montant_verse DECIMAL(17,2),
     fournisseur_id BIGINT,
+    numero VARCHAR(30) NULL,
+    date_echeance DATE NULL,
+    avance_utilisee DECIMAL(17,2) NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
+    CONSTRAINT uk_achat_boutique_numero UNIQUE (boutique_id, numero),
     CONSTRAINT fk_achat_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_achat_fournisseur
@@ -125,7 +141,11 @@ CREATE TABLE IF NOT EXISTS vente (
     montant_total DECIMAL(17,2),
     montant_verse DECIMAL(17,2),
     client_id BIGINT,
+    numero VARCHAR(30) NULL,
+    date_echeance DATE NULL,
+    avance_utilisee DECIMAL(17,2) NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
+    CONSTRAINT uk_vente_boutique_numero UNIQUE (boutique_id, numero),
     CONSTRAINT fk_vente_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_vente_client
@@ -152,6 +172,7 @@ CREATE TABLE IF NOT EXISTS detail_vente (
     produit_id BIGINT,
     quantite INT,
     prix_unitaire DECIMAL(17,2),
+    cout_unitaire DECIMAL(17,2) NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_detail_vente_vente
         FOREIGN KEY (vente_id) REFERENCES vente (id),

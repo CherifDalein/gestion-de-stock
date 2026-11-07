@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -29,6 +31,12 @@ public class Fournisseur {
     private String email;
 
     private String adresse;
+
+    /** Solde d'ouverture signé : positif si le partenaire me doit, négatif si je lui dois ou s'il a versé une avance. */
+    @Column(nullable = false, precision = 17, scale = 2)
+    private BigDecimal soldeInitial = Montants.ZERO;
+
+    private LocalDate echeanceSoldeInitial;
 
     @OneToMany(mappedBy = "fournisseur")
     private List<Produit> produits;

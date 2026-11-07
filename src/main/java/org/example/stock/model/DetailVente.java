@@ -25,4 +25,8 @@ public class DetailVente {
     @Column(precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal prixUnitaire;
+
+    /** Coût de revient unitaire figé lors de la vente ; approximé par le prix d'achat pour les ventes migrées. */
+    @Column(precision = 17, scale = 2)
+    private BigDecimal coutUnitaire;
 }

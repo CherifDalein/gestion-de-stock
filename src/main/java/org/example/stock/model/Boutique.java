@@ -68,6 +68,20 @@ public class Boutique {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean initialisationTerminee;
 
+    /** Délais de paiement proposés par défaut, en jours. */
+    @Column(nullable = false)
+    private int delaiClientsJours = 30;
+
+    @Column(nullable = false)
+    private int delaiFournisseursJours = 30;
+
+    /** Prochains numéros de facture ; initialisés au-delà des numéros migrés. */
+    @Column(nullable = false)
+    private long prochainNumeroVente = 1L;
+
+    @Column(nullable = false)
+    private long prochainNumeroAchat = 1L;
+
     /** Dates UTC de l'essai public ; null pour les boutiques créées avant son introduction. */
     private LocalDateTime essaiDebut;
 

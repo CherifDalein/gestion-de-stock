@@ -37,6 +37,12 @@ Les anciens mouvements restent affectés à la caisse, avec leurs montants
 et leurs liens d'origine. Le [guide de trésorerie](docs/tresorerie.md) décrit
 les paiements, les transferts et les dépenses.
 
+Pour préparer le lot 1 (seuils, unités, services, coût moyen, numéros de facture,
+échéances, avances et soldes initiaux), appliquer la
+[migration du lot 1](docs/migrations/lot-1.md) après sauvegarde. Les ventes et
+achats existants sont numérotés et reçoivent leur échéance ; stocks, montants
+et mouvements restent inchangés.
+
 ## Tests
 
 ```sh
@@ -63,6 +69,7 @@ node --test src/test/js/montants.test.cjs
 - [Démarrage de boutique, stock et solde initiaux](docs/migrations/demarrage-boutique.md)
 - [Caisse, Orange Money, banque et transferts](docs/tresorerie.md)
 - [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)
+- [Préparation du schéma du lot 1](docs/migrations/lot-1.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

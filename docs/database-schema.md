@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les dix-neuf tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie. Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les dix-neuf tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -45,6 +45,8 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `actif` BOOLEAN NOT NULL DEFAULT TRUE : ouverture ou suspension de la boutique
 - `acces_offert` BOOLEAN NOT NULL DEFAULT FALSE : mode commercial offert, indépendant des rôles
 - `initialisation_terminee` BOOLEAN NOT NULL DEFAULT FALSE : fermeture irréversible du démarrage, commune au stock initial et au solde initial de caisse ; le premier achat, la première vente ou un mouvement opérationnel de caisse ferme aussi cette phase
+- `delai_clients_jours`, `delai_fournisseurs_jours` INT NOT NULL DEFAULT 30 : délais de paiement proposés par défaut (lot 1, pas encore utilisés)
+- `prochain_numero_vente`, `prochain_numero_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros de facture ; la migration les place après le plus grand identifiant de toute la table pour ne jamais reprendre un numéro migré (lot 1, pas encore utilisés)
 
 ### `logo_boutique`
 
@@ -68,6 +70,8 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 - `telephone`
 - `email`
 - `adresse`
+- `solde_initial` DECIMAL(17,2) NOT NULL DEFAULT 0 : solde d'ouverture signé, positif si le partenaire me doit, négatif si je lui dois ou s'il a versé une avance (lot 1)
+- `echeance_solde_initial` DATE NULL : échéance de ce solde d'ouverture (lot 1)
 
 ### `fournisseur`
 - `id` PK
@@ -75,6 +79,8 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 - `telephone`
 - `email`
 - `adresse`
+- `solde_initial` DECIMAL(17,2) NOT NULL DEFAULT 0 : solde d'ouverture signé, positif si le partenaire me doit, négatif si je lui dois ou s'il a versé une avance (lot 1)
+- `echeance_solde_initial` DATE NULL : échéance de ce solde d'ouverture (lot 1)
 
 ### `utilisateur`
 - `id` PK
@@ -153,6 +159,10 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `prix_vente`
 - `prix_definis` BOOLEAN NOT NULL DEFAULT TRUE : distingue un produit dont les tarifs sont définis, y compris à zéro, d’une nouvelle fiche en attente d’achat ou de stock initial ; le service de création fixe explicitement `FALSE`
 - `quantite`
+- `nature` VARCHAR(16) NOT NULL DEFAULT 'STOCK' : `STOCK` ou `SERVICE` ; tous les produits existants sont des articles en stock (lot 1)
+- `unite` VARCHAR(30) NULL : unité de vente facultative (lot 1)
+- `seuil_alerte` BIGINT NOT NULL DEFAULT 5 : seuil de stock bas (lot 1)
+- `cout_moyen` DECIMAL(17,2) NOT NULL DEFAULT 0 : coût moyen pondéré, initialisé avec `prix_achat` pour les produits existants (lot 1)
 - `categorie_id` FK -> `categorie.id`
 - `fournisseur_id` FK -> `fournisseur.id`
 
@@ -162,6 +172,9 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `montant_total`
 - `montant_verse`
 - `fournisseur_id` FK -> `fournisseur.id`
+- `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FA-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
+- `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
+- `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
 
 ### `detail_achat`
 - `id` PK
@@ -177,6 +190,9 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `montant_total`
 - `montant_verse`
 - `client_id` FK -> `client.id`
+- `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FV-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
+- `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
+- `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
 
 ### `detail_vente`
 - `id` PK
@@ -184,6 +200,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `produit_id` FK -> `produit.id`
 - `quantite`
 - `prix_unitaire`
+- `cout_unitaire` DECIMAL(17,2) NULL : coût de revient unitaire ; approximé par le prix d'achat actuel du produit pour les ventes migrées (lot 1)
 
 ### `mouvement_caisse`
 - `id` PK
@@ -257,6 +274,10 @@ erDiagram
         BOOLEAN actif
         BOOLEAN acces_offert
         BOOLEAN initialisation_terminee
+        INT delai_clients_jours
+        INT delai_fournisseurs_jours
+        BIGINT prochain_numero_vente
+        BIGINT prochain_numero_achat
     }
     CATEGORIE {
         BIGINT id PK
@@ -294,6 +315,8 @@ erDiagram
         VARCHAR telephone
         VARCHAR email
         VARCHAR adresse
+        DECIMAL solde_initial
+        DATE echeance_solde_initial
     }
     FOURNISSEUR {
         BIGINT id PK
@@ -302,6 +325,8 @@ erDiagram
         VARCHAR telephone
         VARCHAR email
         VARCHAR adresse
+        DECIMAL solde_initial
+        DATE echeance_solde_initial
     }
     UTILISATEUR {
         BIGINT id PK
@@ -324,6 +349,10 @@ erDiagram
         DECIMAL prix_vente
         BOOLEAN prix_definis
         BIGINT quantite
+        VARCHAR nature
+        VARCHAR unite
+        BIGINT seuil_alerte
+        DECIMAL cout_moyen
         BIGINT categorie_id FK
         BIGINT fournisseur_id FK
     }
@@ -334,6 +363,9 @@ erDiagram
         DECIMAL montant_total
         DECIMAL montant_verse
         BIGINT fournisseur_id FK
+        VARCHAR numero
+        DATE date_echeance
+        DECIMAL avance_utilisee
     }
     DETAIL_ACHAT {
         BIGINT id PK
@@ -350,6 +382,9 @@ erDiagram
         DECIMAL montant_total
         DECIMAL montant_verse
         BIGINT client_id FK
+        VARCHAR numero
+        DATE date_echeance
+        DECIMAL avance_utilisee
     }
     DETAIL_VENTE {
         BIGINT id PK
@@ -357,6 +392,7 @@ erDiagram
         BIGINT produit_id FK
         INT quantite
         DECIMAL prix_unitaire
+        DECIMAL cout_unitaire
     }
     MOUVEMENT_CAISSE {
         BIGINT id PK
