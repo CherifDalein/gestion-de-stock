@@ -107,8 +107,8 @@ avec deux décimales. Chaque nouvelle ligne de vente fige ce coût dans
 Σ (prix unitaire − coût unitaire) × quantité.
 
 `prix_achat` garde son rôle : c'est le **dernier** prix d'achat, proposé lors
-du prochain achat. Le CMP est une valeur distincte qui n'apparaît pas encore à
-l'écran.
+du prochain achat. Le CMP est une valeur distincte, affichée au gérant (voir
+« Où le voir » ci-dessous).
 
 ### Formule
 
@@ -195,6 +195,33 @@ lot 1. La migration a donc rempli `cout_unitaire` des ventes existantes, et
 `cout_moyen` des produits, avec le prix d'achat **actuel** du produit. Le
 bénéfice calculé sur ces ventes est une approximation issue de la migration ;
 seules les ventes enregistrées après le lot 1 portent leur vrai coût moyen.
+
+### Où le voir
+
+- **Liste des produits** (`/produits`) : la colonne « Coût moyen » remplace
+  l'ancien « Prix d'achat » (pour un service, c'est son coût fixe, avec
+  l'info-bulle « Coût fixe du service »). La colonne « Marge unitaire » montre
+  prix de vente − coût moyen et, entre parenthèses, le taux sur le prix de vente
+  arrondi à une décimale (demie vers le haut), par exemple
+  `40 000,00 GNF (26,7 %)`. Une marge négative est en rouge ; sans prix défini
+  ou avec un prix de vente nul, la marge affiche « — ». Les deux colonnes se
+  trient. La fenêtre de détail donne coût moyen, dernier prix d'achat (« — »
+  pour un service) et marge.
+- **Fiche produit** : la page de stock (`/produits/{id}/stock`) et la page de
+  modification affichent « Coût moyen pondéré » et « Dernier prix d'achat » côte
+  à côte, avec la phrase « Le coût moyen tient compte de tous les achats en
+  stock ; c'est lui qui sert au calcul du bénéfice. », puis la marge unitaire.
+- **Tableau de bord** : le bénéfice brut du jour et du mois est calculé avec le
+  coût figé sur chaque ligne de vente (`detail_vente.cout_unitaire`), donc avec
+  le coût moyen au moment de la vente, jamais avec le dernier prix d'achat.
+- **Droits** : coût moyen, dernier prix d'achat et marge sont réservés au
+  gérant (ADMIN), dans le HTML comme dans les attributs `data-*`
+  (`data-cost`, `data-last-purchase-price`, `data-margin`, `data-margin-rate`).
+  Le caissier ne les reçoit jamais : ni dans `/produits`, ni dans
+  `/ventes/nouveau` (qui n'expose que le prix de vente et le stock), ni dans le
+  tableau de bord ; les fiches de gestion lui sont fermées (403).
+  `Produit.getMargeUnitaire()` et `getTauxMarge()` calculent en `BigDecimal` ;
+  elles renvoient `null` quand il n'y a pas de marge.
 
 ### Vérifications
 

@@ -359,7 +359,7 @@ body.stock-app .products-search-input > :is(i, svg) { position: absolute; top: 5
 body.stock-app .products-search-input input { padding-left: 39px; }
 body.stock-app .products-table-wrap { width: 100%; border-top: 1px solid var(--app-border); }
 body.stock-app .products-table { min-width: 760px; }
-body.stock-app .products-table--admin { min-width: 1120px; }
+body.stock-app .products-table--admin { min-width: 1260px; }
 body.stock-app .products-table > thead > tr > th { white-space: nowrap; }
 body.stock-app .products-table > :is(thead, tbody) > tr > :first-child { padding-left: 24px; }
 body.stock-app .products-table > :is(thead, tbody) > tr > :last-child { padding-right: 24px; }
@@ -430,7 +430,7 @@ body.stock-app .product-delete-description strong { color: var(--app-ink); overf
   body.stock-app .products-toolbar { grid-template-columns: minmax(0, 1fr); gap: 13px; padding: 0 20px 20px; }
   body.stock-app .products-toolbar > .btn { justify-self: stretch; }
   body.stock-app .products-empty { margin-inline: 20px; padding: 28px 16px; }
-  body.stock-app .products-table--admin { min-width: 1000px; }
+  body.stock-app .products-table--admin { min-width: 1140px; }
   body.stock-app .products-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .products-results { flex-basis: 100%; order: 3; }
   body.stock-app .product-dialog { padding: 22px; max-height: calc(100dvh - 32px); }

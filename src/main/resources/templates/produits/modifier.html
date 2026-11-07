@@ -99,8 +99,8 @@
                     <h2 id="prixTitre">Prix</h2>
                     <p>Les montants sont exprimés en francs guinéens (GNF).</p>
                 </div>
+                <th:block th:replace="~{produits/couts :: lecture(${stockActuel})}"></th:block>
                 <div class="record-grid">
-                    <div class="record-field"><p class="form-label">Dernier coût d’achat (GNF)</p><p th:text="${stockActuel != null ? #numbers.formatDecimal(stockActuel.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') : '—'}"></p><p class="record-help">Mis à jour par les achats ou le stock initial.</p></div>
                     <div class="record-field">
                         <label for="inputPrixVente">Prix de vente (GNF)</label>
                         <input class="form-control" id="inputPrixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'inputPrixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />

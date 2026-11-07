@@ -14,6 +14,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Getter
@@ -111,5 +112,20 @@ public class Produit {
         if (quantite <= 0) return "rupture";
         long seuil = seuilAlerte == null ? SEUIL_ALERTE_PAR_DEFAUT : seuilAlerte;
         return quantite <= seuil ? "faible" : "disponible";
+    }
+
+    /**
+     * Marge unitaire = prix de vente − coût moyen pondéré (coût fixe pour un service).
+     * Absente (null) quand les prix ne sont pas définis ou que le prix de vente vaut 0.
+     */
+    public BigDecimal getMargeUnitaire() {
+        if (!prixDefinis || prixVente == null || coutMoyen == null || prixVente.signum() == 0) return null;
+        return prixVente.subtract(coutMoyen);
+    }
+
+    /** Taux de marge sur le prix de vente, en pourcentage arrondi à une décimale (demie vers le haut). */
+    public BigDecimal getTauxMarge() {
+        BigDecimal marge = getMargeUnitaire();
+        return marge == null ? null : marge.multiply(BigDecimal.valueOf(100)).divide(prixVente, 1, RoundingMode.HALF_UP);
     }
 }

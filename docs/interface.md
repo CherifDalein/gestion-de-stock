@@ -151,8 +151,9 @@ propose pas les services. Voir [les règles du lot 1](lot-1.md).
 Le script local `produits.js` gère la recherche, le tri et la pagination sans
 Simple DataTables. Le tri des quantités et des prix utilise `BigInt` pour conserver
 les grandes valeurs exactes. Les détails sont affichés dans une boîte de dialogue ;
-le prix d’achat, le fournisseur et les actions de gestion restent réservés à
-l’administrateur, y compris dans les attributs HTML. La suppression demande une
+le coût moyen pondéré, la marge unitaire, le dernier prix d’achat, le
+fournisseur et les actions de gestion restent réservés à l’administrateur, y
+compris dans les attributs HTML. La suppression demande une
 confirmation puis envoie le formulaire POST d’origine avec son jeton CSRF.
 Sans JavaScript, les lignes restent visibles et les actions de gestion conservent
 leur fonctionnement et la confirmation native de suppression.
