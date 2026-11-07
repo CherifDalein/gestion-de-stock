@@ -383,6 +383,10 @@ body.stock-app .products-stock-badge--disponible { color: #106448; background: #
 body.stock-app .products-stock-badge--faible { color: #805810; background: #fff3d9; }
 body.stock-app .products-stock-badge--rupture { color: #a43a37; background: #fceceb; }
 body.stock-app .products-stock-badge--inconnu { color: #596e61; background: #f0f4f2; }
+body.stock-app .products-stock-badge--service { color: #24507a; background: #e9f1f9; }
+body.stock-app .products-stock-quantity { display: inline-flex; align-items: baseline; gap: 4px; }
+body.stock-app .products-unit, body.stock-app .operation-unit { color: var(--app-muted); font-size: .72rem; white-space: nowrap; }
+body.stock-app .operation-unit { display: block; margin-top: 3px; text-align: right; }
 body.stock-app .products-row-actions { justify-content: flex-end; }
 body.stock-app .products-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 38px 24px; margin: 0 24px 24px; border-radius: 12px; border: 1px dashed #cadbd1; background: #f8fbf9; color: var(--app-muted); }
 body.stock-app .products-empty-icon { font-size: 1.6rem; color: #759783; margin-bottom: 3px; }

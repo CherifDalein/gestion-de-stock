@@ -1,5 +1,29 @@
 let index = 0;
 let totalGeneral = 0n;
+// Stock restant affiché pour chaque article, après déduction des lignes du panier.
+const stocksRestants = new Map();
+
+function estService(option) {
+    return option.getAttribute('data-service') === 'true';
+}
+
+function stockRestant(option) {
+    if (!stocksRestants.has(option.value)) {
+        const valeur = option.getAttribute('data-stock');
+        stocksRestants.set(option.value, /^\d{1,19}$/.test(String(valeur ?? '')) ? BigInt(valeur) : 0n);
+    }
+    return stocksRestants.get(option.value);
+}
+
+function libelleQuantite(quantite, unite) {
+    return unite ? `${quantite} ${unite}` : String(quantite);
+}
+
+function actualiserOptionStock(option, stock) {
+    stocksRestants.set(option.value, stock);
+    // option.text est du texte brut : le nom et l'unité ne sont jamais interprétés comme du HTML.
+    option.text = `${option.getAttribute('data-nom')} (${libelleQuantite(stock, option.getAttribute('data-unite'))} en stock)`;
+}
 
 function ajouterAuPanier() {
     const select = document.getElementById('selectProduit');
@@ -26,26 +50,23 @@ function ajouterAuPanier() {
         return;
     }
 
-    // Extraction du stock
-    const textActuel = selectedOption.text;
-    const match = textActuel.match(/\((\d+) en stock\)/);
-    const stockActuel = match ? BigInt(match[1]) : 0n;
+    // Un service se vend sans stock : aucune quantité disponible n'est vérifiée ni déduite.
+    const service = estService(selectedOption);
+    const unite = selectedOption.getAttribute('data-unite') || '';
+    const stockActuel = service ? null : stockRestant(selectedOption);
 
-    if (BigInt(qty) > stockActuel) {
+    if (!service && BigInt(qty) > stockActuel) {
         afficherMessageProduit('Stock insuffisant pour cette quantité.');
         return;
     }
     if (qty <= 0) return;
-
-    // Mise à jour visuelle du stock
-    const nouveauStock = stockActuel - BigInt(qty);
 
     const sousTotal = pPrix * BigInt(qty);
     if (totalGeneral + sousTotal > Montants.maximum) {
         afficherMessageProduit('Le total dépasse le montant maximal autorisé.');
         return;
     }
-    selectedOption.text = `${pNom} (${nouveauStock} en stock)`;
+    if (!service) actualiserOptionStock(selectedOption, stockActuel - BigInt(qty));
     const tbody = document.getElementById('panierBody');
 
     const row = document.createElement('tr');
@@ -63,7 +84,7 @@ function ajouterAuPanier() {
     row.insertCell().textContent = `${Montants.afficher(pPrix)} GNF`;
     const quantiteCellule = row.insertCell();
     const quantiteTexte = document.createElement('span');
-    quantiteTexte.textContent = qty;
+    quantiteTexte.textContent = libelleQuantite(qty, unite);
     quantiteCellule.appendChild(quantiteTexte);
     const quantiteInput = document.createElement('input');
     quantiteInput.type = 'hidden';
@@ -105,10 +126,7 @@ function supprimerLigne(idx, montant, pId, qteARendre) {
         for (let i = 0; i < select.options.length; i++) {
             if (select.options[i].value == pId) {
                 const opt = select.options[i];
-                const pNom = opt.getAttribute('data-nom');
-                const match = opt.text.match(/\((\d+) en stock\)/);
-                const stockActuel = match ? BigInt(match[1]) : 0n;
-                opt.text = `${pNom} (${stockActuel + BigInt(qteARendre)} en stock)`;
+                if (!estService(opt)) actualiserOptionStock(opt, stockRestant(opt) + BigInt(qteARendre));
                 break;
             }
         }

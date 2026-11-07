@@ -29,7 +29,9 @@ public class ProduitController {
 
     @GetMapping
     public String liste(Model model) {
-        model.addAttribute("produits", produitService.listerTous());
+        var produits = produitService.listerTous();
+        model.addAttribute("produits", produits);
+        model.addAttribute("resume", ProduitService.ResumeCatalogue.de(produits));
         model.addAttribute("view", "produits/liste");
         return "dashboard";
     }
@@ -49,15 +51,21 @@ public class ProduitController {
                                  BindingResult result,
                                  Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
-        if (result.hasErrors()) {
-            model.addAttribute("categories", categorieService.listerToutes());
-            model.addAttribute("fournisseurs", fournisseurService.listerTous());
-            model.addAttribute("view", "produits/nouveau");
-            return "dashboard";
+        if (!result.hasErrors()) {
+            try {
+                produitService.ajouterProduit(produit);
+                redirectAttributes.addFlashAttribute("success", produit.estService()
+                        ? "Service créé. Il peut être vendu immédiatement, sans stock."
+                        : "Produit créé avec un stock à zéro. Enregistrez un achat ou un stock initial pour ajouter les marchandises.");
+                return "redirect:/produits";
+            } catch (IllegalArgumentException e) {
+                result.reject("produit.invalide", e.getMessage());
+            }
         }
-        produitService.ajouterProduit(produit);
-        redirectAttributes.addFlashAttribute("success", "Produit créé avec un stock à zéro. Enregistrez un achat ou un stock initial pour ajouter les marchandises.");
-        return "redirect:/produits";
+        model.addAttribute("categories", categorieService.listerToutes());
+        model.addAttribute("fournisseurs", fournisseurService.listerTous());
+        model.addAttribute("view", "produits/nouveau");
+        return "dashboard";
     }
 
     @PostMapping("/supprimer/{id}")
@@ -88,6 +96,14 @@ public class ProduitController {
         }
         // Distinguer une absence de saisie d'un tarif explicitement fixé à zéro.
         if (request.getParameter("prixVente") == null) produit.setPrixVente(null);
+        if (request.getParameter("coutMoyen") == null) produit.setCoutMoyen(null);
+        // Le coût d'un article en stock provient des achats : seul un service accepte ce champ.
+        else if (!produitService.trouverParId(id).estService()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");
+        }
+        if (request.getParameter("seuilAlerte") == null) produit.setSeuilAlerte(null);
+        // La nature n'est jamais reçue en modification : elle reste celle de la fiche enregistrée.
+        produit.setNature(null);
         if (!result.hasErrors()) {
             try {
                 produitService.modifierProduit(id, produit);

@@ -13,12 +13,12 @@
     };
     const afficherMontant = valeur => valeur === null ? 'À définir'
         : `${nombres.format(valeur / 100n)},${String(valeur % 100n).padStart(2, '0')} GNF`;
-    const etatStock = quantite => quantite === null ? 'inconnu'
-        : quantite === 0n ? 'rupture' : quantite <= 5n ? 'faible' : 'disponible';
+    // L'état est calculé par le serveur avec le seuil d'alerte propre à chaque produit.
     const libellesStock = Object.freeze({
         disponible: 'Disponible', faible: 'Stock faible', rupture: 'Rupture de stock',
-        inconnu: 'Stock non renseigné'
+        inconnu: 'Stock non renseigné', service: 'Service, vendu sans stock'
     });
+    const lireEtat = valeur => Object.hasOwn(libellesStock, valeur) ? valeur : 'inconnu';
 
     function initialiser() {
         const page = document.getElementById('stockProduits');
@@ -40,18 +40,20 @@
         const boutonsStock = Array.from(page.querySelectorAll('[data-stock-filter]'));
         const boutonsTri = Array.from(page.querySelectorAll('[data-sort]'));
         const trisAutorises = new Set(['reference', 'nom', 'categorie', 'prixAchat', 'prixVente', 'quantite']);
-        const stocksAutorises = new Set(['', 'en-stock', 'disponible', 'faible', 'rupture']);
+        const stocksAutorises = new Set(['', 'en-stock', 'disponible', 'faible', 'rupture', 'service']);
         const taillesAutorisees = new Set(['10', '25', '50', 'all']);
         const tailleInitiale = taillesAutorisees.has(taillePage?.value) ? taillePage.value : '25';
         const donnees = lignes.map((ligne, ordre) => {
             const data = ligne.dataset;
             const quantite = lireQuantite(data.quantity);
+            const etat = lireEtat(data.stockState);
             return {
                 ligne, ordre, reference: data.reference ?? '', nom: data.name ?? '',
                 categorie: data.categoryName || 'Sans catégorie', categorieId: data.categoryId ?? '',
-                fournisseur: data.supplier || 'Non défini', quantite,
+                fournisseur: data.supplier || 'Non défini', quantite, unite: data.unit ?? '',
+                seuil: lireQuantite(data.threshold),
                 prixAchat: lireMontant(data.purchasePrice), prixVente: lireMontant(data.salePrice),
-                etat: etatStock(quantite),
+                etat,
                 recherche: normaliser([data.name, data.reference, data.categoryName || 'Sans catégorie', data.supplier].join(' '))
             };
         });
@@ -102,7 +104,8 @@
                 mots.every(mot => produit.recherche.includes(mot))
                 && (!categorieChoisie || produit.categorieId === categorieChoisie)
                 && (!stockChoisi || (stockChoisi === 'en-stock'
-                    ? produit.quantite !== null && produit.quantite > 0n : produit.etat === stockChoisi)))
+                    ? produit.etat !== 'service' && produit.quantite !== null && produit.quantite > 0n
+                    : produit.etat === stockChoisi)))
                 .sort(comparer);
             const taille = tailleChoisie === 'all' ? Math.max(filtres.length, 1) : Number(tailleChoisie);
             nombrePages = Math.max(1, Math.ceil(filtres.length / taille));
@@ -184,8 +187,11 @@
                 if (!produit) return;
                 const valeurs = {
                     reference: produit.reference || 'Non renseignée', categorie: produit.categorie,
-                    quantite: produit.quantite === null ? 'Non renseignée' : nombres.format(produit.quantite),
-                    etat: libellesStock[produit.etat], prixVente: afficherMontant(produit.prixVente),
+                    quantite: produit.etat === 'service' ? '—'
+                        : produit.quantite === null ? 'Non renseignée'
+                        : `${nombres.format(produit.quantite)}${produit.unite ? ` ${produit.unite}` : ''}`,
+                    etat: libellesStock[produit.etat],
+                    seuil: produit.etat === 'service' || produit.seuil === null ? '—' : nombres.format(produit.seuil), prixVente: afficherMontant(produit.prixVente),
                     prixAchat: afficherMontant(produit.prixAchat), fournisseur: produit.fournisseur
                 };
                 const titre = document.getElementById('produitDetailsTitle');

@@ -3,7 +3,9 @@ let index = 0;
 function ajouterLigne() {
     const select = document.getElementById('selectProduit');
     const pId = select.value;
-    const pNom = select.options[select.selectedIndex].getAttribute('data-nom');
+    const option = select.options[select.selectedIndex];
+    const pNom = option.getAttribute('data-nom');
+    const unite = option.getAttribute('data-unite') || '';
     const prix = document.getElementById('inputPrix').value;
     const prixVente = document.getElementById('inputPrixVente').value;
     const qte = document.getElementById('inputQtite').value;
@@ -25,7 +27,7 @@ function ajouterLigne() {
         return;
     }
     insererLigneAchat(pId, pNom, Montants.formater(prixCentimes),
-        Montants.formater(prixVenteCentimes), String(quantite));
+        Montants.formater(prixVenteCentimes), String(quantite), false, unite);
     afficherMessageProduit();
     select.value = '';
     document.getElementById('inputPrix').value = '';
@@ -41,10 +43,10 @@ function chargerLigneAchat(pId, prix, prixVente, qte) {
     const nom = option?.getAttribute('data-nom') || 'Produit indisponible';
     // Les anciens achats n’ont pas de tarif de vente enregistré : proposer le tarif actuel.
     const tarif = prixVente === null ? option?.getAttribute('data-prix-vente') || '' : prixVente;
-    insererLigneAchat(pId ?? '', nom, prix ?? '', tarif, qte ?? '', true);
+    insererLigneAchat(pId ?? '', nom, prix ?? '', tarif, qte ?? '', true, option?.getAttribute('data-unite') || '');
 }
 
-function insererLigneAchat(pId, pNom, prix, prixVente, qte, chargement = false) {
+function insererLigneAchat(pId, pNom, prix, prixVente, qte, chargement = false, unite = '') {
     const row = document.createElement('tr');
     const nomCellule = row.insertCell();
     const nom = document.createElement('span');
@@ -84,6 +86,13 @@ function insererLigneAchat(pId, pNom, prix, prixVente, qte, chargement = false) 
             }
         }
         champ.cellule.appendChild(input);
+        if (champ.propriete === 'quantite' && unite) {
+            // L'unité sert seulement à l'affichage ; textContent évite toute interprétation HTML.
+            const libelleUnite = document.createElement('span');
+            libelleUnite.className = 'operation-unit';
+            libelleUnite.textContent = unite;
+            champ.cellule.appendChild(libelleUnite);
+        }
     });
     const totalCellule = row.insertCell();
     totalCellule.className = 'ligne-total fw-bold';

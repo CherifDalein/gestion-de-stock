@@ -93,7 +93,7 @@
                             <tr th:each="ligne : ${v.lignes}">
                                 <td th:text="${ligne.produit.nom}"></td>
                                 <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
-                                <td class="text-center" th:text="${ligne.quantite}"></td>
+                                <td class="text-center" th:text="${ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
                                 <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             </tr>
                             </tbody>

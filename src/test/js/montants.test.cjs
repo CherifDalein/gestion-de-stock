@@ -32,7 +32,9 @@ function environnement(script) {
     const body = new Element();
     const option = { value: '1', text: 'Produit (10 en stock)',
         getAttribute: name => ({ 'data-nom': 'Produit', 'data-prix': option.prix,
-            'data-prix-vente': option.prix, 'data-prix-definis': 'true' })[name], prix: '0.10' };
+            'data-prix-vente': option.prix, 'data-prix-definis': 'true', 'data-stock': option.stock,
+            'data-unite': option.unite, 'data-service': option.service })[name],
+        prix: '0.10', stock: '10', unite: null, service: 'false' };
     elements.selectProduit = new Element(); elements.selectProduit.options = [option]; elements.selectProduit.selectedIndex = 0;
     const alerts = [];
     const document = {
@@ -107,4 +109,38 @@ test('le total maximal conserve .99 et un dépassement ne change pas le panier o
         assert.equal((script === 'achat.js' ? env.body : elements.panierBody).children.length, 1);
         assert.equal((script === 'achat.js' ? elements.totalGeneral : elements.inputTotalTotal).value, '999999999999999.99');
     }
+});
+
+test('le panier vente affiche l’unité et ne déduit aucun stock pour un service', () => {
+    const { context, elements, option, alerts } = environnement('panier.js');
+    option.unite = 'sac';
+    elements.selectProduit.value = '1'; elements.inputQuantite.value = '4';
+    vm.runInContext('ajouterAuPanier()', context);
+    assert.equal(option.text, 'Produit (6 sac en stock)');
+    const ligne = elements.panierBody.children[0];
+    assert.equal(ligne.children[2].children[0].textContent, '4 sac');
+    elements.selectProduit.value = '1'; elements.inputQuantite.value = '7';
+    vm.runInContext('ajouterAuPanier()', context);
+    assert.equal(alerts.length, 1, 'le stock restant de 6 refuse une quantité de 7');
+
+    const service = environnement('panier.js');
+    service.option.service = 'true'; service.option.stock = undefined; service.option.text = 'Produit · Service';
+    service.elements.selectProduit.value = '1'; service.elements.inputQuantite.value = '1000';
+    vm.runInContext('ajouterAuPanier()', service.context);
+    assert.equal(service.alerts.length, 0);
+    assert.equal(service.option.text, 'Produit · Service');
+    assert.equal(service.elements.inputTotalTotal.value, '100.00');
+    vm.runInContext('supprimerLigne(0, 10000n, "1", 1000)', service.context);
+    assert.equal(service.option.text, 'Produit · Service');
+    assert.equal(service.elements.inputTotalTotal.value, '0.00');
+});
+
+test('le panier achat affiche l’unité à côté de la quantité, en texte brut', () => {
+    const { context, elements, body, option } = environnement('achat.js');
+    option.unite = '<b>bidon</b>';
+    elements.selectProduit.value = '1'; elements.inputPrix.value = '1'; elements.inputPrixVente.value = '2'; elements.inputQtite.value = '3';
+    vm.runInContext('ajouterLigne()', context);
+    const unite = body.children[0].children[3].children.find(enfant => enfant.className === 'operation-unit');
+    assert.equal(unite.textContent, '<b>bidon</b>');
+    assert.equal(unite.innerHTML, undefined);
 });

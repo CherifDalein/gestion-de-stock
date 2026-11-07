@@ -36,7 +36,7 @@ public class FormBindingAdvice {
                     "lignes[*].produit.id", "lignes[*].quantite"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement"};
             case "inscription" -> new String[]{"nom", "email", "password"};
-            case "produit" -> new String[]{"nom", "reference",
+            case "produit" -> new String[]{"nom", "reference", "unite", "seuilAlerte",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
             case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};
@@ -46,9 +46,17 @@ public class FormBindingAdvice {
                 && request.getRequestURI().startsWith(request.getContextPath() + "/achats/modifier/")) {
             champs = Arrays.stream(champs).filter(champ -> !champ.equals("montantVerse") && !champ.equals("comptePaiement")).toArray(String[]::new);
         }
-        if (binder.getObjectName().equals("produit")
-                && request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/")) {
-            champs = Stream.concat(Stream.of(champs), Stream.of("version", "prixVente")).toArray(String[]::new);
+        if (binder.getObjectName().equals("produit")) {
+            // La nature se choisit uniquement à la création ; le prix et le coût saisis ne concernent qu'un service.
+            boolean modification = request.getRequestURI().startsWith(request.getContextPath() + "/produits/modifier/");
+            String[] nature = request.getParameterValues("nature");
+            if (nature != null && nature.length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule nature de fiche doit être choisie");
+            }
+            boolean creationService = !modification && nature != null && "SERVICE".equals(nature[0]);
+            Stream<String> ajouts = modification ? Stream.of("version", "prixVente", "coutMoyen")
+                    : creationService ? Stream.of("nature", "prixVente", "coutMoyen") : Stream.of("nature");
+            champs = Stream.concat(Stream.of(champs), ajouts).toArray(String[]::new);
         }
         boolean creation = (binder.getObjectName().equals("achat")
                 && request.getRequestURI().equals(request.getContextPath() + "/achats/enregistrer"))

@@ -6,6 +6,8 @@ import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.NatureProduit;
+import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.repository.VenteRepository;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Map;
@@ -31,6 +34,7 @@ public class VenteService {
     @Autowired private ClientRepository clientRepository;
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private ProduitRepository produitRepository;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -58,7 +62,7 @@ public class VenteService {
         }
 
         initialisation.verrouillerEtClorePourActivite();
-        Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(vente.getLignes().stream()
+        Map<Long, Produit> produits = chargerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         vente.setBoutique(boutiqueService.boutiqueCourante());
         BigDecimal montantTotalCalcule = Montants.ZERO;
@@ -72,11 +76,14 @@ public class VenteService {
         for (DetailVente detail : vente.getLignes()) {
             Produit produit = produits.get(detail.getProduit().getId());
 
-            if (produit.getQuantite() < detail.getQuantite()) {
-                throw new RuntimeException("Stock insuffisant pour " + produit.getNom());
-            }
+            // Un service se vend sans stock : ni contrôle, ni déduction de quantité.
+            if (!produit.estService()) {
+                if (produit.getQuantite() < detail.getQuantite()) {
+                    throw new RuntimeException("Stock insuffisant pour " + produit.getNom());
+                }
 
-            produit.setQuantite(produit.getQuantite() - detail.getQuantite());
+                produit.setQuantite(produit.getQuantite() - detail.getQuantite());
+            }
 
             detail.setPrixUnitaire(Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
             detail.setVente(vente);
@@ -98,6 +105,20 @@ public class VenteService {
         caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel, vente.getComptePaiement());
 
         return venteEnregistree;
+    }
+
+    /**
+     * Verrouille uniquement les articles en stock. Les services de la boutique sont lus sans verrou :
+     * leur nature ne change jamais après création et leur quantité n'est pas utilisée.
+     */
+    private Map<Long, Produit> chargerProduits(List<Long> ids) {
+        Map<Long, Produit> services = new HashMap<>();
+        produitRepository.findAllByIdInAndBoutiqueIdAndNature(ids, boutiqueService.idBoutiqueCourante(), NatureProduit.SERVICE)
+                .forEach(service -> services.put(service.getId(), service));
+        Map<Long, Produit> produits = new HashMap<>(stockLockRepository.verrouillerProduits(
+                ids.stream().filter(id -> !services.containsKey(id)).toList()));
+        produits.putAll(services);
+        return produits;
     }
 
     public List<Vente> listerToutes() {

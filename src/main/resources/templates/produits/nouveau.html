@@ -5,21 +5,38 @@
             <div>
                 <p class="record-kicker">Catalogue</p>
                 <h1 id="recordTitre">Nouveau produit</h1>
-                <p class="record-intro">Préparez la fiche du produit. Le stock et les prix seront renseignés à l’entrée des marchandises.</p>
+                <p class="record-intro">Préparez la fiche d’un article suivi en stock ou d’un service vendu sans stock.</p>
             </div>
             <a th:href="@{/produits}" class="btn btn-outline-secondary record-back">
                 <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des produits
             </a>
         </header>
 
-        <form th:action="@{/produits/ajouter}" th:object="${produit}" method="post" class="record-layout record-layout--single">
+        <form th:action="@{/produits/ajouter}" th:object="${produit}" method="post" class="record-layout record-layout--single" data-fiche-produit
+              th:with="estService=${produit.nature != null and produit.nature.name() == 'SERVICE'}">
             <div th:if="${#fields.hasErrors('*')}" class="record-errors" role="alert">
                 <p>Vérifiez les informations du produit.</p>
                 <ul>
                     <li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li>
                 </ul>
             </div>
-            <p class="record-note">Tous les champs sont obligatoires, sauf le fournisseur.</p>
+            <p class="record-note">Tous les champs sont obligatoires, sauf l’unité, le fournisseur et le coût d’un service.</p>
+
+            <fieldset class="record-panel record-choice-panel">
+                <legend class="record-panel-heading"><span class="record-legend">Nature de la fiche</span></legend>
+                <p class="record-help record-choice-help">La nature ne peut plus être changée après l’enregistrement.</p>
+                <div class="record-choices">
+                    <label class="record-choice">
+                        <input type="radio" name="nature" value="STOCK" data-nature-choice th:checked="${!estService}">
+                        <span><strong>Article en stock</strong><small>Quantités suivies, entrées par achat ou stock initial, alerte de stock faible.</small></span>
+                    </label>
+                    <label class="record-choice">
+                        <input type="radio" name="nature" value="SERVICE" data-nature-choice th:checked="${estService}">
+                        <span><strong>Service</strong><small>Vendu sans stock (livraison, pose, réparation…), avec un prix fixé sur la fiche.</small></span>
+                    </label>
+                </div>
+                <p class="record-field-error" th:if="${#fields.hasErrors('nature')}" th:errors="*{nature}"></p>
+            </fieldset>
 
             <section class="record-panel" aria-labelledby="informationsTitre">
                 <div class="record-panel-heading">
@@ -55,10 +72,44 @@
                         <p id="fournisseur-help" class="record-help">Choisissez « Inconnu / Divers » si aucun fournisseur n’est associé.</p>
                         <p id="fournisseur-error" class="record-field-error" th:if="${#fields.hasErrors('fournisseur')}" th:errors="*{fournisseur}"></p>
                     </div>
+                    <div class="record-field">
+                        <label for="unite">Unité <span class="record-optional">(facultatif)</span></label>
+                        <input class="form-control" id="unite" th:field="*{unite}" th:errorclass="stateInvalid" list="unitesSuggerees" maxlength="30" type="text" autocomplete="off" placeholder="pièce, kg, sac…" th:attr="aria-invalid=${#fields.hasErrors('unite')},aria-describedby=${#fields.hasErrors('unite') ? 'unite-help unite-error' : 'unite-help'}" />
+                        <th:block th:replace="~{produits/unites :: suggestions}"></th:block>
+                        <p id="unite-help" class="record-help">Affichée à côté des quantités. Les quantités restent des nombres entiers.</p>
+                        <p id="unite-error" class="record-field-error" th:if="${#fields.hasErrors('unite')}" th:errors="*{unite}"></p>
+                    </div>
                 </div>
             </section>
 
-            <section class="record-panel" aria-labelledby="stockTitre"><div class="record-panel-heading"><h2 id="stockTitre">Le stock démarre à zéro</h2><p>Créez une fiche produit à tout moment, puis enregistrez un achat avec la quantité, le coût d’achat et le prix de vente. La saisie d’un stock initial est réservée aux marchandises déjà présentes pendant le démarrage de la boutique.</p></div></section>
+            <section class="record-panel" aria-labelledby="stockTitre" data-nature-panel="STOCK" th:attr="hidden=${estService ? 'hidden' : null}">
+                <div class="record-panel-heading"><h2 id="stockTitre">Le stock démarre à zéro</h2><p>Créez une fiche produit à tout moment, puis enregistrez un achat avec la quantité, le coût d’achat et le prix de vente. La saisie d’un stock initial est réservée aux marchandises déjà présentes pendant le démarrage de la boutique.</p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="seuilAlerte">Seuil d’alerte</label>
+                        <input class="form-control" id="seuilAlerte" th:field="*{seuilAlerte}" th:disabled="${estService}" th:errorclass="stateInvalid" required type="number" min="0" max="999999999" step="1" inputmode="numeric" autocomplete="off" th:attr="aria-invalid=${#fields.hasErrors('seuilAlerte')},aria-describedby=${#fields.hasErrors('seuilAlerte') ? 'seuilAlerte-help seuilAlerte-error' : 'seuilAlerte-help'}" />
+                        <p id="seuilAlerte-help" class="record-help">Le produit passe en « stock faible » quand il reste ce nombre d’unités ou moins, et en rupture à zéro.</p>
+                        <p id="seuilAlerte-error" class="record-field-error" th:if="${#fields.hasErrors('seuilAlerte')}" th:errors="*{seuilAlerte}"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="record-panel" aria-labelledby="serviceTitre" data-nature-panel="SERVICE" th:attr="hidden=${estService ? null : 'hidden'}">
+                <div class="record-panel-heading"><h2 id="serviceTitre">Prix du service</h2><p>Un service se vend sans stock : aucune quantité n’est vérifiée ni déduite. Les montants sont exprimés en francs guinéens (GNF).</p></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="prixVente">Prix de vente (GNF)</label>
+                        <input class="form-control" id="prixVente" th:field="*{prixVente}" th:disabled="${!estService}" th:errorclass="stateInvalid" required type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'prixVente-error' : null}" />
+                        <p id="prixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="coutMoyen">Coût du service (GNF) <span class="record-optional">(facultatif)</span></label>
+                        <input class="form-control" id="coutMoyen" th:field="*{coutMoyen}" th:disabled="${!estService}" th:errorclass="stateInvalid" type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0" th:attr="aria-invalid=${#fields.hasErrors('coutMoyen')},aria-describedby=${#fields.hasErrors('coutMoyen') ? 'coutMoyen-help coutMoyen-error' : 'coutMoyen-help'}" />
+                        <p id="coutMoyen-help" class="record-help">Ce que le service vous coûte à chaque vente (main-d’œuvre, transport…). Laissez 0 s’il n’y en a pas.</p>
+                        <p id="coutMoyen-error" class="record-field-error" th:if="${#fields.hasErrors('coutMoyen')}" th:errors="*{coutMoyen}"></p>
+                    </div>
+                </div>
+            </section>
 
             <div class="record-actions">
                 <a th:href="@{/produits}" class="btn btn-outline-secondary">Annuler</a>
@@ -68,4 +119,5 @@
             </div>
         </form>
     </section>
+    <script th:src="@{/js/produit-fiche.js}"></script>
 </div>

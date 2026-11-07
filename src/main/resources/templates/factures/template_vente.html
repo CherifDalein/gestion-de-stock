@@ -52,7 +52,7 @@
                 <tbody>
                 <tr th:each="ligne : ${vente.lignes}" data-document-row>
                     <td class="document-product" th:text="${ligne.produit.nom}"></td>
-                    <td class="document-quantity" th:text="${ligne.quantite}"></td>
+                    <td class="document-quantity" th:text="${ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
                     <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                     <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                 </tr>

@@ -49,12 +49,13 @@
                             <label for="selectProduit" class="form-label">Produit</label>
                             <select id="selectProduit" class="form-select" aria-describedby="produitFeedback">
                                 <option value="">Choisir un produit…</option>
-                                <option th:each="p : ${produits}"
+                                <option th:each="p : ${produits}" th:unless="${p.estService()}"
                                         th:value="${p.id}"
                                         th:data-nom="${p.nom}"
+                                        th:data-unite="${p.unite}"
                                         th:data-prix="${p.prixDefinis ? p.prixAchat : null}"
                                         th:data-prix-vente="${p.prixDefinis ? p.prixVente : null}"
-                                        th:text="${p.nom}"></option>
+                                        th:text="${p.nom + (p.unite != null ? ' (' + p.unite + ')' : '')}"></option>
                             </select>
                         </div>
                         <div class="operation-field">

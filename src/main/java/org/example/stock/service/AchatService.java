@@ -44,6 +44,7 @@ public class AchatService {
         achat.setDateAchat(LocalDateTime.now());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
+        refuserServices(produits);
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achat);
 
@@ -84,6 +85,7 @@ public class AchatService {
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(Stream.concat(
                 ancienAchat.getLignes().stream(), achatModifie.getLignes().stream())
                 .map(ligne -> ligne.getProduit().getId()).toList());
+        refuserServices(produits);
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achatModifie);
         BigDecimal montantDejaVerse = Montants.ouZero(ancienAchat.getMontantVerse());
@@ -196,6 +198,15 @@ public class AchatService {
             BigDecimal tarifPrecedent = tarifsVente.putIfAbsent(ligne.getProduit().getId(), ligne.getPrixVenteUnitaire());
             if (tarifPrecedent != null && tarifPrecedent.compareTo(ligne.getPrixVenteUnitaire()) != 0) {
                 throw new IllegalArgumentException("Les lignes d'un même produit doivent avoir le même prix de vente.");
+            }
+        }
+    }
+
+    /** Un service n'a pas de stock : il ne peut jamais entrer par un achat. */
+    private void refuserServices(Map<Long, Produit> produits) {
+        for (Produit produit : produits.values()) {
+            if (produit.estService()) {
+                throw new IllegalArgumentException("« " + produit.getNom() + " » est un service : il se vend sans stock et ne peut pas figurer dans un achat.");
             }
         }
     }

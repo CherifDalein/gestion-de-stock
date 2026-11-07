@@ -55,6 +55,7 @@ public class InventaireService {
         initialisation.verrouillerEtExigerOuverte();
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);
         verifierVersion(produit,formulaire.getVersion());
+        refuserService(produit, "un stock initial");
         if (!initialAutorise(produit)) throw new IllegalArgumentException("Le stock initial est réservé au démarrage de la boutique et à un produit sans stock ni opération précédente. Utilisez un achat.");
         var cout=Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire");
         var prixVente=Montants.positifOuNul(formulaire.getPrixVente(),"Le prix de vente");
@@ -64,11 +65,16 @@ public class InventaireService {
     @Transactional
     public void ajuster(Long id, AjustementStockForm formulaire) {
         administrateur();
-        produits.trouverParId(id);
+        refuserService(produits.trouverParId(id), "un ajustement d'inventaire");
         throw new IllegalArgumentException("La modification manuelle du stock est désactivée. Après le démarrage de la boutique, seuls les achats et les ventes font varier les quantités.");
     }
+    private static void refuserService(Produit produit, String operation) {
+        if (produit.estService()) {
+            throw new IllegalArgumentException("« " + produit.getNom() + " » est un service : il se vend sans stock et ne peut pas recevoir " + operation + ".");
+        }
+    }
     private boolean initialAutorise(Produit produit) {
-        return initialisation.estOuverte() && produit.getQuantite() != null && produit.getQuantite() == 0
+        return !produit.estService() && initialisation.estOuverte() && produit.getQuantite() != null && produit.getQuantite() == 0
                 && !mouvements.existsByProduitId(produit.getId())
                 && em.createQuery("select count(d) from DetailAchat d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0
                 && em.createQuery("select count(d) from DetailVente d where d.produit.id=:id",Long.class).setParameter("id",produit.getId()).getSingleResult()==0;

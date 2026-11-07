@@ -64,7 +64,7 @@
                     <td class="document-reference" th:text="${'#' + vente.id}"></td>
                     <td class="document-date" th:text="${vente.dateVente != null ? #temporals.format(vente.dateVente, 'dd/MM/yyyy HH:mm') : 'Non renseignée'}"></td>
                     <td class="document-products">
-                        <div th:each="ligne : ${vente.lignes}" class="document-product-line"><span th:text="${ligne.produit.nom}"></span><span class="document-product-quantity" th:text="${' × ' + ligne.quantite}"></span></div>
+                        <div th:each="ligne : ${vente.lignes}" class="document-product-line"><span th:text="${ligne.produit.nom}"></span><span class="document-product-quantity" th:text="${' × ' + ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></span></div>
                     </td>
                     <td class="document-amount" th:text="${#numbers.formatDecimal(vente.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                     <td class="document-amount" th:text="${#numbers.formatDecimal(vente.montantVerse ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
