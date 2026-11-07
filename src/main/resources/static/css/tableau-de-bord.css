@@ -59,9 +59,18 @@ body.stock-app .tdb-table { min-width: 560px; }
 body.stock-app .tdb-table :is(td, tfoot th) { font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.stock-app .tdb-table tfoot :is(th, td) { font-weight: 700; border-top: 2px solid var(--app-border); }
 
+/* Créances et dettes : listes de retards. */
+body.stock-app .tdb-retard { display: block; margin-top: 4px; font-weight: 500; }
+body.stock-app .tdb-columns--retards { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; margin-bottom: 18px; }
+body.stock-app .tdb-table--retards { min-width: 0; }
+body.stock-app .tdb-table--retards .tdb-retard-nom { font-weight: 600; overflow-wrap: anywhere; }
+body.stock-app .tdb-table--retards td { white-space: nowrap; }
+body.stock-app .tdb-releve { display: inline-flex; align-items: center; min-height: 44px; font-size: .82rem; font-weight: 600; }
+body.stock-app .tdb-sans-partenaire { overflow-wrap: anywhere; }
+
 @media (max-width: 1199.98px) {
   body.stock-app .tdb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  body.stock-app .tdb-columns { grid-template-columns: minmax(0, 1fr); }
+  body.stock-app .tdb-columns, body.stock-app .tdb-columns--retards { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 575.98px) {
   body.stock-app .tdb-grid { grid-template-columns: 1fr; }

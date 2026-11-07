@@ -70,6 +70,8 @@ public class HomeController {
         model.addAttribute("indicateursMois", tableauDeBord.indicateursDuMois(aujourdHui));
         model.addAttribute("libelleMois", MOIS_EN_COURS.format(aujourdHui));
         model.addAttribute("valeurStock", tableauDeBord.valeurStock());
+        // Créances et dettes : calculées pour le gérant seulement.
+        model.addAttribute("creancesDettes", tableauDeBord.creancesEtDettes());
         TableauDeBordService.AnneeChoisie choix = TableauDeBordService.choisirAnnee(annee, aujourdHui);
         model.addAttribute("anneeCorrigee", choix.corrigee());
         model.addAttribute("evolution", tableauDeBord.evolutionMensuelle(choix.annee(), aujourdHui));

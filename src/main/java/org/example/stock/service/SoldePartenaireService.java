@@ -8,6 +8,7 @@ import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.SoldePartenaireRepository;
 import org.example.stock.repository.SoldePartenaireRepository.Factures;
 import org.example.stock.repository.SoldePartenaireRepository.Partenaire;
+import org.example.stock.repository.SoldePartenaireRepository.RetardPartenaire;
 import org.example.stock.repository.SoldePartenaireRepository.Totaux;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -125,6 +128,52 @@ public class SoldePartenaireService {
     @Transactional(readOnly = true)
     public Totaux dettesFournisseurs() {
         return totaux(Partenaire.FOURNISSEUR);
+    }
+
+    /** Avances disponibles de tous les clients de la boutique (argent reçu d'avance), chaque solde restant distinct. */
+    @Transactional(readOnly = true)
+    public BigDecimal avancesClients() {
+        return soldesClients().values().stream().map(SoldePartenaire::avanceDisponible).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Avances de la boutique chez ses fournisseurs. */
+    @Transactional(readOnly = true)
+    public BigDecimal avancesFournisseurs() {
+        return soldesFournisseurs().values().stream().map(SoldePartenaire::avanceDisponible).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** Clients en retard, du montant en retard le plus grand au plus petit (au plus {@code limite}). */
+    @Transactional(readOnly = true)
+    public Retards retardsClients(int limite) {
+        return retards(Partenaire.CLIENT, limite);
+    }
+
+    /** Fournisseurs à payer en retard, du montant le plus grand au plus petit (au plus {@code limite}). */
+    @Transactional(readOnly = true)
+    public Retards retardsFournisseurs(int limite) {
+        return retards(Partenaire.FOURNISSEUR, limite);
+    }
+
+    private Retards retards(Partenaire type, int limite) {
+        Long boutiqueId = boutiques.idBoutiqueCourante();
+        LocalDate jour = echeances.aujourdHui();
+        var tous = soldes.retardsParPartenaire(type, boutiqueId, jour).stream()
+                .sorted(Comparator.comparing(RetardPartenaire::montant).reversed()
+                        .thenComparing(RetardPartenaire::plusAncienneEcheance)
+                        .thenComparing(RetardPartenaire::nom, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(RetardPartenaire::id))
+                .toList();
+        return new Retards(tous.stream().limit(Math.max(0, limite)).toList(), tous.size(),
+                soldes.retardFacturesSansPartenaire(type, boutiqueId, jour));
+    }
+
+    /**
+     * Partenaires en retard (liste limitée, du plus grand montant au plus petit), nombre total de partenaires en retard
+     * et montant en retard des factures sans partenaire nommé (ventes sans client), compté dans les totaux mais absent
+     * de la liste.
+     */
+    public record Retards(List<RetardPartenaire> partenaires, int total, BigDecimal sansPartenaire) {
+        public int autres() { return Math.max(0, total - partenaires.size()); }
     }
 
     private Totaux totaux(Partenaire type) {

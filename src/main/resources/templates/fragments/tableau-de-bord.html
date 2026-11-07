@@ -171,10 +171,99 @@
         <p class="tdb-note mt-3 mb-0">Montants en GNF. Résultat = bénéfice brut − dépenses. Les achats ne sont pas des dépenses : leur coût est compté dans le bénéfice brut au moment de la vente.</p>
     </section>
 
-    <!--/* Emplacement réservé à la seconde partie du tableau de bord (créances et dettes en retard).
-           La tâche suivante y insérera son propre fragment, alimenté par le serveur et soumis aux mêmes
-           droits ; aucune donnée n'est affichée ici d'ici là. */-->
+    <!--/* Créances et dettes : réservé au gérant. Pour un caissier, « creancesDettes » n'est ni calculé ni placé dans le modèle. */-->
+    <th:block th:if="${creancesDettes != null}">
+        <th:block th:replace="~{fragments/tableau-de-bord :: creancesDettes(${creancesDettes})}"></th:block>
+    </th:block>
 </div>
+
+<!--/* Créances clients, dettes fournisseurs, avances, position nette et listes de retards ; réservé au gérant. */-->
+<th:block th:fragment="creancesDettes(cd)">
+    <section class="tdb-section" aria-labelledby="tdbCreancesTitre" data-bloc="creances-dettes">
+        <div class="tdb-section-heading">
+            <h2 id="tdbCreancesTitre">Créances et dettes</h2>
+            <p>Ce que les clients doivent, ce que vous devez aux fournisseurs, à aujourd’hui.</p>
+        </div>
+        <div class="app-metric-grid tdb-grid">
+            <article class="app-metric-card">
+                <span class="app-metric-icon"><i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Créances clients</h3>
+                <p class="app-metric-value" data-indicateur="creances"><span th:text="${#numbers.formatDecimal(cd.creances, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">
+                    <span>Total à recevoir des clients</span>
+                    <span class="tdb-retard" data-indicateur="creances-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.creancesEnRetard, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                </p>
+            </article>
+            <article class="app-metric-card">
+                <span class="app-metric-icon text-danger"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Dettes fournisseurs</h3>
+                <p class="app-metric-value" data-indicateur="dettes"><span th:text="${#numbers.formatDecimal(cd.dettes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">
+                    <span>Total à payer aux fournisseurs</span>
+                    <span class="tdb-retard" data-indicateur="dettes-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.dettesEnRetard, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                </p>
+            </article>
+            <article class="app-metric-card">
+                <span class="app-metric-icon"><i class="fa-solid fa-piggy-bank" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Avances</h3>
+                <p class="app-metric-value" data-indicateur="avances-clients"><span th:text="${#numbers.formatDecimal(cd.avancesClients, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">
+                    <span>Argent reçu d’avance des clients, disponible pour leurs prochains achats</span>
+                    <span class="tdb-retard" data-indicateur="avances-fournisseurs">Avances chez les fournisseurs : <strong th:text="${#numbers.formatDecimal(cd.avancesFournisseurs, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                </p>
+            </article>
+            <article class="app-metric-card">
+                <span class="app-metric-icon"><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Position nette</h3>
+                <p class="app-metric-value" th:classappend="${cd.positionNette.signum() < 0 ? 'text-danger' : ''}" data-indicateur="position-nette"><span th:text="${#numbers.formatDecimal(cd.positionNette, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">Créances − dettes − avances des clients + avances chez les fournisseurs</p>
+            </article>
+        </div>
+    </section>
+
+    <div class="tdb-columns tdb-columns--retards">
+        <th:block th:replace="~{fragments/tableau-de-bord :: retards('clients', 'tdbClientsRetardTitre', 'Clients en retard', 'Les plus gros montants échus d’abord.', ${cd.clientsEnRetard}, 'client', 'Aucun client en retard', 'Ventes sans client en retard')}"></th:block>
+        <th:block th:replace="~{fragments/tableau-de-bord :: retards('fournisseurs', 'tdbFournisseursRetardTitre', 'Fournisseurs à payer en retard', 'Les plus gros montants échus d’abord.', ${cd.fournisseursEnRetard}, 'fournisseur', 'Aucun fournisseur à payer en retard', 'Achats sans fournisseur en retard')}"></th:block>
+    </div>
+</th:block>
+
+<!--/* Liste des partenaires en retard (10 au plus) avec lien vers leur relevé cumulé. Les noms sont insérés par th:text. */-->
+<section class="app-panel tdb-panel" th:fragment="retards(cle, idTitre, titre, aide, retards, chemin, vide, libelleSans)" th:attr="aria-labelledby=${idTitre},data-retards=${cle}">
+    <div class="app-panel-heading">
+        <div>
+            <h2 th:id="${idTitre}" th:text="${titre}">Clients en retard</h2>
+            <p th:text="${aide}">Aide.</p>
+        </div>
+    </div>
+    <p class="app-empty-hint" th:if="${retards.partenaires.isEmpty()}">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i><span th:text="${vide}">Aucun en retard</span>
+    </p>
+    <div class="table-responsive tdb-table-wrap" tabindex="0" role="region" th:attr="aria-labelledby=${idTitre}" th:unless="${retards.partenaires.isEmpty()}">
+        <table class="table tdb-table tdb-table--retards mb-0">
+            <caption class="visually-hidden" th:text="${titre + ', montants en GNF'}">Retards</caption>
+            <thead>
+            <tr>
+                <th scope="col">Nom</th>
+                <th scope="col" class="text-end">En retard (GNF)</th>
+                <th scope="col">Échue depuis le</th>
+                <th scope="col"><span class="visually-hidden">Relevé</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${retards.partenaires}" th:attr="data-retard-id=${p.id}">
+                <th scope="row" class="tdb-retard-nom" th:text="${p.nom}">Nom</th>
+                <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(p.montant, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                <td th:text="${#temporals.format(p.plusAncienneEcheance, 'dd/MM/yyyy')}">01/01/2026</td>
+                <td class="text-end"><a class="tdb-releve" th:href="@{|/factures/${chemin}/${p.id}/cumule|}" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}">Relevé</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <p class="tdb-note mt-2 mb-0" th:if="${retards.autres() > 0}" th:text="${retards.autres() + (retards.autres() > 1 ? ' autres en retard, non listés' : ' autre en retard, non listé')}">1 autre</p>
+    <p class="tdb-note tdb-sans-partenaire mt-2 mb-0" th:if="${retards.sansPartenaire.signum() > 0}" th:attr="data-sans-partenaire=${cle}">
+        <span th:text="${libelleSans}">Ventes sans client en retard</span> : <strong th:text="${#numbers.formatDecimal(retards.sansPartenaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong>
+    </p>
+</section>
 
 <!--/* Bénéfice brut, dépenses et bénéfice net d'une période ; réservé au gérant. */-->
 <th:block th:fragment="marges(indicateurs, cle, suffixe)">

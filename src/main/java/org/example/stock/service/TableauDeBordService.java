@@ -4,7 +4,9 @@ import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.model.Montants;
 import org.example.stock.model.Produit;
+import org.example.stock.repository.SoldePartenaireRepository.Totaux;
 import org.example.stock.repository.TableauDeBordRepository;
+import org.example.stock.service.SoldePartenaireService.Retards;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,8 @@ public class TableauDeBordService {
     public static final int ANNEE_MINIMALE = 2000;
     /** Nombre maximal de produits à surveiller affichés. */
     public static final int LIMITE_PRODUITS_A_SURVEILLER = 10;
+    /** Nombre maximal de clients et de fournisseurs en retard affichés. */
+    public static final int LIMITE_RETARDS = 10;
 
     private static final List<String> MOIS = List.of("Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet",
             "Août", "Septembre", "Octobre", "Novembre", "Décembre");
@@ -37,10 +41,28 @@ public class TableauDeBordService {
 
     private final TableauDeBordRepository requetes;
     private final BoutiqueService boutiqueService;
+    private final SoldePartenaireService soldes;
 
-    public TableauDeBordService(TableauDeBordRepository requetes, BoutiqueService boutiqueService) {
+    public TableauDeBordService(TableauDeBordRepository requetes, BoutiqueService boutiqueService, SoldePartenaireService soldes) {
         this.requetes = requetes;
         this.boutiqueService = boutiqueService;
+        this.soldes = soldes;
+    }
+
+    /**
+     * Créances, dettes, avances et position nette de la boutique courante, à partir des agrégats de
+     * {@link SoldePartenaireService} (aucun autre calcul de solde). Réservé au gérant : le contrôleur ne l'appelle pas
+     * pour un caissier.
+     */
+    public CreancesDettes creancesEtDettes() {
+        Totaux creances = soldes.creancesClients();
+        Totaux dettes = soldes.dettesFournisseurs();
+        BigDecimal avancesClients = soldes.avancesClients();
+        BigDecimal avancesFournisseurs = soldes.avancesFournisseurs();
+        BigDecimal position = creances.total().subtract(dettes.total()).subtract(avancesClients).add(avancesFournisseurs);
+        return new CreancesDettes(creances.total(), creances.enRetard(), dettes.total(), dettes.enRetard(),
+                avancesClients, avancesFournisseurs, position,
+                soldes.retardsClients(LIMITE_RETARDS), soldes.retardsFournisseurs(LIMITE_RETARDS));
     }
 
     /** Chiffre d'affaires du jour : seul indicateur d'activité partagé avec le caissier. */
@@ -179,6 +201,11 @@ public class TableauDeBordService {
                               BigDecimal beneficeNet, long lignesSansCout) {}
 
     /** Valeur au coût moyen des articles en stock, services exclus. */
+    /** Seconde partie du tableau de bord ; position = créances − dettes − avances des clients + avances chez les fournisseurs. */
+    public record CreancesDettes(BigDecimal creances, BigDecimal creancesEnRetard, BigDecimal dettes, BigDecimal dettesEnRetard,
+                                 BigDecimal avancesClients, BigDecimal avancesFournisseurs, BigDecimal positionNette,
+                                 Retards clientsEnRetard, Retards fournisseursEnRetard) {}
+
     public record ValeurStock(BigDecimal valeur, long nombreProduits) {}
 
     /** Article à surveiller, sans prix ni coût : la liste est aussi montrée au caissier. */
