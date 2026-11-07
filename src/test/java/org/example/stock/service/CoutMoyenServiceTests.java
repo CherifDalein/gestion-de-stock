@@ -150,6 +150,39 @@ class CoutMoyenServiceTests {
         return formulaire;
     }
 
+    @Test void uneVenteDeServiceFigeSonCoutFixeSansToucherAuStock() {
+        var fiche = new Produit();
+        fiche.setNom("Livraison");
+        fiche.setReference("SRV-" + UUID.randomUUID());
+        fiche.setCategorie(espace.categorie());
+        fiche.setNature(NatureProduit.SERVICE);
+        fiche.setPrixVente(new BigDecimal("5000"));
+        fiche.setCoutMoyen(new BigDecimal("1500"));
+        Produit service = catalogue.ajouterProduit(fiche);
+        achats.enregistrerAchat(achat(10, "1000"));
+
+        var ligneService = new DetailVente();
+        var referenceService = new Produit();
+        referenceService.setId(service.getId());
+        ligneService.setProduit(referenceService);
+        ligneService.setQuantite(2);
+        Vente vente = vente(3);
+        vente.setMontantVerse(null);
+        vente.getLignes().add(ligneService);
+        vente = ventes.effectuerVente(vente);
+
+        var lignes = vente.getLignes().stream()
+                .map(l -> lignesVente.findById(l.getId()).orElseThrow()).toList();
+        assertThat(lignes).filteredOn(l -> l.getProduit().getId().equals(service.getId()))
+                .singleElement().satisfies(l -> assertThat(l.getCoutUnitaire()).isEqualByComparingTo("1500"));
+        assertThat(lignes).filteredOn(l -> l.getProduit().getId().equals(espace.produit().getId()))
+                .singleElement().satisfies(l -> assertThat(l.getCoutUnitaire()).isEqualByComparingTo("1000"));
+        Produit serviceRelu = produits.findById(service.getId()).orElseThrow();
+        assertThat(serviceRelu.getQuantite()).isZero();
+        assertThat(serviceRelu.getCoutMoyen()).isEqualByComparingTo("1500");
+        assertThat(actuel().getQuantite()).isEqualTo(7L);
+    }
+
     @Test void deuxAchatsDonnentLaMoyennePondereeEtLePrixAchatResteLeDernier() {
         achats.enregistrerAchat(achat(10, "1000"));
         assertThat(actuel().getCoutMoyen()).isEqualByComparingTo("1000.00");
