@@ -41,6 +41,8 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
     List<MouvementCaisse> findBySourceAndBoutiqueId(String source, Long boutiqueId);
     List<MouvementCaisse> findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long achatId, Long boutiqueId);
     List<MouvementCaisse> findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long venteId, Long boutiqueId);
+    List<MouvementCaisse> findByClientIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long clientId, String source, Long boutiqueId);
+    List<MouvementCaisse> findByFournisseurIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long fournisseurId, String source, Long boutiqueId);
     List<MouvementCaisse> findByDateMouvementGreaterThanEqualAndBoutiqueIdOrderByDateMouvementDesc(LocalDateTime date, Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m")

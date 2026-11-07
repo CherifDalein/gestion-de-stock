@@ -57,8 +57,19 @@ public class Achat {
     @OneToMany(mappedBy = "achat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetailAchat> lignes = new ArrayList<>();
 
+    /**
+     * Reste à payer = max(0, total − versé − avance utilisée). Un trop-payé ou une avance qui couvre tout le total
+     * donne zéro : le reste n'est jamais négatif.
+     */
     public BigDecimal getResteAPayer() {
-        return Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantVerse));
+        BigDecimal reste = Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantVerse)).subtract(Montants.ouZero(avanceUtilisee));
+        return reste.signum() < 0 ? Montants.ZERO : reste;
+    }
+
+    /** Surplus = max(0, versé − total) : la part versée au-delà du total, devenue une avance du partenaire. */
+    public BigDecimal getSurplus() {
+        BigDecimal surplus = Montants.ouZero(montantVerse).subtract(Montants.ouZero(montantTotal));
+        return surplus.signum() < 0 ? Montants.ZERO : surplus;
     }
 
     /** En retard : un reste à payer et une échéance strictement antérieure au jour donné. */

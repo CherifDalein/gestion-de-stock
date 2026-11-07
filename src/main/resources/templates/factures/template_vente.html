@@ -9,7 +9,7 @@
 </head>
 <body class="stock-document">
 <main id="stockDocument" class="document-shell" data-document-type="vente"
-      th:with="total=${vente.montantTotal ?: 0}, verseTotal=${vente.montantVerse ?: 0}, resteTotal=${vente.resteAPayer}">
+      th:with="total=${vente.montantTotal ?: 0}, verseTotal=${vente.montantVerse ?: 0}, avance=${vente.avanceUtilisee ?: 0}, surplus=${vente.surplus}, resteTotal=${vente.resteAPayer}">
     <header class="document-toolbar no-print">
         <div><p class="document-kicker">Documents</p><h1>Facture de vente</h1></div>
         <div class="document-toolbar-actions">
@@ -22,8 +22,8 @@
             <div th:replace="~{fragments/identite-boutique :: identite}"></div>
             <div class="document-heading">
                 <h1 id="documentTitle" th:text="${'Facture de vente ' + (vente.numero ?: '#' + vente.id)}"></h1>
-                <span class="document-status" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal > 0 ? 'partiel' : 'a-regler')}"
-                      th:text="${resteTotal <= 0 ? 'Réglée' : (verseTotal > 0 ? 'Partiel' : 'À régler')}"></span>
+                <span class="document-status" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal + avance > 0 ? 'partiel' : 'a-regler')}"
+                      th:text="${resteTotal <= 0 ? 'Réglée' : (verseTotal + avance > 0 ? 'Partiel' : 'À régler')}"></span>
             </div>
         </header>
         <div class="document-identity">
@@ -67,6 +67,8 @@
             <dl>
                 <div class="document-summary-total"><dt>Total de la vente</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(total, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div><dt>Montant versé</dt><dd data-document-amount="verse" th:text="${#numbers.formatDecimal(verseTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${avance.signum() > 0}"><dt>Avance utilisée</dt><dd data-document-amount="avance" th:text="${#numbers.formatDecimal(avance, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${surplus.signum() > 0}"><dt th:text="${'Surplus versé (avance du client)'}"></dt><dd data-document-amount="surplus" th:text="${#numbers.formatDecimal(surplus, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div class="document-summary-rest"><dt>Reste à payer</dt><dd data-document-amount="reste" th:text="${#numbers.formatDecimal(resteTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
             </dl>
         </section>

@@ -51,7 +51,7 @@
                     <thead><tr><th scope="col">Numéro</th><th scope="col">Date et heure</th><th scope="col">Client</th><th scope="col" class="text-end">Total</th><th scope="col" class="text-end">Versé</th><th scope="col" class="text-end">Reste</th><th scope="col">Règlement</th><th scope="col" class="text-end">Document</th></tr></thead>
                     <tbody>
                     <tr th:each="v : ${ventes}" data-invoice-row
-                        th:with="verse=${v.montantVerse ?: 0}, statut=${v.resteAPayer <= 0 ? 'reglee' : (verse > 0 ? 'partielle' : 'credit')}"
+                        th:with="verse=${v.montantVerse ?: 0}, statut=${v.resteAPayer <= 0 ? 'reglee' : (verse + (v.avanceUtilisee ?: 0) > 0 ? 'partielle' : 'credit')}"
                         th:attr="data-id=${v.id},data-reference=${(v.numero ?: '') + ' #' + v.id},data-name=${v.client != null ? v.client.nom : 'Client Passant'},data-date=${v.dateVente ?: ''},data-total=${v.montantTotal},data-verse=${verse},data-reste=${v.resteAPayer},data-status=${statut}">
                         <td class="invoices-reference" data-label="Numéro" th:text="${v.numero ?: '#' + v.id}"></td>
                         <td class="invoices-date" data-label="Date et heure" th:text="${v.dateVente != null ? #temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>

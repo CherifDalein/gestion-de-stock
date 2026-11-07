@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
 import org.example.stock.model.Fournisseur;
+import org.example.stock.model.Montants;
 import org.example.stock.repository.FournisseurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ public class FournisseurService {
     @Autowired
     private BoutiqueService boutiqueService;
 
+    @Autowired
+    private SoldeDepartService soldeDepart;
+
     public List<Fournisseur> listerTous() {
         return fournisseurRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
@@ -26,11 +30,16 @@ public class FournisseurService {
     public Fournisseur enregistrer(Fournisseur f) {
         if (f.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         f.setBoutique(boutiqueService.boutiqueCourante());
+        // Le solde enregistré ne vient jamais du navigateur : il est recalculé, pour le gérant seulement.
+        f.setSoldeInitial(Montants.ZERO);
+        f.setEcheanceSoldeInitial(f.isSoldeDepartSoumis() ? f.getEcheanceSoldeInitial() : null);
+        soldeDepart.appliquerALaCreation(f);
         return fournisseurRepository.save(f);
     }
 
     @Transactional
     public Fournisseur modifierFournisseur(Long id, Fournisseur modifications) {
+        soldeDepart.appliquerALaModification(id, modifications);
         Fournisseur fournisseur = trouverParId(id);
         fournisseur.setNom(modifications.getNom());
         fournisseur.setTelephone(modifications.getTelephone());

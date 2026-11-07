@@ -51,4 +51,14 @@ public class MouvementCaisse {
     @JoinColumn(name = "vente_id")
     private Vente vente;
 
+    /** Client dont ce mouvement règle le solde de départ (source {@code SOLDE_CLIENT}). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_client"))
+    private Client client;
+
+    /** Fournisseur dont ce mouvement règle le solde de départ (source {@code SOLDE_FOURNISSEUR}). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fournisseur_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_fournisseur"))
+    private Fournisseur fournisseur;
+
 }

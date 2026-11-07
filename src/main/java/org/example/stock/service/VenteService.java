@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import org.example.stock.model.Client;
 import org.example.stock.model.DetailVente;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
@@ -39,6 +40,7 @@ public class VenteService {
     @Autowired private CoutMoyenService coutMoyen;
     @Autowired private NumerotationFactureService numerotation;
     @Autowired private EcheanceService echeances;
+    @Autowired private SoldePartenaireService soldes;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -69,6 +71,8 @@ public class VenteService {
         initialisation.verrouillerEtClorePourActivite();
         // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
         String numero = numerotation.attribuerNumeroVente(vente.getNumero());
+        // Fiche du client verrouillée ensuite, avant les produits : deux ventes du même client ne consomment jamais deux fois la même avance.
+        Client client = vente.getClient() == null ? null : stockLockRepository.verrouillerClient(vente.getClient().getId());
         Map<Long, Produit> produits = chargerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         vente.setBoutique(boutiqueService.boutiqueCourante());
@@ -100,7 +104,10 @@ public class VenteService {
         }
 
         vente.setMontantTotal(Montants.valider(montantTotalCalcule, "Le total de la vente"));
-        vente.setMontantVerse(normaliserMontantVerse(vente.getMontantVerse(), montantTotalCalcule));
+        // Le trop-payé n'est admis qu'avec un client : le surplus devient son avance. Toute la somme versée entre en trésorerie.
+        BigDecimal verse = normaliserMontantVerse(vente.getMontantVerse(), montantTotalCalcule, client != null);
+        vente.setMontantVerse(verse);
+        vente.setAvanceUtilisee(avanceAUtiliser(client, montantTotalCalcule, verse));
         vente.setDateVente(LocalDateTime.now());
         vente.setDateEcheance(echeances.pourCreation(vente.getDateVente(), vente.getResteAPayer(), vente.getDateEcheance(),
                 vente.getBoutique().getDelaiClientsJours()));
@@ -167,12 +174,13 @@ public class VenteService {
         Vente vente = stockLockRepository.verrouillerVente(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(vente.getMontantVerse()), "Le montant déjà versé");
         BigDecimal total = Montants.positifOuNul(vente.getMontantTotal(), "Le total de la vente");
-        if (total.compareTo(dejaVerse) < 0) {
+        // Un trop-payé à la création est permis (avance du client) ; seule une avance supérieure au total est incohérente.
+        if (Montants.ouZero(vente.getAvanceUtilisee()).compareTo(total) > 0) {
             throw new IllegalArgumentException("Les montants de cette vente sont invalides. Vérifiez la facture.");
         }
         if (montantVerseAttendu.compareTo(dejaVerse) != 0) throw new ReglementVenteObsoleteException();
         BigDecimal nouveauVerse = dejaVerse.add(montant);
-        if (nouveauVerse.compareTo(total) > 0) {
+        if (montant.compareTo(vente.getResteAPayer()) > 0) {
             throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
         }
         vente.setMontantVerse(Montants.valider(nouveauVerse, "Le cumul des versements"));
@@ -200,12 +208,18 @@ public class VenteService {
         vente.setDateEcheance(echeance);
     }
 
-    private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {
+    private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal, boolean avecClient) {
         BigDecimal montant = Montants.positifOuNul(Objects.requireNonNullElse(montantVerse, montantTotal), "Le montant versé");
-        if (montant.compareTo(montantTotal) > 0) {
+        if (!avecClient && montant.compareTo(montantTotal) > 0) {
             throw new RuntimeException("Le montant verse ne peut pas depasser le total de la vente.");
         }
 
         return montant;
+    }
+
+    /** min(avance disponible du client, total − versé), sans mouvement de trésorerie : l'argent est déjà entré. */
+    private BigDecimal avanceAUtiliser(Client client, BigDecimal total, BigDecimal verse) {
+        if (client == null || verse.compareTo(total) >= 0) return Montants.ZERO;
+        return Montants.valider(soldes.avanceDisponibleVerrouillee(client).min(total.subtract(verse)), "L'avance utilisée");
     }
 }

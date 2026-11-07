@@ -430,3 +430,115 @@ et la page du caissier, et l'isolation des boutiques. Le test MariaDB crée puis
 supprime uniquement un schéma temporaire `stock_tableau_de_bord_test_*` ; la
 variable `TABLEAU_DE_BORD_TEST_DB_URL=jdbc:mariadb://127.0.0.1:13306/` peut
 sélectionner un serveur local isolé.
+
+## Avances et soldes de départ
+
+### Convention de signe
+
+Pour un client comme pour un fournisseur, du point de vue de la boutique :
+
+- solde **positif** : le partenaire doit de l'argent à la boutique ;
+- solde **négatif** : la boutique doit de l'argent au partenaire.
+
+Un solde client négatif est donc une avance versée par le client. Un solde
+fournisseur positif est une avance versée au fournisseur.
+
+### Solde de départ
+
+Les fiches client et fournisseur (création et modification) acceptent un montant
+supérieur ou égal à zéro, un sens (« Il me doit » ou « Je lui dois ») et une
+échéance facultative. L'application enregistre le montant signé dans
+`solde_initial`, sans aucun mouvement de trésorerie. Le sens et le montant sont
+les seuls champs liés : `soldeInitial` et `avanceUtilisee` ne sont jamais reçus
+du navigateur (400). Une avance de départ n'a pas d'échéance.
+
+Le solde de départ ne peut plus être modifié dès qu'il a été réglé en partie, ni
+quand la modification ferait passer l'avance disponible sous zéro.
+
+Règlement : page `/clients/solde/regler/{id}` et `/fournisseurs/solde/regler/{id}`,
+construite comme les règlements de factures (contrôle du reste attendu, choix du
+compte, CSRF). Le paiement est un mouvement de trésorerie rattaché au partenaire
+(entrée pour un client, sortie pour un fournisseur). Un règlement ne peut pas
+dépasser le reste ; un formulaire périmé reçoit 409.
+
+Reste du solde de départ d'un client = `solde_initial` s'il est positif − somme des
+règlements. Pour un fournisseur : `-solde_initial` s'il est négatif − somme des règlements.
+
+### Trop-payé et avance
+
+À la **création** d'une vente (resp. d'un achat), le montant versé peut dépasser le
+total uniquement si un client (resp. un fournisseur) est choisi ; sans partenaire,
+« ne peut pas dépasser le total » reste refusé. Tout l'argent versé entre en
+trésorerie ; le surplus (versé − total) devient une avance. Les règlements
+ultérieurs d'une facture restent plafonnés à son reste.
+
+Avance disponible d'un client :
+
+    max(0, −solde_initial) + Σ max(0, versé − total) de ses ventes − Σ avance_utilisee de ses ventes
+
+Même formule pour un fournisseur avec `max(0, solde_initial)` et ses achats. Elle
+ne peut jamais être négative : sinon une `IncoherenceAvanceException` est levée.
+
+À la création, si le partenaire a une avance et que versé < total, l'application
+retire `min(avance disponible, total − versé)` dans `avance_utilisee`, **sans**
+mouvement de trésorerie (l'argent est déjà entré). Les formulaires de vente et
+d'achat affichent l'avance disponible via `GET /clients/{id}/avance` et
+`GET /fournisseurs/{id}/avance` (JSON `{"avance":"20000.00"}`).
+
+Reste à payer = `max(0, total − versé − avance_utilisee)`. Il sert aux règlements,
+aux listes, aux factures, aux échéances et retards. Une vente couverte par l'avance
+n'a pas d'échéance. Dans le tableau de bord, le « réglé » des ventes du jour vaut
+`min(versé, total) + avance_utilisee`.
+
+### Exemples chiffrés
+
+1. Le client paie 120 000 GNF pour une vente de 100 000 : la caisse reçoit
+   120 000, l'avance du client est 20 000. Sa vente suivante de 50 000 à crédit :
+   `avance_utilisee` = 20 000, reste 30 000, aucun mouvement de caisse, avance
+   disponible 0.
+2. Fournisseur : solde de départ « Je lui dois » 100 000, paiement de 30 000 :
+   sortie de trésorerie de 30 000, reste 70 000, solde net −70 000.
+3. Client : solde de départ « Je lui dois » 10 000, vente de 30 000 sans
+   versement : avance utilisée 10 000, reste 20 000, solde net +20 000.
+4. Client : « Il me doit » 50 000, règlement de 20 000, reste 30 000 ; un règlement
+   de 30 000,01 est refusé.
+
+Solde net : client = reste du solde de départ + restes des factures − avance ;
+fournisseur = avance − reste du solde de départ − restes des factures.
+`SoldePartenaireService` fournit ces valeurs par partenaire, ainsi que, pour la
+boutique, le total des créances clients, des dettes fournisseurs et leur part en
+retard (même convention de date que `EcheanceService`). Le bloc « créances et
+dettes » du tableau de bord n'est pas encore branché.
+
+### Verrous et concurrence
+
+À la création, l'ordre des verrous est : ligne `boutique` (numérotation), ligne du
+**partenaire** (`PESSIMISTIC_WRITE`), puis les produits. Le règlement d'un solde
+prend la boutique, puis le partenaire. `modifierAchat` verrouille le fournisseur
+avant l'achat. Sous MariaDB (REPEATABLE READ), l'avance est relue par des lectures
+verrouillantes (`FOR UPDATE`) pour voir les opérations validées après l'instantané.
+Deux ventes simultanées d'un même client avec 20 000 d'avance consomment donc
+exactement 20 000 au total. Un renvoi du même jeton ne consomme pas l'avance deux
+fois et ne crée pas de second mouvement.
+
+### Droits
+
+| Action | Gérant | Caissier |
+|---|---|---|
+| Saisir ou modifier un solde de départ | oui | non (403) |
+| Régler le solde d'un client | oui | oui, comme un règlement de vente |
+| Régler le solde d'un fournisseur | oui | non, comme un règlement d'achat |
+| Lire l'avance d'un client | oui | oui |
+| Lire l'avance d'un fournisseur | oui | non |
+
+Un partenaire d'une autre boutique est introuvable (404) et son avance n'est ni
+visible ni utilisable.
+
+### Vérifications
+
+```sh
+./gradlew test --tests '*AvancesSoldesPartenairesTests'
+./gradlew avancesPartenairesMariaDbTest
+./gradlew lot1MariaDbTest
+node --test src/test/js/montants.test.cjs
+```

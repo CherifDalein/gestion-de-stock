@@ -29,10 +29,14 @@
                     </div>
                     <div class="operation-field">
                         <label for="client" class="form-label">Client de la vente <span class="text-muted">(facultatif)</span></label>
-                        <select class="form-select" th:field="*{client}" id="client">
+                        <select class="form-select" th:field="*{client}" id="client" th:data-avance-url="@{/clients}">
                             <option value="">Client de passage</option>
                             <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom}"></option>
                         </select>
+                    </div>
+                    <div class="operation-field" id="avanceBloc" hidden>
+                        <p class="operation-note mb-0"><i class="fas fa-piggy-bank" aria-hidden="true"></i>
+                            Avance disponible du client : <strong id="avanceDisponible">0.00</strong> GNF. Elle est déduite automatiquement du reste à payer.</p>
                     </div>
                     <div class="operation-field">
                         <label for="numeroFacture" class="form-label">Numéro de facture <span class="text-muted">(facultatif)</span></label>
@@ -128,7 +132,7 @@
                         <label for="montantVerse" class="form-label">Somme reçue maintenant (GNF)</label>
                         <input type="number" min="0" step="0.01" th:field="*{montantVerse}" id="montantVerse"
                                class="form-control" placeholder="0" aria-describedby="versementAide">
-                        <p id="versementAide" class="operation-field-help">Vous pouvez recevoir le total ou un premier versement.</p>
+                        <p id="versementAide" class="operation-field-help">Vous pouvez recevoir le total ou un premier versement. Avec un client, une somme supérieure au total devient son avance.</p>
                     </div>
                     <div class="operation-field">
                         <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
@@ -141,6 +145,7 @@
                                th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
                         <p id="echeanceAide" class="operation-field-help">Proposée selon le délai accordé aux clients. Sans reste à payer, aucune échéance n’est enregistrée.</p>
                     </div>
+                    <p id="avanceUtiliseeInfo" class="operation-field-help" role="status" aria-live="polite" hidden></p>
                     <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Ajoutez des produits pour calculer le règlement.</p>
                     <div class="operation-note">
                         <i class="fas fa-circle-info" aria-hidden="true"></i>
@@ -157,6 +162,7 @@
     </div>
     <script th:src="@{/js/montants.js}"></script>
     <script th:src="@{/js/panier.js}"></script>
+    <script th:src="@{/js/avance.js}"></script>
     <script th:inline="javascript">
         // Après un refus, le panier saisi est reconstitué à partir des lignes envoyées.
         document.addEventListener('DOMContentLoaded', function() {
