@@ -63,7 +63,7 @@ public class CreationOperationsMariaDbTest {
                 AccountEmailMigration.executer(c, "DROP DATABASE " + database);
             }
         }
-        System.out.println("9 scénarios de création MariaDB réussis ; base temporaire supprimée.");
+        System.out.println("10 scénarios de création MariaDB réussis ; base temporaire supprimée.");
     }
 
     private CreationOperationsMariaDbTest(ConfigurableApplicationContext contexte) {
@@ -116,6 +116,60 @@ public class CreationOperationsMariaDbTest {
         verifierEtat(2, 1, 3, 104, "-10.00");
         concurrents(TypeOperationCreation.ACHAT); verifierEtat(3, 1, 4, 107, "-25.00");
         concurrents(TypeOperationCreation.VENTE); verifierEtat(3, 2, 5, 105, "-5.00");
+        // Le rollback et les renvois n'ont consommé aucun numéro : la numérotation reste continue.
+        exiger(numeros("achat").equals(List.of("FA-000001", "FA-000002", "FA-000003"))
+                && numeros("vente").equals(List.of("FV-000001", "FV-000002")), "Numérotation discontinue " + numeros("achat") + numeros("vente"));
+        numerotationConcurrente();
+    }
+
+    /** Deux ventes réellement simultanées : la seconde attend le verrou de la boutique, puis prend le numéro suivant. */
+    private void numerotationConcurrente() throws Exception {
+        String premierJeton = creations.ouvrir(TypeOperationCreation.VENTE), secondJeton = creations.ouvrir(TypeOperationCreation.VENTE);
+        CountDownLatch premiereCreee = new CountDownLatch(1), autoriserCommit = new CountDownLatch(1);
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<Long> premiere = executor.submit(() -> {
+                connecter("test-admin@example.test");
+                try { return transaction.execute(status -> {
+                    Long id = creations.creerVente(premierJeton, vente(1)).documentId();
+                    premiereCreee.countDown(); attendre(autoriserCommit); return id;
+                }); } finally { SecurityContextHolder.clearContext(); }
+            });
+            attendre(premiereCreee);
+            Future<Long> seconde = executor.submit(() -> {
+                connecter("test-admin@example.test");
+                try { return creations.creerVente(secondJeton, vente(1)).documentId(); }
+                finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                seconde.get(500, TimeUnit.MILLISECONDS);
+                throw new AssertionError("La seconde vente n'a pas attendu le compteur de la boutique");
+            } catch (TimeoutException attendu) { }
+            autoriserCommit.countDown();
+            Long a = premiere.get(25, TimeUnit.SECONDS), b = seconde.get(25, TimeUnit.SECONDS);
+            exiger("FV-000003".equals(numero(a)) && "FV-000004".equals(numero(b)), "Numéros concurrents " + numero(a) + " / " + numero(b));
+        } finally { autoriserCommit.countDown(); }
+        exiger(jdbc.queryForObject("SELECT prochain_numero_vente FROM boutique", Long.class) == 5L, "Compteur de ventes incohérent");
+        // Un numéro manuel déjà attribué automatiquement est refusé sans rien enregistrer.
+        Etat avantRefus = etat();
+        String jetonManuel = creations.ouvrir(TypeOperationCreation.VENTE);
+        Vente doublon = vente(1); doublon.setNumero("FV-000004");
+        try { creations.creerVente(jetonManuel, doublon); throw new AssertionError("Numéro en double accepté"); }
+        catch (IllegalArgumentException attendu) { exiger(attendu.getMessage().contains("déjà utilisé"), "Message du doublon"); }
+        exiger(avantRefus.equals(etat()), "Un numéro refusé modifie des opérations");
+        Vente manuelle = vente(1); manuelle.setNumero("FV-000005");
+        exiger("FV-000005".equals(numero(creations.creerVente(jetonManuel, manuelle).documentId())), "Numéro manuel");
+        // Le numéro manuel ne consomme pas le compteur, mais il est sauté par le numéro automatique suivant.
+        exiger("FV-000006".equals(numero(creations.creerVente(creations.ouvrir(TypeOperationCreation.VENTE), vente(1)).documentId())),
+                "Numéro manuel non sauté");
+        exiger(jdbc.queryForObject("SELECT prochain_numero_vente FROM boutique", Long.class) == 7L, "Compteur après saut incohérent");
+    }
+
+    private String numero(Long venteId) {
+        return jdbc.queryForObject("SELECT numero FROM vente WHERE id=?", String.class, venteId);
+    }
+
+    private List<String> numeros(String table) {
+        return jdbc.queryForList("SELECT numero FROM " + table + " ORDER BY id", String.class);
     }
 
     private void concurrents(TypeOperationCreation type) throws Exception {

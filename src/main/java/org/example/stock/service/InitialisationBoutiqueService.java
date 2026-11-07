@@ -57,8 +57,9 @@ public class InitialisationBoutiqueService {
     @Transactional
     public Boutique verrouillerEtClorePourActivite() {
         Boutique courante = boutiques.boutiqueCourante();
-        // La clôture est monotone : après le démarrage, les caissiers gardent seulement
-        // les verrous de leur document et de leurs produits, sans verrou global permanent.
+        // La clôture est monotone : après le démarrage, elle ne verrouille plus la boutique.
+        // Seules les créations de ventes et d'achats la verrouillent ensuite, pour leur numéro de facture
+        // (NumerotationFactureService) ; les règlements gardent seulement le verrou de leur document.
         if (courante.isInitialisationTerminee()) return courante;
         Boutique boutique = verrouillerBoutiqueCourante();
         boutique.setInitialisationTerminee(true);

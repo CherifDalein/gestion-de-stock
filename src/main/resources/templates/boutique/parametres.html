@@ -97,6 +97,28 @@
                         <p id="boutiqueEmailError" class="record-field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}" role="alert"></p>
                     </div>
                 </div>
+                <div class="record-panel-heading">
+                    <h3 id="boutiqueDelaisTitle">Délais de paiement</h3>
+                    <p>Ils proposent l’échéance d’une vente ou d’un achat qui reste à payer. L’échéance reste modifiable sur chaque facture.</p>
+                </div>
+                <div class="record-grid" role="group" aria-labelledby="boutiqueDelaisTitle">
+                    <div class="record-field">
+                        <label for="boutiqueDelaiClients">Délai accordé aux clients (jours)</label>
+                        <input id="boutiqueDelaiClients" class="form-control" type="number" th:field="*{delaiClientsJours}" min="0" max="365" step="1" required inputmode="numeric"
+                               th:classappend="${#fields.hasErrors('delaiClientsJours')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('delaiClientsJours')},aria-describedby=${#fields.hasErrors('delaiClientsJours') ? 'boutiqueDelaiClientsHelp boutiqueDelaiClientsError' : 'boutiqueDelaiClientsHelp'}" />
+                        <p id="boutiqueDelaiClientsHelp" class="record-help">De 0 à 365 jours, à partir de la date de la vente.</p>
+                        <p id="boutiqueDelaiClientsError" class="record-field-error" th:if="${#fields.hasErrors('delaiClientsJours')}" th:errors="*{delaiClientsJours}" role="alert"></p>
+                    </div>
+                    <div class="record-field">
+                        <label for="boutiqueDelaiFournisseurs">Délai accordé par les fournisseurs (jours)</label>
+                        <input id="boutiqueDelaiFournisseurs" class="form-control" type="number" th:field="*{delaiFournisseursJours}" min="0" max="365" step="1" required inputmode="numeric"
+                               th:classappend="${#fields.hasErrors('delaiFournisseursJours')} ? 'is-invalid' : ''"
+                               th:attr="aria-invalid=${#fields.hasErrors('delaiFournisseursJours')},aria-describedby=${#fields.hasErrors('delaiFournisseursJours') ? 'boutiqueDelaiFournisseursHelp boutiqueDelaiFournisseursError' : 'boutiqueDelaiFournisseursHelp'}" />
+                        <p id="boutiqueDelaiFournisseursHelp" class="record-help">De 0 à 365 jours, à partir de la date de l’achat.</p>
+                        <p id="boutiqueDelaiFournisseursError" class="record-field-error" th:if="${#fields.hasErrors('delaiFournisseursJours')}" th:errors="*{delaiFournisseursJours}" role="alert"></p>
+                    </div>
+                </div>
                 <div class="record-actions">
                     <a class="btn btn-outline-secondary" th:href="@{/}">Annuler</a>
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les paramètres</button>

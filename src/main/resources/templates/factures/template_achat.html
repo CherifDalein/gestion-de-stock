@@ -21,7 +21,7 @@
         <header class="document-paper-header">
             <div th:replace="~{fragments/identite-boutique :: identite}"></div>
             <div class="document-heading">
-                <h1 id="documentTitle" th:text="${'Facture d’achat #' + achat.id}"></h1>
+                <h1 id="documentTitle" th:text="${'Facture d’achat ' + (achat.numero ?: '#' + achat.id)}"></h1>
                 <span class="document-status" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal > 0 ? 'partiel' : 'a-regler')}"
                       th:text="${resteTotal <= 0 ? 'Réglée' : (verseTotal > 0 ? 'Partiel' : 'À régler')}"></span>
             </div>
@@ -35,8 +35,10 @@
                 <p th:if="${achat.fournisseur != null and !#strings.isEmpty(#strings.trim(achat.fournisseur.adresse))}" th:text="${achat.fournisseur.adresse}"></p>
             </section>
             <dl class="document-metadata">
+                <div><dt>Numéro</dt><dd data-document-number th:text="${achat.numero ?: 'Sans numéro'}"></dd></div>
                 <div><dt>Référence</dt><dd th:text="${'#' + achat.id}"></dd></div>
                 <div><dt>Date</dt><dd th:text="${achat.dateAchat != null ? #temporals.format(achat.dateAchat, 'dd/MM/yyyy HH:mm') : 'Non renseignée'}"></dd></div>
+                <div th:if="${achat.dateEcheance != null}"><dt>Échéance</dt><dd data-document-due><span th:text="${#temporals.format(achat.dateEcheance, 'dd/MM/yyyy')}"></span><strong th:if="${achat.estEnRetard(aujourdHui)}" class="document-overdue"> · En retard</strong></dd></div>
             </dl>
         </div>
 

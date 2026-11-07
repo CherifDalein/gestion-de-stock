@@ -138,3 +138,7 @@ body.stock-document .document-footer { margin-top: 30px; padding-top: 18px; bord
     body.stock-document .document-shell { padding: 12mm; box-decoration-break: clone; }
   }
 }
+
+/* Échéance d'un document et mention de retard, lisibles aussi à l'impression. */
+body.stock-document .document-due { margin-top: 4px; font-size: .92em; color: #4b5563; }
+body.stock-document .document-overdue { color: #b42318; font-weight: 700; }

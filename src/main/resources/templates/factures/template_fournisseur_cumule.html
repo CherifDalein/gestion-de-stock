@@ -61,8 +61,9 @@
                 </tr></thead>
                 <tbody>
                 <tr th:each="achat : ${achats}" data-document-row>
-                    <td class="document-reference" th:text="${'#' + achat.id}"></td>
-                    <td class="document-date" th:text="${achat.dateAchat != null ? #temporals.format(achat.dateAchat, 'dd/MM/yyyy HH:mm') : 'Non renseignée'}"></td>
+                    <td class="document-reference" th:text="${achat.numero ?: '#' + achat.id}"></td>
+                    <td class="document-date"><span th:text="${achat.dateAchat != null ? #temporals.format(achat.dateAchat, 'dd/MM/yyyy HH:mm') : 'Non renseignée'}"></span>
+                        <div th:if="${achat.dateEcheance != null}" class="document-due">Échéance : <span th:text="${#temporals.format(achat.dateEcheance, 'dd/MM/yyyy')}"></span><strong th:if="${achat.estEnRetard(aujourdHui)}" class="document-overdue"> · En retard</strong></div></td>
                     <td class="document-products">
                         <div th:each="ligne : ${achat.lignes}" class="document-product-line"><span th:text="${ligne.produit.nom}"></span><span class="document-product-quantity" th:text="${' × ' + ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></span></div>
                     </td>

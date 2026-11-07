@@ -7,6 +7,9 @@ une présentation adaptée aux ordinateurs et aux téléphones.
 ## Fichiers
 
 - `templates/dashboard.html` : navigation commune, compte et tableau de bord.
+- `templates/fragments/tableau-de-bord.html` et `static/css/tableau-de-bord.css` :
+  activité du jour et du mois, produits à surveiller, valeur du stock et
+  évolution mensuelle (voir [le tableau de bord](lot-1.md#tableau-de-bord)).
 - `static/css/stock-pro.css` : thème commun, chargé après les styles Bootstrap existants.
 - `templates/login.html`, `templates/register.html` et `static/css/auth.css` : accès aux comptes.
 - `static/js/scripts.js` : menu mobile, focus clavier et tableaux avec défilement horizontal.

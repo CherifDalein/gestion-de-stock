@@ -52,14 +52,14 @@
                     <tbody>
                     <tr th:each="v : ${ventes}" data-invoice-row
                         th:with="verse=${v.montantVerse ?: 0}, statut=${v.resteAPayer <= 0 ? 'reglee' : (verse > 0 ? 'partielle' : 'credit')}"
-                        th:attr="data-id=${v.id},data-reference=${'#' + v.id},data-name=${v.client != null ? v.client.nom : 'Client Passant'},data-date=${v.dateVente ?: ''},data-total=${v.montantTotal},data-verse=${verse},data-reste=${v.resteAPayer},data-status=${statut}">
-                        <td class="invoices-reference" data-label="Numéro" th:text="${'#' + v.id}"></td>
+                        th:attr="data-id=${v.id},data-reference=${(v.numero ?: '') + ' #' + v.id},data-name=${v.client != null ? v.client.nom : 'Client Passant'},data-date=${v.dateVente ?: ''},data-total=${v.montantTotal},data-verse=${verse},data-reste=${v.resteAPayer},data-status=${statut}">
+                        <td class="invoices-reference" data-label="Numéro" th:text="${v.numero ?: '#' + v.id}"></td>
                         <td class="invoices-date" data-label="Date et heure" th:text="${v.dateVente != null ? #temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
                         <td class="invoices-partner-name" data-label="Client" th:text="${v.client != null ? v.client.nom : 'Client Passant'}"></td>
                         <td class="invoices-money" data-label="Total" th:text="${#numbers.formatDecimal(v.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         <td class="invoices-money invoices-money--paid" data-label="Versé" th:text="${#numbers.formatDecimal(verse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         <td class="invoices-money invoices-money--remaining" data-label="Reste" th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
-                        <td data-label="Règlement"><span class="invoice-status" th:classappend="${'invoice-status--' + statut}" th:text="${statut == 'reglee' ? 'Réglée' : (statut == 'partielle' ? 'Partiel' : 'À régler')}"></span></td>
+                        <td data-label="Règlement"><span class="invoice-status" th:classappend="${'invoice-status--' + statut}" th:text="${statut == 'reglee' ? 'Réglée' : (statut == 'partielle' ? 'Partiel' : 'À régler')}"></span><small th:if="${v.dateEcheance != null and v.resteAPayer > 0}" class="invoices-due d-block text-muted" th:text="${'Échéance : ' + #temporals.format(v.dateEcheance, 'dd/MM/yyyy')}"></small><span th:if="${v.estEnRetard(aujourdHui)}" class="badge bg-dark">En retard</span></td>
                         <td class="invoices-document"><a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Consulter facture n° ' + v.id}"><i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span></a></td>
                     </tr>
                     </tbody>

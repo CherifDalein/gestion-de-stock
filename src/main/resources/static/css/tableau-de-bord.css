@@ -1,0 +1,78 @@
+/* Tableau de bord : activité, produits à surveiller et évolution mensuelle.
+   Les trois couleurs des barres gardent un contraste d'au moins 3:1 sur fond blanc comme sur fond
+   sombre (#1e1e1e) ; le résultat et la perte sont hachurés pour ne pas dépendre de la seule couleur.
+   Les textes du graphique suivent les variables du thème. Les hauteurs viennent du serveur. */
+body.stock-app .tdb {
+  --tdb-ventes: #2f8f6b;
+  --tdb-resultat: #3a6db0;
+  --tdb-perte: #c4473a;
+  --tdb-axe: var(--app-border, #dfe8e3);
+}
+body.stock-app .tdb-section { margin-bottom: 8px; }
+body.stock-app .tdb-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 14px; }
+body.stock-app .tdb-section-heading h2 { font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--app-ink); }
+body.stock-app .tdb-section-heading p { margin: 0; color: var(--app-muted); font-size: .8rem; }
+body.stock-app .tdb-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+body.stock-app .tdb-grid .app-metric-value { font-size: clamp(1.35rem, 1.7vw, 1.9rem); }
+body.stock-app .tdb-sans-cout { display: block; margin-top: 4px; color: #8a5a00; font-weight: 600; }
+body.stock-app .tdb-columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: start; }
+body.stock-app .tdb-columns > .tdb-panel:only-child { grid-column: 1 / -1; }
+body.stock-app .tdb-panel { min-width: 0; }
+body.stock-app .tdb-panel-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 10px; font-size: .82rem; font-weight: 600; }
+body.stock-app .tdb-note { color: var(--app-muted); font-size: .78rem; }
+body.stock-app .tdb-stock-value { margin: 8px 0 6px; }
+body.stock-app .tdb-watch { list-style: none; margin: 0; padding: 0; }
+body.stock-app .tdb-watch-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--app-border); }
+body.stock-app .tdb-watch-item:last-child { border-bottom: 0; }
+body.stock-app .tdb-watch-name { min-width: 0; }
+body.stock-app .tdb-watch-name strong { display: block; font-size: .88rem; overflow-wrap: anywhere; }
+body.stock-app .tdb-watch-name small { display: block; color: var(--app-muted); font-size: .73rem; overflow-wrap: anywhere; }
+body.stock-app .tdb-watch-stock { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+body.stock-app .tdb-watch-quantity { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+body.stock-app .tdb-evolution-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+body.stock-app .tdb-year-nav { display: inline-flex; align-items: center; gap: 8px; }
+body.stock-app .tdb-year-nav .btn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+body.stock-app .tdb-year { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; }
+
+body.stock-app .tdb-chart-wrap { margin: 6px 0 20px; overflow-x: auto; }
+body.stock-app .tdb-chart-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 10px; color: var(--app-muted); font-size: .75rem; }
+body.stock-app .tdb-chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+body.stock-app .tdb-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+body.stock-app .tdb-chart { display: grid; grid-template-columns: repeat(12, minmax(22px, 1fr)); gap: 4px; min-width: 300px; }
+body.stock-app .tdb-chart-col { display: flex; flex-direction: column; align-items: stretch; min-width: 0; }
+body.stock-app .tdb-chart-area { display: flex; flex-direction: column; height: 170px; }
+body.stock-app .tdb-chart-up { display: flex; align-items: flex-end; justify-content: center; gap: 2px; border-bottom: 1px solid var(--tdb-axe); min-height: 0; }
+body.stock-app .tdb-chart-down { display: flex; align-items: flex-start; justify-content: center; min-height: 0; }
+body.stock-app .tdb-bar { display: block; width: min(14px, 40%); border-radius: 3px 3px 0 0; }
+body.stock-app .tdb-chart-down .tdb-bar { border-radius: 0 0 3px 3px; }
+body.stock-app :is(.tdb-bar--ventes, .tdb-swatch--ventes) { background: var(--tdb-ventes); }
+body.stock-app :is(.tdb-bar--resultat, .tdb-swatch--resultat) {
+  background: repeating-linear-gradient(135deg, var(--tdb-resultat) 0 3px, color-mix(in srgb, var(--tdb-resultat) 55%, transparent) 3px 6px);
+}
+body.stock-app :is(.tdb-bar--perte, .tdb-swatch--perte) {
+  background: repeating-linear-gradient(45deg, var(--tdb-perte) 0 3px, color-mix(in srgb, var(--tdb-perte) 55%, transparent) 3px 6px);
+}
+body.stock-app .tdb-chart-label { margin-top: 6px; text-align: center; color: var(--app-muted); font-size: .66rem; white-space: nowrap; }
+
+body.stock-app .tdb-table { min-width: 560px; }
+body.stock-app .tdb-table :is(td, tfoot th) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.stock-app .tdb-table tfoot :is(th, td) { font-weight: 700; border-top: 2px solid var(--app-border); }
+
+@media (max-width: 1199.98px) {
+  body.stock-app .tdb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.stock-app .tdb-columns { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 575.98px) {
+  body.stock-app .tdb-grid { grid-template-columns: 1fr; }
+  body.stock-app .tdb-evolution-heading { flex-direction: column; }
+  body.stock-app .tdb-chart { gap: 2px; }
+  body.stock-app .tdb-chart-area { height: 140px; }
+  body.stock-app .tdb-chart-label { font-size: .6rem; }
+  body.stock-app .tdb-watch-item { flex-wrap: wrap; }
+}
+@media (forced-colors: active) {
+  body.stock-app .tdb-bar, body.stock-app .tdb-swatch { forced-color-adjust: none; background: CanvasText; }
+  body.stock-app :is(.tdb-bar--resultat, .tdb-swatch--resultat) { background: repeating-linear-gradient(135deg, CanvasText 0 3px, Canvas 3px 6px); border: 1px solid CanvasText; }
+  body.stock-app :is(.tdb-bar--perte, .tdb-swatch--perte) { background: repeating-linear-gradient(45deg, Highlight 0 3px, Canvas 3px 6px); border: 1px solid Highlight; }
+}

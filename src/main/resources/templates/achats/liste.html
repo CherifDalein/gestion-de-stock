@@ -5,7 +5,13 @@
         <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
         <div th:if="${param.success != null and param.success[0] == 'modifie'}"
              class="alert alert-success" role="status">Achat modifié avec succès.</div>
-        <div class="mb-4 d-flex justify-content-end">
+        <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <nav class="btn-group" aria-label="Filtrer les achats">
+                <a th:href="@{/achats}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? '' : 'active'}"
+                   th:attr="aria-current=${filtreEchues ? null : 'page'}">Tous les achats</a>
+                <a th:href="@{/achats(filtre='echues')}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
+                   th:attr="aria-current=${filtreEchues ? 'page' : null}">Échus non soldés</a>
+            </nav>
             <a th:href="@{/achats/nouveau}" class="btn btn-primary">
                 <i class="fas fa-truck" aria-hidden="true"></i> Nouvel approvisionnement
             </a>
@@ -19,8 +25,9 @@
                 <table id="datatablesSimple" class="table table-striped table-hover journal-table">
                     <thead>
                     <tr>
-                        <th scope="col">ID</th>
+                        <th scope="col">Numéro</th>
                         <th scope="col">Date</th>
+                        <th scope="col">Échéance</th>
                         <th scope="col">Fournisseur</th>
                         <th scope="col">Total</th>
                         <th scope="col">Versé</th>
@@ -31,8 +38,9 @@
                     </thead>
                     <tbody>
                     <tr th:each="a : ${achats}">
-                        <td th:text="${a.id}"></td>
+                        <td class="text-nowrap" th:text="${a.numero ?: '#' + a.id}"></td>
                         <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
                         <td class="fw-bold" th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         <td class="text-success" th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
@@ -42,6 +50,7 @@
                         <td>
                             <span th:if="${a.montantTotal - (a.montantVerse ?: 0) == 0}" class="badge bg-success">Réglé</span>
                             <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">À régler</span>
+                            <span th:if="${a.estEnRetard(aujourdHui)}" class="badge bg-dark"><i class="fa-regular fa-clock" aria-hidden="true"></i> En retard</span>
                         </td>
                         <td class="text-center">
                             <div class="journal-row-actions app-row-actions">
@@ -63,6 +72,7 @@
                     </tr>
                     </tbody>
                 </table>
+                <p th:if="${filtreEchues and #lists.isEmpty(achats)}" class="text-muted mb-0">Aucun achat échu non soldé.</p>
                 </div>
             </div>
         </div>

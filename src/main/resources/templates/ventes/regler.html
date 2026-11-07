@@ -3,7 +3,7 @@
         <header class="operation-header">
             <div>
                 <p class="app-page-kicker">Ventes · Règlement</p>
-                <h1>Règlements de la vente #<span th:text="${venteReglement.id}"></span></h1>
+                <h1>Règlements de la vente <span th:text="${venteReglement.numero ?: '#' + venteReglement.id}"></span></h1>
                 <p class="app-page-subtitle">Retrouvez les versements et enregistrez un nouveau paiement.</p>
             </div>
             <div class="app-actions">
@@ -41,6 +41,10 @@
                         <div>
                             <dt>Référence</dt>
                             <dd>Vente #<span th:text="${venteReglement.id}"></span></dd>
+                        </div>
+                        <div>
+                            <dt>Numéro de facture</dt>
+                            <dd th:text="${venteReglement.numero ?: 'Sans numéro'}"></dd>
                         </div>
                     </dl>
                 </section>
@@ -102,6 +106,11 @@
                         <dt>Déjà versé</dt>
                         <dd th:text="${#numbers.formatDecimal(venteReglement.montantVerse ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
                     </div>
+                    <div>
+                        <dt>Échéance</dt>
+                        <dd><span th:text="${venteReglement.dateEcheance != null ? #temporals.format(venteReglement.dateEcheance, 'dd/MM/yyyy') : 'Aucune'}"></span>
+                            <span th:if="${venteReglement.estEnRetard(aujourdHui)}" class="badge bg-dark ms-1">En retard</span></dd>
+                    </div>
                 </dl>
 
                 <form th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}"
@@ -125,12 +134,21 @@
                            th:attr="aria-invalid=${#fields.hasErrors('montant')}"
                            aria-describedby="montantReglementHelp" inputmode="decimal" required />
                     <p id="montantReglementHelp" class="operation-note">Saisissez uniquement ce nouveau versement. Il sera ajouté au montant déjà payé.</p>
+                    <div class="operation-field mb-3">
+                        <label for="dateEcheanceReglement" class="form-label">Échéance du reste à payer</label>
+                        <input id="dateEcheanceReglement" type="date" th:field="*{dateEcheance}" class="form-control"
+                               th:min="${venteReglement.dateVente != null ? #temporals.format(venteReglement.dateVente, 'yyyy-MM-dd') : null}"
+                               aria-describedby="dateEcheanceReglementHelp" />
+                        <p id="dateEcheanceReglementHelp" class="operation-field-help">Appliquée s’il reste un montant dû après ce versement. Pour la reporter sans versement, utilisez « Modifier seulement l’échéance ».</p>
+                    </div>
                 </form>
                 <p th:if="${venteReglement.resteAPayer == 0}" class="alert alert-success mb-0" role="status">Cette vente est entièrement réglée.</p>
             </aside>
         </div>
             <div th:if="${venteReglement.resteAPayer > 0 or #fields.hasErrors('*')}" class="operation-actions">
                 <a th:href="@{/ventes}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" form="formReglementVente" th:formaction="@{/ventes/regler/{id}/echeance(id=${venteReglement.id})}" formnovalidate
+                        class="btn btn-outline-primary"><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Modifier seulement l’échéance</button>
                 <button type="submit" form="formReglementVente" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le versement</button>
             </div>
         </div>

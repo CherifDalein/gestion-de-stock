@@ -34,6 +34,12 @@
                             <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}"></option>
                         </select>
                     </div>
+                    <div class="operation-field">
+                        <label for="numeroFacture" class="form-label">Numéro de facture <span class="text-muted">(facultatif)</span></label>
+                        <input type="text" id="numeroFacture" name="numero" th:value="${achat.numero}" class="form-control"
+                               maxlength="30" autocomplete="off" placeholder="Automatique : FA-000123" aria-describedby="numeroFactureAide">
+                        <p id="numeroFactureAide" class="operation-field-help">Laissez vide pour un numéro automatique, ou reprenez la référence du fournisseur. Il doit être unique dans la boutique et ne pourra plus être modifié.</p>
+                    </div>
                 </section>
 
                 <section class="operation-panel" aria-labelledby="produitsTitre">
@@ -136,6 +142,13 @@
                     <div class="operation-field">
                         <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
                         <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" value="0" readonly>
+                    </div>
+                    <div class="operation-field" id="echeanceBloc" data-echeance>
+                        <label for="dateEcheance" class="form-label">Échéance du reste à payer</label>
+                        <input type="date" id="dateEcheance" name="dateEcheance" class="form-control" aria-describedby="echeanceAide"
+                               th:value="${#temporals.format(achat.dateEcheance != null ? achat.dateEcheance : echeanceProposee, 'yyyy-MM-dd')}"
+                               th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                        <p id="echeanceAide" class="operation-field-help">Proposée selon le délai accordé par les fournisseurs. Sans reste à payer, aucune échéance n’est enregistrée.</p>
                     </div>
                     <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Ajoutez des produits pour calculer le règlement.</p>
                     <div class="operation-note">

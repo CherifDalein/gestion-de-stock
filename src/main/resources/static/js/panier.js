@@ -25,7 +25,18 @@ function actualiserOptionStock(option, stock) {
     option.text = `${option.getAttribute('data-nom')} (${libelleQuantite(stock, option.getAttribute('data-unite'))} en stock)`;
 }
 
-function ajouterAuPanier() {
+// Reconstitue une ligne envoyée après un refus du serveur : le stock affiché n'empêche pas son retour,
+// le serveur revérifie toujours les quantités.
+function chargerLigneVente(pId, qte) {
+    const select = document.getElementById('selectProduit');
+    const option = Array.from(select.options).find(option => option.value === String(pId));
+    if (!option || option.disabled || !Number.isSafeInteger(Number(qte)) || Number(qte) <= 0) return;
+    select.value = option.value;
+    document.getElementById('inputQuantite').value = String(qte);
+    ajouterAuPanier(true);
+}
+
+function ajouterAuPanier(chargement = false) {
     const select = document.getElementById('selectProduit');
     const qtyInput = document.getElementById('inputQuantite');
 
@@ -55,7 +66,7 @@ function ajouterAuPanier() {
     const unite = selectedOption.getAttribute('data-unite') || '';
     const stockActuel = service ? null : stockRestant(selectedOption);
 
-    if (!service && BigInt(qty) > stockActuel) {
+    if (!service && BigInt(qty) > stockActuel && !chargement) {
         afficherMessageProduit('Stock insuffisant pour cette quantité.');
         return;
     }
@@ -66,7 +77,10 @@ function ajouterAuPanier() {
         afficherMessageProduit('Le total dépasse le montant maximal autorisé.');
         return;
     }
-    if (!service) actualiserOptionStock(selectedOption, stockActuel - BigInt(qty));
+    if (!service) {
+        const restant = stockActuel - BigInt(qty);
+        actualiserOptionStock(selectedOption, restant < 0n ? 0n : restant);
+    }
     const tbody = document.getElementById('panierBody');
 
     const row = document.createElement('tr');
@@ -219,6 +233,16 @@ function calculerReste() {
     } else {
         resteInput.classList.remove('text-danger', 'fw-bold');
     }
+    actualiserEcheance(reste > 0n);
+}
+
+// L'échéance n'est envoyée que s'il reste à payer : un champ désactivé n'est pas soumis.
+function actualiserEcheance(resteDu) {
+    const bloc = document.getElementById('echeanceBloc');
+    const champ = document.getElementById('dateEcheance');
+    if (!bloc || !champ) return;
+    bloc.hidden = !resteDu;
+    champ.disabled = !resteDu;
 }
 
 // Initialisation au chargement

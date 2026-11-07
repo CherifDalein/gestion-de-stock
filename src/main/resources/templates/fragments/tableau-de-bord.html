@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--/*
+  Activité du tableau de bord. Les blocs réservés au gérant ne s'affichent que si le serveur a placé
+  leurs données dans le modèle : pour un caissier, ces attributs ne sont jamais calculés.
+*/-->
+<div th:fragment="activite" class="tdb">
+    <link th:href="@{/css/tableau-de-bord.css}" rel="stylesheet" />
+
+    <section class="tdb-section" aria-labelledby="tdbJourTitre">
+        <div class="tdb-section-heading">
+            <h2 id="tdbJourTitre">Activité du jour</h2>
+            <p>Ventes enregistrées aujourd’hui, de minuit à minuit.</p>
+        </div>
+        <div class="app-metric-grid tdb-grid">
+            <article class="app-metric-card">
+                <span class="app-metric-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Chiffre d’affaires du jour</h3>
+                <p class="app-metric-value" data-indicateur="chiffre-affaires-jour"><span th:text="${#numbers.formatDecimal(chiffreAffairesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">Total des ventes du jour, réglées ou non</p>
+            </article>
+            <th:block th:if="${indicateursJour != null}">
+                <th:block th:replace="~{fragments/tableau-de-bord :: marges(${indicateursJour}, 'jour', 'du jour')}"></th:block>
+            </th:block>
+            <article class="app-metric-card" th:if="${indicateursJour == null}">
+                <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Encaissé sur les ventes du jour</h3>
+                <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">Montants réglés sur les ventes créées aujourd’hui</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="tdb-section" th:if="${indicateursMois != null}" aria-labelledby="tdbMoisTitre">
+        <div class="tdb-section-heading">
+            <h2 id="tdbMoisTitre">Activité du mois</h2>
+            <p th:text="${'Du premier jour de ' + libelleMois + ' à aujourd’hui.'}">Mois en cours.</p>
+        </div>
+        <div class="app-metric-grid tdb-grid">
+            <article class="app-metric-card">
+                <span class="app-metric-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+                <h3 class="app-metric-label">Chiffre d’affaires du mois</h3>
+                <p class="app-metric-value" data-indicateur="chiffre-affaires-mois"><span th:text="${#numbers.formatDecimal(indicateursMois.chiffreAffaires, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-foot">Total des ventes du mois, réglées ou non</p>
+            </article>
+            <th:block th:replace="~{fragments/tableau-de-bord :: marges(${indicateursMois}, 'mois', 'du mois')}"></th:block>
+        </div>
+    </section>
+
+    <div class="tdb-columns">
+        <section class="app-panel tdb-panel" aria-labelledby="tdbSurveillerTitre">
+            <div class="app-panel-heading">
+                <div>
+                    <h2 id="tdbSurveillerTitre">Produits à surveiller</h2>
+                    <p>Articles en rupture ou au seuil d’alerte, les ruptures d’abord.</p>
+                </div>
+            </div>
+            <p class="app-empty-hint" th:if="${produitsASurveiller.produits.isEmpty()}">
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i>Aucun article en rupture ni sous son seuil d’alerte.
+            </p>
+            <ul class="tdb-watch" th:unless="${produitsASurveiller.produits.isEmpty()}">
+                <li th:each="produit : ${produitsASurveiller.produits}" class="tdb-watch-item" th:attr="data-produit-surveille=${produit.id}">
+                    <span class="tdb-watch-name">
+                        <strong th:text="${produit.nom}">Produit</strong>
+                        <small th:text="${'Réf. ' + produit.reference + ' · seuil ' + produit.seuilAlerte}">Réf.</small>
+                    </span>
+                    <span class="tdb-watch-stock">
+                        <span class="tdb-watch-quantity" th:text="${produit.quantite + (produit.unite != null ? ' ' + produit.unite : '')}">0</span>
+                        <span class="products-stock-badge" th:classappend="${'products-stock-badge--' + produit.etat}"
+                              th:text="${produit.enRupture() ? 'Rupture' : 'Stock faible'}">Rupture</span>
+                    </span>
+                </li>
+            </ul>
+            <a class="tdb-panel-link" th:href="@{/produits(stock='a-surveiller')}">
+                <span th:text="${produitsASurveiller.autres() > 0 ? 'Voir les ' + produitsASurveiller.total + ' produits à surveiller' : 'Voir la liste des produits'}">Voir la liste des produits</span>
+                <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i>
+            </a>
+        </section>
+
+        <section class="app-panel tdb-panel" th:if="${valeurStock != null}" aria-labelledby="tdbStockTitre">
+            <div class="app-panel-heading">
+                <div>
+                    <h2 id="tdbStockTitre">Valeur du stock</h2>
+                    <p>Quantités en stock × coût moyen pondéré, services exclus.</p>
+                </div>
+            </div>
+            <p class="app-metric-value tdb-stock-value" data-indicateur="valeur-stock"><span th:text="${#numbers.formatDecimal(valeurStock.valeur, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+            <p class="tdb-note" th:text="${valeurStock.nombreProduits + (valeurStock.nombreProduits > 1 ? ' articles en stock dans le catalogue' : ' article en stock dans le catalogue')}">0 article</p>
+        </section>
+    </div>
+
+    <section class="app-panel tdb-evolution" th:if="${evolution != null}" id="evolution" aria-labelledby="tdbEvolutionTitre">
+        <div class="app-panel-heading tdb-evolution-heading">
+            <div>
+                <h2 id="tdbEvolutionTitre" th:text="${'Évolution mensuelle ' + evolution.annee}">Évolution mensuelle</h2>
+                <p>Ventes, bénéfice brut, dépenses et résultat de chaque mois.</p>
+            </div>
+            <nav class="tdb-year-nav" aria-label="Choisir l’année">
+                <a class="btn btn-outline-secondary btn-sm" th:if="${evolution.anneePrecedente != null}"
+                   th:href="@{/(annee=${evolution.anneePrecedente})} + '#evolution'"
+                   th:attr="aria-label=${'Année ' + evolution.anneePrecedente}">‹</a>
+                <span class="btn btn-outline-secondary btn-sm disabled" th:if="${evolution.anneePrecedente == null}" aria-hidden="true">‹</span>
+                <strong class="tdb-year" th:text="${evolution.annee}">2026</strong>
+                <a class="btn btn-outline-secondary btn-sm" th:if="${evolution.anneeSuivante != null}"
+                   th:href="@{/(annee=${evolution.anneeSuivante})} + '#evolution'"
+                   th:attr="aria-label=${'Année ' + evolution.anneeSuivante}">›</a>
+                <span class="btn btn-outline-secondary btn-sm disabled" th:if="${evolution.anneeSuivante == null}" aria-hidden="true">›</span>
+            </nav>
+        </div>
+        <p class="alert alert-warning py-2" role="status" th:if="${anneeCorrigee}">Année demandée invalide : l’année en cours est affichée.</p>
+        <p class="app-empty-hint" th:if="${evolution.vide}">
+            <i class="fa-regular fa-calendar" aria-hidden="true"></i><span th:text="${'Aucune vente ni dépense enregistrée en ' + evolution.annee + '.'}">Aucune donnée.</span>
+        </p>
+
+        <div class="tdb-chart-wrap" th:unless="${evolution.vide}" aria-hidden="true">
+            <div class="tdb-chart-legend">
+                <span><i class="tdb-swatch tdb-swatch--ventes"></i>Ventes</span>
+                <span><i class="tdb-swatch tdb-swatch--resultat"></i>Résultat</span>
+                <span th:if="${evolution.partNegative > 0}"><i class="tdb-swatch tdb-swatch--perte"></i>Perte</span>
+            </div>
+            <div class="tdb-chart">
+                <div class="tdb-chart-col" th:each="m : ${evolution.mois}"
+                     th:title="${m.libelle + ' : ventes ' + #numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'POINT') + ' GNF, résultat ' + #numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
+                    <div class="tdb-chart-area">
+                        <div class="tdb-chart-up" th:style="${'flex-basis: ' + evolution.partPositive + '%'}">
+                            <span class="tdb-bar tdb-bar--ventes" th:style="${'height: ' + m.hauteurVentes + '%'}"></span>
+                            <span class="tdb-bar tdb-bar--resultat" th:style="${'height: ' + m.hauteurResultat + '%'}"></span>
+                        </div>
+                        <div class="tdb-chart-down" th:if="${evolution.partNegative > 0}" th:style="${'flex-basis: ' + evolution.partNegative + '%'}">
+                            <span class="tdb-bar tdb-bar--perte" th:style="${'height: ' + m.hauteurPerte + '%'}"></span>
+                        </div>
+                    </div>
+                    <span class="tdb-chart-label" th:text="${m.libelleCourt}">janv.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive tdb-table-wrap" tabindex="0" role="region" aria-labelledby="tdbEvolutionTitre">
+            <table class="table tdb-table mb-0">
+                <caption class="visually-hidden" th:text="${'Activité mensuelle ' + evolution.annee + ', montants en GNF'}">Activité mensuelle</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Mois</th>
+                    <th scope="col" class="text-end">Ventes</th>
+                    <th scope="col" class="text-end">Bénéfice brut</th>
+                    <th scope="col" class="text-end">Dépenses</th>
+                    <th scope="col" class="text-end">Résultat</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${evolution.mois}" th:attr="data-mois=${m.numero}">
+                    <th scope="row" th:text="${m.libelle}">Janvier</th>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.depenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:classappend="${m.resultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th scope="row">Total</th>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalVentes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalBeneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalDepenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:classappend="${evolution.totalResultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(evolution.totalResultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <p class="tdb-note mt-3 mb-0">Montants en GNF. Résultat = bénéfice brut − dépenses. Les achats ne sont pas des dépenses : leur coût est compté dans le bénéfice brut au moment de la vente.</p>
+    </section>
+
+    <!--/* Emplacement réservé à la seconde partie du tableau de bord (créances et dettes en retard).
+           La tâche suivante y insérera son propre fragment, alimenté par le serveur et soumis aux mêmes
+           droits ; aucune donnée n'est affichée ici d'ici là. */-->
+</div>
+
+<!--/* Bénéfice brut, dépenses et bénéfice net d'une période ; réservé au gérant. */-->
+<th:block th:fragment="marges(indicateurs, cle, suffixe)">
+    <article class="app-metric-card">
+        <span class="app-metric-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span>
+        <h3 class="app-metric-label" th:text="${'Bénéfice brut ' + suffixe}">Bénéfice brut</h3>
+        <p class="app-metric-value" th:classappend="${indicateurs.beneficeBrut < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-brut-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-foot">
+            <span>Prix de vente moins coût moyen figé à la vente</span>
+            <span class="tdb-sans-cout" th:if="${indicateurs.lignesSansCout > 0}" th:attr="data-lignes-sans-cout=${indicateurs.lignesSansCout}"
+                  th:text="${indicateurs.lignesSansCout + (indicateurs.lignesSansCout > 1 ? ' lignes de vente sans coût connu, comptées à 0' : ' ligne de vente sans coût connu, comptée à 0')}">1 ligne sans coût connu</span>
+        </p>
+    </article>
+    <article class="app-metric-card">
+        <span class="app-metric-icon text-danger"><i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i></span>
+        <h3 class="app-metric-label" th:text="${'Dépenses ' + suffixe}">Dépenses</h3>
+        <p class="app-metric-value" th:attr="data-indicateur=${'depenses-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.depenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-foot">Dépenses de trésorerie (loyer, transport, frais…), hors achats</p>
+    </article>
+    <article class="app-metric-card">
+        <span class="app-metric-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
+        <h3 class="app-metric-label" th:text="${'Bénéfice net ' + suffixe}">Bénéfice net</h3>
+        <p class="app-metric-value" th:classappend="${indicateurs.beneficeNet < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-net-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeNet, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-foot">Bénéfice brut moins dépenses</p>
+    </article>
+</th:block>
+</body>
+</html>

@@ -42,9 +42,11 @@ Précisions :
   migré. Une boutique créée après la migration démarre à 1.
 - `solde_initial` est signé : positif quand le client ou le fournisseur me doit,
   négatif quand je lui dois ou qu'il m'a versé une avance.
-- `numero` reste facultatif pour l'instant : le code actuel crée encore les
-  ventes et achats sans numéro, et plusieurs numéros vides restent permis par la
-  contrainte unique. Une tâche suivante le générera puis le rendra obligatoire.
+- `numero` reste facultatif dans le schéma : plusieurs numéros vides restent
+  permis par la contrainte unique. Depuis la livraison des
+  [numéros de facture](../lot-1.md#numéros-de-facture-et-échéances), l'application
+  numérote toutes les nouvelles ventes et tous les nouveaux achats ; la colonne
+  pourra devenir obligatoire par une migration ultérieure.
   De même, les nouvelles lignes de vente gardent `cout_unitaire` vide et les
   nouveaux produits un `cout_moyen` à zéro jusqu'à la livraison du coût moyen
   pondéré.

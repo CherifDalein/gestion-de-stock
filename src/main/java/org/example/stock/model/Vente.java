@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
 import org.example.stock.enums.CompteTresorerie;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,11 +28,12 @@ public class Vente {
 
     private LocalDateTime dateVente;
 
-    /** Numéro de facture unique par boutique ; facultatif jusqu'à sa génération par une tâche suivante. */
-    @Column(length = 30)
+    /** Numéro de facture unique par boutique, attribué à la création puis jamais modifié. */
+    @Column(length = 30, updatable = false)
     private String numero;
 
-    /** Échéance du reste à payer ; vide pour un document soldé. */
+    /** Échéance du reste à payer ; vide pour un document soldé dès sa création, conservée en historique ensuite. */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dateEcheance;
 
     /** Part du montant réglée par une avance existante du partenaire. */
@@ -57,5 +59,10 @@ public class Vente {
 
     public BigDecimal getResteAPayer() {
         return Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantVerse));
+    }
+
+    /** En retard : un reste à payer et une échéance strictement antérieure au jour donné. */
+    public boolean estEnRetard(LocalDate aujourdHui) {
+        return dateEcheance != null && aujourdHui != null && getResteAPayer().signum() > 0 && dateEcheance.isBefore(aujourdHui);
     }
 }

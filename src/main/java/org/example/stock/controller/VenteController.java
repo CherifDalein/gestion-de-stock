@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.example.stock.service.ClientService;
 import org.example.stock.service.ProduitService;
 import org.example.stock.service.VenteService;
+import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.EcheanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Controller;
@@ -40,10 +42,15 @@ public class VenteController {
     @Autowired private CaisseService caisseService;
     @Autowired private OperationCreationService creations;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private EcheanceService echeances;
+    @Autowired private BoutiqueService boutiques;
 
     @GetMapping
-    public String listeVentes(Model model) {
-        model.addAttribute("ventes", venteService.listerToutes());
+    public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
+        boolean echues = "echues".equals(filtre);
+        model.addAttribute("ventes", echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes());
+        model.addAttribute("filtreEchues", echues);
+        model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/liste");
         return "dashboard";
     }
@@ -55,6 +62,7 @@ public class VenteController {
         model.addAttribute("clients", clientService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
         model.addAttribute("initialisationOuverte", initialisation.estOuverte());
+        model.addAttribute("echeanceProposee", echeances.proposer(boutiques.boutiqueCourante().getDelaiClientsJours()));
         model.addAttribute("view", "ventes/nouveau");
         return "dashboard";
     }
@@ -65,6 +73,9 @@ public class VenteController {
                                   Model model, HttpServletResponse response) {
         FormBindingAdvice.verifier(result);
         model.addAttribute("jetonCreation", jetonCreation);
+        // Après un refus, le formulaire réaffiche la saisie, jamais un numéro ou une échéance calculés puis annulés.
+        String numeroSaisi = vente.getNumero();
+        var echeanceSaisie = vente.getDateEcheance();
         try {
             var resultat = creations.creerVente(jetonCreation, vente);
             redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
@@ -78,9 +89,12 @@ public class VenteController {
                 response.setStatus(conflit.getStatus().value());
                 model.addAttribute("creationConflit", true);
             }
+            vente.setNumero(numeroSaisi);
+            vente.setDateEcheance(echeanceSaisie);
             model.addAttribute("clients", clientService.listerTous());
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("initialisationOuverte", initialisation.estOuverte());
+            model.addAttribute("echeanceProposee", echeances.proposer(boutiques.boutiqueCourante().getDelaiClientsJours()));
 
             model.addAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie le stock. Réessayez la vente." : e.getMessage());
@@ -94,6 +108,8 @@ public class VenteController {
         Vente vente = chargerVente(id);
         ReglementVenteForm formulaire = new ReglementVenteForm();
         formulaire.setMontantVerseAttendu(Montants.ouZero(vente.getMontantVerse()));
+        formulaire.setDateEcheance(vente.getDateEcheance() != null ? vente.getDateEcheance()
+                : echeances.proposer(boutiques.boutiqueCourante().getDelaiClientsJours()));
         model.addAttribute("reglementVente", formulaire);
         preparerReglement(vente, model);
         return "dashboard";
@@ -106,7 +122,8 @@ public class VenteController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement());
+                venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
+                        formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Versement client enregistré avec succès.");
                 return "redirect:/ventes/regler/" + id;
             } catch (ReglementVenteObsoleteException | ConcurrencyFailureException e) {
@@ -123,6 +140,26 @@ public class VenteController {
         return "dashboard";
     }
 
+    /** Reporte l'échéance sans enregistrer de versement ; le montant éventuellement saisi est ignoré. */
+    @PostMapping("/regler/{id}/echeance")
+    public String modifierEcheance(@PathVariable Long id, @ModelAttribute("reglementVente") ReglementVenteForm formulaire,
+                                   BindingResult result, Model model, RedirectAttributes redirectAttributes,
+                                   HttpServletResponse response) {
+        FormBindingAdvice.verifier(result);
+        try {
+            venteService.modifierEcheance(id, formulaire.getDateEcheance());
+            redirectAttributes.addFlashAttribute("success", "Échéance de la vente modifiée.");
+            return "redirect:/ventes/regler/" + id;
+        } catch (ConcurrencyFailureException e) {
+            response.setStatus(HttpStatus.CONFLICT.value());
+            result.reject("echeance.conflit", "Une autre opération modifie cette vente. Rechargez le formulaire et réessayez.");
+        } catch (IllegalArgumentException e) {
+            result.reject("echeance.invalide", e.getMessage());
+        }
+        preparerReglement(chargerVente(id), model);
+        return "dashboard";
+    }
+
     private Vente chargerVente(Long id) {
         Vente vente = venteService.trouverParId(id);
         if (vente == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vente introuvable");
@@ -132,6 +169,7 @@ public class VenteController {
     private void preparerReglement(Vente vente, Model model) {
         model.addAttribute("venteReglement", vente);
         model.addAttribute("reglements", caisseService.listerReglementsVente(vente.getId()));
+        model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/regler");
     }
 }
