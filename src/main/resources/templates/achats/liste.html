@@ -43,13 +43,13 @@
                         <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
                         <td class="fw-bold" th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
-                        <td class="text-success" th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="text-success" ><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                         <td class="text-danger fw-bold"
-                            th:text="${#numbers.formatDecimal((a.montantTotal - (a.montantVerse ?: 0)), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
+                            th:text="${#numbers.formatDecimal(a.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                         </td>
                         <td>
-                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) == 0}" class="badge bg-success">Réglé</span>
-                            <span th:if="${a.montantTotal - (a.montantVerse ?: 0) > 0}" class="badge bg-warning text-dark">À régler</span>
+                            <span th:if="${a.resteAPayer <= 0}" class="badge bg-success">Réglé</span>
+                            <span th:if="${a.resteAPayer > 0}" class="badge bg-warning text-dark">À régler</span>
                             <span th:if="${a.estEnRetard(aujourdHui)}" class="badge bg-dark"><i class="fa-regular fa-clock" aria-hidden="true"></i> En retard</span>
                         </td>
                         <td class="text-center">

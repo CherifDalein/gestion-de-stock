@@ -267,6 +267,24 @@ class AvancesSoldesPartenairesTests {
     }
 
     @Test
+    void lesListesDesVentesEtDesAchatsMontrentReglesLesFacturesCouvertesParLAvance() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        Vente vente = vente(client, 2, "0");
+        assertThat(vente.getAvanceUtilisee()).isEqualByComparingTo(vente.getMontantTotal());
+        assertThat(vente.getResteAPayer()).isZero();
+        String ventes = mvc.perform(get("/ventes").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(ventes).contains("Réglée").contains("+ avance").doesNotContain("À régler");
+
+        parametrerSolde(fournisseur, "1000000", SensSolde.IL_ME_DOIT, null);
+        Achat achat = achat(fournisseur, 2, "0");
+        assertThat(achat.getResteAPayer()).isZero();
+        String achats = mvc.perform(get("/achats").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(achats).contains("Réglé").contains("+ avance").doesNotContain("À régler");
+    }
+
+    @Test
     void laBoutiqueRegleUnSoldeDeDepartEnversUnFournisseurParUneSortieDeTresorerie() throws Exception {
         mvc.perform(post("/fournisseurs/enregistrer").with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Creancier")
                         .param("montantSoldeDepart", "100000").param("sensSoldeDepart", "JE_LUI_DOIS"))
