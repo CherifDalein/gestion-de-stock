@@ -26,6 +26,6 @@ test('le texte de confirmation montre l\'ancien et le nouveau solde avec leur se
     const ancien = S.soldeSaisi('1000000', 'JE_LUI_DOIS');
     const nouveau = S.soldeSaisi('10000000', 'JE_LUI_DOIS');
     assert.equal(S.confirmation(ancien, nouveau),
-        'Je confirme le nouveau solde de départ : -1 000 000 (je lui dois) → -10 000 000 (je lui dois) GNF');
-    assert.equal(S.confirmation(0n, 5000000n), 'Je confirme le nouveau solde de départ : 0 → +50 000 (il me doit) GNF');
+        'Je confirme le nouveau solde de départ : 1 000 000 GNF (je lui dois) → 10 000 000 GNF (je lui dois)');
+    assert.equal(S.confirmation(0n, 5000000n), 'Je confirme le nouveau solde de départ : 0 GNF → 50 000 GNF (il me doit)');
 });

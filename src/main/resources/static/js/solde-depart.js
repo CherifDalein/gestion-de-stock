@@ -22,10 +22,10 @@
         return fraction === 0n ? entier : `${entier},${String(fraction).padStart(2, '0')}`;
     }
 
-    /** Solde signé avec son sens : « +1 000 000 (il me doit) », « -1 000 000 (je lui dois) » ou « 0 ». */
+    /** Solde avec son sens, sans signe : « 1 000 000 GNF (il me doit) », « 1 000 000 GNF (je lui dois) » ou « 0 GNF ». */
     function signe(centimes) {
-        if (centimes === 0n) return '0';
-        return centimes > 0n ? `+${formater(centimes)} (il me doit)` : `-${formater(centimes)} (je lui dois)`;
+        if (centimes === 0n) return '0 GNF';
+        return centimes > 0n ? `${formater(centimes)} GNF (il me doit)` : `${formater(centimes)} GNF (je lui dois)`;
     }
 
     /** Solde signé saisi : le montant, négatif quand le sens est « je lui dois ». */
@@ -41,7 +41,7 @@
     }
 
     function confirmation(ancien, nouveau) {
-        return `Je confirme le nouveau solde de départ : ${signe(ancien)} → ${signe(nouveau)} GNF`;
+        return `Je confirme le nouveau solde de départ : ${signe(ancien)} → ${signe(nouveau)}`;
     }
 
     function initialiser() {
