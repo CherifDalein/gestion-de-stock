@@ -493,8 +493,33 @@ supérieur ou égal à zéro, un sens (« Il me doit » ou « Je lui dois ») et
 les seuls champs liés : `soldeInitial` et `avanceUtilisee` ne sont jamais reçus
 du navigateur (400). Une avance de départ n'a pas d'échéance.
 
-Le solde de départ ne peut plus être modifié dès qu'il a été réglé en partie, ni
-quand la modification ferait passer l'avance disponible sous zéro.
+Le solde de départ (montant, sens, échéance) n'est modifiable que **tant qu'il n'a servi à rien** :
+
+- aucun règlement du solde de départ n'a été enregistré pour ce partenaire ;
+- et aucune facture de ce partenaire n'a `avance_utilisee` > 0 (ses ventes pour un client, ses achats
+  pour un fournisseur). La règle est volontairement stricte : dès qu'une avance a été consommée, quelle
+  que soit son origine (solde de départ ou trop-payé), le solde de départ est figé.
+
+Sinon le serveur refuse toute modification (HTTP 200 avec le formulaire et l'erreur) : « Ce solde de départ a déjà
+servi (règlement ou avance utilisée) : il ne peut plus être modifié. Une correction se fera par un ajustement
+de solde. » Le contrôle se fait dans la transaction, sous le verrou de la fiche, avec des lectures filtrées sur
+la boutique (`SoldePartenaireRepository.avanceUtiliseeVerrouillee`). Le reste de la fiche (nom, téléphone,
+adresse…) reste modifiable, et renvoyer exactement les mêmes valeurs de solde n'est pas une modification.
+
+**Confirmation.** Tant que le solde est modifiable, un changement du montant ou du sens exige la case
+« Je confirme le nouveau solde de départ : ancien → nouveau GNF » (champ `confirmationSoldeDepart`, accepté
+seulement par la modification d'une fiche). Sans elle, le serveur renvoie le formulaire avec « Confirmez le
+changement du solde de départ. ». La création et un changement d'échéance seule n'exigent pas cette
+confirmation.
+
+**Écran de modification.** Solde figé : montant, sens et échéance sont affichés en lecture seule avec
+l'explication ci-dessus. Solde modifiable : le montant saisi est reformaté sous le champ (« = 1 000 000 GNF ») et
+la case de confirmation, dont le texte montre l'ancien et le nouveau solde signés avec leur sens, apparaît dès
+que le montant ou le sens change (`static/js/solde-depart.js`, textes insérés par `textContent`). Le navigateur
+n'est qu'une aide : le serveur applique seul la règle.
+
+**Correction d'un solde figé.** Elle se fera par l'opération « Ajustement de solde » (motif et historique),
+prévue au lot 3 : elle n'existe pas encore.
 
 Règlement : page `/clients/solde/regler/{id}` et `/fournisseurs/solde/regler/{id}`,
 construite comme les règlements de factures (contrôle du reste attendu, choix du

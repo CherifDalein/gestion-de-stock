@@ -17,13 +17,14 @@ import java.time.LocalDate;
  * @param resteFactures     somme des restes à payer de ses factures
  * @param avanceDisponible  avance non encore utilisée, jamais négative
  * @param soldeNet          solde global signé
+ * @param avanceUtiliseeFactures somme des avances consommées par ses factures (ventes d'un client, achats d'un fournisseur)
  */
 public record SoldePartenaire(BigDecimal soldeDepart, BigDecimal soldeDepartRegle, BigDecimal resteSoldeDepart,
                               LocalDate echeanceSoldeDepart, BigDecimal resteFactures, BigDecimal avanceDisponible,
-                              BigDecimal soldeNet) {
-    /** Le solde de départ ne se modifie plus dès qu'un règlement a été enregistré. */
+                              BigDecimal soldeNet, BigDecimal avanceUtiliseeFactures) {
+    /** Le solde de départ ne se modifie plus dès qu'il a servi : un règlement enregistré ou une avance consommée par une facture. */
     public boolean soldeDepartModifiable() {
-        return soldeDepartRegle.signum() == 0;
+        return soldeDepartRegle.signum() == 0 && avanceUtiliseeFactures.signum() == 0;
     }
 
     public boolean soldeDepartAReglerPossible() {

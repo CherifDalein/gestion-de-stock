@@ -57,7 +57,7 @@ public class SoldeDepartService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void appliquerALaCreation(Client client) {
         if (!client.isSoldeDepartSoumis()) return;
-        Solde solde = calculer(Partenaire.CLIENT, null, Montants.ZERO, null, client.getMontantSoldeDepart(), client.getSensSoldeDepart(), client.getEcheanceSoldeInitial());
+        Solde solde = calculer(Partenaire.CLIENT, null, Montants.ZERO, null, client.getMontantSoldeDepart(), client.getSensSoldeDepart(), client.getEcheanceSoldeInitial(), false);
         client.setSoldeInitial(solde.signe());
         client.setEcheanceSoldeInitial(solde.echeance());
     }
@@ -65,19 +65,19 @@ public class SoldeDepartService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void appliquerALaCreation(Fournisseur fournisseur) {
         if (!fournisseur.isSoldeDepartSoumis()) return;
-        Solde solde = calculer(Partenaire.FOURNISSEUR, null, Montants.ZERO, null, fournisseur.getMontantSoldeDepart(), fournisseur.getSensSoldeDepart(), fournisseur.getEcheanceSoldeInitial());
+        Solde solde = calculer(Partenaire.FOURNISSEUR, null, Montants.ZERO, null, fournisseur.getMontantSoldeDepart(), fournisseur.getSensSoldeDepart(), fournisseur.getEcheanceSoldeInitial(), false);
         fournisseur.setSoldeInitial(solde.signe());
         fournisseur.setEcheanceSoldeInitial(solde.echeance());
     }
 
-    /** À la modification : la fiche est verrouillée, le solde ne change plus s'il a déjà été réglé en partie. */
+    /** À la modification : la fiche est verrouillée ; le solde ne change plus une fois réglé ou utilisé, et un changement de montant ou de sens doit être confirmé. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void appliquerALaModification(Long id, Client saisie) {
         if (!saisie.isSoldeDepartSoumis()) return;
         exigerGerant();
         Client client = verrous.verrouillerClient(id);
         Solde solde = calculer(Partenaire.CLIENT, id, client.getSoldeInitial(), client.getEcheanceSoldeInitial(),
-                saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial());
+                saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
         client.setSoldeInitial(solde.signe());
         client.setEcheanceSoldeInitial(solde.echeance());
     }
@@ -88,13 +88,13 @@ public class SoldeDepartService {
         exigerGerant();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(id);
         Solde solde = calculer(Partenaire.FOURNISSEUR, id, fournisseur.getSoldeInitial(), fournisseur.getEcheanceSoldeInitial(),
-                saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial());
+                saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
         fournisseur.setSoldeInitial(solde.signe());
         fournisseur.setEcheanceSoldeInitial(solde.echeance());
     }
 
     private Solde calculer(Partenaire type, Long id, BigDecimal soldeActuel, LocalDate echeanceActuelle,
-                           BigDecimal montantSaisi, SensSolde sens, LocalDate echeanceSaisie) {
+                           BigDecimal montantSaisi, SensSolde sens, LocalDate echeanceSaisie, boolean confirme) {
         exigerGerant();
         BigDecimal montant = montantSaisi == null ? Montants.ZERO : Montants.positifOuNul(montantSaisi, "Le solde de départ");
         if (montant.signum() > 0 && sens == null) {
@@ -108,8 +108,13 @@ public class SoldeDepartService {
         if (id != null) {
             BigDecimal actuel = Montants.ouZero(soldeActuel);
             boolean change = signe.compareTo(actuel) != 0 || !Objects.equals(echeance, echeanceActuelle);
-            if (change && soldes.reglementsVerrouilles(type, id).signum() > 0) {
-                throw new IllegalArgumentException("Ce solde de départ a déjà été réglé en partie : il ne peut plus être modifié.");
+            // Bloqué après usage : un règlement du solde ou une avance consommée par une facture (quelle qu'en soit l'origine) le figent.
+            if (change && (soldes.reglementsVerrouilles(type, id).signum() > 0 || soldes.avanceUtiliseeVerrouillee(type, id))) {
+                throw new IllegalArgumentException("Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. "
+                        + "Une correction se fera par un ajustement de solde.");
+            }
+            if (signe.compareTo(actuel) != 0 && !confirme) {
+                throw new IllegalArgumentException("Confirmez le changement du solde de départ.");
             }
             if (signe.compareTo(actuel) != 0 && soldes.avanceDisponibleAvecSolde(type, id, signe).signum() < 0) {
                 throw new IllegalArgumentException("Une partie de l'avance de ce partenaire a déjà été utilisée sur ses factures : "

@@ -220,7 +220,7 @@ class AvancesSoldesPartenairesTests {
         // Réglé en partie : le solde de départ ne peut plus être modifié.
         mvc.perform(post("/clients/modifier/" + debiteur.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Debiteur")
                         .param("montantSoldeDepart", "10000").param("sensSoldeDepart", "IL_ME_DOIT").param("echeanceSoldeInitial", "2030-01-15"))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("réglé en partie")));
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("a déjà servi (règlement ou avance utilisée)")));
         assertThat(clients.findById(debiteur.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("50000");
         // Le caissier règle aussi un solde de client, comme il règle une vente ; solder complètement est possible.
         mvc.perform(reglementSolde("/clients/solde/regler/" + debiteur.getId(), "30000", "20000", "CAISSE").with(csrf()).with(user(CAISSIER).roles("CAISSIER")))
@@ -234,7 +234,8 @@ class AvancesSoldesPartenairesTests {
     void unSoldeDepartNonRegleResteModifiableEtSonEcheanceFaitLeRetard() throws Exception {
         parametrerSolde(client, "10000", SensSolde.IL_ME_DOIT, LocalDate.of(2020, 1, 1));
         mvc.perform(post("/clients/modifier/" + client.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", client.getNom())
-                        .param("montantSoldeDepart", "25000").param("sensSoldeDepart", "IL_ME_DOIT").param("echeanceSoldeInitial", "2020-02-02"))
+                        .param("montantSoldeDepart", "25000").param("sensSoldeDepart", "IL_ME_DOIT").param("echeanceSoldeInitial", "2020-02-02")
+                        .param("confirmationSoldeDepart", "true"))
                 .andExpect(status().is3xxRedirection());
         Client modifie = clients.findById(client.getId()).orElseThrow();
         assertThat(modifie.getSoldeInitial()).isEqualByComparingTo("25000");
@@ -259,10 +260,10 @@ class AvancesSoldesPartenairesTests {
         assertThat(caisse.count()).isZero();
         assertThat(soldes().soldeClient(avance.getId()).avanceDisponible()).isZero();
         assertThat(soldes().soldeClient(avance.getId()).soldeNet()).isEqualByComparingTo("20000");
-        // L'avance d'un solde de départ ne peut plus être retirée une fois consommée.
+        // L'avance d'un solde de départ ne peut plus être retirée une fois consommée (solde figé, même sans confirmation).
         mvc.perform(post("/clients/modifier/" + avance.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Avance depart")
                         .param("montantSoldeDepart", "0").param("sensSoldeDepart", "IL_ME_DOIT"))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("déjà été utilisée")));
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("a déjà servi (règlement ou avance utilisée)")));
         assertThat(clients.findById(avance.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-10000");
     }
 
@@ -321,6 +322,198 @@ class AvancesSoldesPartenairesTests {
         assertThat(achat.getResteAPayer()).isEqualByComparingTo("60000");
         assertThat(caisse.count()).isZero();
         assertThat(soldes().soldeFournisseur(fournisseur.getId()).soldeNet()).isEqualByComparingTo("-60000");
+    }
+
+    // ---- Solde de départ figé après usage et confirmation du changement ------------------------------------------
+
+    static final String MESSAGE_FIGE = "Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. "
+            + "Une correction se fera par un ajustement de solde.";
+    static final String MESSAGE_CONFIRMATION = "Confirmez le changement du solde de départ.";
+
+    private org.springframework.test.web.servlet.ResultActions modifier(String type, Long id, String nom, String montant, String sens, boolean confirme) throws Exception {
+        var requete = post("/" + type + "/modifier/" + id).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", nom)
+                .param("montantSoldeDepart", montant).param("sensSoldeDepart", sens);
+        if (confirme) requete.param("confirmationSoldeDepart", "true");
+        return mvc.perform(requete);
+    }
+
+    private static String echapper(String texte) {
+        return texte.replace("'", "&#39;");
+    }
+
+    @Test
+    void unSoldeClientDontLAvanceAEteConsommeeNePeutPlusEtreModifie() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        Vente vente = vente(client, 20, "0");                       // total 200 000, couvert par l'avance du solde de départ
+        assertThat(vente.getAvanceUtilisee()).isEqualByComparingTo("200000");
+
+        modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-1000000");
+        assertThat(soldes().soldeClient(client.getId()).soldeDepartModifiable()).isFalse();
+        // Le sens ne peut pas non plus être inversé.
+        modifier("clients", client.getId(), client.getNom(), "1000000", "IL_ME_DOIT", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-1000000");
+    }
+
+    @Test
+    void unSoldeFournisseurDontLAvanceAEteConsommeeNePeutPlusEtreModifie() throws Exception {
+        parametrerSolde(fournisseur, "1000000", SensSolde.IL_ME_DOIT, null);     // avance chez le fournisseur
+        Achat achat = achat(fournisseur, 10, "0");                  // total 100 000
+        assertThat(achat.getAvanceUtilisee()).isEqualByComparingTo("100000");
+
+        modifier("fournisseurs", fournisseur.getId(), fournisseur.getNom(), "10000000", "IL_ME_DOIT", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(fournisseurs.findById(fournisseur.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("1000000");
+        assertThat(soldes().soldeFournisseur(fournisseur.getId()).soldeDepartModifiable()).isFalse();
+    }
+
+    @Test
+    void uneAvanceVenueDUnTropPayeFigeAussiLeSoldeDeDepart() throws Exception {
+        // Quelle que soit l'origine de l'avance consommée, le solde de départ est figé.
+        parametrerSolde(client, "5000", SensSolde.IL_ME_DOIT, null);
+        vente(client, 10, "150000");                                // 50 000 de trop-payé
+        vente(client, 1, "0");                                      // consomme 10 000 de l'avance du trop-payé
+        modifier("clients", client.getId(), client.getNom(), "6000", "IL_ME_DOIT", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("5000");
+    }
+
+    @Test
+    void unSoldeJamaisUtiliseSeModifieAvecConfirmationEtPasSans() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", false)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(MESSAGE_CONFIRMATION)));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-1000000");
+        modifier("clients", client.getId(), client.getNom(), "1000000", "IL_ME_DOIT", false)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(MESSAGE_CONFIRMATION)));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-1000000");
+        modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", true).andExpect(status().is3xxRedirection());
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-10000000");
+
+        parametrerSolde(fournisseur, "2000", SensSolde.JE_LUI_DOIS, null);
+        modifier("fournisseurs", fournisseur.getId(), fournisseur.getNom(), "20000", "JE_LUI_DOIS", false)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(MESSAGE_CONFIRMATION)));
+        assertThat(fournisseurs.findById(fournisseur.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-2000");
+        modifier("fournisseurs", fournisseur.getId(), fournisseur.getNom(), "20000", "JE_LUI_DOIS", true).andExpect(status().is3xxRedirection());
+        assertThat(fournisseurs.findById(fournisseur.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-20000");
+    }
+
+    @Test
+    void laCreationNExigePasLaConfirmationEtLeChampEstInterditAilleurs() throws Exception {
+        mvc.perform(post("/clients/enregistrer").with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Sans confirmation")
+                .param("montantSoldeDepart", "7000").param("sensSoldeDepart", "IL_ME_DOIT")).andExpect(status().is3xxRedirection());
+        mvc.perform(post("/clients/enregistrer").with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Avec confirmation")
+                .param("montantSoldeDepart", "7000").param("sensSoldeDepart", "IL_ME_DOIT").param("confirmationSoldeDepart", "true"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/clients/modifier/" + client.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("nom", "Nom")
+                .param("confirmationSoldeDepart", "true").param("confirmationSoldeDepart", "true")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void renvoyerLesMemesValeursDeSoldeNEstPasUneModificationMemeSansConfirmationOuSoldeFige() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        modifier("clients", client.getId(), "Nouveau nom", "1000000", "JE_LUI_DOIS", false).andExpect(status().is3xxRedirection());
+        assertThat(clients.findById(client.getId()).orElseThrow().getNom()).isEqualTo("Nouveau nom");
+        vente(client, 20, "0");                                     // le solde est maintenant figé
+        modifier("clients", client.getId(), "Encore un nom", "1000000", "JE_LUI_DOIS", false).andExpect(status().is3xxRedirection());
+        Client relu = clients.findById(client.getId()).orElseThrow();
+        assertThat(relu.getNom()).isEqualTo("Encore un nom");
+        assertThat(relu.getSoldeInitial()).isEqualByComparingTo("-1000000");
+    }
+
+    @Test
+    void lesAutresChampsDUneFicheAuSoldeFigeResteModifiables() throws Exception {
+        parametrerSolde(fournisseur, "1000000", SensSolde.IL_ME_DOIT, null);
+        achat(fournisseur, 10, "0");
+        // Le formulaire d'un solde figé n'envoie plus les champs du solde : seuls le nom et le téléphone changent.
+        mvc.perform(post("/fournisseurs/modifier/" + fournisseur.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN"))
+                        .param("nom", "Fournisseur renommé").param("telephone", "620000000"))
+                .andExpect(status().is3xxRedirection());
+        Fournisseur relu = fournisseurs.findById(fournisseur.getId()).orElseThrow();
+        assertThat(relu.getNom()).isEqualTo("Fournisseur renommé");
+        assertThat(relu.getTelephone()).isEqualTo("620000000");
+        assertThat(relu.getSoldeInitial()).isEqualByComparingTo("1000000");
+        parametrerSolde(client, "3000", SensSolde.IL_ME_DOIT, null);
+        vente(client, 1, "0");
+        mvc.perform(post("/clients/modifier/" + client.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN"))
+                        .param("nom", client.getNom()).param("telephone", "611111111"))
+                .andExpect(status().is3xxRedirection());
+        assertThat(clients.findById(client.getId()).orElseThrow().getTelephone()).isEqualTo("611111111");
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("3000");
+    }
+
+    @Test
+    void apresUnReglementPartielLeSoldeResteRefuseMemeAvecConfirmation() throws Exception {
+        parametrerSolde(client, "50000", SensSolde.IL_ME_DOIT, null);
+        mvc.perform(reglementSolde("/clients/solde/regler/" + client.getId(), "20000", "0", "CAISSE").with(csrf()).with(user(ADMIN).roles("ADMIN")))
+                .andExpect(status().is3xxRedirection());
+        modifier("clients", client.getId(), client.getNom(), "90000", "IL_ME_DOIT", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("50000");
+
+        parametrerSolde(fournisseur, "50000", SensSolde.JE_LUI_DOIS, null);
+        mvc.perform(reglementSolde("/fournisseurs/solde/regler/" + fournisseur.getId(), "10000", "0", "CAISSE").with(csrf()).with(user(ADMIN).roles("ADMIN")))
+                .andExpect(status().is3xxRedirection());
+        modifier("fournisseurs", fournisseur.getId(), fournisseur.getNom(), "90000", "JE_LUI_DOIS", true)
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+        assertThat(fournisseurs.findById(fournisseur.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("-50000");
+    }
+
+    @Test
+    void uneAvanceUtiliseeDansUneAutreBoutiqueNeFigePasLeSolde() throws Exception {
+        parametrerSolde(client, "1000", SensSolde.IL_ME_DOIT, null);
+        parametrerSolde(fournisseur, "1000", SensSolde.IL_ME_DOIT, null);
+        // Un partenaire de l'autre boutique consomme son avance : cela ne concerne pas la boutique courante.
+        parametrerSolde(clientAutre, "1000000", SensSolde.JE_LUI_DOIS, null);
+        Vente factureAutre = new Vente(); factureAutre.setBoutique(autreBoutique); factureAutre.setClient(clientAutre);
+        factureAutre.setMontantTotal(new BigDecimal("200000")); factureAutre.setMontantVerse(BigDecimal.ZERO);
+        factureAutre.setAvanceUtilisee(new BigDecimal("200000")); ventes.saveAndFlush(factureAutre);
+        assertThat(soldes().soldeClient(client.getId()).soldeDepartModifiable()).isTrue();
+        modifier("clients", client.getId(), client.getNom(), "2000", "IL_ME_DOIT", true).andExpect(status().is3xxRedirection());
+        assertThat(clients.findById(client.getId()).orElseThrow().getSoldeInitial()).isEqualByComparingTo("2000");
+        modifier("fournisseurs", fournisseur.getId(), fournisseur.getNom(), "2000", "IL_ME_DOIT", true).andExpect(status().is3xxRedirection());
+        // Et le solde figé de l'autre boutique reste figé pour son gérant.
+        mvc.perform(post("/clients/modifier/" + clientAutre.getId()).with(csrf()).with(user(ADMIN2).roles("ADMIN")).param("nom", "Client de l'autre boutique")
+                .param("montantSoldeDepart", "5").param("sensSoldeDepart", "JE_LUI_DOIS").param("confirmationSoldeDepart", "true"))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(echapper(MESSAGE_FIGE))));
+    }
+
+    @Test
+    void lEcranMontreLeSoldeFigeEnLectureSeuleAvecSonExplication() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        vente(client, 20, "0");
+        parametrerSolde(fournisseur, "1000000", SensSolde.IL_ME_DOIT, null);
+        achat(fournisseur, 10, "0");
+        for (String url : List.of("/clients/modifier/" + client.getId(), "/fournisseurs/modifier/" + fournisseur.getId())) {
+            String html = mvc.perform(get(url).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(html).contains("soldeDepartFige", "soldeDepartLectureSeule", "1 000 000,00 GNF", "ajustement de solde")
+                    .doesNotContain("inputMontantSoldeDepart", "inputConfirmationSoldeDepart", "name=\"montantSoldeDepart\"", "name=\"sensSoldeDepart\"");
+        }
+        // Après une tentative refusée, l'écran montre toujours le solde enregistré, pas la valeur forgée.
+        String html = modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", true).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("1 000 000,00 GNF").doesNotContain("10 000 000");
+    }
+
+    @Test
+    void lEcranDUnSoldeModifiableProposeLaCaseDeConfirmationEtLApercu() throws Exception {
+        parametrerSolde(client, "1000000", SensSolde.JE_LUI_DOIS, null);
+        parametrerSolde(fournisseur, "400", SensSolde.IL_ME_DOIT, null);
+        for (String url : List.of("/clients/modifier/" + client.getId(), "/fournisseurs/modifier/" + fournisseur.getId())) {
+            String html = mvc.perform(get(url).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(html).contains("inputMontantSoldeDepart", "soldeDepartApercu", "inputConfirmationSoldeDepart", "name=\"confirmationSoldeDepart\"",
+                            "data-ancien-solde", "/js/solde-depart.js")
+                    .doesNotContain("soldeDepartFige", "disabled");
+        }
+        assertThat(mvc.perform(get("/clients/modifier/" + client.getId()).with(user(ADMIN).roles("ADMIN"))).andReturn().getResponse().getContentAsString())
+                .contains("data-ancien-solde=\"-1000000.00\"");
+        // La création n'a pas de case de confirmation.
+        assertThat(mvc.perform(get("/clients/nouveau").with(user(ADMIN).roles("ADMIN"))).andReturn().getResponse().getContentAsString())
+                .doesNotContain("inputConfirmationSoldeDepart");
+        // Le caissier ne voit rien de la section.
+        assertThat(mvc.perform(get("/clients/modifier/" + client.getId()).with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString())
+                .doesNotContain("soldeDepartSection", "inputConfirmationSoldeDepart");
     }
 
     // ---- Reste à payer, échéance et retard ------------------------------------------------------------------

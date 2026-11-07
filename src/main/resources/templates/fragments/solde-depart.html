@@ -1,27 +1,48 @@
 <!-- Section « solde de départ » des fiches client et fournisseur, à placer dans un formulaire th:object.
      Réservée au gérant : le caissier ne la voit pas et le serveur refuse ses envois (403). -->
-<section th:fragment="section(verrouille, libelleDoit, libelleDois)" class="record-panel" aria-labelledby="soldeDepartTitre" sec:authorize="hasRole('ADMIN')">
+<section th:fragment="section(situation, libelleDoit, libelleDois)" class="record-panel" aria-labelledby="soldeDepartTitre" sec:authorize="hasRole('ADMIN')"
+         th:with="fige=${situation != null and !situation.soldeDepartModifiable()}, modif=${situation != null and situation.soldeDepartModifiable()}"
+         th:attr="data-ancien-solde=${modif} ? ${situation.soldeDepart.toPlainString()} : null" id="soldeDepartSection">
     <div class="record-panel-heading">
         <h2 id="soldeDepartTitre">Solde de départ</h2>
         <p>Ce qui restait dû avant l'utilisation de l'application. Ce n'est pas de l'argent en caisse : aucun mouvement de trésorerie n'est créé. Laissez à zéro s'il n'y a rien à reprendre.</p>
     </div>
-    <p th:if="${verrouille}" class="text-muted" role="status">Ce solde de départ a déjà été réglé en partie : il ne peut plus être modifié.</p>
-    <div class="record-grid">
-        <div class="record-field">
-            <label for="inputMontantSoldeDepart">Montant (GNF)</label>
-            <input class="form-control" id="inputMontantSoldeDepart" th:field="*{montantSoldeDepart}" type="number" min="0" step="0.01" inputmode="decimal"
-                   placeholder="0" th:attr="disabled=${verrouille} ? 'disabled' : null" />
+    <th:block th:if="${fige}">
+        <p class="text-muted" role="status" id="soldeDepartFige">Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. Une correction se fera par un ajustement de solde.</p>
+        <dl class="row mb-0" id="soldeDepartLectureSeule">
+            <dt class="col-sm-3">Montant</dt>
+            <dd class="col-sm-9" th:text="${#numbers.formatDecimal(situation.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+            <dt class="col-sm-3">Sens</dt>
+            <dd class="col-sm-9" th:text="${situation.soldeDepart.signum() == 0 ? 'Aucun solde de départ' : situation.soldeDepart.signum() < 0 ? libelleDois : libelleDoit}"></dd>
+            <dt class="col-sm-3">Échéance</dt>
+            <dd class="col-sm-9" th:text="${situation.echeanceSoldeDepart != null ? #temporals.format(situation.echeanceSoldeDepart, 'dd/MM/yyyy') : 'Aucune'}"></dd>
+        </dl>
+    </th:block>
+    <th:block th:unless="${fige}">
+        <div class="record-grid">
+            <div class="record-field">
+                <label for="inputMontantSoldeDepart">Montant (GNF)</label>
+                <input class="form-control" id="inputMontantSoldeDepart" th:field="*{montantSoldeDepart}" type="number" min="0" step="0.01" inputmode="decimal"
+                       placeholder="0" aria-describedby="soldeDepartApercu" />
+                <p id="soldeDepartApercu" class="form-text mb-0" aria-live="polite"></p>
+            </div>
+            <div class="record-field">
+                <label for="inputSensSoldeDepart">Sens</label>
+                <select class="form-select" id="inputSensSoldeDepart" th:field="*{sensSoldeDepart}">
+                    <option value="IL_ME_DOIT" th:text="${libelleDoit}">Il me doit</option>
+                    <option value="JE_LUI_DOIS" th:text="${libelleDois}">Je lui dois</option>
+                </select>
+            </div>
+            <div class="record-field">
+                <label for="inputEcheanceSoldeInitial">Échéance <span class="record-optional">(facultative)</span></label>
+                <input class="form-control" id="inputEcheanceSoldeInitial" th:field="*{echeanceSoldeInitial}" type="date" />
+            </div>
         </div>
-        <div class="record-field">
-            <label for="inputSensSoldeDepart">Sens</label>
-            <select class="form-select" id="inputSensSoldeDepart" th:field="*{sensSoldeDepart}" th:attr="disabled=${verrouille} ? 'disabled' : null">
-                <option value="IL_ME_DOIT" th:text="${libelleDoit}">Il me doit</option>
-                <option value="JE_LUI_DOIS" th:text="${libelleDois}">Je lui dois</option>
-            </select>
+        <div th:if="${modif}" id="soldeDepartConfirmation" class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" id="inputConfirmationSoldeDepart" name="confirmationSoldeDepart" value="true" />
+            <label class="form-check-label" for="inputConfirmationSoldeDepart" id="soldeDepartConfirmationTexte">Je confirme le nouveau solde de départ</label>
+            <p class="form-text mb-0">À cocher uniquement si vous changez le montant ou le sens du solde de départ.</p>
         </div>
-        <div class="record-field">
-            <label for="inputEcheanceSoldeInitial">Échéance <span class="record-optional">(facultative)</span></label>
-            <input class="form-control" id="inputEcheanceSoldeInitial" th:field="*{echeanceSoldeInitial}" type="date" th:attr="disabled=${verrouille} ? 'disabled' : null" />
-        </div>
-    </div>
+        <script th:src="@{/js/solde-depart.js}"></script>
+    </th:block>
 </section>
