@@ -254,11 +254,12 @@ class StockConcurrencyTests {
 
     @Test
     void uneErreurDePaiementAnnuleStockDocumentEtCaisse() {
-        Achat achat = achat(3, new BigDecimal("999.0"));
-        assertThatThrownBy(() -> authentifie(() -> achatService.enregistrerAchat(achat)))
+        // Un achat a toujours un fournisseur et accepte un trop-payé (avance) : le refus s'observe sur une vente sans client.
+        Vente vente = vente(3); vente.setMontantVerse(new BigDecimal("999.0"));
+        assertThatThrownBy(() -> authentifie(() -> venteService.effectuerVente(vente)))
                 .hasMessageContaining("ne peut pas depasser");
         assertThat(stock()).isEqualTo(10L);
-        assertThat(achats.count()).isZero();
+        assertThat(ventes.count()).isZero();
         assertThat(caisse.count()).isZero();
     }
 

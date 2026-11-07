@@ -179,8 +179,8 @@ class InitialisationBoutiqueServiceTests {
     }
 
     @Test void achatRefuseApresPriseDuVerrouNeClotPasLeDemarrage() {
-        var a = achat(2); a.setMontantVerse(new BigDecimal("100"));
-        assertThatThrownBy(() -> achats.enregistrerAchat(a)).hasMessageContaining("depasser");
+        var a = achat(2); a.setMontantVerse(new BigDecimal("-1"));
+        assertThatThrownBy(() -> achats.enregistrerAchat(a)).isInstanceOf(IllegalArgumentException.class);
         assertThat(demarrage.estOuverte()).isTrue();
         assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isFalse();
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isZero();
