@@ -172,6 +172,7 @@
     </section>
 
     <!--/* Créances et dettes : réservé au gérant. Pour un caissier, « creancesDettes » n'est ni calculé ni placé dans le modèle. */-->
+    <p class="alert alert-warning py-2" role="alert" th:if="${creancesDettesIncoherentes}">Les créances et les dettes ne peuvent pas être affichées : un solde de partenaire est incohérent. Vérifiez les règlements des soldes de départ ou contactez l’assistance.</p>
     <th:block th:if="${creancesDettes != null}">
         <th:block th:replace="~{fragments/tableau-de-bord :: creancesDettes(${creancesDettes})}"></th:block>
     </th:block>

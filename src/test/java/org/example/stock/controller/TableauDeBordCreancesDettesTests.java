@@ -29,6 +29,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -111,6 +112,17 @@ class TableauDeBordCreancesDettesTests {
         vente(boutiqueB, null, "777000", "0", "0", "2026-01-03");
         Fournisseur fournisseurSecret = fournisseur(boutiqueB, "FOURNISSEUR_SECRET_B", "-666000", "2026-01-01");
         achat(boutiqueB, fournisseurSecret, "555000", "0", "2026-01-02");
+    }
+
+    @Test
+    void uneIncoherenceDeSoldeNePriveLeGerantQueDesCreancesEtDettes() throws Exception {
+        doThrow(new org.example.stock.service.IncoherenceAvanceException("Solde incohérent de test"))
+                .when(soldes).creancesClients();
+        MvcResult resultat = mvc.perform(get("/").with(user(GERANT_A).roles("ADMIN"))).andExpect(status().isOk()).andReturn();
+        assertThat(resultat.getModelAndView().getModel()).doesNotContainKey("creancesDettes")
+                .containsEntry("creancesDettesIncoherentes", true)
+                .containsKeys("indicateursJour", "valeurStock");
+        assertThat(resultat.getResponse().getContentAsString()).contains("Les créances et les dettes ne peuvent pas être affichées");
     }
 
     @Test
