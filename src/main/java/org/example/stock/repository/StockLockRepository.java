@@ -3,6 +3,8 @@ package org.example.stock.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Client;
+import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
 import org.example.stock.service.BoutiqueService;
@@ -55,6 +57,13 @@ public class StockLockRepository {
         return achat;
     }
 
+    /** Identifiant du fournisseur d'un achat de la boutique courante (404 sinon), lu sans verrou pour verrouiller le fournisseur en premier. */
+    public Long idFournisseurDeAchat(Long achatId) {
+        verifierIdentifiant("Achat", achatId, boutiques.idBoutiqueCourante());
+        return entityManager.createQuery("select a.fournisseur.id from Achat a where a.id = :id", Long.class)
+                .setParameter("id", achatId).getResultStream().findFirst().orElse(null);
+    }
+
     public Vente verrouillerVente(Long id) {
         verifierIdentifiant("Vente", id, boutiques.idBoutiqueCourante());
         Vente vente = entityManager.find(Vente.class, id, LockModeType.PESSIMISTIC_WRITE);
@@ -63,6 +72,29 @@ public class StockLockRepository {
         entityManager.refresh(vente, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(vente.getBoutique());
         return vente;
+    }
+
+    /**
+     * Verrou en écriture de la fiche d'un client de la boutique courante (404 sinon). À prendre après le verrou de
+     * la boutique et avant ceux des produits ; la fiche est relue sous verrou, même déjà présente dans le contexte JPA.
+     */
+    public Client verrouillerClient(Long id) {
+        verifierIdentifiant("Client", id, boutiques.idBoutiqueCourante());
+        Client client = entityManager.find(Client.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (client == null) throw introuvable("Client");
+        entityManager.refresh(client, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(client.getBoutique());
+        return client;
+    }
+
+    /** Verrou en écriture de la fiche d'un fournisseur de la boutique courante, au même rang que celui d'un client. */
+    public Fournisseur verrouillerFournisseur(Long id) {
+        verifierIdentifiant("Fournisseur", id, boutiques.idBoutiqueCourante());
+        Fournisseur fournisseur = entityManager.find(Fournisseur.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (fournisseur == null) throw introuvable("Fournisseur");
+        entityManager.refresh(fournisseur, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(fournisseur.getBoutique());
+        return fournisseur;
     }
 
     private void verifierIdentifiant(String entite, Long id, Long boutiqueId) {

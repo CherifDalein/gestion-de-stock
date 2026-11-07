@@ -472,7 +472,7 @@ class CreationOperationTests {
     void uneErreurMetierConserveLeJetonEtPermetLaCorrectionDuFormulaire(TypeOperationCreation type) throws Exception {
         String jeton = ouvrir(type);
         var invalide = formulaire(type, jeton, type == TypeOperationCreation.VENTE ? 11 : 3);
-        if (type == TypeOperationCreation.ACHAT) invalide.param("montantVerse", "999");
+        if (type == TypeOperationCreation.ACHAT) invalide.param("montantVerse", "-1"); // un trop-payé est désormais admis avec un fournisseur
         mvc.perform(invalide.with(user(EMAIL).roles("ADMIN")).with(csrf()))
                 .andExpect(status().isOk()).andExpect(view().name("dashboard"))
                 .andExpect(model().attributeExists("error"))

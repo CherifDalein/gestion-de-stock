@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
 import org.example.stock.model.Client;
+import org.example.stock.model.Montants;
 import org.example.stock.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,9 @@ public class ClientService {
     @Autowired
     private BoutiqueService boutiqueService;
 
+    @Autowired
+    private SoldeDepartService soldeDepart;
+
     public List<Client> listerTous() {
         return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
@@ -27,11 +31,17 @@ public class ClientService {
     public Client enregistrerClient(Client client) {
         if (client.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         client.setBoutique(boutiqueService.boutiqueCourante());
+        // Le solde enregistré ne vient jamais du navigateur : il est recalculé, pour le gérant seulement.
+        client.setSoldeInitial(Montants.ZERO);
+        client.setEcheanceSoldeInitial(client.isSoldeDepartSoumis() ? client.getEcheanceSoldeInitial() : null);
+        soldeDepart.appliquerALaCreation(client);
         return clientRepository.save(client);
     }
 
     @Transactional
     public Client modifierClient(Long id, Client modifications) {
+        // Un caissier ne peut ni saisir ni modifier le solde de départ ; le gérant le modifie sous le verrou de la fiche.
+        soldeDepart.appliquerALaModification(id, modifications);
         Client client = trouverParId(id);
         client.setNom(modifications.getNom());
         client.setTelephone(modifications.getTelephone());

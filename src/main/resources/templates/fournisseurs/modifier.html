@@ -56,6 +56,8 @@
                 </div>
             </section>
 
+            <div th:replace="~{fragments/solde-depart :: section(${soldeDepartVerrouille}, 'Il me doit (avance versée)', 'Je lui dois')}"></div>
+
             <div class="record-actions">
                 <a th:href="@{/fournisseurs}" class="btn btn-outline-secondary">Annuler</a>
                 <button type="submit" class="btn btn-primary">

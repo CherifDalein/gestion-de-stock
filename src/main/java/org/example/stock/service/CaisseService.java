@@ -3,6 +3,8 @@ package org.example.stock.service;
 import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Client;
+import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.MouvementCaisseRepository;
@@ -166,7 +168,7 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerEntree(montant, motif, source, utilisateur, null, CompteTresorerie.CAISSE);
+        enregistrerEntree(montant, motif, source, utilisateur, null, null, CompteTresorerie.CAISSE);
     }
 
     @Transactional
@@ -176,14 +178,34 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente, compte);
+        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente, null, compte);
+    }
+
+    /** Entrée d'un règlement du solde de départ d'un client : mouvement de trésorerie rattaché au client, sans vente. */
+    @Transactional
+    public void enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerEntree(montant, motif, "SOLDE_CLIENT", utilisateur, null, client, compte);
+    }
+
+    /** Sortie d'un règlement du solde de départ d'un fournisseur : mouvement de trésorerie rattaché au fournisseur, sans achat. */
+    @Transactional
+    public void enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerSortie(montant, motif, "SOLDE_FOURNISSEUR", utilisateur, null, fournisseur, compte);
+    }
+
+    public List<MouvementCaisse> listerReglementsSoldeClient(Long clientId) {
+        return mouvementRepo.findByClientIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(clientId, "SOLDE_CLIENT", boutiqueService.idBoutiqueCourante());
+    }
+
+    public List<MouvementCaisse> listerReglementsSoldeFournisseur(Long fournisseurId) {
+        return mouvementRepo.findByFournisseurIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(fournisseurId, "SOLDE_FOURNISSEUR", boutiqueService.idBoutiqueCourante());
     }
 
     public List<MouvementCaisse> listerReglementsVente(Long venteId) {
         return mouvementRepo.findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(venteId, boutiqueService.idBoutiqueCourante());
     }
 
-    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, CompteTresorerie compte) {
+    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -212,13 +234,14 @@ public class CaisseService {
         mouvement.setSource(source);
         mouvement.setUtilisateur(utilisateur);
         mouvement.setVente(vente);
+        mouvement.setClient(client);
 
         mouvementRepo.save(mouvement);
     }
 
     @Transactional
     public void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerSortie(montant, motif, source, utilisateur, null, CompteTresorerie.CAISSE);
+        enregistrerSortie(montant, motif, source, utilisateur, null, null, CompteTresorerie.CAISSE);
     }
 
     @Transactional
@@ -228,14 +251,14 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat, compte);
+        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat, null, compte);
     }
 
     public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
         return mouvementRepo.findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(achatId, boutiqueService.idBoutiqueCourante());
     }
 
-    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, CompteTresorerie compte) {
+    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -267,6 +290,7 @@ public class CaisseService {
         mouvement.setSource(source);
         mouvement.setUtilisateur(utilisateur);
         mouvement.setAchat(achat);
+        mouvement.setFournisseur(fournisseur);
 
         mouvementRepo.save(mouvement);
     }

@@ -1,5 +1,7 @@
 package org.example.stock.migration;
 
+import org.example.stock.repository.SoldePartenaireRepository;
+import org.example.stock.service.SoldePartenaireService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.validation.Validator;
@@ -385,7 +387,7 @@ public final class CoutMoyenServiceMariaDbTest {
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
     @Import({AchatService.class, VenteService.class, InventaireService.class, ProduitService.class, CoutMoyenService.class,
             CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class,
-            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class})
+            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

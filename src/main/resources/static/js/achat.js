@@ -1,3 +1,27 @@
+// Avance du partenaire choisi : information affichée seulement, le serveur la recalcule sous verrou à l'enregistrement.
+let avanceDisponible = 0n;
+
+function partenaireChoisi() {
+    return Boolean(document.getElementById('fournisseur')?.value);
+}
+
+function definirAvanceDisponible(centimes) {
+    avanceDisponible = centimes;
+    const valeur = document.getElementById('avanceDisponible');
+    if (valeur) valeur.textContent = Montants.afficher(centimes);
+    const bloc = document.getElementById('avanceBloc');
+    if (bloc) bloc.hidden = centimes <= 0n;
+    calculerReste();
+}
+
+function actualiserAvanceUtilisee(utilisee, surplus) {
+    const info = document.getElementById('avanceUtiliseeInfo');
+    if (!info) return;
+    info.textContent = utilisee > 0n ? `Avance utilisée automatiquement : ${Montants.afficher(utilisee)} GNF`
+        : surplus > 0n ? `Trop-payé : ${Montants.afficher(surplus)} GNF deviendront une avance chez le fournisseur.` : '';
+    info.hidden = utilisee <= 0n && surplus <= 0n;
+}
+
 let index = 0;
 
 function ajouterLigne() {
@@ -188,6 +212,9 @@ function actualiserStatutReglement(total, verse) {
     } else if (verse === null || verse < 0n) {
         etat = 'invalide';
         message = 'Saisissez un montant versé positif ou nul avec au maximum deux décimales.';
+    } else if (verse > total && partenaireChoisi()) {
+        etat = 'surplus';
+        message = 'Trop-payé : le surplus devient une avance chez le fournisseur';
     } else if (verse > total) {
         etat = 'depassement';
         message = 'Le montant versé dépasse le total.';
@@ -215,7 +242,12 @@ function calculerReste() {
         document.getElementById('resteAPayer').value = '';
         return;
     }
-    const reste = total - verse;
+    // Avance chez le fournisseur déduite automatiquement ; sur un achat existant, l'avance déjà utilisée est reprise.
+    const dejaUtilisee = Montants.lire(document.getElementById('avanceDejaUtilisee')?.value || '0') ?? 0n;
+    const utilisee = dejaUtilisee > 0n ? dejaUtilisee
+        : partenaireChoisi() ? Montants.avanceUtilisee(total, verse, avanceDisponible) : 0n;
+    const reste = total - verse - utilisee > 0n ? total - verse - utilisee : 0n;
+    actualiserAvanceUtilisee(utilisee, partenaireChoisi() && verse > total ? verse - total : 0n);
 
     const resteInput = document.getElementById('resteAPayer');
     resteInput.value = Montants.formater(reste);

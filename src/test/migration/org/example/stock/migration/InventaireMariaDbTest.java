@@ -1,5 +1,7 @@
 package org.example.stock.migration;
 
+import org.example.stock.repository.SoldePartenaireRepository;
+import org.example.stock.service.SoldePartenaireService;
 import org.example.stock.config.TrialProperties;
 import org.example.stock.enums.Role;
 import org.example.stock.form.*;
@@ -101,6 +103,6 @@ public final class InventaireMariaDbTest {
     private static void exiger(boolean condition,String message){if(!condition)throw new IllegalStateException(message);}
     private static void sql(Connection c,String sql)throws SQLException{try(var s=c.createStatement()){s.execute(sql);}}
     @Configuration(proxyBeanMethods=false) @Profile("inventaire-mariadb-service-test")
-    @Import({InventaireService.class,ProduitService.class,BoutiqueService.class,EssaiBoutiqueService.class,StockLockRepository.class,CaisseService.class,TrialProperties.class,InitialisationBoutiqueService.class,AchatService.class,CoutMoyenService.class,NumerotationFactureService.class,EcheanceService.class})
+    @Import({InventaireService.class,ProduitService.class,BoutiqueService.class,EssaiBoutiqueService.class,StockLockRepository.class,CaisseService.class,TrialProperties.class,InitialisationBoutiqueService.class,AchatService.class,CoutMoyenService.class,NumerotationFactureService.class,EcheanceService.class,SoldePartenaireService.class,SoldePartenaireRepository.class})
     static class Services {}
 }

@@ -44,7 +44,14 @@ public final class Lot1Migration {
             new Champ("client", "solde_initial", "DECIMAL(17,2) DEFAULT 0 NOT NULL", null, DECIMAL, 17, 2, false, "0"),
             new Champ("client", "echeance_solde_initial", "DATE NULL", null, Set.of(Types.DATE), 0, 0, true, null),
             new Champ("fournisseur", "solde_initial", "DECIMAL(17,2) DEFAULT 0 NOT NULL", null, DECIMAL, 17, 2, false, "0"),
-            new Champ("fournisseur", "echeance_solde_initial", "DATE NULL", null, Set.of(Types.DATE), 0, 0, true, null));
+            new Champ("fournisseur", "echeance_solde_initial", "DATE NULL", null, Set.of(Types.DATE), 0, 0, true, null),
+            // Règlements du solde de départ : mouvement de trésorerie rattaché au partenaire.
+            new Champ("mouvement_caisse", "client_id", "BIGINT NULL", null, Set.of(Types.BIGINT), 0, 0, true, null),
+            new Champ("mouvement_caisse", "fournisseur_id", "BIGINT NULL", null, Set.of(Types.BIGINT), 0, 0, true, null));
+    /** Clés étrangères de {@code mouvement_caisse} : colonne, nom de la contrainte, table référencée. */
+    record Cle(String colonne, String nom, String reference) {}
+    static final List<Cle> CLES = List.of(new Cle("client_id", "fk_mouvement_caisse_client", "client"),
+            new Cle("fournisseur_id", "fk_mouvement_caisse_fournisseur", "fournisseur"));
     /** Contraintes uniques (boutique_id, numero) ; les numéros vides restent permis jusqu'à leur génération. */
     static final Map<String, String> UNIQUES = Map.of("vente", "uk_vente_boutique_numero", "achat", "uk_achat_boutique_numero");
     static final Map<String, String> PREFIXES = Map.of("vente", "FV-", "achat", "FA-");
@@ -106,6 +113,7 @@ public final class Lot1Migration {
                 initialiser(c);
                 verifierInitialisation(c);
                 ajouterUniques(c);
+                ajouterCles(c);
                 finaliser(c);
             }
             verifierPresents(c);
@@ -184,6 +192,26 @@ public final class Lot1Migration {
             sql(c, "ALTER TABLE " + table(c, e.getKey()) + " ADD CONSTRAINT " + e.getValue() + " UNIQUE (boutique_id,numero)");
     }
 
+    static void ajouterCles(Connection c) throws SQLException {
+        var presentes = cles(c);
+        for (var cle : CLES) if (!presentes.containsKey(cle.colonne()))
+            sql(c, "ALTER TABLE " + table(c, "mouvement_caisse") + " ADD CONSTRAINT " + cle.nom() + " FOREIGN KEY(" + cle.colonne()
+                    + ") REFERENCES " + table(c, cle.reference()) + "(id)");
+    }
+
+    /** Colonne de {@code mouvement_caisse} -> table référencée, pour ses clés étrangères simples. */
+    static Map<String, String> cles(Connection c) throws SQLException {
+        var resultat = new TreeMap<String, String>();
+        try (var r = c.getMetaData().getImportedKeys(c.getCatalog(), c.getSchema(), BoutiquesMigration.tables(c).get("mouvement_caisse"))) {
+            while (r.next()) resultat.put(r.getString("FKCOLUMN_NAME").toLowerCase(Locale.ROOT), r.getString("PKTABLE_NAME").toLowerCase(Locale.ROOT));
+        }
+        return resultat;
+    }
+
+    private static boolean cleConforme(Connection c, Cle cle) throws SQLException {
+        return cle.reference().equals(cles(c).get(cle.colonne()));
+    }
+
     /** Les compteurs puis, en dernier, le coût moyen deviennent obligatoires : ce dernier DDL clôt l'initialisation. */
     static void finaliser(Connection c) throws SQLException {
         for (var champ : CHAMPS) if (champ.initialise() && !champ.nullable() && champ != MARQUEUR && !finale(c, champ)) modifier(c, champ);
@@ -233,6 +261,11 @@ public final class Lot1Migration {
             s.setString(1, c.getCatalog());
             try (var r = s.executeQuery()) { if (r.next()) nonConforme("la contrainte de numéro doit couvrir la colonne complète"); }
         }
+        for (var cle : CLES) {
+            var presente = cles(c).get(cle.colonne());
+            if (presente != null && !presente.equals(cle.reference())) nonConforme("mouvement_caisse." + cle.colonne() + " doit référencer " + cle.reference());
+            if (termine && presente == null) nonConforme("clé étrangère de mouvement_caisse." + cle.colonne() + " absente alors que l'initialisation est terminée");
+        }
         verifierValeurs(c);
     }
 
@@ -272,6 +305,7 @@ public final class Lot1Migration {
         int manquants = 0;
         for (var champ : CHAMPS) if (!finale(c, champ)) manquants++;
         for (String nom : UNIQUES.keySet()) if (!uniqueNumero(c, nom)) manquants++;
+        for (var cle : CLES) if (!cleConforme(c, cle)) manquants++;
         return manquants;
     }
 

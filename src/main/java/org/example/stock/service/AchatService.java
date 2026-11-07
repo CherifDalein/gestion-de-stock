@@ -2,6 +2,7 @@ package org.example.stock.service;
 
 import org.example.stock.model.Achat;
 import org.example.stock.model.DetailAchat;
+import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Montants;
@@ -37,6 +38,7 @@ public class AchatService {
     @Autowired private CoutMoyenService coutMoyen;
     @Autowired private NumerotationFactureService numerotation;
     @Autowired private EcheanceService echeances;
+    @Autowired private SoldePartenaireService soldes;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
@@ -48,6 +50,8 @@ public class AchatService {
         // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
         String numero = numerotation.attribuerNumeroAchat(achat.getNumero());
         achat.setBoutique(boutiqueService.boutiqueCourante());
+        // Fiche du fournisseur verrouillée ensuite, avant les produits : une avance n'est jamais consommée deux fois.
+        Fournisseur fournisseur = stockLockRepository.verrouillerFournisseur(achat.getFournisseur().getId());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         refuserServices(produits);
@@ -70,7 +74,11 @@ public class AchatService {
         }
 
         achat.setMontantTotal(montantTotalCalcule);
-        achat.setMontantVerse(normaliserMontantVerse(achat.getMontantVerse(), montantTotalCalcule));
+        // Un achat a toujours un fournisseur : le trop-payé est admis, le surplus devient une avance chez lui.
+        BigDecimal verse = normaliserMontantVerse(achat.getMontantVerse(), montantTotalCalcule);
+        achat.setMontantVerse(verse);
+        achat.setAvanceUtilisee(verse.compareTo(montantTotalCalcule) >= 0 ? Montants.ZERO
+                : Montants.valider(soldes.avanceDisponibleVerrouillee(fournisseur).min(montantTotalCalcule.subtract(verse)), "L'avance utilisée"));
         achat.setDateEcheance(echeances.pourCreation(achat.getDateAchat(), achat.getResteAPayer(), achat.getDateEcheance(),
                 achat.getBoutique().getDelaiFournisseursJours()));
         achat.setNumero(numero);
@@ -91,7 +99,14 @@ public class AchatService {
             throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
         }
         initialisation.verrouillerEtClorePourActivite();
+        // Même ordre que la création : la fiche du fournisseur avant le document et les produits.
+        Long fournisseurVerrouilleId = stockLockRepository.idFournisseurDeAchat(id);
+        Fournisseur fournisseurVerrouille = fournisseurVerrouilleId == null ? null : stockLockRepository.verrouillerFournisseur(fournisseurVerrouilleId);
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
+        if (fournisseurVerrouille == null ? ancienAchat.getFournisseur() != null
+                : ancienAchat.getFournisseur() == null || !fournisseurVerrouille.getId().equals(ancienAchat.getFournisseur().getId())) {
+            throw new IllegalStateException("Le fournisseur de cet achat vient de changer. Rechargez la page et réessayez.");
+        }
 
         validerAchat(achatModifie);
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(Stream.concat(
@@ -100,10 +115,13 @@ public class AchatService {
         refuserServices(produits);
 
         BigDecimal montantTotalCalcule = calculerMontantTotal(achatModifie);
-        BigDecimal montantDejaVerse = Montants.ouZero(ancienAchat.getMontantVerse());
+        // Le montant déjà payé comprend l'avance utilisée : le nouveau total ne peut pas descendre en dessous.
+        BigDecimal montantDejaVerse = Montants.ouZero(ancienAchat.getMontantVerse()).add(Montants.ouZero(ancienAchat.getAvanceUtilisee()));
         if (montantTotalCalcule.compareTo(montantDejaVerse) < 0) {
-            throw new IllegalArgumentException("Le total modifié ne peut pas être inférieur au montant déjà payé.");
+            throw new IllegalArgumentException("Le total modifié ne peut pas être inférieur au montant déjà payé"
+                    + (Montants.ouZero(ancienAchat.getAvanceUtilisee()).signum() > 0 ? " (avance utilisée comprise)." : "."));
         }
+        verifierAvanceConservee(ancienAchat, achatModifie, fournisseurVerrouille, montantTotalCalcule);
 
         for (DetailAchat ancienneLigne : ancienAchat.getLignes()) {
             Produit produit = produits.get(ancienneLigne.getProduit().getId());
@@ -167,12 +185,13 @@ public class AchatService {
         Achat achat = stockLockRepository.verrouillerAchat(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(achat.getMontantVerse()), "Le montant déjà versé");
         BigDecimal total = Montants.positifOuNul(achat.getMontantTotal(), "Le total de l'achat");
-        if (total.compareTo(dejaVerse) < 0) {
+        // Un trop-payé à la création est permis (avance chez le fournisseur) ; seule une avance supérieure au total est incohérente.
+        if (Montants.ouZero(achat.getAvanceUtilisee()).compareTo(total) > 0) {
             throw new IllegalArgumentException("Les montants de cet achat sont invalides. Vérifiez la facture.");
         }
         if (montantVerseAttendu.compareTo(dejaVerse) != 0) throw new ReglementAchatObsoleteException();
         BigDecimal nouveauVerse = dejaVerse.add(montant);
-        if (nouveauVerse.compareTo(total) > 0) {
+        if (montant.compareTo(achat.getResteAPayer()) > 0) {
             throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
         }
         achat.setMontantVerse(Montants.valider(nouveauVerse, "Le cumul des versements"));
@@ -186,6 +205,23 @@ public class AchatService {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
         caisseService.enregistrerSortieAchat(montant, motif, achat, actuel, comptePaiement);
+    }
+
+    /**
+     * Un achat qui porte une avance (trop-payé ou avance utilisée) garde son fournisseur, et son trop-payé ne peut disparaître
+     * que si l'avance correspondante n'a pas déjà été utilisée ailleurs.
+     */
+    private void verifierAvanceConservee(Achat ancien, Achat modifie, Fournisseur fournisseur, BigDecimal nouveauTotal) {
+        BigDecimal surplusPerdu = ancien.getSurplus().subtract(Montants.ouZero(ancien.getMontantVerse()).subtract(nouveauTotal).max(Montants.ZERO));
+        boolean porteAvance = ancien.getSurplus().signum() > 0 || Montants.ouZero(ancien.getAvanceUtilisee()).signum() > 0;
+        if (porteAvance && modifie.getFournisseur() != null && fournisseur != null
+                && !modifie.getFournisseur().getId().equals(fournisseur.getId())) {
+            throw new IllegalArgumentException("Cet achat porte une avance (trop-payé ou avance utilisée) : son fournisseur ne peut plus être changé.");
+        }
+        if (surplusPerdu.signum() > 0 && fournisseur != null
+                && soldes.avanceDisponibleVerrouillee(fournisseur).compareTo(surplusPerdu) < 0) {
+            throw new IllegalArgumentException("Le trop-payé de cet achat est déjà en partie utilisé comme avance : le total ne peut pas être augmenté.");
+        }
     }
 
     public List<Achat> listerTous() {
@@ -264,11 +300,6 @@ public class AchatService {
     }
 
     private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {
-        BigDecimal montant = Montants.positifOuNul(Objects.requireNonNullElse(montantVerse, montantTotal), "Le montant versé");
-        if (montant.compareTo(montantTotal) > 0) {
-            throw new RuntimeException("Le montant verse ne peut pas depasser le total de l'achat.");
-        }
-
-        return montant;
+        return Montants.positifOuNul(Objects.requireNonNullElse(montantVerse, montantTotal), "Le montant versé");
     }
 }

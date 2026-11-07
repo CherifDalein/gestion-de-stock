@@ -13,6 +13,11 @@ const Montants = Object.freeze({
         const valeur = centimes < 0n ? -centimes : centimes;
         return `${signe}${valeur / 100n}.${String(valeur % 100n).padStart(2, '0')}`;
     },
+    /** Part du reste couverte par l'avance du partenaire : min(avance, max(0, total − versé)). */
+    avanceUtilisee(total, verse, avance) {
+        const du = total - verse;
+        return du <= 0n ? 0n : (avance < du ? avance : du);
+    },
     afficher(centimes) {
         const [entier, fraction] = this.formater(centimes).split('.');
         return `${entier.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}.${fraction}`;

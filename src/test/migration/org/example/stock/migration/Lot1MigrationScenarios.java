@@ -11,7 +11,8 @@ final class Lot1MigrationScenarios {
             "reprise_finalisation", "relance", "nouvelle_boutique");
     static final List<String> INVALIDES = List.of("nature_longueur", "nature_defaut", "nature_inconnue", "seuil_type", "cout_moyen_echelle",
             "numero_longueur", "numero_sans_unique", "numero_unique_global", "echeance_type", "avance_nullable", "avance_negative",
-            "delai_defaut", "prochain_defaut", "prochain_facultatif_apres_fin", "solde_nullable", "fin_sans_colonne");
+            "delai_defaut", "prochain_defaut", "prochain_facultatif_apres_fin", "solde_nullable", "fin_sans_colonne",
+            "cle_partenaire_absente", "cle_partenaire_mauvaise_cible", "mouvement_partenaire_type");
     /** Identifiants réservés aux lignes créées après la migration par le scénario de relance. */
     private static final long RELANCE_MIN = 70, RELANCE_MAX = 79;
     private Lot1MigrationScenarios() {}
@@ -64,6 +65,8 @@ final class Lot1MigrationScenarios {
                 sql(c, "INSERT INTO produit(id,boutique_id,version,nom,reference,prix_achat,prix_vente,quantite,categorie_id) VALUES(70,1,0,'Produit récent','REC',77.00,90.00,3,1)");
                 sql(c, "INSERT INTO vente(id,boutique_id,date_vente,montant_total,montant_verse,client_id) VALUES(70,1,'2026-02-01 00:00:00.000000',90.00,0,70)");
                 sql(c, "INSERT INTO detail_vente(id,vente_id,produit_id,quantite,prix_unitaire) VALUES(70,70,70,1,90.00)");
+                sql(c, "INSERT INTO mouvement_caisse(id,boutique_id,date_mouvement,montant,type,motif,source,client_id,compte) VALUES"
+                        + "(70,1,'2026-02-02 00:00:00.000000',100.00,'ENTREE','Règlement du solde de départ','SOLDE_CLIENT',70,'CAISSE')");
                 sql(c, "UPDATE boutique SET delai_clients_jours=45,prochain_numero_vente=prochain_numero_vente+1 WHERE id=1");
             }
             case "nature_longueur" -> sql(c, "ALTER TABLE produit " + alter(c) + " nature VARCHAR(15) DEFAULT 'STOCK' NOT NULL");
@@ -81,6 +84,15 @@ final class Lot1MigrationScenarios {
             case "prochain_defaut" -> sql(c, "ALTER TABLE boutique ALTER COLUMN prochain_numero_achat SET DEFAULT 2");
             case "prochain_facultatif_apres_fin" -> sql(c, "ALTER TABLE boutique " + alter(c) + " prochain_numero_vente BIGINT NULL");
             case "solde_nullable" -> sql(c, "ALTER TABLE fournisseur " + alter(c) + " solde_initial DECIMAL(17,2) DEFAULT 0 NULL");
+            case "cle_partenaire_absente" -> supprimerCle(c, "fk_mouvement_caisse_client");
+            case "cle_partenaire_mauvaise_cible" -> {
+                supprimerCle(c, "fk_mouvement_caisse_fournisseur");
+                sql(c, "ALTER TABLE mouvement_caisse ADD CONSTRAINT fk_mouvement_caisse_fournisseur FOREIGN KEY(fournisseur_id) REFERENCES client(id)");
+            }
+            case "mouvement_partenaire_type" -> {
+                supprimerCle(c, "fk_mouvement_caisse_client");
+                sql(c, "ALTER TABLE mouvement_caisse " + alter(c) + " client_id INT NULL");
+            }
             case "fin_sans_colonne" -> { retirerUnique(c, "achat"); sql(c, "ALTER TABLE achat DROP COLUMN numero"); }
             default -> throw new IllegalStateException("Scénario lot 1 inconnu.");
         }
@@ -145,6 +157,9 @@ final class Lot1MigrationScenarios {
         }
         exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE delai_fournisseurs_jours<>30 OR delai_clients_jours<>30"
                 + (scenario.equals("relance") ? " AND id<>1" : "")) == 0, "Délais historiques inattendus");
+        exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE id NOT BETWEEN " + RELANCE_MIN + " AND " + RELANCE_MAX
+                + " AND (client_id IS NOT NULL OR fournisseur_id IS NOT NULL)") == 0, "Mouvement de caisse historique rattaché à un partenaire");
+        exiger(Lot1Migration.cles(c).entrySet().containsAll(Map.of("client_id", "client", "fournisseur_id", "fournisseur").entrySet()), "Clés étrangères des partenaires absentes");
         for (String partenaire : List.of("client", "fournisseur"))
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + partenaire + historique + " AND (solde_initial<>0 OR echeance_solde_initial IS NOT NULL)") == 0, "Solde initial historique inventé");
         if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=1234567") == 1) {
@@ -159,6 +174,8 @@ final class Lot1MigrationScenarios {
         if (scenario.equals("relance")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente v JOIN detail_vente d ON d.vente_id=v.id JOIN produit p ON p.id=d.produit_id"
                 + " JOIN client k ON k.id=v.client_id WHERE v.id=70 AND v.numero IS NULL AND v.date_echeance IS NULL AND d.cout_unitaire IS NULL AND p.cout_moyen=0"
                 + " AND k.solde_initial=-500.25 AND k.echeance_solde_initial='2026-01-15'") == 1, "La relance a réécrit une activité postérieure");
+        if (scenario.equals("relance")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE id=70 AND client_id=70 AND fournisseur_id IS NULL AND montant=100.00") == 1,
+                "La relance a modifié un règlement de solde de départ");
         for (String document : List.of("vente", "achat"))
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + document + " WHERE numero IS NOT NULL") == BoutiquesMigration.compter(c, "SELECT COUNT(DISTINCT numero) FROM " + document),
                     "Numéros migrés en double");
@@ -180,6 +197,10 @@ final class Lot1MigrationScenarios {
         var uniques = new TreeMap<String, Object>();
         for (String nom : List.of("vente", "achat")) uniques.put(nom, new HashSet<>(BoutiquesMigration.indexesUniques(c, nom).values()));
         return List.of(Lot1Migration.photographie(c), Lot1Migration.valeursLot1(c), schemas, uniques);
+    }
+
+    private static void supprimerCle(Connection c, String nom) throws SQLException {
+        sql(c, "ALTER TABLE mouvement_caisse DROP " + (maria(c) ? "FOREIGN KEY " : "CONSTRAINT ") + nom);
     }
 
     private static void retirerUnique(Connection c, String table) throws SQLException {

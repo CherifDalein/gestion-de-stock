@@ -9,7 +9,7 @@
 </head>
 <body class="stock-document">
 <main id="stockDocument" class="document-shell" data-document-type="client-cumule"
-      th:with="periodeDemandee=${param.periode != null and #arrays.length(param.periode) > 0 ? param.periode[0] : ''}, periodeActive=${periodeDemandee == 'jour' or periodeDemandee == 'semaine' or periodeDemandee == 'mois' or periodeDemandee == 'annee' ? periodeDemandee : ''}, periodeLibelle=${periodeActive == 'jour' ? 'Aujourd’hui' : (periodeActive == 'semaine' ? '7 derniers jours' : (periodeActive == 'mois' ? 'Ce mois' : (periodeActive == 'annee' ? 'Cette année' : 'Tout')))}, total=${#aggregates.sum(ventes.![(montantTotal ?: 0)]) ?: 0}, verseTotal=${#aggregates.sum(ventes.![(montantVerse ?: 0)]) ?: 0}, resteTotal=${#aggregates.sum(ventes.![resteAPayer]) ?: 0}">
+      th:with="periodeDemandee=${param.periode != null and #arrays.length(param.periode) > 0 ? param.periode[0] : ''}, periodeActive=${periodeDemandee == 'jour' or periodeDemandee == 'semaine' or periodeDemandee == 'mois' or periodeDemandee == 'annee' ? periodeDemandee : ''}, periodeLibelle=${periodeActive == 'jour' ? 'Aujourd’hui' : (periodeActive == 'semaine' ? '7 derniers jours' : (periodeActive == 'mois' ? 'Ce mois' : (periodeActive == 'annee' ? 'Cette année' : 'Tout')))}, total=${#aggregates.sum(ventes.![(montantTotal ?: 0)]) ?: 0}, verseTotal=${#aggregates.sum(ventes.![(montantVerse ?: 0)]) ?: 0}, avanceTotal=${#aggregates.sum(ventes.![(avanceUtilisee ?: 0)]) ?: 0}, surplusTotal=${#aggregates.sum(ventes.![surplus]) ?: 0}, resteTotal=${#aggregates.sum(ventes.![resteAPayer]) ?: 0}">
     <header class="document-toolbar no-print">
         <div><p class="document-kicker">Documents</p><h1>Relevé cumulé client</h1></div>
         <div class="document-toolbar-actions">
@@ -29,8 +29,8 @@
             <div th:replace="~{fragments/identite-boutique :: identite}"></div>
             <div class="document-heading">
                 <h1 id="documentTitle">Relevé cumulé client</h1>
-                <span class="document-status" th:if="${not #lists.isEmpty(ventes)}" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal > 0 ? 'partiel' : 'a-regler')}"
-                      th:text="${resteTotal <= 0 ? 'Réglée' : (verseTotal > 0 ? 'Partiel' : 'À régler')}"></span>
+                <span class="document-status" th:if="${not #lists.isEmpty(ventes)}" th:attr="data-status=${resteTotal <= 0 ? 'reglee' : (verseTotal + avanceTotal > 0 ? 'partiel' : 'a-regler')}"
+                      th:text="${resteTotal <= 0 ? 'Réglée' : (verseTotal + avanceTotal > 0 ? 'Partiel' : 'À régler')}"></span>
             </div>
         </header>
         <div class="document-identity">
@@ -80,7 +80,23 @@
             <dl>
                 <div class="document-summary-total"><dt>Total des ventes</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(total, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div><dt>Montant versé</dt><dd data-document-amount="verse" th:text="${#numbers.formatDecimal(verseTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${avanceTotal.signum() > 0}"><dt>Avance utilisée</dt><dd data-document-amount="avance" th:text="${#numbers.formatDecimal(avanceTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${surplusTotal.signum() > 0}"><dt>Surplus versé (avance du client)</dt><dd data-document-amount="surplus" th:text="${#numbers.formatDecimal(surplusTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div class="document-summary-rest"><dt>Reste à payer</dt><dd data-document-amount="reste" th:text="${#numbers.formatDecimal(resteTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+            </dl>
+        </section>
+        <section class="document-summary" aria-label="Solde de départ et avance" th:if="${solde != null}">
+            <dl>
+                <div th:if="${solde.soldeDepart.signum() != 0}"><dt>Solde de départ</dt><dd data-document-amount="solde-depart"
+                    th:text="${(solde.soldeDepart.signum() > 0 ? 'Il me doit ' : 'Je lui dois ') + #numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:each="r : ${reglementsSolde}" data-document-row><dt th:text="${'Règlement du solde de départ du ' + #temporals.format(r.dateMouvement, 'dd/MM/yyyy')}"></dt>
+                    <dd data-document-amount="reglement-solde" th:text="${#numbers.formatDecimal(r.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${solde.soldeDepart.signum() != 0}"><dt>Reste du solde de départ</dt><dd data-document-amount="reste-solde-depart"
+                    th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div><dt>Avance disponible</dt><dd data-document-amount="avance-disponible"
+                    th:text="${#numbers.formatDecimal(solde.avanceDisponible, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div class="document-summary-rest"><dt>Solde global (toutes périodes)</dt><dd data-document-amount="solde-net"
+                    th:text="${solde.soldeNet.signum() == 0 ? 'Soldé' : (solde.soldeNet.signum() > 0 ? 'Il me doit ' : 'Je lui dois ') + #numbers.formatDecimal(solde.soldeNet.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
             </dl>
         </section>
         <footer class="document-footer">Montants exprimés en francs guinéens (GNF).</footer>

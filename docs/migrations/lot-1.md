@@ -25,6 +25,7 @@ ces champs.
 | `boutique` | `prochain_numero_vente`, `prochain_numero_achat` | BIGINT NOT NULL DEFAULT 1 | plus grand identifiant de toute la table `vente` (resp. `achat`) + 1, ou 1 si elle est vide |
 | `client`, `fournisseur` | `solde_initial` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 |
 | `client`, `fournisseur` | `echeance_solde_initial` | DATE NULL | vide |
+| `mouvement_caisse` | `client_id`, `fournisseur_id` | BIGINT NULL, clés étrangères nommées `fk_mouvement_caisse_client` et `fk_mouvement_caisse_fournisseur` | vide : aucun mouvement existant n'est rattaché à un partenaire |
 
 Précisions :
 
@@ -42,6 +43,14 @@ Précisions :
   migré. Une boutique créée après la migration démarre à 1.
 - `solde_initial` est signé : positif quand le client ou le fournisseur me doit,
   négatif quand je lui dois ou qu'il m'a versé une avance.
+- `mouvement_caisse.client_id` et `fournisseur_id` ne sont renseignés que par les
+  règlements d'un solde de départ (sources `SOLDE_CLIENT` et `SOLDE_FOURNISSEUR`).
+  La migration ajoute les colonnes et les deux clés étrangères nommées, sans
+  réécrire aucun mouvement ; une clé absente ou pointant vers la mauvaise table,
+  ou une colonne d'un autre type, est signalée (scénarios `cle_partenaire_absente`,
+  `cle_partenaire_mauvaise_cible` et `mouvement_partenaire_type`). Le scénario de
+  relance vérifie qu'un règlement de solde enregistré après la migration n'est pas
+  réécrit.
 - `numero` reste facultatif dans le schéma : plusieurs numéros vides restent
   permis par la contrainte unique. Depuis la livraison des
   [numéros de facture](../lot-1.md#numéros-de-facture-et-échéances), l'application

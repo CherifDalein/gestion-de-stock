@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "inscription"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
         // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
@@ -35,10 +35,12 @@ public class FormBindingAdvice {
             case "vente" -> new String[]{"client", "client.id", "montantVerse", "comptePaiement",
                     "lignes[*].produit.id", "lignes[*].quantite"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement", "dateEcheance"};
+            case "reglementSolde" -> new String[]{"montant", "reglementAttendu", "comptePaiement", "dateEcheance"};
             case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference", "unite", "seuilAlerte",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
-            case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse"};
+            // Solde de départ : un montant positif ou nul, un sens et une échéance. Le solde signé (soldeInitial) n'est jamais lié.
+            case "client", "fournisseur" -> new String[]{"nom", "telephone", "email", "adresse", "montantSoldeDepart", "sensSoldeDepart", "echeanceSoldeInitial"};
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};
             default -> throw new IllegalArgumentException("Formulaire non pris en charge");
         };
@@ -72,6 +74,9 @@ public class FormBindingAdvice {
             if (parametre.equals("comptePaiement") && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul compte de paiement doit être choisi");
             }
+            if (CHAMPS_SOLDE_DEPART.contains(parametre) && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule valeur du solde de départ peut être saisie");
+            }
             if ((parametre.equals("numero") || parametre.equals("dateEcheance")) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul numéro et une seule échéance peuvent être saisis");
             }
@@ -90,6 +95,14 @@ public class FormBindingAdvice {
         binder.registerCustomEditor(Client.class, reference(id -> {
             Client client = new Client(); client.setId(id); return client;
         }));
+    }
+
+    /** Paramètres de la section « solde de départ » des fiches client et fournisseur. */
+    private static final java.util.Set<String> CHAMPS_SOLDE_DEPART = java.util.Set.of("montantSoldeDepart", "sensSoldeDepart", "echeanceSoldeInitial");
+
+    /** Vrai quand la requête contient au moins un champ du solde de départ ; le service refuse alors le caissier (403). */
+    public static boolean soldeDepartSoumis(HttpServletRequest request) {
+        return CHAMPS_SOLDE_DEPART.stream().anyMatch(request.getParameterMap()::containsKey);
     }
 
     private boolean correspond(String champ, String parametre) {

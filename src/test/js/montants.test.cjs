@@ -144,3 +144,15 @@ test('le panier achat affiche l’unité à côté de la quantité, en texte bru
     assert.equal(unite.textContent, '<b>bidon</b>');
     assert.equal(unite.innerHTML, undefined);
 });
+
+test('l’avance utilisée est plafonnée au reste et ne devient jamais négative', () => {
+    const { context } = environnement();
+    const avance = (total, verse, dispo) => vm.runInContext(
+        `Montants.formater(Montants.avanceUtilisee(Montants.lire('${total}'), Montants.lire('${verse}'), Montants.lire('${dispo}')))`, context);
+    assert.equal(avance('50000', '0', '20000'), '20000.00');
+    assert.equal(avance('50000', '40000', '20000'), '10000.00');
+    assert.equal(avance('50000', '50000', '20000'), '0.00');
+    assert.equal(avance('50000', '120000', '20000'), '0.00');
+    assert.equal(avance('0.10', '0', '0.20'), '0.10');
+    assert.equal(avance('100', '0', '0'), '0.00');
+});

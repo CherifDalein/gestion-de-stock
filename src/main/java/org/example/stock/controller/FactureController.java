@@ -2,7 +2,9 @@ package org.example.stock.controller;
 
 import org.example.stock.model.Achat;
 import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.CaisseService;
 import org.example.stock.service.EcheanceService;
+import org.example.stock.service.SoldePartenaireService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.example.stock.model.Client;
@@ -45,6 +47,8 @@ public class FactureController {
     private FournisseurRepository fournisseurRepository;
 
     @Autowired private EcheanceService echeances;
+    @Autowired private SoldePartenaireService soldes;
+    @Autowired private CaisseService caisseService;
 
     /** Jour de référence du badge « En retard » sur les factures, listes et relevés. */
     @ModelAttribute("aujourdHui")
@@ -110,6 +114,9 @@ public class FactureController {
         model.addAttribute("client", client);
         model.addAttribute("clientId", clientId);
         model.addAttribute("ventes", ventes);
+        // Solde de départ, règlements et avance : situation actuelle du client, quelle que soit la période choisie.
+        model.addAttribute("solde", soldes.soldeClient(clientId));
+        model.addAttribute("reglementsSolde", caisseService.listerReglementsSoldeClient(clientId));
         return "factures/template_client_cumule";
     }
 
@@ -145,6 +152,8 @@ public class FactureController {
         model.addAttribute("fournisseur", fournisseur);
         model.addAttribute("fournisseurId", fournisseurId);
         model.addAttribute("achats", achats);
+        model.addAttribute("solde", soldes.soldeFournisseur(fournisseurId));
+        model.addAttribute("reglementsSolde", caisseService.listerReglementsSoldeFournisseur(fournisseurId));
         return "factures/template_fournisseur_cumule";
     }
 

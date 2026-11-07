@@ -223,7 +223,13 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     vente_id BIGINT,
     compte VARCHAR(32) NOT NULL DEFAULT 'CAISSE',
     operation_tresorerie_id BIGINT NULL,
+    client_id BIGINT NULL,
+    fournisseur_id BIGINT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT fk_mouvement_caisse_client
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_mouvement_caisse_fournisseur
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),
     CONSTRAINT fk_mouvement_operation_tresorerie
         FOREIGN KEY (operation_tresorerie_id) REFERENCES operation_tresorerie (id),
     CONSTRAINT fk_mouvement_caisse_boutique

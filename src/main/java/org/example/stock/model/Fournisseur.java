@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import org.example.stock.enums.SensSolde;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -36,7 +38,28 @@ public class Fournisseur {
     @Column(nullable = false, precision = 17, scale = 2)
     private BigDecimal soldeInitial = Montants.ZERO;
 
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate echeanceSoldeInitial;
+
+    /**
+     * Saisie du solde de départ (jamais persistée telle quelle) : un montant positif ou nul et un sens, que le service
+     * convertit en {@code soldeInitial} signé. Le champ signé brut n'est jamais lié depuis un formulaire.
+     */
+    @Transient
+    private BigDecimal montantSoldeDepart;
+
+    @Transient
+    private SensSolde sensSoldeDepart;
+
+    /** Vrai quand le formulaire contenait la section « solde de départ » ; renseigné par le contrôleur, jamais lié. */
+    @Transient
+    private boolean soldeDepartSoumis;
+
+    /** Préremplit la saisie avec le solde enregistré : valeur absolue et sens. */
+    public void preparerSaisieSoldeDepart() {
+        montantSoldeDepart = Montants.ouZero(soldeInitial).abs();
+        sensSoldeDepart = Montants.ouZero(soldeInitial).signum() < 0 ? SensSolde.JE_LUI_DOIS : SensSolde.IL_ME_DOIT;
+    }
 
     @OneToMany(mappedBy = "fournisseur")
     private List<Produit> produits;

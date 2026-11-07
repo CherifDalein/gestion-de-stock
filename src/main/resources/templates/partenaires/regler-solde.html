@@ -1,0 +1,120 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation" th:object="${reglementSolde}"
+         th:with="estClient=${typePartenaire == 'client'}">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker" th:text="${(estClient ? 'Clients' : 'Fournisseurs') + ' · Solde de départ'}"></p>
+                <h1>Règlement du solde de départ de <span th:text="${partenaireNom}"></span></h1>
+                <p class="app-page-subtitle" th:text="${estClient ? 'Enregistrez ce que ce client verse pour régler son solde de départ.' : 'Enregistrez ce que vous payez à ce fournisseur pour régler votre solde de départ.'}"></p>
+            </div>
+            <div class="app-actions">
+                <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour à la liste
+                </a>
+            </div>
+        </header>
+
+        <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
+
+        <div class="operation-form">
+        <div class="operation-layout">
+            <div class="operation-workspace">
+                <section class="operation-panel" aria-labelledby="historyHeading">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="historyHeading">Règlements enregistrés</h2>
+                            <p>Les paiements déjà enregistrés sur ce solde de départ.</p>
+                        </div>
+                        <i class="fa-solid fa-clock-rotate-left operation-panel-icon" aria-hidden="true"></i>
+                    </div>
+                    <p class="operation-note">Le solde de départ n'est pas de l'argent en caisse : seuls ces règlements créent un mouvement de trésorerie.</p>
+                    <div th:if="${#lists.isEmpty(reglements)}" class="operation-empty">
+                        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                        <p>Aucun règlement pour le moment.</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(reglements)}" class="table-responsive">
+                        <table class="table operation-history mb-0">
+                            <thead>
+                            <tr>
+                                <th scope="col">Date</th>
+                                <th scope="col" class="text-end">Montant</th>
+                                <th scope="col">Compte</th>
+                                <th scope="col">Enregistré par</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="r : ${reglements}">
+                                <td th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatDecimal(r.montant.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-nowrap" th:text="${r.compte.libelle}"></td>
+                                <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="operation-summary operation-panel" aria-labelledby="paymentHeading">
+                <div class="operation-panel-header">
+                    <div>
+                        <h2 id="paymentHeading">Règlement</h2>
+                        <p>Le reste du solde de départ.</p>
+                    </div>
+                    <i class="fa-solid fa-wallet operation-panel-icon" aria-hidden="true"></i>
+                </div>
+                <div class="operation-summary-total">
+                    <span>Reste du solde de départ</span>
+                    <strong class="operation-total-value" th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong>
+                </div>
+                <dl class="operation-summary-lines">
+                    <div>
+                        <dt>Solde de départ</dt>
+                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Déjà réglé</dt>
+                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepartRegle, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Échéance</dt>
+                        <dd th:text="${solde.echeanceSoldeDepart != null ? #temporals.format(solde.echeanceSoldeDepart, 'dd/MM/yyyy') : 'Aucune'}"></dd>
+                    </div>
+                </dl>
+
+                <form th:if="${solde.resteSoldeDepart > 0 or #fields.hasErrors('*')}"
+                      th:action="@{${actionUrl}}" th:object="${reglementSolde}" method="post" id="formReglementSolde">
+                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                        <ul class="mb-2"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
+                        <a th:href="@{${actionUrl}}">Recharger et vérifier les règlements</a>
+                    </div>
+                    <input type="hidden" th:field="*{reglementAttendu}" />
+                    <div class="operation-field mb-3">
+                        <label for="comptePaiement" class="form-label">Compte de trésorerie</label>
+                        <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
+                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                        </select>
+                        <p id="comptePaiementAide" class="operation-field-help" th:text="${estClient ? 'La somme reçue est ajoutée à ce compte.' : 'La somme payée est retirée de ce compte.'}"></p>
+                    </div>
+                    <label for="montantReglement" class="form-label fw-semibold" th:text="${estClient ? 'Somme reçue maintenant (GNF)' : 'Somme payée maintenant (GNF)'}"></label>
+                    <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
+                           th:max="${solde.resteSoldeDepart}" class="form-control form-control-lg"
+                           th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'"
+                           th:attr="aria-invalid=${#fields.hasErrors('montant')}"
+                           aria-describedby="montantReglementHelp" inputmode="decimal" required />
+                    <p id="montantReglementHelp" class="operation-note">Saisissez uniquement ce nouveau règlement. Il ne peut pas dépasser le reste du solde de départ.</p>
+                    <div class="operation-field mb-3">
+                        <label for="dateEcheanceReglement" class="form-label">Échéance du reste</label>
+                        <input id="dateEcheanceReglement" type="date" th:field="*{dateEcheance}" class="form-control" />
+                    </div>
+                </form>
+                <p th:if="${solde.resteSoldeDepart == 0}" class="alert alert-success mb-0" role="status">Ce solde de départ est entièrement réglé ou n'a rien à régler.</p>
+            </aside>
+        </div>
+            <div th:if="${solde.resteSoldeDepart > 0 or #fields.hasErrors('*')}" class="operation-actions">
+                <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" form="formReglementSolde" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le règlement</button>
+            </div>
+        </div>
+    </div>
+</div>
