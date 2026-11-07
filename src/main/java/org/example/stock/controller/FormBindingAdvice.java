@@ -63,6 +63,12 @@ public class FormBindingAdvice {
                     : creationService ? Stream.of("nature", "prixVente", "coutMoyen") : Stream.of("nature");
             champs = Stream.concat(Stream.of(champs), ajouts).toArray(String[]::new);
         }
+        // La confirmation du changement de solde n'existe qu'à la modification d'une fiche client ou fournisseur.
+        boolean modificationPartenaire = (binder.getObjectName().equals("client")
+                && request.getRequestURI().startsWith(request.getContextPath() + "/clients/modifier/"))
+                || (binder.getObjectName().equals("fournisseur")
+                && request.getRequestURI().startsWith(request.getContextPath() + "/fournisseurs/modifier/"));
+        if (modificationPartenaire) champs = Stream.concat(Stream.of(champs), Stream.of("confirmationSoldeDepart")).toArray(String[]::new);
         boolean creation = (binder.getObjectName().equals("achat")
                 && request.getRequestURI().equals(request.getContextPath() + "/achats/enregistrer"))
                 || (binder.getObjectName().equals("vente")
@@ -76,6 +82,9 @@ public class FormBindingAdvice {
             }
             if (CHAMPS_SOLDE_DEPART.contains(parametre) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule valeur du solde de départ peut être saisie");
+            }
+            if (parametre.equals("confirmationSoldeDepart") && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule confirmation du solde de départ peut être envoyée");
             }
             if ((parametre.equals("numero") || parametre.equals("dateEcheance")) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul numéro et une seule échéance peuvent être saisis");

@@ -64,7 +64,7 @@ public class ClientController {
         Client client = clientService.trouverParId(id);
         client.preparerSaisieSoldeDepart();
         model.addAttribute("client", client);
-        model.addAttribute("soldeDepartVerrouille", !soldes.soldeClient(id).soldeDepartModifiable());
+        model.addAttribute("soldeDepartSituation", soldes.soldeClient(id));
         model.addAttribute("view", "clients/modifier");
         return "dashboard";
     }
@@ -79,7 +79,7 @@ public class ClientController {
         } catch (IllegalArgumentException | IncoherenceAvanceException e) {
             result.reject("solde.invalide", e.getMessage());
             client.setId(id);
-            model.addAttribute("soldeDepartVerrouille", !soldes.soldeClient(id).soldeDepartModifiable());
+            model.addAttribute("soldeDepartSituation", soldes.soldeClient(id));
             model.addAttribute("view", "clients/modifier");
             return "dashboard";
         }

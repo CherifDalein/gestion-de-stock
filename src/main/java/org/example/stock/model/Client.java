@@ -52,6 +52,10 @@ public class Client {
     @Transient
     private boolean soldeDepartSoumis;
 
+    /** Case « Je confirme le nouveau solde de départ » de la modification d'une fiche ; lie uniquement le champ du formulaire. */
+    @Transient
+    private boolean confirmationSoldeDepart;
+
     /** Préremplit la saisie avec le solde enregistré : valeur absolue et sens. */
     public void preparerSaisieSoldeDepart() {
         montantSoldeDepart = Montants.ouZero(soldeInitial).abs();

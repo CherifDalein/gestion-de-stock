@@ -117,6 +117,16 @@ public class SoldePartenaireRepository {
         return new Factures(surplus, utilisee, BigDecimal.ZERO);
     }
 
+    /**
+     * Vrai si une facture de ce partenaire dans cette boutique (vente d'un client, achat d'un fournisseur) a consommé de
+     * l'avance ({@code avance_utilisee > 0}). Lecture verrouillée, à n'utiliser qu'après le verrou de la fiche.
+     */
+    public boolean avanceUtiliseeVerrouillee(Partenaire type, Long boutiqueId, Long partenaireId) {
+        return !entityManager.createNativeQuery("SELECT id FROM " + type.factures + " WHERE boutique_id = :boutique AND " + type.colonne
+                        + " = :partenaire AND COALESCE(avance_utilisee,0) > 0 FOR UPDATE")
+                .setParameter("boutique", boutiqueId).setParameter("partenaire", partenaireId).getResultList().isEmpty();
+    }
+
     /** Lecture verrouillée des règlements du solde de départ d'un partenaire. */
     public BigDecimal reglementsVerrouilles(Partenaire type, Long boutiqueId, Long partenaireId) {
         List<?> lignes = entityManager.createNativeQuery("SELECT montant FROM mouvement_caisse WHERE boutique_id = :boutique AND source = :source AND "

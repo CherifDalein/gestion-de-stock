@@ -215,6 +215,12 @@ public class SoldePartenaireService {
         return soldes.reglementsVerrouilles(type, boutiques.idBoutiqueCourante(), partenaireId);
     }
 
+    /** Une facture de ce partenaire a-t-elle consommé de l'avance ? Relu sous verrou, fiche déjà verrouillée. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public boolean avanceUtiliseeVerrouillee(Partenaire type, Long partenaireId) {
+        return soldes.avanceUtiliseeVerrouillee(type, boutiques.idBoutiqueCourante(), partenaireId);
+    }
+
     /** Avance disponible, ou {@link IncoherenceAvanceException} si le calcul donne une valeur négative. */
     private static BigDecimal avance(BigDecimal partieSolde, Factures factures) {
         BigDecimal avance = avanceBrute(partieSolde, factures);
@@ -240,7 +246,7 @@ public class SoldePartenaireService {
         BigDecimal avance = avance(client ? soldeInitial.negate() : soldeInitial, factures);
         BigDecimal creances = reste.add(factures.reste());
         BigDecimal net = client ? creances.subtract(avance) : avance.subtract(creances);
-        return new SoldePartenaire(soldeInitial, regle, reste, reste.signum() > 0 ? echeance : null, factures.reste(), avance, net);
+        return new SoldePartenaire(soldeInitial, regle, reste, reste.signum() > 0 ? echeance : null, factures.reste(), avance, net, factures.avanceUtilisee());
     }
 
     private static ResponseStatusException introuvable(String libelle) {

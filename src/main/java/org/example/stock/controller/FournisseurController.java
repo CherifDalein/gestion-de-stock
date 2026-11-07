@@ -72,7 +72,7 @@ public class FournisseurController {
         Fournisseur fournisseur = fournisseurService.trouverParId(id);
         fournisseur.preparerSaisieSoldeDepart();
         model.addAttribute("fournisseur", fournisseur);
-        model.addAttribute("soldeDepartVerrouille", !soldes.soldeFournisseur(id).soldeDepartModifiable());
+        model.addAttribute("soldeDepartSituation", soldes.soldeFournisseur(id));
         model.addAttribute("view", "fournisseurs/modifier");
         return "dashboard";
     }
@@ -87,7 +87,7 @@ public class FournisseurController {
         } catch (IllegalArgumentException | IncoherenceAvanceException e) {
             result.reject("solde.invalide", e.getMessage());
             fournisseur.setId(id);
-            model.addAttribute("soldeDepartVerrouille", !soldes.soldeFournisseur(id).soldeDepartModifiable());
+            model.addAttribute("soldeDepartSituation", soldes.soldeFournisseur(id));
             model.addAttribute("view", "fournisseurs/modifier");
             return "dashboard";
         }
