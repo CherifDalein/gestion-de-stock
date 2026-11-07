@@ -33,12 +33,14 @@ public class InventaireService {
     private final Validator validator;
     private final Clock clock;
     private final InitialisationBoutiqueService initialisation;
+    private final CoutMoyenService coutMoyen;
     public InventaireService(ProduitService produits, BoutiqueService boutiques, UtilisateurRepository utilisateurs,
                             StockLockRepository verrous, MouvementStockRepository mouvements, EntityManager em,
-                            Validator validator, @Qualifier("recoveryClock") Clock clock, InitialisationBoutiqueService initialisation) {
+                            Validator validator, @Qualifier("recoveryClock") Clock clock, InitialisationBoutiqueService initialisation,
+                            CoutMoyenService coutMoyen) {
         this.produits=produits; this.boutiques=boutiques; this.utilisateurs=utilisateurs; this.verrous=verrous;
         this.mouvements=mouvements; this.em=em; this.validator=validator; this.clock=clock;
-        this.initialisation=initialisation;
+        this.initialisation=initialisation; this.coutMoyen=coutMoyen;
     }
     public record VueInventaire(Produit produit, boolean initialAutorise, List<MouvementStock> historique,
                                 int page, boolean pagePrecedente, boolean pageSuivante) {}
@@ -59,6 +61,7 @@ public class InventaireService {
         var cout=Montants.positifOuNul(formulaire.getCoutUnitaire(),"Le coût unitaire");
         var prixVente=Montants.positifOuNul(formulaire.getPrixVente(),"Le prix de vente");
         produit.setPrixAchat(cout); produit.setPrixVente(prixVente); produit.setPrixDefinis(true);
+        coutMoyen.enregistrerEntree(produit,formulaire.getQuantite(),cout);
         ajouter(produit,acteur,TypeMouvementStock.INITIAL,formulaire.getQuantite(),cout,prixVente,formulaire.getMotif());
     }
     @Transactional
