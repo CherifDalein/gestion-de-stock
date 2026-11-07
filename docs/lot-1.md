@@ -332,3 +332,101 @@ les délais des paramètres et le refus du champ `numero` hors création. Le
 scénario MariaDB vérifie avec les vrais verrous InnoDB qu'une seconde vente
 attend le compteur puis prend le numéro suivant, qu'un rollback ne consomme pas
 de numéro et qu'un numéro manuel en double est refusé.
+
+## Tableau de bord
+
+La page d'accueil connectée (`/`) présente l'activité de la boutique du compte
+connecté. La boutique vient toujours du compte, jamais d'un paramètre du
+navigateur. Tous les chiffres sont calculés par le serveur
+(`TableauDeBordService`), en décimal exact, par des requêtes agrégées
+(`TableauDeBordRepository` : `SUM`, `COUNT`, `GROUP BY`) ; aucune liste de
+ventes n'est chargée pour les calculer.
+
+### Périodes
+
+- **Aujourd'hui** est la date locale du serveur (`LocalDate.now()`), la même
+  convention que la caisse et le tableau de bord existant : les ventes, achats
+  et opérations de trésorerie sont datés à l'heure du serveur.
+- Toutes les périodes sont **semi-ouvertes** : `[début, fin)`. Le jour va de
+  minuit inclus au minuit suivant exclu ; le mois du 1er à 0 h inclus au 1er
+  du mois suivant exclu ; l'année du 1er janvier inclus au 1er janvier suivant
+  exclu. Une vente à 23 h 59 min 59 s le 31 janvier compte en janvier, une vente
+  à minuit le 1er février compte en février.
+- L'évolution mensuelle regroupe les ventes et les dépenses de l'année par
+  mois de leur date (`EXTRACT(MONTH …)`), à l'intérieur des bornes de l'année.
+  Les tests vérifient sur MariaDB que ce regroupement redonne exactement les
+  chiffres calculés avec les bornes de chaque mois.
+
+### Indicateurs
+
+| Indicateur | Définition |
+|---|---|
+| Chiffre d'affaires | Σ `vente.montant_total` des ventes de la période, réglées ou non. |
+| Bénéfice brut | Σ (`prix_unitaire` − `cout_unitaire`) × `quantite` des lignes de vente de la période, services compris (leur coût fixe est figé à la vente). |
+| Dépenses | Σ `operation_tresorerie.montant` des opérations de type `DEPENSE` de la période (loyer, transport, frais…). Les achats et leurs règlements ne sont **pas** des dépenses : le coût des marchandises entre dans le bénéfice brut au moment de la vente. Les transferts entre comptes ne sont pas des dépenses. |
+| Bénéfice net | Bénéfice brut − dépenses. |
+| Valeur du stock | Σ `quantite` × `cout_moyen` des fiches de nature `STOCK`, avec leur nombre. Les services sont exclus. |
+| Produits à surveiller | Articles en stock en rupture (quantité 0) ou au seuil (0 < quantité ≤ seuil), selon la même règle que `Produit.etatStock()`. Les ruptures d'abord, puis les plus petites quantités ; 10 au plus, avec le nombre total et un lien vers le catalogue filtré (`/produits?stock=a-surveiller`). Les services ne sont jamais à surveiller. |
+| Évolution mensuelle | Pour chaque mois de l'année choisie : ventes (chiffre d'affaires), bénéfice brut, dépenses et résultat (bénéfice brut − dépenses), avec le total de l'année. |
+
+Les quatre premiers indicateurs sont donnés pour le jour et pour le mois en
+cours. L'évolution est affichée en tableau et en graphique en barres dessiné
+en HTML/CSS par le serveur, sans bibliothèque : ventes et résultat au-dessus de
+l'axe, perte en dessous. Le tableau reste la version accessible du graphique.
+
+### Lignes sans coût connu
+
+Une ligne de vente dont `cout_unitaire` est vide compte son coût à **0** dans
+le bénéfice brut. Le nombre de ces lignes est affiché discrètement sous le
+bénéfice brut de la période (« 1 ligne de vente sans coût connu, comptée à
+0 »), pour que le gérant sache que la marge est surestimée d'autant. Les
+ventes migrées ont normalement reçu un coût approché (voir « Ventes
+antérieures au lot 1 »).
+
+### Année affichée
+
+Le paramètre `annee` choisit l'année de l'évolution ; le sélecteur ‹ année ›
+passe à l'année précédente ou suivante. Il est validé par le serveur : quatre
+chiffres, de 2000 à l'année en cours. Une valeur absente affiche l'année en
+cours ; une valeur invalide (texte, année future, avant 2000, valeurs
+multiples) affiche aussi l'année en cours avec un avertissement, sans erreur.
+Une année sans données affiche douze mois à zéro et aucun graphique.
+
+### Droits
+
+| Bloc | Gérant (ADMIN) | Caissier (CAISSIER) |
+|---|---|---|
+| Soldes et mouvements de trésorerie du jour (existant) | oui | non |
+| Chiffre d'affaires du jour | oui | oui |
+| Encaissé sur les ventes du jour | oui (carte « Ventes du jour · réglé ») | oui |
+| Produits à surveiller | oui | oui (sans prix ni coût) |
+| Bénéfices, dépenses, chiffres du mois | oui | non |
+| Valeur du stock | oui | non |
+| Évolution mensuelle | oui | non ; `annee` est ignoré |
+
+Pour un caissier, les indicateurs réservés ne sont **pas calculés** et ne sont
+pas placés dans le modèle (`indicateursJour`, `indicateursMois`,
+`valeurStock`, `evolution`) : ils ne sont pas seulement masqués par le gabarit.
+La liste des produits à surveiller n'expose que le nom, la référence, la
+quantité, l'unité, le seuil et l'état.
+
+La seconde partie du tableau de bord (créances et dettes en retard) dispose
+d'un emplacement réservé dans `templates/fragments/tableau-de-bord.html` ; il
+n'affiche rien tant que cette partie n'est pas livrée.
+
+### Vérifications
+
+```sh
+./gradlew test --tests '*TableauDeBordTests'
+./gradlew tableauDeBordMariaDbTest
+```
+
+Les tests H2 comparent chaque chiffre à un calcul fait à la main sur un jeu de
+données fixe (ventes à coûts figés, une ligne sans coût, un service, dépenses,
+achats et transferts qui ne comptent pas, opérations hors période et d'une
+autre boutique), et vérifient la valeur du stock, les produits à surveiller,
+l'évolution d'une année avec et sans données, les années invalides, le modèle
+et la page du caissier, et l'isolation des boutiques. Le test MariaDB crée puis
+supprime uniquement un schéma temporaire `stock_tableau_de_bord_test_*` ; la
+variable `TABLEAU_DE_BORD_TEST_DB_URL=jdbc:mariadb://127.0.0.1:13306/` peut
+sélectionner un serveur local isolé.
