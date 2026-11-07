@@ -40,7 +40,7 @@
         const boutonsStock = Array.from(page.querySelectorAll('[data-stock-filter]'));
         const boutonsTri = Array.from(page.querySelectorAll('[data-sort]'));
         const trisAutorises = new Set(['reference', 'nom', 'categorie', 'prixAchat', 'prixVente', 'quantite']);
-        const stocksAutorises = new Set(['', 'en-stock', 'disponible', 'faible', 'rupture', 'service']);
+        const stocksAutorises = new Set(['', 'en-stock', 'disponible', 'faible', 'rupture', 'a-surveiller', 'service']);
         const taillesAutorisees = new Set(['10', '25', '50', 'all']);
         const tailleInitiale = taillesAutorisees.has(taillePage?.value) ? taillePage.value : '25';
         const donnees = lignes.map((ligne, ordre) => {
@@ -105,7 +105,9 @@
                 && (!categorieChoisie || produit.categorieId === categorieChoisie)
                 && (!stockChoisi || (stockChoisi === 'en-stock'
                     ? produit.etat !== 'service' && produit.quantite !== null && produit.quantite > 0n
-                    : produit.etat === stockChoisi)))
+                    : stockChoisi === 'a-surveiller'
+                        ? produit.etat === 'rupture' || produit.etat === 'faible'
+                        : produit.etat === stockChoisi)))
                 .sort(comparer);
             const taille = tailleChoisie === 'all' ? Math.max(filtres.length, 1) : Number(tailleChoisie);
             nombrePages = Math.max(1, Math.ceil(filtres.length / taille));
@@ -138,6 +140,9 @@
         }
 
         const filtrer = () => { numeroPage = 1; afficher(); };
+        // Filtre initial transmis par un lien (ex. « Produits à surveiller » du tableau de bord).
+        const stockDemande = new URLSearchParams(window.location.search).get('stock');
+        if (stock && stockDemande !== null && stocksAutorises.has(stockDemande)) stock.value = stockDemande;
         recherche?.addEventListener('input', filtrer);
         categorie?.addEventListener('change', filtrer);
         stock?.addEventListener('change', filtrer);
