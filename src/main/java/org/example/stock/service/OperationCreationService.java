@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HexFormat;
 import java.util.UUID;
 
@@ -196,6 +197,17 @@ public class OperationCreationService {
                 if (compte != CompteTresorerie.CAISSE) {
                     out.writeUTF("COMPTE_PAIEMENT");
                     out.writeUTF(compte == null ? "" : compte.name());
+                }
+                // Champs facultatifs ajoutés ensuite : absents, ils conservent l'empreinte des formulaires antérieurs.
+                String numero = NumerotationFactureService.normaliser(achat != null ? achat.getNumero() : vente.getNumero());
+                if (numero != null) {
+                    out.writeUTF("NUMERO");
+                    out.writeUTF(numero);
+                }
+                LocalDate echeance = achat != null ? achat.getDateEcheance() : vente.getDateEcheance();
+                if (echeance != null) {
+                    out.writeUTF("ECHEANCE");
+                    out.writeUTF(echeance.toString());
                 }
             }
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.toByteArray()));

@@ -4,10 +4,12 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import org.springframework.format.annotation.DateTimeFormat;
 import lombok.Setter;
 import org.example.stock.enums.CompteTresorerie;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -23,4 +25,8 @@ public class ReglementAchatForm {
     @NotNull(message = "Rechargez le formulaire de règlement")
     @DecimalMin(value = "0", message = "Le montant déjà versé est invalide")
     private BigDecimal montantVerseAttendu;
+
+    /** Échéance du reste à payer ; appliquée seulement s'il reste un montant dû. */
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate dateEcheance;
 }

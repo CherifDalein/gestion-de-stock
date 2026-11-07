@@ -49,6 +49,8 @@ public class ParametresBoutiqueService {
         formulaire.setTelephone(boutique.getTelephone());
         formulaire.setTelephoneSecondaire(boutique.getTelephoneSecondaire());
         formulaire.setEmail(boutique.getEmail());
+        formulaire.setDelaiClientsJours(boutique.getDelaiClientsJours());
+        formulaire.setDelaiFournisseursJours(boutique.getDelaiFournisseursJours());
         return formulaire;
     }
 
@@ -56,7 +58,7 @@ public class ParametresBoutiqueService {
     public void modifierPourBoutiqueCourante(ParametresBoutiqueForm formulaire) {
         Utilisateur gerant = exigerGerant();
         if (formulaire == null || !validator.validate(formulaire).isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Les coordonnées de la boutique sont invalides");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Les coordonnées ou les délais de la boutique sont invalides");
         }
         if (formulaire.isSupprimerLogo() && formulaire.getLogo() != null && !formulaire.getLogo().isEmpty()) {
             throw new LogoBoutiqueInvalideException("Choisissez de remplacer le logo ou de le retirer, pas les deux à la fois.");
@@ -83,6 +85,8 @@ public class ParametresBoutiqueService {
         boutique.setTelephone(formulaire.getTelephone());
         boutique.setTelephoneSecondaire(formulaire.getTelephoneSecondaire());
         boutique.setEmail(formulaire.getEmail());
+        if (formulaire.getDelaiClientsJours() != null) boutique.setDelaiClientsJours(formulaire.getDelaiClientsJours());
+        if (formulaire.getDelaiFournisseursJours() != null) boutique.setDelaiFournisseursJours(formulaire.getDelaiFournisseursJours());
         if (nouveauLogo != null || formulaire.isSupprimerLogo()) {
             // Lecture courante après le verrou boutique : écarter le snapshot d'un existsById antérieur.
             LogoBoutique logo = entityManager.createQuery("select l from LogoBoutique l where l.boutiqueId = :id", LogoBoutique.class)

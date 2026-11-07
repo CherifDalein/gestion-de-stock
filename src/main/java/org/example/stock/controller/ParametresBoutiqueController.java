@@ -38,7 +38,8 @@ public class ParametresBoutiqueController {
     @InitBinder("parametresBoutique")
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
-        Set<String> autorises = Set.of("nom", "adresse", "telephone", "telephoneSecondaire", "email", "logo", "supprimerLogo", "_supprimerLogo", "_csrf");
+        Set<String> autorises = Set.of("nom", "adresse", "telephone", "telephoneSecondaire", "email", "logo", "supprimerLogo", "_supprimerLogo",
+                "delaiClientsJours", "delaiFournisseursJours", "_csrf");
         if (request.getMethod().equals("POST")) {
             for (String parametre : request.getParameterMap().keySet()) {
                 if (!autorises.contains(parametre) || request.getParameterValues(parametre).length != 1

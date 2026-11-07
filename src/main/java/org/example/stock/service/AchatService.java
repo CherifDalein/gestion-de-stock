@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.List;
@@ -34,13 +35,18 @@ public class AchatService {
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private CoutMoyenService coutMoyen;
+    @Autowired private NumerotationFactureService numerotation;
+    @Autowired private EcheanceService echeances;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
         if (achat.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le paiement.");
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         validerAchat(achat);
+        achat.setNumero(NumerotationFactureService.validerSaisie(achat.getNumero()));
         initialisation.verrouillerEtClorePourActivite();
+        // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
+        String numero = numerotation.attribuerNumeroAchat(achat.getNumero());
         achat.setBoutique(boutiqueService.boutiqueCourante());
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(achat.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
@@ -65,6 +71,9 @@ public class AchatService {
 
         achat.setMontantTotal(montantTotalCalcule);
         achat.setMontantVerse(normaliserMontantVerse(achat.getMontantVerse(), montantTotalCalcule));
+        achat.setDateEcheance(echeances.pourCreation(achat.getDateAchat(), achat.getResteAPayer(), achat.getDateEcheance(),
+                achat.getBoutique().getDelaiFournisseursJours()));
+        achat.setNumero(numero);
         Achat achatEnregistre = achatRepository.save(achat);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -110,6 +119,9 @@ public class AchatService {
 
         ancienAchat.setFournisseur(achatModifie.getFournisseur());
         ancienAchat.setMontantTotal(montantTotalCalcule);
+        // Le numéro ne change jamais ; l'échéance suit le nouveau reste à payer.
+        ancienAchat.setDateEcheance(echeances.apresChangement(ancienAchat.getDateAchat(), ancienAchat.getResteAPayer(),
+                achatModifie.getDateEcheance(), ancienAchat.getDateEcheance(), boutiqueService.boutiqueCourante().getDelaiFournisseursJours()));
 
         ancienAchat.getLignes().clear();
         for (DetailAchat nouvelleLigne : achatModifie.getLignes()) {
@@ -136,6 +148,13 @@ public class AchatService {
 
     @Transactional
     public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        reglerAchat(id, montant, montantVerseAttendu, comptePaiement, null);
+    }
+
+    /** Le versement peut aussi reporter l'échéance du reste ; un achat soldé garde son échéance en historique. */
+    @Transactional
+    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+                            LocalDate nouvelleEcheance) {
         if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) {
@@ -157,6 +176,10 @@ public class AchatService {
             throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
         }
         achat.setMontantVerse(Montants.valider(nouveauVerse, "Le cumul des versements"));
+        if (nouvelleEcheance != null && achat.getResteAPayer().signum() > 0) {
+            EcheanceService.exigerValide(nouvelleEcheance, achat.getDateAchat());
+            achat.setDateEcheance(nouvelleEcheance);
+        }
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
@@ -167,6 +190,23 @@ public class AchatService {
 
     public List<Achat> listerTous() {
         return achatRepository.findByBoutiqueIdOrderByDateAchatDesc(boutiqueService.idBoutiqueCourante());
+    }
+
+    /** Achats échus non soldés : reste à payer et échéance antérieure au jour. */
+    public List<Achat> listerEchusNonSoldes() {
+        return achatRepository.findEchusNonSoldes(boutiqueService.idBoutiqueCourante(), echeances.aujourdHui());
+    }
+
+    /** Change seulement l'échéance d'un achat qui a encore un reste à payer. */
+    @Transactional
+    public void modifierEcheance(Long id, LocalDate echeance) {
+        if (echeance == null) throw new IllegalArgumentException("Choisissez la nouvelle échéance.");
+        Achat achat = stockLockRepository.verrouillerAchat(id);
+        if (achat.getResteAPayer().signum() <= 0) {
+            throw new IllegalArgumentException("Cet achat est soldé : son échéance n'est plus modifiable.");
+        }
+        EcheanceService.exigerValide(echeance, achat.getDateAchat());
+        achat.setDateEcheance(echeance);
     }
 
     public Achat trouverParId(Long id) {

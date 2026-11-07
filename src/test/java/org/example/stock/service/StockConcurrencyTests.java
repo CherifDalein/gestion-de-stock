@@ -155,14 +155,17 @@ class StockConcurrencyTests {
         assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("310.0");
     }
 
+    /** Depuis les numéros de facture, deux créations d'une même boutique attendent le compteur l'une de l'autre. */
     @Test
-    void apresLeDemarrageDeuxVentesDeProduitsDistinctsNeSeBloquentPas() throws Exception {
+    void apresLeDemarrageDeuxVentesDeProduitsDistinctsAttendentLeNumeroDeFacture() throws Exception {
         authentifie(() -> { initialisation.terminer(); return null; });
         assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isTrue();
         Produit second = creerProduit(produit.getCategorie(), "SECOND", 10L);
         Vente venteSecond = new Vente(); venteSecond.getLignes().add(ligneVente(second.getId(), 4));
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(3)),
-                () -> venteService.effectuerVente(venteSecond), false, false)).isNull();
+                () -> venteService.effectuerVente(venteSecond), false, true)).isNull();
+        assertThat(ventes.findAll().stream().map(Vente::getNumero).sorted().toList())
+                .containsExactly("FV-000001", "FV-000002");
         assertThat(stock()).isEqualTo(7L);
         assertThat(produits.findById(second.getId()).orElseThrow().getQuantite()).isEqualTo(6L);
         assertThat(ventes.count()).isEqualTo(2);

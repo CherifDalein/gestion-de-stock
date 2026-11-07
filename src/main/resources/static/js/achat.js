@@ -226,6 +226,16 @@ function calculerReste() {
     } else {
         resteInput.classList.remove('text-danger');
     }
+    actualiserEcheance(reste > 0n);
+}
+
+// L'échéance n'est envoyée que s'il reste à payer : un champ désactivé n'est pas soumis.
+function actualiserEcheance(resteDu) {
+    const bloc = document.getElementById('echeanceBloc');
+    const champ = document.getElementById('dateEcheance');
+    if (!bloc || !champ) return;
+    bloc.hidden = !resteDu;
+    champ.disabled = !resteDu;
 }
 
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,12 +1,14 @@
 package org.example.stock.form;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import org.springframework.web.multipart.MultipartFile;
 
-/** Coordonnées publiques de la boutique, sans identifiant ni propriétés d'accès. */
+/** Coordonnées publiques et délais de paiement de la boutique, sans identifiant ni propriétés d'accès. */
 @Getter
 public class ParametresBoutiqueForm {
     @NotBlank(message = "Le nom de la boutique est obligatoire")
@@ -29,6 +31,18 @@ public class ParametresBoutiqueForm {
     @Email(message = "Le format de l'email est invalide")
     @Size(max = 254, message = "L'email accepte au maximum 254 caractères")
     private String email;
+
+    /** Délais de paiement proposés, en jours ; absents d'un envoi, les délais enregistrés sont conservés. */
+    @Min(value = 0, message = "Le délai accordé aux clients doit être compris entre 0 et 365 jours")
+    @Max(value = 365, message = "Le délai accordé aux clients doit être compris entre 0 et 365 jours")
+    private Integer delaiClientsJours;
+
+    @Min(value = 0, message = "Le délai accordé par les fournisseurs doit être compris entre 0 et 365 jours")
+    @Max(value = 365, message = "Le délai accordé par les fournisseurs doit être compris entre 0 et 365 jours")
+    private Integer delaiFournisseursJours;
+
+    public void setDelaiClientsJours(Integer delaiClientsJours) { this.delaiClientsJours = delaiClientsJours; }
+    public void setDelaiFournisseursJours(Integer delaiFournisseursJours) { this.delaiFournisseursJours = delaiFournisseursJours; }
 
     public void setNom(String nom) { this.nom = nom == null ? null : nom.strip(); }
     public void setAdresse(String adresse) { this.adresse = facultatif(adresse); }

@@ -34,7 +34,7 @@ public class FormBindingAdvice {
                     "lignes[*].produit.id", "lignes[*].quantite", "lignes[*].prixAchatUnitaire", "lignes[*].prixVenteUnitaire"};
             case "vente" -> new String[]{"client", "client.id", "montantVerse", "comptePaiement",
                     "lignes[*].produit.id", "lignes[*].quantite"};
-            case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement"};
+            case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement", "dateEcheance"};
             case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference", "unite", "seuilAlerte",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
@@ -42,9 +42,12 @@ public class FormBindingAdvice {
             case "categorie", "nouvelleCategorie" -> new String[]{"nom"};
             default -> throw new IllegalArgumentException("Formulaire non pris en charge");
         };
-        if (binder.getObjectName().equals("achat")
-                && request.getRequestURI().startsWith(request.getContextPath() + "/achats/modifier/")) {
+        boolean modificationAchat = binder.getObjectName().equals("achat")
+                && request.getRequestURI().startsWith(request.getContextPath() + "/achats/modifier/");
+        if (modificationAchat) {
             champs = Arrays.stream(champs).filter(champ -> !champ.equals("montantVerse") && !champ.equals("comptePaiement")).toArray(String[]::new);
+            // Le numéro reste celui de la création ; seule l'échéance du reste à payer peut changer.
+            champs = Stream.concat(Stream.of(champs), Stream.of("dateEcheance")).toArray(String[]::new);
         }
         if (binder.getObjectName().equals("produit")) {
             // La nature se choisit uniquement à la création ; le prix et le coût saisis ne concernent qu'un service.
@@ -62,11 +65,15 @@ public class FormBindingAdvice {
                 && request.getRequestURI().equals(request.getContextPath() + "/achats/enregistrer"))
                 || (binder.getObjectName().equals("vente")
                 && request.getRequestURI().equals(request.getContextPath() + "/ventes/enregistrer"));
-        // Paramètre de transport lu séparément par le contrôleur, jamais une propriété persistante.
-        if (creation) champs = Stream.concat(Stream.of(champs), Stream.of("jetonCreation")).toArray(String[]::new);
+        // jetonCreation : paramètre de transport lu séparément par le contrôleur, jamais une propriété persistante.
+        // Le numéro de facture se saisit uniquement à la création, avec l'échéance proposée.
+        if (creation) champs = Stream.concat(Stream.of(champs), Stream.of("jetonCreation", "numero", "dateEcheance")).toArray(String[]::new);
         for (String parametre : request.getMethod().equals("POST") ? request.getParameterMap().keySet() : java.util.Set.<String>of()) {
             if (parametre.equals("comptePaiement") && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul compte de paiement doit être choisi");
+            }
+            if ((parametre.equals("numero") || parametre.equals("dateEcheance")) && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul numéro et une seule échéance peuvent être saisis");
             }
             if (!parametre.equals("_csrf") && Arrays.stream(champs).noneMatch(champ -> correspond(champ, parametre))) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");

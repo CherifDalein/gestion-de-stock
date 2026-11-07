@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -36,6 +37,8 @@ public class VenteService {
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private ProduitRepository produitRepository;
     @Autowired private CoutMoyenService coutMoyen;
+    @Autowired private NumerotationFactureService numerotation;
+    @Autowired private EcheanceService echeances;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -62,7 +65,10 @@ public class VenteService {
             }
         }
 
+        vente.setNumero(NumerotationFactureService.validerSaisie(vente.getNumero()));
         initialisation.verrouillerEtClorePourActivite();
+        // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
+        String numero = numerotation.attribuerNumeroVente(vente.getNumero());
         Map<Long, Produit> produits = chargerProduits(vente.getLignes().stream()
                 .map(ligne -> ligne.getProduit().getId()).toList());
         vente.setBoutique(boutiqueService.boutiqueCourante());
@@ -96,6 +102,9 @@ public class VenteService {
         vente.setMontantTotal(Montants.valider(montantTotalCalcule, "Le total de la vente"));
         vente.setMontantVerse(normaliserMontantVerse(vente.getMontantVerse(), montantTotalCalcule));
         vente.setDateVente(LocalDateTime.now());
+        vente.setDateEcheance(echeances.pourCreation(vente.getDateVente(), vente.getResteAPayer(), vente.getDateEcheance(),
+                vente.getBoutique().getDelaiClientsJours()));
+        vente.setNumero(numero);
         Vente venteEnregistree = venteRepository.save(vente);
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -127,6 +136,11 @@ public class VenteService {
         return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Ventes échues non soldées : reste à payer et échéance antérieure au jour. */
+    public List<Vente> listerEchuesNonSoldees() {
+        return venteRepository.findEchuesNonSoldees(boutiqueService.idBoutiqueCourante(), echeances.aujourdHui());
+    }
+
     public Vente trouverParId(Long id) {
         return venteRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante()).orElse(null);
     }
@@ -138,6 +152,13 @@ public class VenteService {
 
     @Transactional
     public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        reglerVente(id, montant, montantVerseAttendu, comptePaiement, null);
+    }
+
+    /** Le versement peut aussi reporter l'échéance du reste ; une vente soldée garde son échéance en historique. */
+    @Transactional
+    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+                            LocalDate nouvelleEcheance) {
         if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
@@ -155,12 +176,28 @@ public class VenteService {
             throw new IllegalArgumentException("Le versement ne peut pas dépasser le reste à payer.");
         }
         vente.setMontantVerse(Montants.valider(nouveauVerse, "Le cumul des versements"));
+        if (nouvelleEcheance != null && vente.getResteAPayer().signum() > 0) {
+            EcheanceService.exigerValide(nouvelleEcheance, vente.getDateVente());
+            vente.setDateEcheance(nouvelleEcheance);
+        }
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Vente #" + id + " - Client: "
                 + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
         caisseService.enregistrerEntreeVente(montant, motif, vente, actuel, comptePaiement);
+    }
+
+    /** Change seulement l'échéance d'une vente qui a encore un reste à payer. */
+    @Transactional
+    public void modifierEcheance(Long id, LocalDate echeance) {
+        if (echeance == null) throw new IllegalArgumentException("Choisissez la nouvelle échéance.");
+        Vente vente = stockLockRepository.verrouillerVente(id);
+        if (vente.getResteAPayer().signum() <= 0) {
+            throw new IllegalArgumentException("Cette vente est soldée : son échéance n'est plus modifiable.");
+        }
+        EcheanceService.exigerValide(echeance, vente.getDateVente());
+        vente.setDateEcheance(echeance);
     }
 
     private BigDecimal normaliserMontantVerse(BigDecimal montantVerse, BigDecimal montantTotal) {

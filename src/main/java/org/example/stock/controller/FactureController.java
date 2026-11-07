@@ -2,6 +2,7 @@ package org.example.stock.controller;
 
 import org.example.stock.model.Achat;
 import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.EcheanceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.example.stock.model.Client;
@@ -15,10 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -40,6 +43,14 @@ public class FactureController {
 
     @Autowired
     private FournisseurRepository fournisseurRepository;
+
+    @Autowired private EcheanceService echeances;
+
+    /** Jour de référence du badge « En retard » sur les factures, listes et relevés. */
+    @ModelAttribute("aujourdHui")
+    public LocalDate aujourdHui() {
+        return echeances.aujourdHui();
+    }
 
     @GetMapping("/vente/{id}")
     public String voirFactureVente(@PathVariable Long id, Model model) {

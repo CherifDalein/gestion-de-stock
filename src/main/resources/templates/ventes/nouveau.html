@@ -34,6 +34,12 @@
                             <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom}"></option>
                         </select>
                     </div>
+                    <div class="operation-field">
+                        <label for="numeroFacture" class="form-label">Numéro de facture <span class="text-muted">(facultatif)</span></label>
+                        <input type="text" id="numeroFacture" name="numero" th:value="${vente.numero}" class="form-control"
+                               maxlength="30" autocomplete="off" placeholder="Automatique : FV-000123" aria-describedby="numeroFactureAide">
+                        <p id="numeroFactureAide" class="operation-field-help">Laissez vide pour un numéro automatique. Un numéro saisi doit être unique dans la boutique et ne pourra plus être modifié.</p>
+                    </div>
                 </section>
 
                 <section class="operation-panel" aria-labelledby="panierTitre">
@@ -128,6 +134,13 @@
                         <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
                         <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" value="0" readonly>
                     </div>
+                    <div class="operation-field" id="echeanceBloc" data-echeance>
+                        <label for="dateEcheance" class="form-label">Échéance du reste à payer</label>
+                        <input type="date" id="dateEcheance" name="dateEcheance" class="form-control" aria-describedby="echeanceAide"
+                               th:value="${#temporals.format(vente.dateEcheance != null ? vente.dateEcheance : echeanceProposee, 'yyyy-MM-dd')}"
+                               th:min="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}">
+                        <p id="echeanceAide" class="operation-field-help">Proposée selon le délai accordé aux clients. Sans reste à payer, aucune échéance n’est enregistrée.</p>
+                    </div>
                     <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Ajoutez des produits pour calculer le règlement.</p>
                     <div class="operation-note">
                         <i class="fas fa-circle-info" aria-hidden="true"></i>
@@ -144,4 +157,15 @@
     </div>
     <script th:src="@{/js/montants.js}"></script>
     <script th:src="@{/js/panier.js}"></script>
+    <script th:inline="javascript">
+        // Après un refus, le panier saisi est reconstitué à partir des lignes envoyées.
+        document.addEventListener('DOMContentLoaded', function() {
+            /*[# th:each="ligne : ${vente.lignes}"]*/
+            chargerLigneVente(
+                /*[[${ligne.produit != null ? ligne.produit.id : null}]]*/ null,
+                /*[[${ligne.quantite}]]*/ null
+            );
+            /*[/]*/
+        });
+    </script>
 </div>

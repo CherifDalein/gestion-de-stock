@@ -5,6 +5,8 @@ import org.example.stock.service.AchatService;
 import org.example.stock.service.FournisseurService;
 import org.example.stock.service.ProduitService;
 import org.example.stock.service.CaisseService;
+import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.EcheanceService;
 import org.example.stock.service.ReglementAchatObsoleteException;
 import org.example.stock.form.ReglementAchatForm;
 import org.example.stock.enums.TypeOperationCreation;
@@ -31,6 +33,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.ArrayList;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/achats")
@@ -41,10 +44,15 @@ public class AchatController {
     @Autowired private CaisseService caisseService;
     @Autowired private OperationCreationService creations;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private EcheanceService echeances;
+    @Autowired private BoutiqueService boutiques;
 
     @GetMapping
-    public String listeVentes(Model model) {
-        model.addAttribute("achats", service.listerTous());
+    public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
+        boolean echus = "echues".equals(filtre);
+        model.addAttribute("achats", echus ? service.listerEchusNonSoldes() : service.listerTous());
+        model.addAttribute("filtreEchues", echus);
+        model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "achats/liste");
         return "dashboard";
     }
@@ -59,6 +67,7 @@ public class AchatController {
         model.addAttribute("produits", produitService.listerTous());
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
         model.addAttribute("initialisationOuverte", initialisation.estOuverte());
+        model.addAttribute("echeanceProposee", echeanceProposee());
         model.addAttribute("view", "achats/nouveau");
         return "dashboard";
     }
@@ -69,6 +78,9 @@ public class AchatController {
                               Model model, HttpServletResponse response) {
         FormBindingAdvice.verifier(result);
         model.addAttribute("jetonCreation", jetonCreation);
+        // Après un refus, le formulaire réaffiche la saisie, jamais un numéro ou une échéance calculés puis annulés.
+        String numeroSaisi = achat.getNumero();
+        var echeanceSaisie = achat.getDateEcheance();
         try {
             var resultat = creations.creerAchat(jetonCreation, achat);
             redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
@@ -82,10 +94,13 @@ public class AchatController {
                 response.setStatus(conflit.getStatus().value());
                 model.addAttribute("creationConflit", true);
             }
+            achat.setNumero(numeroSaisi);
+            achat.setDateEcheance(echeanceSaisie);
             model.addAttribute("achat", achat);
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("fournisseurs", fournisseurService.listerTous());
             model.addAttribute("initialisationOuverte", initialisation.estOuverte());
+            model.addAttribute("echeanceProposee", echeanceProposee());
             model.addAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie le stock. Réessayez l'achat." : e.getMessage());
             model.addAttribute("view", "achats/nouveau");
@@ -101,6 +116,7 @@ public class AchatController {
         model.addAttribute("achat", achat);
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
+        model.addAttribute("echeanceProposee", achat.getDateEcheance() != null ? achat.getDateEcheance() : echeanceProposee());
         model.addAttribute("view", "achats/modifier");
         return "dashboard";
     }
@@ -125,6 +141,7 @@ public class AchatController {
         Achat achat = chargerAchat(id);
         ReglementAchatForm formulaire = new ReglementAchatForm();
         formulaire.setMontantVerseAttendu(achat.getMontantVerse() == null ? BigDecimal.ZERO : achat.getMontantVerse());
+        formulaire.setDateEcheance(achat.getDateEcheance() != null ? achat.getDateEcheance() : echeanceProposee());
         model.addAttribute("reglementAchat", formulaire);
         preparerReglement(achat, model);
         return "dashboard";
@@ -137,7 +154,8 @@ public class AchatController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement());
+                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
+                        formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Versement fournisseur enregistré avec succès.");
                 return "redirect:/achats/regler/" + id;
             } catch (ReglementAchatObsoleteException | ConcurrencyFailureException e) {
@@ -154,6 +172,30 @@ public class AchatController {
         return "dashboard";
     }
 
+    /** Reporte l'échéance sans enregistrer de versement ; le montant éventuellement saisi est ignoré. */
+    @PostMapping("/regler/{id}/echeance")
+    public String modifierEcheance(@PathVariable Long id, @ModelAttribute("reglementAchat") ReglementAchatForm formulaire,
+                                   BindingResult result, Model model, RedirectAttributes redirectAttributes,
+                                   HttpServletResponse response) {
+        FormBindingAdvice.verifier(result);
+        try {
+            service.modifierEcheance(id, formulaire.getDateEcheance());
+            redirectAttributes.addFlashAttribute("success", "Échéance de l’achat modifiée.");
+            return "redirect:/achats/regler/" + id;
+        } catch (ConcurrencyFailureException e) {
+            response.setStatus(HttpStatus.CONFLICT.value());
+            result.reject("echeance.conflit", "Une autre opération modifie cet achat. Rechargez le formulaire et réessayez.");
+        } catch (IllegalArgumentException e) {
+            result.reject("echeance.invalide", e.getMessage());
+        }
+        preparerReglement(chargerAchat(id), model);
+        return "dashboard";
+    }
+
+    private LocalDate echeanceProposee() {
+        return echeances.proposer(boutiques.boutiqueCourante().getDelaiFournisseursJours());
+    }
+
     private Achat chargerAchat(Long id) {
         Achat achat = service.trouverParId(id);
         if (achat == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achat introuvable");
@@ -163,6 +205,7 @@ public class AchatController {
     private void preparerReglement(Achat achat, Model model) {
         model.addAttribute("achatReglement", achat);
         model.addAttribute("reglements", caisseService.listerReglementsAchat(achat.getId()));
+        model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "achats/regler");
     }
 }

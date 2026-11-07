@@ -4,7 +4,7 @@
         <header class="operation-header">
             <div>
                 <p class="app-page-kicker">Achats</p>
-                <h1>Modifier l’achat #<span th:text="${achat.id}"></span></h1>
+                <h1>Modifier l’achat <span th:text="${achat.numero ?: '#' + achat.id}"></span></h1>
                 <p class="app-page-subtitle">Ajustez le fournisseur et les produits, puis vérifiez le total de l’achat.</p>
             </div>
             <a th:href="@{/achats}" class="btn btn-outline-primary">
@@ -23,6 +23,11 @@
                             <h2 id="fournisseurTitre">Fournisseur</h2>
                             <p>Le fournisseur associé à cet approvisionnement.</p>
                         </div>
+                    </div>
+                    <div class="operation-field record-field">
+                        <label for="numeroFactureLecture" class="form-label">Numéro de facture</label>
+                        <input type="text" id="numeroFactureLecture" class="form-control" th:value="${achat.numero ?: 'Sans numéro'}" readonly aria-describedby="numeroFactureLectureAide">
+                        <p id="numeroFactureLectureAide" class="operation-field-help">Le numéro attribué à la création n’est pas modifiable.</p>
                     </div>
                     <div class="operation-field record-field">
                         <label for="fournisseur" class="form-label">Fournisseur de l’achat</label>
@@ -133,6 +138,13 @@
                     <div class="operation-field">
                         <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
                         <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" readonly>
+                    </div>
+                    <div class="operation-field" id="echeanceBloc" data-echeance>
+                        <label for="dateEcheance" class="form-label">Échéance du reste à payer</label>
+                        <input type="date" id="dateEcheance" name="dateEcheance" class="form-control" aria-describedby="echeanceAide"
+                               th:value="${#temporals.format(echeanceProposee, 'yyyy-MM-dd')}"
+                               th:min="${achat.dateAchat != null ? #temporals.format(achat.dateAchat, 'yyyy-MM-dd') : null}">
+                        <p id="echeanceAide" class="operation-field-help">Modifiable tant qu’il reste à payer. Une facture soldée garde son échéance en historique.</p>
                     </div>
                     <p id="reglementStatut" class="operation-payment-status" role="status" aria-live="polite">Vérification du règlement…</p>
                     <div class="operation-note">
