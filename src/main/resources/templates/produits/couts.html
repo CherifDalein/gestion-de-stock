@@ -1,0 +1,16 @@
+<!-- Coût, dernier prix d'achat et marge d'un produit : réservés au gérant (ADMIN), jamais envoyés à un caissier. -->
+<div th:fragment="lecture(p)" class="record-grid" sec:authorize="hasRole('ADMIN')">
+    <th:block th:if="${p.estService()}">
+        <div class="record-field"><p class="form-label">Coût fixe du service</p><p data-cout th:text="${p.prixDefinis ? #numbers.formatDecimal(p.coutMoyen, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF' : 'À définir'}"></p><p class="record-help">Ce que le service vous coûte à chaque vente.</p></div>
+    </th:block>
+    <th:block th:unless="${p.estService()}">
+        <div class="record-field"><p class="form-label">Coût moyen pondéré</p><p data-cout th:text="${p.prixDefinis ? #numbers.formatDecimal(p.coutMoyen, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF' : 'À définir'}"></p><p class="record-help">Le coût moyen tient compte de tous les achats en stock ; c’est lui qui sert au calcul du bénéfice.</p></div>
+        <div class="record-field"><p class="form-label">Dernier prix d’achat</p><p data-dernier-prix th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixAchat, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF' : 'À définir'}"></p><p class="record-help">Mis à jour par les achats ou le stock initial ; proposé au prochain achat.</p></div>
+    </th:block>
+    <div class="record-field">
+        <p class="form-label">Marge unitaire</p>
+        <p data-marge th:classappend="${p.margeUnitaire != null and p.margeUnitaire.signum() < 0} ? 'text-danger'"
+           th:text="${p.margeUnitaire != null ? #numbers.formatDecimal(p.margeUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + #numbers.formatDecimal(p.tauxMarge, 1, 'WHITESPACE', 1, 'COMMA') + ' %)' : '—'}"></p>
+        <p class="record-help">Prix de vente enregistré moins le coût ; le taux est calculé sur le prix de vente.</p>
+    </div>
+</div>

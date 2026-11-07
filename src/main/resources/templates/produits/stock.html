@@ -6,6 +6,10 @@
         <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
         <p class="record-note mb-4">Les entrées de marchandises se saisissent dans <a th:href="@{/achats/nouveau}">les achats</a> et les sorties dans les ventes. Le stock initial est réservé au démarrage de la boutique ; aucune correction manuelle des quantités n’est possible.</p>
+        <section class="record-panel" aria-labelledby="coutsTitre" th:if="${inventaire.produit.prixDefinis}">
+            <div class="record-panel-heading"><h2 id="coutsTitre">Coût et marge</h2><p>Montants en francs guinéens (GNF), réservés au gérant.</p></div>
+            <th:block th:replace="~{produits/couts :: lecture(${inventaire.produit})}"></th:block>
+        </section>
         <form th:if="${inventaire.initialAutorise}" th:action="@{/produits/{id}/stock/initial(id=${inventaire.produit.id})}" th:object="${stockInitial}" method="post" class="record-panel">
             <div class="record-panel-heading"><h2>Stock initial</h2><p>Pour les marchandises déjà présentes au démarrage de la boutique. Cette saisie est possible une seule fois sur ce produit, avant la fin du démarrage et avant sa première opération. Elle ne crée ni achat, ni dette fournisseur, ni mouvement de caisse.</p></div>
             <input type="hidden" name="version" th:value="*{version}">
