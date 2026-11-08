@@ -117,6 +117,13 @@ tasks.register('retourVenteMariaDbTest', JavaExec) {
     mainClass = 'org.example.stock.migration.RetourVenteMariaDbTest'
 }
 
+tasks.register('ordreVerrousMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie l’ordre global des verrous (boutique d’abord) avec les vrais verrous InnoDB dans une base MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.OrdreVerrousMariaDbTest'
+}
+
 tasks.register('retourAchatMariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie les retours d’achat simultanés avec les vrais verrous InnoDB dans une base MariaDB temporaire'

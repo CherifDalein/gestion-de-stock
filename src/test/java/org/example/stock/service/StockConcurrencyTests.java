@@ -144,12 +144,16 @@ class StockConcurrencyTests {
         assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("-20.0");
     }
 
+    /**
+     * Ordre global des verrous : un règlement verrouille la boutique en premier, il attend donc la fin d'une vente de la même
+     * boutique (avant, il ne se bloquait pas). Il ne touche ni au stock ni aux produits.
+     */
     @Test
-    void unReglementPendantUneVenteNeVerrouilleNiNeModifieLeStock() throws Exception {
+    void unReglementAttendUneVenteDeLaBoutiqueSansModifierLeStock() throws Exception {
         Long id = authentifie(() -> achatService.enregistrerAchat(achat(10, new BigDecimal("0.0"))).getId());
         assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isTrue();
         assertThat(executerAvecVerrouRetenu(() -> venteService.effectuerVente(vente(18)),
-                () -> achatService.reglerAchat(id, new BigDecimal("50"), BigDecimal.ZERO), true, false)).isNull();
+                () -> achatService.reglerAchat(id, new BigDecimal("50"), BigDecimal.ZERO), true, true)).isNull();
         assertThat(stock()).isEqualTo(2L);
         assertThat(achats.findById(id).orElseThrow().getMontantVerse()).isEqualByComparingTo("50.0");
         assertThat(caisse.calculerSoldeTotal()).isEqualByComparingTo("310.0");
@@ -277,10 +281,11 @@ class StockConcurrencyTests {
             return invocation.callRealMethod();
         };
         StockLockRepository cible = AopTestUtils.getUltimateTargetObject(verrous);
-        // Les opérations commerciales attendent d'abord la boutique ; une modification de fiche
-        // attend directement le produit. Observer l'entrée des deux chemins sans retenir le commit.
+        // Toutes les écritures attendent d'abord la boutique. Observer l'entrée sans retenir le commit.
         InitialisationBoutiqueService cibleInitialisation = AopTestUtils.getUltimateTargetObject(initialisation);
         doAnswer(observer).when(cibleInitialisation).verrouillerEtClorePourActivite();
+        // Toute écriture commence par le verrou de la boutique (ordre global des verrous) : c'est lui qui attend.
+        doAnswer(observer).when(cible).verrouillerBoutiqueCourante();
         if (document) doAnswer(observer).when(cible).verrouillerAchat(any());
         else doAnswer(observer).when(cible).verrouillerProduits(any());
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {

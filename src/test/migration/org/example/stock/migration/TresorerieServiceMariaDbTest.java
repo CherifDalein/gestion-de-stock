@@ -44,8 +44,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
 
 import static org.example.stock.enums.CompteTresorerie.*;
 
@@ -59,6 +59,7 @@ public final class TresorerieServiceMariaDbTest {
     private final OperationTresorerieRepository operations;
     private final PlatformTransactionManager transactions;
     private final CompteTresorerieBoutiqueRepository comptes;
+    private final org.example.stock.repository.StockLockRepository verrous;
     private int scenarios;
 
     private TresorerieServiceMariaDbTest(AnnotationConfigApplicationContext contexte) {
@@ -68,6 +69,7 @@ public final class TresorerieServiceMariaDbTest {
         operations = contexte.getBean(OperationTresorerieRepository.class);
         transactions = contexte.getBean(PlatformTransactionManager.class);
         comptes = contexte.getBean(CompteTresorerieBoutiqueRepository.class);
+        verrous = contexte.getBean(org.example.stock.repository.StockLockRepository.class);
     }
 
     public static void main(String[] args) {
@@ -208,15 +210,21 @@ public final class TresorerieServiceMariaDbTest {
                 try { caisse.enregistrerEntree(new BigDecimal("10"), "Second encaissement", "VENTE", e.premier()); }
                 finally { SecurityContextHolder.clearContext(); }
             });
-            try { second.get(5, TimeUnit.SECONDS); }
-            finally { terminerPremiere.countDown(); }
+            // Ordre global des verrous : toute écriture de caisse verrouille d'abord la boutique ; le second encaissement
+            // attend donc la fin du premier (écritures d'une même boutique sérialisées), puis réussit.
+            try {
+                boolean attendu = false;
+                try { second.get(500, TimeUnit.MILLISECONDS); } catch (TimeoutException attente) { attendu = true; }
+                exiger(attendu, "Le second encaissement aurait dû attendre le verrou de la boutique.");
+            } finally { terminerPremiere.countDown(); }
             premier.get(15, TimeUnit.SECONDS);
+            second.get(15, TimeUnit.SECONDS);
         }
         connecter(e.premier());
         exiger(caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("120")) == 0
                 && caisse.getSoldeActuel().compareTo(new BigDecimal("320")) == 0 && caisse.listerTous().size() == 5,
                 "Les deux encaissements du même acteur n'ont pas conservé leurs écritures.");
-        reussi("deux encaissements du même compte restent simultanés sans verrou inutile");
+        reussi("deux encaissements d'une même boutique s'exécutent l'un après l'autre");
     }
 
     private void paiementEtTransfertMemeActeur() throws Exception {
@@ -228,6 +236,8 @@ public final class TresorerieServiceMariaDbTest {
                 connecter(e.premier());
                 try {
                     new TransactionTemplate(transactions).execute(status -> {
+                        // Ordre global des verrous : la boutique, puis le compte.
+                        verrous.verrouillerBoutiqueCourante();
                         comptes.verrouillerLecture(e.boutique().getId(), CAISSE).orElseThrow();
                         comptePris.countDown();
                         try { exiger(terminerPaiement.await(10, TimeUnit.SECONDS), "L'paiement n'a pas été libéré."); }
@@ -390,7 +400,7 @@ public final class TresorerieServiceMariaDbTest {
     @Profile("tresorerie-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class})
+    @Import({CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

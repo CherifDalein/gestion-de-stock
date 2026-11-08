@@ -49,6 +49,7 @@ class ReglementVenteTests {
     Boutique boutique;
     @Autowired MockMvc mvc;
     @Autowired VenteService venteService;
+    @Autowired org.example.stock.repository.StockLockRepository verrous;
     @Autowired VenteRepository ventes;
     @Autowired ProduitRepository produits;
     @Autowired CategorieRepository categories;
@@ -253,6 +254,8 @@ class ReglementVenteTests {
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
             Future<?> premier = pool.submit(() -> authentifie(contexte, () ->
                     new TransactionTemplate(transactions).executeWithoutResult(status -> {
+                        // Ordre global des verrous : la boutique d'abord, puis la vente (prendre la vente seule serait un interblocage).
+                        verrous.verrouillerBoutiqueCourante();
                         entityManager.find(Vente.class, vente.getId(), LockModeType.PESSIMISTIC_WRITE);
                         verrouPris.countDown(); attendre(liberer);
                         venteService.reglerVente(vente.getId(), new BigDecimal("10000"), new BigDecimal("50000"));
