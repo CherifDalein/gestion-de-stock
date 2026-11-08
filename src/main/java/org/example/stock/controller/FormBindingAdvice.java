@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm", "retourAchatForm"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
         // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
@@ -39,6 +39,8 @@ public class FormBindingAdvice {
             case "prolongationDevis" -> new String[]{"dateValidite"};
             // Retour de vente : seules les quantités par ligne, le motif et le choix de remboursement viennent du navigateur.
             case "retourVenteForm" -> new String[]{"lignes[*].detailVenteId", "lignes[*].quantite", "motif", "modeRemboursement", "comptePaiement", "retoursConnus"};
+            // Retour d'achat : mêmes champs que le retour de vente, avec la ligne d'achat retournée.
+            case "retourAchatForm" -> new String[]{"lignes[*].detailAchatId", "lignes[*].quantite", "motif", "modeRemboursement", "comptePaiement", "retoursConnus"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement", "dateEcheance"};
             case "reglementSolde" -> new String[]{"montant", "reglementAttendu", "comptePaiement", "dateEcheance"};
             case "inscription" -> new String[]{"nom", "email", "password"};
@@ -100,7 +102,7 @@ public class FormBindingAdvice {
                     || binder.getObjectName().equals("prolongationDevis")) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule valeur peut être envoyée pour ce champ");
             }
-            if (binder.getObjectName().equals("retourVenteForm") && (CHAMPS_UNIQUES_RETOUR.contains(parametre) || parametre.startsWith("lignes[")) && request.getParameterValues(parametre).length != 1) {
+            if ((binder.getObjectName().equals("retourVenteForm") || binder.getObjectName().equals("retourAchatForm")) && (CHAMPS_UNIQUES_RETOUR.contains(parametre) || parametre.startsWith("lignes[")) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule valeur peut être envoyée pour ce champ");
             }
             if (!parametre.equals("_csrf") && Arrays.stream(champs).noneMatch(champ -> correspond(champ, parametre))) {
@@ -120,7 +122,7 @@ public class FormBindingAdvice {
         }));
     }
 
-    /** Champs d'un retour de vente qui n'acceptent qu'une valeur (hors lignes). */
+    /** Champs d'un retour (de vente ou d'achat) qui n'acceptent qu'une valeur (hors lignes). */
     private static final java.util.Set<String> CHAMPS_UNIQUES_RETOUR = java.util.Set.of("motif", "modeRemboursement", "comptePaiement", "retoursConnus");
 
     /** Champs d'un devis qui n'acceptent qu'une valeur (hors lignes). */

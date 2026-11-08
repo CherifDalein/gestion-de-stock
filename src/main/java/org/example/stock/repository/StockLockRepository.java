@@ -58,13 +58,6 @@ public class StockLockRepository {
         return achat;
     }
 
-    /** Identifiant du fournisseur d'un achat de la boutique courante (404 sinon), lu sans verrou pour verrouiller le fournisseur en premier. */
-    public Long idFournisseurDeAchat(Long achatId) {
-        verifierIdentifiant("Achat", achatId, boutiques.idBoutiqueCourante());
-        return entityManager.createQuery("select a.fournisseur.id from Achat a where a.id = :id", Long.class)
-                .setParameter("id", achatId).getResultStream().findFirst().orElse(null);
-    }
-
     public Vente verrouillerVente(Long id) {
         verifierIdentifiant("Vente", id, boutiques.idBoutiqueCourante());
         Vente vente = entityManager.find(Vente.class, id, LockModeType.PESSIMISTIC_WRITE);

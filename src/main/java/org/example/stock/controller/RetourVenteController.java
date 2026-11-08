@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * Retour de vente : réservé au gérant (voir SecurityConfig). Tout est lu dans la boutique du compte connecté ; une vente
- * ou un retour d'une autre boutique est introuvable (404).
+ * d'une autre boutique est introuvable (404). La liste et l'impression des retours sont dans {@link RetourController}.
  */
 @Controller
 public class RetourVenteController {
@@ -68,19 +68,6 @@ public class RetourVenteController {
             saisie.setRetoursConnus(frais.retoursConnus());
             return page(frais, saisie, model);
         }
-    }
-
-    @GetMapping("/retours")
-    public String liste(Model model) {
-        model.addAttribute("retoursVente", retourVenteService.lister());
-        model.addAttribute("view", "retours/liste");
-        return "dashboard";
-    }
-
-    @GetMapping("/retours/{id}/imprimer")
-    public String imprimer(@PathVariable Long id, Model model) {
-        model.addAttribute("retour", retourVenteService.trouver(id));
-        return "retours/impression";
     }
 
     private String page(RetourVenteService.Formulaire formulaire, RetourVenteForm saisie, Model model) {

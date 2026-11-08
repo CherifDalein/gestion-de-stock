@@ -40,7 +40,10 @@ public class DetailRetour {
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal prixUnitaire;
 
-    /** Coût de revient unitaire de la marchandise rendue, pour corriger la marge ; vide quand il n'est pas connu. */
+    /**
+     * Retour de vente : coût de revient unitaire figé de la ligne vendue, pour corriger la marge ; vide quand il n'est pas connu.
+     * Retour d'achat : coût moyen du produit juste avant le retour, à titre d'information seulement.
+     */
     @Column(precision = 17, scale = 2)
     private BigDecimal coutUnitaire;
 }

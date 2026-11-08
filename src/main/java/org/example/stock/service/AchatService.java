@@ -9,8 +9,11 @@ import org.example.stock.model.Montants;
 import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.FournisseurRepository;
+import org.example.stock.repository.RetourRepository;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -39,6 +42,8 @@ public class AchatService {
     @Autowired private NumerotationFactureService numerotation;
     @Autowired private EcheanceService echeances;
     @Autowired private SoldePartenaireService soldes;
+    @Autowired private EntityManager entityManager;
+    @Autowired private RetourRepository retourRepository;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
@@ -94,20 +99,27 @@ public class AchatService {
         return achatEnregistre;
     }
 
-    @Transactional
+    /**
+     * Modifie les lignes d'un achat sans retour. Isolation READ COMMITTED, comme le retour d'achat : la lecture verrouillée des
+     * retours de l'achat ne pose alors aucun verrou de plage, qui croiserait l'insertion d'un retour sur un autre achat du même
+     * fournisseur (deadlock InnoDB constaté pour les retours de vente en REPEATABLE READ).
+     */
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void modifierAchat(Long id, Achat achatModifie) {
         if (achatModifie.getMontantVerse() != null) {
             throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
         }
         initialisation.verrouillerEtClorePourActivite();
-        // Même ordre que la création : la fiche du fournisseur avant le document et les produits.
-        Long fournisseurVerrouilleId = stockLockRepository.idFournisseurDeAchat(id);
-        Fournisseur fournisseurVerrouille = fournisseurVerrouilleId == null ? null : stockLockRepository.verrouillerFournisseur(fournisseurVerrouilleId);
+        // Même ordre que le retour d'achat : l'achat, puis la fiche du fournisseur, puis les produits. L'achat en premier
+        // évite le cycle avec un retour d'achat (achat → fournisseur) et avec un règlement (achat seul).
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
-        if (fournisseurVerrouille == null ? ancienAchat.getFournisseur() != null
-                : ancienAchat.getFournisseur() == null || !fournisseurVerrouille.getId().equals(ancienAchat.getFournisseur().getId())) {
-            throw new IllegalStateException("Le fournisseur de cet achat vient de changer. Rechargez la page et réessayez.");
+        // Lecture verrouillée sous le verrou de l'achat : un retour d'achat validé à l'instant est vu.
+        if (!entityManager.createQuery("select r.id from Retour r where r.achat.id = :achat", Long.class)
+                .setParameter("achat", id).setLockMode(LockModeType.PESSIMISTIC_READ).setMaxResults(1).getResultList().isEmpty()) {
+            throw new ModificationAchatRefuseeException();
         }
+        Fournisseur fournisseurVerrouille = ancienAchat.getFournisseur() == null ? null
+                : stockLockRepository.verrouillerFournisseur(ancienAchat.getFournisseur().getId());
 
         validerAchat(achatModifie);
         Map<Long, Produit> produits = stockLockRepository.verrouillerProduits(Stream.concat(
@@ -244,6 +256,12 @@ public class AchatService {
         }
         EcheanceService.exigerValide(echeance, achat.getDateAchat());
         achat.setDateEcheance(echeance);
+    }
+
+    /** Vrai si l'achat de la boutique courante a au moins un retour d'achat (il est alors figé). Lecture simple, sans verrou. */
+    @Transactional(readOnly = true)
+    public boolean aDesRetours(Long id) {
+        return retourRepository.countByAchatId(id) > 0;
     }
 
     public Achat trouverParId(Long id) {

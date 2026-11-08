@@ -206,7 +206,24 @@ public class CaisseService {
         return mouvementRepo.findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(venteId, boutiqueService.idBoutiqueCourante());
     }
 
+    /**
+     * Entrée de trésorerie qui constate l'argent rendu par un fournisseur après un retour d'achat : source
+     * {@code RETOUR_ACHAT}, rattachée au retour (jamais à l'achat, pour ne pas figurer parmi ses versements ni parmi les
+     * règlements du solde de départ du fournisseur). À appeler dans la transaction du retour, après les verrous de l'achat,
+     * de la boutique, du fournisseur et des produits.
+     */
+    @Transactional
+    public void enregistrerEntreeRetourAchat(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, CompteTresorerie compte) {
+        if (retour == null || retour.getId() == null) throw new IllegalArgumentException("Retour introuvable");
+        enregistrerEntree(montant, motif, "RETOUR_ACHAT", utilisateur, null, null, retour, compte);
+    }
+
     private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
+        enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compte);
+    }
+
+    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client,
+                                   Retour retour, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -236,6 +253,7 @@ public class CaisseService {
         mouvement.setUtilisateur(utilisateur);
         mouvement.setVente(vente);
         mouvement.setClient(client);
+        mouvement.setRetour(retour);
 
         mouvementRepo.save(mouvement);
     }
