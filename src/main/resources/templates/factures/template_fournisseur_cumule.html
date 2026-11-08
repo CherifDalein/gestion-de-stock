@@ -89,8 +89,8 @@
             <dl>
                 <div th:if="${solde.soldeDepart.signum() != 0}"><dt>Solde de départ</dt><dd data-document-amount="solde-depart"
                     th:text="${(solde.soldeDepart.signum() > 0 ? 'Il me doit ' : 'Je lui dois ') + #numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:each="r : ${reglementsSolde}" data-document-row><dt th:text="${'Règlement du solde de départ du ' + #temporals.format(r.dateMouvement, 'dd/MM/yyyy')}"></dt>
-                    <dd data-document-amount="reglement-solde" th:text="${#numbers.formatDecimal(r.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:each="r : ${reglementsSolde}" data-document-row><dt th:text="${(r.source == 'ANNULATION' ? 'Annulation d''un règlement du solde de départ du ' : 'Règlement du solde de départ du ') + #temporals.format(r.source == 'ANNULATION' and r.annulationDe != null ? r.annulationDe.dateMouvement : r.dateMouvement, 'dd/MM/yyyy')}"></dt>
+                    <dd data-document-amount="reglement-solde" th:text="${(r.source == 'ANNULATION' ? '− ' : '') + #numbers.formatDecimal(r.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div th:if="${solde.soldeDepart.signum() != 0}"><dt>Reste du solde de départ</dt><dd data-document-amount="reste-solde-depart"
                     th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
                 <div><dt>Avance disponible</dt><dd data-document-amount="avance-disponible"

@@ -33,6 +33,9 @@ public class SecurityConfig {
                         // Le retour d'achat (/achats/{id}/retour) est couvert par la règle « /achats/** » réservée au gérant, plus bas.
                         // Le retour de vente et ses documents sont réservés au gérant : à placer avant les règles larges des ventes.
                         .requestMatchers("/ventes/*/retour", "/ventes/*/retour/**", "/retours", "/retours/**").hasRole("ADMIN")
+                        // L'annulation d'un règlement (vente ou solde de départ d'un client) est réservée au gérant ; celles des achats et des
+                        // fournisseurs sont couvertes par « /achats/** » et « /fournisseurs/** » plus bas. À placer avant les règles larges.
+                        .requestMatchers("/ventes/regler/*/annuler/**", "/clients/solde/regler/*/annuler/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**", "/devis/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")

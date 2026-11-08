@@ -66,7 +66,7 @@ Précisions :
 Les vingt tables existantes et toutes leurs anciennes colonnes sont comparées
 avant et après l'application, BLOB compris : stocks, prix, montants,
 versements, mouvements de caisse et de stock, logos et historiques restent
-identiques. Aucun mouvement n'est créé, aucune des quatre nouvelles tables ne
+identiques (hors la source des règlements reclassés, voir plus bas). Aucun mouvement n'est créé, aucune des quatre nouvelles tables ne
 reçoit de ligne.
 
 La reprise est sûre. Les quatre tables sont créées une à une (une table déjà
@@ -85,6 +85,19 @@ valeur incohérente (statut ou type inconnu, montant négatif, compteur inférie
 Le [SQL de création](../database-schema.sql) contient ces tables et colonnes
 pour une installation neuve. Il ne remplace pas la migration d'une base
 existante.
+
+## Reclassement des règlements
+
+Avant l'annulation de règlement, un règlement ultérieur et le paiement saisi à la création portaient la même source (`VENTE` ou
+`ACHAT`). Pour que seuls les premiers soient annulables, la migration reclasse en `REGLEMENT_VENTE` / `REGLEMENT_ACHAT` les
+mouvements dont le motif commence exactement par « Règlement Vente #<id> - Client: » ou « Règlement Achat #<id> - Fournisseur: »,
+que `<id>` désigne la vente ou l'achat rattaché au mouvement, de la même boutique, et que la source d'origine soit `VENTE` ou `ACHAT`.
+Tout mouvement ambigu (autre identifiant, document d'une autre boutique, motif approchant ou vide, source déjà distincte) reste
+inchangé et donc **non annulable** : mieux vaut un refus qu'une annulation sur un paiement de création. Le reclassement est
+rejouable sans effet. Il modifie uniquement `source`, jamais un montant, une date ou un compte.
+
+La colonne `mouvement_caisse.annulation_de_id` (clé étrangère vers `mouvement_caisse`, unique) est ajoutée vide : aucune annulation
+n'existe avant la livraison.
 
 ## Appliquer sur la base locale
 

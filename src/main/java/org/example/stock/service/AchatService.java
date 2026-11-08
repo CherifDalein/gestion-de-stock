@@ -220,7 +220,7 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
-        caisseService.enregistrerSortieAchat(montant, motif, achat, actuel, comptePaiement);
+        caisseService.enregistrerSortieReglementAchat(montant, motif, achat, actuel, comptePaiement);
     }
 
     /**

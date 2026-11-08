@@ -1,0 +1,67 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation" th:object="${annulationReglement}">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Règlements · Annulation</p>
+                <h1>Annuler ce règlement</h1>
+                <p class="app-page-subtitle" th:text="${nomDocument}"></p>
+            </div>
+            <div class="app-actions">
+                <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux règlements
+                </a>
+            </div>
+        </header>
+
+        <div class="operation-form">
+            <section class="operation-panel" aria-labelledby="reglementHeading">
+                <div class="operation-panel-header">
+                    <div>
+                        <h2 id="reglementHeading">Règlement à annuler</h2>
+                        <p>Vérifiez le règlement avant de confirmer.</p>
+                    </div>
+                    <i class="fa-solid fa-rotate-left operation-panel-icon" aria-hidden="true"></i>
+                </div>
+                <dl class="operation-details">
+                    <div>
+                        <dt>Montant</dt>
+                        <dd th:text="${#numbers.formatDecimal(confirmation.mouvement.montant.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Date</dt>
+                        <dd th:text="${confirmation.mouvement.dateMouvement != null ? #temporals.format(confirmation.mouvement.dateMouvement, 'dd/MM/yyyy HH:mm:ss') : 'Non renseignée'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Compte</dt>
+                        <dd th:text="${confirmation.mouvement.compte.libelle}"></dd>
+                    </div>
+                    <div>
+                        <dt>Enregistré par</dt>
+                        <dd th:text="${confirmation.mouvement.utilisateur != null ? confirmation.mouvement.utilisateur.nom : 'Non renseigné'}"></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                <ul class="mb-0"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
+            </div>
+            <div th:if="${confirmation.refus != null and !#fields.hasErrors('*')}" class="alert alert-warning" role="alert" th:text="${confirmation.refus}"></div>
+
+            <form th:if="${confirmation.annulable}" th:action="@{${actionUrl}}" method="post" id="formAnnulationReglement" class="operation-panel mt-3">
+                <p class="operation-note"
+                   th:text="${encaissement ? 'L’argent reçu sort du compte : un mouvement inverse est ajouté au journal, le règlement d’origine reste visible. Le compte doit disposer de la somme.' : 'L’argent payé revient sur le compte : un mouvement inverse est ajouté au journal, le règlement d’origine reste visible.'}"></p>
+                <div class="operation-field mb-3">
+                    <label for="motifAnnulation" class="form-label fw-semibold">Motif de l’annulation (obligatoire)</label>
+                    <textarea id="motifAnnulation" class="form-control" th:field="*{motif}" rows="3" minlength="3" maxlength="255" required
+                              th:classappend="${#fields.hasErrors('motif')} ? 'is-invalid'"
+                              th:attr="aria-invalid=${#fields.hasErrors('motif')}" aria-describedby="motifAnnulationAide"></textarea>
+                    <p id="motifAnnulationAide" class="operation-field-help">De 3 à 255 caractères. Il est conservé avec l’annulation et visible dans le journal.</p>
+                </div>
+                <div class="operation-actions">
+                    <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">Ne pas annuler</a>
+                    <button type="submit" class="btn btn-danger"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Confirmer l’annulation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

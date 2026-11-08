@@ -8,6 +8,7 @@ import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.SoldePartenaireRepository;
 import org.example.stock.repository.SoldePartenaireRepository.Factures;
 import org.example.stock.repository.SoldePartenaireRepository.Partenaire;
+import org.example.stock.repository.SoldePartenaireRepository.Reglements;
 import org.example.stock.repository.SoldePartenaireRepository.RetardPartenaire;
 import org.example.stock.repository.SoldePartenaireRepository.Totaux;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ import java.util.Map;
  *   <li>avance disponible d'un client = max(0, −solde de départ) + Σ max(0, versé − total d'origine) + Σ avoirs de ses
  *       retours de vente − Σ avance utilisée de ses ventes ; celle d'un fournisseur = max(0, solde de départ) + Σ trop-payés + Σ avoirs de ses
  *       retours d'achat − Σ avance utilisée de ses achats ;</li>
- *   <li>reste du solde de départ = montant dû (client : solde positif ; fournisseur : solde négatif) − Σ règlements.</li>
+ *   <li>reste du solde de départ = montant dû (client : solde positif ; fournisseur : solde négatif) − Σ règlements + Σ leurs annulations.</li>
  * </ul>
  *
  * <p>Les lectures d'affichage utilisent des requêtes agrégées. Les méthodes « verrouillée » relisent les lignes sous
@@ -84,7 +85,7 @@ public class SoldePartenaireService {
         Map<Long, SoldePartenaire> resultat = new LinkedHashMap<>();
         for (Client client : clients.findAllByBoutiqueId(boutiqueId)) {
             resultat.put(client.getId(), construire(Partenaire.CLIENT, client.getSoldeInitial(), client.getEcheanceSoldeInitial(),
-                    reglements.getOrDefault(client.getId(), BigDecimal.ZERO), factures.getOrDefault(client.getId(), Factures.VIDE)));
+                    reglements.getOrDefault(client.getId(), Reglements.AUCUN), factures.getOrDefault(client.getId(), Factures.VIDE)));
         }
         return resultat;
     }
@@ -97,7 +98,7 @@ public class SoldePartenaireService {
         Map<Long, SoldePartenaire> resultat = new LinkedHashMap<>();
         for (Fournisseur fournisseur : fournisseurs.findAllByBoutiqueId(boutiqueId)) {
             resultat.put(fournisseur.getId(), construire(Partenaire.FOURNISSEUR, fournisseur.getSoldeInitial(), fournisseur.getEcheanceSoldeInitial(),
-                    reglements.getOrDefault(fournisseur.getId(), BigDecimal.ZERO), factures.getOrDefault(fournisseur.getId(), Factures.VIDE)));
+                    reglements.getOrDefault(fournisseur.getId(), Reglements.AUCUN), factures.getOrDefault(fournisseur.getId(), Factures.VIDE)));
         }
         return resultat;
     }
@@ -210,9 +211,9 @@ public class SoldePartenaireService {
         return avanceBrute(type == Partenaire.CLIENT ? nouveauSolde.negate() : nouveauSolde, factures);
     }
 
-    /** Σ des règlements du solde de départ, relus sous verrou (valeur absolue). */
+    /** Règlements du solde de départ (nets de leurs annulations, et bruts), relus sous verrou en valeur absolue. */
     @Transactional(propagation = Propagation.MANDATORY)
-    public BigDecimal reglementsVerrouilles(Partenaire type, Long partenaireId) {
+    public Reglements reglementsVerrouilles(Partenaire type, Long partenaireId) {
         return soldes.reglementsVerrouilles(type, boutiques.idBoutiqueCourante(), partenaireId);
     }
 
@@ -236,8 +237,9 @@ public class SoldePartenaireService {
         return partieSolde.max(BigDecimal.ZERO).add(factures.surplus()).add(factures.avoirs()).subtract(factures.avanceUtilisee());
     }
 
-    private SoldePartenaire construire(Partenaire type, BigDecimal soldeInitial, LocalDate echeance, BigDecimal regle, Factures factures) {
+    private SoldePartenaire construire(Partenaire type, BigDecimal soldeInitial, LocalDate echeance, Reglements reglements, Factures factures) {
         soldeInitial = Montants.ouZero(soldeInitial);
+        BigDecimal regle = reglements.net();
         boolean client = type == Partenaire.CLIENT;
         BigDecimal du = (client ? soldeInitial : soldeInitial.negate()).max(BigDecimal.ZERO);
         BigDecimal reste = du.subtract(regle);
@@ -247,7 +249,7 @@ public class SoldePartenaireService {
         BigDecimal avance = avance(client ? soldeInitial.negate() : soldeInitial, factures);
         BigDecimal creances = reste.add(factures.reste());
         BigDecimal net = client ? creances.subtract(avance) : avance.subtract(creances);
-        return new SoldePartenaire(soldeInitial, regle, reste, reste.signum() > 0 ? echeance : null, factures.reste(), avance, net, factures.avanceUtilisee());
+        return new SoldePartenaire(soldeInitial, regle, reste, reste.signum() > 0 ? echeance : null, factures.reste(), avance, net, factures.avanceUtilisee(), reglements.brut());
     }
 
     private static ResponseStatusException introuvable(String libelle) {

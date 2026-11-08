@@ -11,20 +11,24 @@ import java.time.LocalDate;
  * Pour un fournisseur, net = avance disponible − reste du solde de départ − restes des factures.</p>
  *
  * @param soldeDepart       montant signé enregistré sur la fiche (positif : il me doit ; négatif : je lui dois)
- * @param soldeDepartRegle  somme des règlements du solde de départ, en valeur absolue
+ * @param soldeDepartRegle  somme des règlements du solde de départ moins leurs annulations, en valeur absolue
  * @param resteSoldeDepart  ce qui reste à régler du solde de départ par celui qui le doit (client ou boutique)
  * @param echeanceSoldeDepart échéance du solde de départ, vide si elle n'a pas été saisie
  * @param resteFactures     somme des restes à payer de ses factures
  * @param avanceDisponible  avance non encore utilisée, jamais négative
  * @param soldeNet          solde global signé
  * @param avanceUtiliseeFactures somme des avances consommées par ses factures (ventes d'un client, achats d'un fournisseur)
+ * @param soldeDepartDejaRegle somme des règlements enregistrés, annulés ou non : un règlement annulé a servi, le solde reste figé
  */
 public record SoldePartenaire(BigDecimal soldeDepart, BigDecimal soldeDepartRegle, BigDecimal resteSoldeDepart,
                               LocalDate echeanceSoldeDepart, BigDecimal resteFactures, BigDecimal avanceDisponible,
-                              BigDecimal soldeNet, BigDecimal avanceUtiliseeFactures) {
-    /** Le solde de départ ne se modifie plus dès qu'il a servi : un règlement enregistré ou une avance consommée par une facture. */
+                              BigDecimal soldeNet, BigDecimal avanceUtiliseeFactures, BigDecimal soldeDepartDejaRegle) {
+    /**
+     * Le solde de départ ne se modifie plus dès qu'il a servi : un règlement enregistré (même annulé depuis) ou une avance
+     * consommée par une facture.
+     */
     public boolean soldeDepartModifiable() {
-        return soldeDepartRegle.signum() == 0 && avanceUtiliseeFactures.signum() == 0;
+        return soldeDepartDejaRegle.signum() == 0 && avanceUtiliseeFactures.signum() == 0;
     }
 
     public boolean soldeDepartAReglerPossible() {

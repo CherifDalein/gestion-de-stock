@@ -35,6 +35,19 @@ final class Lot2MigrationScenarios {
                 + "(22,2,'2025-03-01 10:00:00.000000',1.00,'ENCAISSEMENT','Règlement anonyme','VENTE',NULL,NULL,1234567),"
                 + "(30,2,'2025-02-15 09:00:00.000000',-10.00,'DECAISSEMENT','Versement anonyme','ACHAT',NULL,3,NULL),"
                 + "(31,2,'2025-02-15 09:01:00.000000',-10.00,'DECAISSEMENT','Versement nominatif','ACHAT',2,3,NULL)");
+        // Règlements ultérieurs écrits par la page de règlement (reclassés) et mouvements qui doivent rester tels quels : paiement saisi à la
+        // création, identifiant de document différent, motif approchant, texte libre, source déjà distincte.
+        sql(c, "INSERT INTO mouvement_caisse(id,boutique_id,date_mouvement,montant,type,motif,source,utilisateur_id,achat_id,vente_id) VALUES"
+                + "(13,2,'2025-02-11 10:00:00.000000',10.00,'ENCAISSEMENT','Règlement Vente #3 - Client: Fatoumata','VENTE',NULL,NULL,3),"
+                + "(14,2,'2025-02-11 10:01:00.000000',10.00,'ENCAISSEMENT','Règlement Vente #4 - Client: Fatoumata','VENTE',NULL,NULL,3),"
+                + "(15,2,'2025-02-11 10:02:00.000000',10.00,'ENCAISSEMENT','Vente #3 - Client: Fatoumata','VENTE',NULL,NULL,3),"
+                + "(17,2,'2025-02-11 10:04:00.000000',10.00,'ENCAISSEMENT','règlement vente #3 - client: Fatoumata','VENTE',NULL,NULL,3),"
+                + "(18,2,'2025-02-11 10:05:00.000000',10.00,'ENCAISSEMENT','Règlement Vente #3','VENTE',NULL,NULL,3),"
+                + "(19,2,'2025-02-11 10:06:00.000000',10.00,'ENCAISSEMENT',NULL,'VENTE',NULL,NULL,3),"
+                + "(33,2,'2025-02-16 09:00:00.000000',-10.00,'DECAISSEMENT','Règlement Achat #3 - Fournisseur: Boubacar','ACHAT',NULL,3,NULL),"
+                + "(34,2,'2025-02-16 09:01:00.000000',-10.00,'DECAISSEMENT','Règlement Achat #3 - Client: Boubacar','ACHAT',NULL,3,NULL),"
+                + "(35,2,'2025-02-16 09:02:00.000000',-10.00,'DECAISSEMENT','Achat #3 - Fournisseur: Boubacar','ACHAT',NULL,3,NULL),"
+                + "(36,2,'2025-02-16 09:03:00.000000',-10.00,'DECAISSEMENT','Règlement Achat #3 - Fournisseur: Boubacar','AJUSTEMENT',NULL,3,NULL)");
     }
 
     static void preparer(Connection c, String scenario) throws Exception {
@@ -188,6 +201,15 @@ final class Lot2MigrationScenarios {
     /** Auteurs repris selon la règle (premier mouvement nominatif), tables nouvelles vides et compteurs initiaux, puis valeurs attendues des cas limites. */
     private static void verifierValeurs(Connection c, String scenario) throws SQLException {
         boolean relance = scenario.equals("relance");
+        // Reclassement des règlements ultérieurs : seuls les motifs exactement écrits par l'application pour le document rattaché, de la même boutique.
+        if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE id=13") == 1) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE (id=13 AND source='REGLEMENT_VENTE') OR (id=33 AND source='REGLEMENT_ACHAT')") == 2,
+                    "Règlements ultérieurs historiques non reclassés");
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE (id IN (14,15,17,18,19,10,11,12,22) AND source='VENTE') OR (id IN (34,35,30,31) AND source='ACHAT')"
+                    + " OR (id=36 AND source='AJUSTEMENT')") == 14, "Un mouvement ambigu ou saisi à la création a été reclassé");
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE source IN ('REGLEMENT_VENTE','REGLEMENT_ACHAT')" + (relance ? " AND id<80" : "")) == 2,
+                    "Trop de mouvements reclassés");
+        }
         String historique = "d.id NOT BETWEEN " + RELANCE_MIN + " AND " + RELANCE_MAX + (relance ? " AND d.id<>1" : "");
         // Oracle indépendant de la migration : utilisateur du mouvement de plus petit identifiant qui en a un.
         for (String[] document : new String[][]{{"vente", "vente_id", "vendeur_id"}, {"achat", "achat_id", "utilisateur_id"}})

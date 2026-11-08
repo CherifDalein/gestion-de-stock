@@ -517,6 +517,89 @@ du dernier stock, retour et modification du même achat (cinq fois).
   reste et l'avance.
 - Un retour d'achat n'est pas annulable ; une correction passe par un nouvel achat ou un ajustement d'inventaire.
 
+## Annulation d'un règlement
+
+Le gérant peut annuler un **règlement ultérieur** : encaissement d'une vente, paiement d'un achat, règlement du solde de départ d'un
+client ou d'un fournisseur. L'argent s'est trompé de compte, de client ou de montant : on le remet comme avant, sans rien effacer.
+
+### Droits
+
+Réservé au gérant (`ADMIN`) : un caissier reçoit 403 sur les deux pages (confirmation et envoi), et le bouton « Annuler » ne
+s'affiche pas pour lui. Un mouvement, une vente, un achat, un client ou un fournisseur d'une autre boutique donne 404. Le jeton CSRF
+est exigé. Le formulaire n'accepte que le champ `motif` : tout autre champ donne 400.
+
+### Ce qui s'annule, ce qui ne s'annule pas
+
+| Mouvement | Annulable ? |
+|---|---|
+| Règlement ultérieur d'une vente (source `REGLEMENT_VENTE`) ou d'un achat (`REGLEMENT_ACHAT`) | oui |
+| Règlement du solde de départ d'un client (`SOLDE_CLIENT`) ou d'un fournisseur (`SOLDE_FOURNISSEUR`) | oui |
+| Paiement saisi à la création d'une vente ou d'un achat (`VENTE`, `ACHAT`) | non : se corrige par un retour |
+| Dépense, transfert, retour, fonds de départ, ajustement | non |
+| Mouvement déjà annulé | non : « Ce règlement a déjà été annulé. » |
+| Mouvement d'annulation (`ANNULATION`) | non |
+
+Jusqu'ici le règlement ultérieur et le paiement de création portaient la même source (`VENTE` ou `ACHAT`). Les règlements écrits
+par la page de règlement ont désormais leur propre source ; la migration reclasse les anciens (voir
+[Lot 2 : préparation du schéma](migrations/lot-2.md#reclassement-des-règlements)).
+
+### Effets (une seule transaction)
+
+1. Un **mouvement inverse** est créé : montant opposé, même compte, source `ANNULATION`, lien `annulation_de_id` vers l'origine,
+   motif, utilisateur et date. L'origine n'est jamais modifiée ni supprimée.
+2. Facture : `montant_verse` diminue du montant annulé. Si la facture n'avait plus d'échéance et que son reste redevient positif,
+   une échéance est proposée (date du jour plus le délai de la boutique) ; une échéance existante est conservée.
+3. Solde de départ : le reste à régler est rétabli. La règle « solde figé après usage » ne change pas : un solde déjà réglé,
+   même annulé ensuite, ne redevient pas modifiable.
+4. Un encaissement annulé est une **sortie** : même contrôle de solde que les dépenses et transferts (« Solde insuffisant sur le
+   compte … »). Un paiement fournisseur annulé est une entrée.
+
+Le motif est obligatoire (3 à 255 caractères, sans caractère de contrôle).
+
+### Refus
+
+- **Retour postérieur** : si un retour daté du règlement ou après existe sur la facture, l'annulation est refusée. Annuler ferait
+  disparaître l'argent sur lequel le retour s'est appuyé ; on traite alors la facture par un nouveau retour ou règlement.
+- Source non annulable, déjà annulé, motif invalide, solde du compte insuffisant (encaissement), solde de départ qui ne couvre plus
+  le montant : message clair, rien n'est écrit.
+- Double envoi ou deux gérants en même temps : la contrainte unique `uk_mouvement_caisse_annulation` et les verrous garantissent une
+  seule annulation ; le second envoi reçoit 409 avec le message « déjà annulé », jamais une erreur 500.
+
+### Exemples chiffrés
+
+- Vente de 100 000 GNF, 20 000 versés à la création, règlement de 30 000 sur la banque : reste 50 000, trésorerie +50 000. Annulation :
+  mouvement de −30 000 sur la banque, montant versé 20 000, reste 80 000, trésorerie +20 000, créance du client de nouveau 80 000.
+  Le paiement de 20 000 saisi à la création n'est pas annulable.
+- Achat de 100 000 GNF, 20 000 versés, paiement de 30 000 sur Orange Money, puis annulation : entrée de +30 000 sur Orange Money,
+  reste dû 80 000.
+- Client devant 100 000 GNF de solde de départ, 30 000 réglés (reste 70 000), puis annulation : reste 100 000, caisse revenue à 0.
+  Pour un fournisseur à qui la boutique doit 100 000 et 40 000 payés, l'annulation est une entrée de 40 000, reste dû 100 000.
+
+### Écrans
+
+Les pages de règlement (vente, achat, solde de départ client et fournisseur) affichent un bouton « Annuler » sur chaque règlement
+annulable (gérant seulement). Il ouvre une page de confirmation (montant, date, compte, auteur) avec le champ motif. Le journal de
+caisse écrit « Annulé le … · motif : … » sur l'origine et « Annulation du mouvement du … » sur le mouvement inverse ; les totaux
+comptent les deux, donc restent justes. Les relevés cumulés montrent l'annulation d'un règlement de solde de départ en négatif.
+
+### Verrous et concurrence
+
+L'ordre est celui de [Ordre des verrous](#ordre-des-verrous) : boutique, puis le document (vente, achat, ou partenaire du solde),
+puis le partenaire, puis les comptes de trésorerie. La transaction est en `READ_COMMITTED` (comme les retours) pour relire l'état
+réel après une attente de verrou.
+
+### Vérifications
+
+`AnnulationReglementTests` (H2) couvre : vente, achat, solde client et fournisseur ; échéance proposée ou conservée ; refus (création,
+dépense, déjà annulé, annulation, retour postérieur, motif, caissier 403, autre boutique 404, champ inconnu 400, CSRF) ; deux envois
+simultanés ; journal. `OrdreVerrousMariaDbTest` croise 25 fois, sur les vrais verrous InnoDB, l'annulation d'un règlement avec un
+nouveau règlement de la même vente et avec un retour de la même vente.
+
+### Limites connues
+
+- Un retour (de vente ou d'achat) n'est pas annulable ; un retour postérieur au règlement bloque son annulation.
+- Une annulation n'est pas elle-même annulable : pour remettre le règlement, on en saisit un nouveau.
+
 ## Ordre des verrous
 
 Cette section est la seule description de l'ordre des verrous de l'application ; les autres sections et le
@@ -556,6 +639,7 @@ peut former de cycle. Exemple observé avant la règle : une création d'achat t
 | Ventes | création et transformation d'un devis (`effectuerVente`), règlement (`reglerVente`), échéance (`modifierEcheance`) |
 | Création avec jeton | `OperationCreationService.creerAchat` et `creerVente` (la boutique avant la ligne du jeton) |
 | Retours | `RetourVenteService.enregistrer`, `RetourAchatService.enregistrer` |
+| Annulation de règlement | `AnnulationReglementService.annulerReglementVente`, `annulerReglementAchat`, `annulerReglementSoldeClient`, `annulerReglementSoldeFournisseur` |
 | Soldes de départ | `SoldeDepartService.reglerClient` et `reglerFournisseur` ; `appliquerALaModification` (modification d'une fiche client ou fournisseur avec solde de départ) |
 | Devis | création, prolongation, annulation |
 | Trésorerie | `CaisseService.initialiser`, `depenser`, `transferer` et toute écriture de mouvement (`enregistrerEntree*`, `enregistrerSortie*`) |
@@ -595,4 +679,4 @@ les 25 tours passent, et les lectures verrouillées voient toujours les opérati
 avance et retour en avoir d'un de ses achats ; création de vente pour un client ayant une avance et retour de vente en avoir ;
 règlement d'un achat et retour du même achat ; règlement d'une vente et retour de la même vente ; règlement du solde de départ d'un
 client et vente à ce client ; règlement du solde de départ d'un fournisseur et achat chez lui ; modification d'un achat et création
-d'un achat pour le même fournisseur ; retours et créations croisés dans deux boutiques. Aucun ne doit produire d'erreur.
+d'un achat pour le même fournisseur ; annulation d'un règlement et nouveau règlement de la même vente ; annulation d'un règlement et retour de la même vente ; retours et créations croisés dans deux boutiques. Aucun ne doit produire d'erreur.

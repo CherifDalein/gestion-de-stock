@@ -21,6 +21,16 @@ public interface RetourRepository extends JpaRepository<Retour, Long> {
     @Query("SELECT r FROM Retour r WHERE r.boutique.id = :boutiqueId AND r.type = org.example.stock.enums.TypeRetour.ACHAT ORDER BY r.dateRetour DESC, r.id DESC")
     List<Retour> retoursAchat(@Param("boutiqueId") Long boutiqueId);
 
+    /**
+     * Numéros des retours d'une vente datés à partir d'une date : ceux qu'un règlement fait à cette date ne peut plus voir
+     * sans risque (un retour tient compte du reste à payer au moment où il est fait). Égalité comprise, par prudence.
+     */
+    @Query("SELECT r.numero FROM Retour r WHERE r.vente.id = :venteId AND r.dateRetour >= :date ORDER BY r.dateRetour, r.id")
+    List<String> numerosDepuisVente(@Param("venteId") Long venteId, @Param("date") java.time.LocalDateTime date);
+
+    @Query("SELECT r.numero FROM Retour r WHERE r.achat.id = :achatId AND r.dateRetour >= :date ORDER BY r.dateRetour, r.id")
+    List<String> numerosDepuisAchat(@Param("achatId") Long achatId, @Param("date") java.time.LocalDateTime date);
+
     long countByVenteId(Long venteId);
 
     long countByAchatId(Long achatId);

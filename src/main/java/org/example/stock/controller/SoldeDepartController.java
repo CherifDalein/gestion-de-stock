@@ -91,7 +91,9 @@ public class SoldeDepartController {
         model.addAttribute("partenaireNom", client.getNom());
         model.addAttribute("typePartenaire", "client");
         model.addAttribute("solde", soldes.soldeClient(id));
-        model.addAttribute("reglements", caisseService.listerReglementsSoldeClient(id));
+        var reglements = caisseService.listerReglementsSoldeClient(id);
+        model.addAttribute("reglements", reglements);
+        model.addAttribute("annulations", caisseService.annulationsDe(reglements));
         model.addAttribute("actionUrl", "/clients/solde/regler/" + id);
         model.addAttribute("retourUrl", "/clients");
         model.addAttribute("view", "partenaires/regler-solde");
@@ -136,7 +138,9 @@ public class SoldeDepartController {
         model.addAttribute("partenaireNom", fournisseur.getNom());
         model.addAttribute("typePartenaire", "fournisseur");
         model.addAttribute("solde", soldes.soldeFournisseur(id));
-        model.addAttribute("reglements", caisseService.listerReglementsSoldeFournisseur(id));
+        var reglements = caisseService.listerReglementsSoldeFournisseur(id);
+        model.addAttribute("reglements", reglements);
+        model.addAttribute("annulations", caisseService.annulationsDe(reglements));
         model.addAttribute("actionUrl", "/fournisseurs/solde/regler/" + id);
         model.addAttribute("retourUrl", "/fournisseurs");
         model.addAttribute("view", "partenaires/regler-solde");

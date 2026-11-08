@@ -10,6 +10,11 @@ import java.util.*;
  * Les quatre tables sont créées vides. {@code vente.montant_retours} et {@code achat.montant_retours} sont ajoutées à 0
  * (valeur par défaut, rien à reprendre). Seules deux colonnes reprennent l'existant, {@code vente.vendeur_id} et
  * {@code achat.utilisateur_id}, remplies dans une seule transaction avec l'auteur du premier mouvement de caisse nominatif.
+ * La même transaction reclasse les règlements ultérieurs historiques : un mouvement de source {@code VENTE} (resp. {@code ACHAT})
+ * dont le motif écrit par l'application est exactement « Règlement Vente #n - Client: … » (resp. « Règlement Achat #n - Fournisseur: … »),
+ * avec n l'identifiant du document auquel il est rattaché et ce document de la même boutique, devient {@code REGLEMENT_VENTE}
+ * (resp. {@code REGLEMENT_ACHAT}) et seul lui peut être annulé. Le paiement saisi à la création (« Vente #n - … ») et tout
+ * mouvement dont le motif ne correspond pas exactement gardent leur source : ils ne sont pas annulables.
  * {@code boutique.prochain_numero_retour_achat NOT NULL} marque la fin de l'initialisation et interdit toute nouvelle
  * écriture de ces valeurs lors d'une relance. Aucun stock, montant ou mouvement n'est modifié.
  * Seules les syntaxes acceptées par MariaDB 10.4 sont employées.
@@ -212,11 +217,41 @@ public final class Lot2Migration {
         try {
             reprendreAuteurs(c, "vente", "vente_id", "vendeur_id");
             reprendreAuteurs(c, "achat", "achat_id", "utilisateur_id");
+            reclasserReglements(c);
             sql(c, "UPDATE " + table(c, "boutique") + " SET prochain_numero_retour_achat=1 WHERE prochain_numero_retour_achat IS NULL");
             c.commit(); valide = true;
         } finally {
             if (!valide) c.rollback();
             c.setAutoCommit(true);
+        }
+    }
+
+    /** Source d'un paiement saisi à la création, source du règlement ultérieur correspondant, colonne du document, table du document et début exact du motif. */
+    record Reclassement(String ancienne, String nouvelle, String lien, String document, String prefixe, String complement) {}
+    static final List<Reclassement> RECLASSEMENTS = List.of(
+            new Reclassement("VENTE", "REGLEMENT_VENTE", "vente_id", "vente", "Règlement Vente #", " - Client: "),
+            new Reclassement("ACHAT", "REGLEMENT_ACHAT", "achat_id", "achat", "Règlement Achat #", " - Fournisseur: "));
+
+    /**
+     * Mouvements historiques à reclasser en règlements ultérieurs : source d'origine, rattachés à un document de leur boutique, au motif
+     * exactement écrit par la page de règlement pour ce document. Aucune autre ligne n'est touchée (rôle et sens du mouvement compris).
+     */
+    private static List<Long> reglementsHistoriques(Connection c, Reclassement r) throws SQLException {
+        var ids = new ArrayList<Long>();
+        try (var s = c.createStatement(); var rs = s.executeQuery("SELECT m.id,m." + r.lien() + ",m.motif FROM " + table(c, "mouvement_caisse") + " m JOIN "
+                + table(c, r.document()) + " d ON d.id=m." + r.lien() + " AND d.boutique_id=m.boutique_id WHERE m.source='" + r.ancienne() + "' AND m.motif IS NOT NULL ORDER BY m.id")) {
+            while (rs.next()) if (rs.getString(3).startsWith(r.prefixe() + rs.getLong(2) + r.complement())) ids.add(rs.getLong(1));
+        }
+        return ids;
+    }
+
+    private static void reclasserReglements(Connection c) throws SQLException {
+        for (var r : RECLASSEMENTS) {
+            var ids = reglementsHistoriques(c, r);
+            try (var s = c.prepareStatement("UPDATE " + table(c, "mouvement_caisse") + " SET source=? WHERE id=? AND source=?")) {
+                for (long id : ids) { s.setString(1, r.nouvelle()); s.setLong(2, id); s.setString(3, r.ancienne()); s.addBatch(); }
+                if (!ids.isEmpty()) s.executeBatch();
+            }
         }
     }
 
@@ -234,6 +269,7 @@ public final class Lot2Migration {
     }
 
     private static void verifierInitialisation(Connection c) throws SQLException {
+        for (var r : RECLASSEMENTS) if (!reglementsHistoriques(c, r).isEmpty()) nonConforme("un règlement ultérieur historique n'a pas été reclassé");
         if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "boutique") + " WHERE prochain_numero_retour_achat IS NULL") != 0) nonConforme("initialisation incomplète des compteurs");
         for (String[] document : new String[][]{{"vente", "vente_id", "vendeur_id"}, {"achat", "achat_id", "utilisateur_id"}})
             if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, document[0]) + " d WHERE d." + document[2] + " IS NULL AND EXISTS (SELECT 1 FROM "
@@ -408,6 +444,7 @@ public final class Lot2Migration {
             total += BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, document[0]) + " d WHERE " + filtre + "EXISTS (SELECT 1 FROM " + table(c, "mouvement_caisse")
                     + " m WHERE m." + document[1] + "=d.id AND m.utilisateur_id IS NOT NULL)");
         }
+        for (var r : RECLASSEMENTS) total += reglementsHistoriques(c, r).size();
         if (colonnes(c, "boutique").containsKey(MARQUEUR.nom())) total += BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "boutique") + " WHERE " + MARQUEUR.nom() + " IS NULL");
         else total += BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "boutique"));
         return total;
@@ -428,8 +465,14 @@ public final class Lot2Migration {
             try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table(c, nom) + " ORDER BY " + PhotographieJdbc.ordre(c, nom))) {
                 while (r.next()) {
                     var ligne = new ArrayList<Object>();
-                    for (int i = 1; i <= r.getMetaData().getColumnCount(); i++)
-                        if (!exclues.contains(r.getMetaData().getColumnName(i).toLowerCase(Locale.ROOT))) ligne.add(PhotographieJdbc.valeur(r, i));
+                    for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) {
+                        String colonne = r.getMetaData().getColumnName(i).toLowerCase(Locale.ROOT);
+                        if (exclues.contains(colonne)) continue;
+                        Object valeur = PhotographieJdbc.valeur(r, i);
+                        // Le reclassement des règlements ultérieurs est la seule réécriture voulue : la source d'origine sert de référence.
+                        if (nom.equals("mouvement_caisse") && colonne.equals("source")) for (var reclassement : RECLASSEMENTS) if (reclassement.nouvelle().equals(valeur)) valeur = reclassement.ancienne();
+                        ligne.add(valeur);
+                    }
                     lignes.add(ligne);
                 }
             }

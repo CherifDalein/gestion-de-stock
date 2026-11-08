@@ -1,0 +1,18 @@
+<!-- Mentions et bouton d'annulation d'un règlement. Tous les textes viennent de th:text, jamais de HTML. -->
+<th:block th:fragment="mention(mouvement, annulation)">
+    <small class="d-block text-muted mouvement-annule" th:if="${annulation != null}">
+        Annulé le <span th:text="${annulation.dateMouvement != null ? #temporals.format(annulation.dateMouvement, 'dd/MM/yyyy HH:mm') : 'date non renseignée'}"></span>
+        · motif : <span th:text="${annulation.motif}"></span>
+    </small>
+    <small class="d-block text-muted mouvement-annulation" th:if="${mouvement.source == 'ANNULATION' and mouvement.annulationDe != null}">
+        Annulation du mouvement du <span th:text="${mouvement.annulationDe.dateMouvement != null ? #temporals.format(mouvement.annulationDe.dateMouvement, 'dd/MM/yyyy HH:mm') : 'date non renseignée'}"></span>
+    </small>
+</th:block>
+
+<!-- Bouton « Annuler » : gérant seulement, sur un règlement annulable pas encore annulé. -->
+<th:block th:fragment="bouton(mouvement, annulation, source, url)">
+    <a sec:authorize="hasRole('ADMIN')" th:if="${annulation == null and mouvement.source == source}"
+       th:href="@{${url}}" class="btn btn-sm btn-outline-danger"
+       th:attr="aria-label=${'Annuler le règlement du ' + #temporals.format(mouvement.dateMouvement, 'dd/MM/yyyy HH:mm')}">
+        <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Annuler</a>
+</th:block>
