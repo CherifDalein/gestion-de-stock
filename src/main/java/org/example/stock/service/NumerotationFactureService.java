@@ -2,6 +2,7 @@ package org.example.stock.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
+import org.example.stock.repository.StockLockRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,8 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>Le compteur est lu et avancé sous le verrou de la ligne boutique, dans la transaction de la création :
  * deux créations simultanées d'une même boutique sont numérotées l'une après l'autre, et une création annulée
- * rend son numéro. Appeler après {@code InitialisationBoutiqueService.verrouillerEtClorePourActivite()} et avant
- * tout verrou de produit ou toute insertion liée à la boutique, pour garder le même ordre de verrous partout.</p>
+ * rend son numéro. La ligne boutique est le premier verrou de toute écriture métier
+ * ({@link StockLockRepository#verrouillerBoutiqueCourante()}, voir « Ordre des verrous » dans {@code docs/lot-2.md}) : elle
+ * est déjà tenue quand on arrive ici, et le verrou pris ici n'est qu'une garantie, sans attente ni relecture.</p>
  */
 @Service
 @Transactional(propagation = Propagation.MANDATORY)
@@ -23,10 +25,12 @@ public class NumerotationFactureService {
 
     private final EntityManager entityManager;
     private final BoutiqueService boutiques;
+    private final StockLockRepository verrous;
 
-    public NumerotationFactureService(EntityManager entityManager, BoutiqueService boutiques) {
+    public NumerotationFactureService(EntityManager entityManager, BoutiqueService boutiques, StockLockRepository verrous) {
         this.entityManager = entityManager;
         this.boutiques = boutiques;
+        this.verrous = verrous;
     }
 
     private enum Type {
@@ -94,6 +98,8 @@ public class NumerotationFactureService {
     private String attribuer(Type type, String numeroSaisi) {
         String manuel = validerSaisie(numeroSaisi);
         Long boutiqueId = boutiques.idBoutiqueCourante();
+        // Déjà verrouillée en tête de transaction (idempotent) ; sinon, c'est ici le premier verrou de la transaction.
+        verrous.verrouillerBoutiqueCourante();
         // Lecture verrouillée : elle voit le dernier compteur validé, même après un instantané REPEATABLE READ,
         // et sérialise les créations de la boutique jusqu'au commit.
         Object valeur = entityManager.createNativeQuery("select " + type.colonne + " from boutique where id = :id for update")

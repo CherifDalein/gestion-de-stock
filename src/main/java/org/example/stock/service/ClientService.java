@@ -3,6 +3,7 @@ package org.example.stock.service;
 import org.example.stock.model.Client;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.ClientRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,9 @@ public class ClientService {
 
     @Autowired
     private SoldeDepartService soldeDepart;
+
+    @Autowired
+    private StockLockRepository verrous;
 
     public List<Client> listerTous() {
         return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
@@ -56,6 +60,8 @@ public class ClientService {
 
     @Transactional
     public void supprimerClient(Long id) {
+        // La suppression contrôle les factures du client : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »).
+        verrous.verrouillerBoutiqueCourante();
         clientRepository.delete(trouverParId(id));
     }
 }

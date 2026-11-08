@@ -81,6 +81,8 @@ public class DevisService {
         if (form.getLignes() == null || form.getLignes().isEmpty()) {
             throw new IllegalArgumentException("Ajoutez au moins une ligne au devis.");
         }
+        // Ordre global des verrous : la boutique d'abord (elle porte aussi le compteur FD-), avant toute lecture ou insertion.
+        verrous.verrouillerBoutiqueCourante();
         LocalDate jour = echeances.aujourdHui();
         LocalDate validite = form.getDateValidite() != null ? form.getDateValidite() : jour.plusDays(VALIDITE_PAR_DEFAUT_JOURS);
         exigerValiditeCreation(validite, jour);
@@ -127,7 +129,7 @@ public class DevisService {
             total = Montants.valider(total.add(ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantite()))), "Le total du devis");
         }
 
-        // Verrou de la boutique pour le compteur : même rang que les ventes et achats, avant toute insertion.
+        // Le compteur est lu sous le verrou de la boutique, déjà tenu.
         nouveau.setNumero(numerotation.attribuerNumeroDevis());
         nouveau.setBoutique(boutiques.boutiqueCourante());
         nouveau.setClient(client);
@@ -167,6 +169,7 @@ public class DevisService {
     @Transactional
     public void prolonger(Long id, LocalDate nouvelleDate) {
         if (nouvelleDate == null) throw new IllegalArgumentException("Choisissez la nouvelle date de validité.");
+        verrous.verrouillerBoutiqueCourante();
         Devis verrouille = verrous.verrouillerDevis(id);
         exigerEnCours(verrouille);
         LocalDate jour = echeances.aujourdHui();
@@ -181,6 +184,7 @@ public class DevisService {
     /** Annule un devis en cours (expiré compris). Un devis transformé ne s'annule pas : la vente existe. */
     @Transactional
     public void annuler(Long id) {
+        verrous.verrouillerBoutiqueCourante();
         Devis verrouille = verrous.verrouillerDevis(id);
         exigerEnCours(verrouille);
         verrouille.setStatut(StatutDevis.ANNULE);

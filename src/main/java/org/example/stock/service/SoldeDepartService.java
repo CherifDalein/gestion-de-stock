@@ -27,7 +27,8 @@ import java.util.Objects;
  *
  * <p>Le solde est enregistré signé dans {@code solde_initial} (positif : le partenaire me doit ; négatif : je lui dois).
  * Sa saisie ne crée aucun mouvement de trésorerie. Son règlement, lui, entre ou sort en trésorerie, rattaché au partenaire.
- * Ordre des verrous : boutique (clôture du démarrage), fiche du partenaire, lignes lues pour le calcul, comptes de trésorerie.</p>
+ * Ordre des verrous : boutique, fiche du partenaire, lignes lues pour le calcul, comptes de trésorerie (docs/lot-2.md,
+ * « Ordre des verrous »).</p>
  */
 @Service
 public class SoldeDepartService {
@@ -75,6 +76,7 @@ public class SoldeDepartService {
     public void appliquerALaModification(Long id, Client saisie) {
         if (!saisie.isSoldeDepartSoumis()) return;
         exigerGerant();
+        verrous.verrouillerBoutiqueCourante();
         Client client = verrous.verrouillerClient(id);
         Solde solde = calculer(Partenaire.CLIENT, id, client.getSoldeInitial(), client.getEcheanceSoldeInitial(),
                 saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
@@ -86,6 +88,7 @@ public class SoldeDepartService {
     public void appliquerALaModification(Long id, Fournisseur saisie) {
         if (!saisie.isSoldeDepartSoumis()) return;
         exigerGerant();
+        verrous.verrouillerBoutiqueCourante();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(id);
         Solde solde = calculer(Partenaire.FOURNISSEUR, id, fournisseur.getSoldeInitial(), fournisseur.getEcheanceSoldeInitial(),
                 saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
@@ -130,6 +133,7 @@ public class SoldeDepartService {
     @Transactional
     public void reglerClient(Long clientId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
+        verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Client client = verrous.verrouillerClient(clientId);
         BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.CLIENT, clientId);
@@ -146,6 +150,7 @@ public class SoldeDepartService {
     @Transactional
     public void reglerFournisseur(Long fournisseurId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
+        verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(fournisseurId);
         BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.FOURNISSEUR, fournisseurId);

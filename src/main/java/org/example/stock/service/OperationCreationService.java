@@ -6,6 +6,7 @@ import org.example.stock.enums.TypeOperationCreation;
 import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.OperationCreationRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,15 +35,18 @@ public class OperationCreationService {
     private final VenteService ventes;
     private final EntityManager entityManager;
     private final BoutiqueService boutiques;
+    private final StockLockRepository verrous;
 
     public OperationCreationService(OperationCreationRepository operations, UtilisateurRepository utilisateurs,
-                                    AchatService achats, VenteService ventes, EntityManager entityManager, BoutiqueService boutiques) {
+                                    AchatService achats, VenteService ventes, EntityManager entityManager, BoutiqueService boutiques,
+                                    StockLockRepository verrous) {
         this.operations = operations;
         this.utilisateurs = utilisateurs;
         this.achats = achats;
         this.ventes = ventes;
         this.entityManager = entityManager;
         this.boutiques = boutiques;
+        this.verrous = verrous;
     }
 
     public record ResultatCreation(Long documentId, boolean dejaEnregistre) {}
@@ -60,6 +64,9 @@ public class OperationCreationService {
 
     @Transactional
     public ResultatCreation creerAchat(String jeton, Achat achat) {
+        // Ordre global des verrous : la boutique avant la ligne du jeton, pour que le jeton ne soit jamais tenu pendant
+        // l'attente de la boutique (l'achat appelé ensuite la retrouve déjà verrouillée).
+        verrous.verrouillerBoutiqueCourante();
         OperationCreation operation = verrouiller(jeton, TypeOperationCreation.ACHAT);
         String empreinte = empreinte(achat, null);
         if (operation.getAchat() != null) {
@@ -84,6 +91,7 @@ public class OperationCreationService {
     /** Vente issue d'un devis si {@code devisId} est donné : l'identifiant du devis fait partie de l'empreinte du formulaire. */
     @Transactional
     public ResultatCreation creerVente(String jeton, Vente vente, Long devisId) {
+        verrous.verrouillerBoutiqueCourante();
         OperationCreation operation = verrouiller(jeton, TypeOperationCreation.VENTE);
         String empreinte = empreinte(null, vente, true, devisId);
         if (operation.getVente() != null) {

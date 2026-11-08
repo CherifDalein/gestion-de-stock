@@ -49,10 +49,12 @@ public class AchatService {
     public Achat enregistrerAchat(Achat achat) {
         if (achat.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le paiement.");
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
+        // Ordre global des verrous : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »), puis le fournisseur et ses
+        // factures, puis les produits.
+        stockLockRepository.verrouillerBoutiqueCourante();
         validerAchat(achat);
         achat.setNumero(NumerotationFactureService.validerSaisie(achat.getNumero()));
         initialisation.verrouillerEtClorePourActivite();
-        // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
         String numero = numerotation.attribuerNumeroAchat(achat.getNumero());
         achat.setBoutique(boutiqueService.boutiqueCourante());
         // Fiche du fournisseur verrouillée ensuite, avant les produits : une avance n'est jamais consommée deux fois.
@@ -100,18 +102,18 @@ public class AchatService {
     }
 
     /**
-     * Modifie les lignes d'un achat sans retour. Isolation READ COMMITTED, comme le retour d'achat : la lecture verrouillée des
-     * retours de l'achat ne pose alors aucun verrou de plage, qui croiserait l'insertion d'un retour sur un autre achat du même
-     * fournisseur (deadlock InnoDB constaté pour les retours de vente en REPEATABLE READ).
+     * Modifie les lignes d'un achat sans retour. Ordre des verrous : boutique, achat, fournisseur, produits (docs/lot-2.md,
+     * « Ordre des verrous »). Isolation READ COMMITTED, comme le retour d'achat : la lecture verrouillée des retours de l'achat
+     * ne pose aucun verrou de plage (voir « Isolation » dans la même section).
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void modifierAchat(Long id, Achat achatModifie) {
         if (achatModifie.getMontantVerse() != null) {
             throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
         }
+        stockLockRepository.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
-        // Même ordre que le retour d'achat : l'achat, puis la fiche du fournisseur, puis les produits. L'achat en premier
-        // évite le cycle avec un retour d'achat (achat → fournisseur) et avec un règlement (achat seul).
+        // Même ordre que le retour d'achat : boutique, achat, fiche du fournisseur, produits.
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
         // Lecture verrouillée sous le verrou de l'achat : un retour d'achat validé à l'instant est vu.
         if (!entityManager.createQuery("select r.id from Retour r where r.achat.id = :achat", Long.class)
@@ -194,6 +196,7 @@ public class AchatService {
         if (montantVerseAttendu == null || montantVerseAttendu.signum() < 0) {
             throw new IllegalArgumentException("Rechargez le formulaire de règlement.");
         }
+        stockLockRepository.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Achat achat = stockLockRepository.verrouillerAchat(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(achat.getMontantVerse()), "Le montant déjà versé");
@@ -250,6 +253,7 @@ public class AchatService {
     @Transactional
     public void modifierEcheance(Long id, LocalDate echeance) {
         if (echeance == null) throw new IllegalArgumentException("Choisissez la nouvelle échéance.");
+        stockLockRepository.verrouillerBoutiqueCourante();
         Achat achat = stockLockRepository.verrouillerAchat(id);
         if (achat.getResteAPayer().signum() <= 0) {
             throw new IllegalArgumentException("Cet achat est soldé : son échéance n'est plus modifiable.");

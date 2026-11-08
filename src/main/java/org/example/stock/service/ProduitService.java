@@ -73,6 +73,8 @@ public class ProduitService {
         if (modifications.getVersion() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Version du produit obligatoire");
         }
+        // Ordre global des verrous : la boutique avant le produit (docs/lot-2.md, « Ordre des verrous »).
+        stockLockRepository.verrouillerBoutiqueCourante();
         if (!produitRepository.existsByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable");
         }
@@ -164,6 +166,7 @@ public class ProduitService {
 
     @Transactional
     public void supprimerProduit(Long id) {
+        stockLockRepository.verrouillerBoutiqueCourante();
         Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
         if (produit.getQuantite() != null && produit.getQuantite() != 0) {
             throw new IllegalArgumentException("Ce produit possède encore du stock et doit être conservé. Seuls les achats et les ventes peuvent faire varier les quantités.");

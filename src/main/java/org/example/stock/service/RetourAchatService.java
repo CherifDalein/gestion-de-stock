@@ -45,13 +45,10 @@ import java.util.Set;
  * trésorerie entrant), soit gardé en avoir chez lui (avance de la boutique auprès de ce fournisseur). Le stock diminue de
  * la quantité retournée ; le coût moyen est recalculé au prix de la ligne d'achat ({@link CoutMoyenService}).</p>
  *
- * <p><b>Ordre des verrous</b> : (clôture du démarrage) → ligne de l'<b>achat</b> → ligne de la <b>boutique</b> (numéro
- * {@code RA-}) → fiche du <b>fournisseur</b> → <b>produits</b> (par identifiant croissant) → comptes de trésorerie
- * (lecture) pour l'argent rendu. L'achat passe en premier parce que le règlement d'un achat le verrouille puis insère un
- * mouvement de caisse, qui lit la boutique par sa clé étrangère : prendre la boutique avant l'achat ferait un cycle avec
- * ce règlement. La modification d'un achat prend elle aussi l'achat en premier, puis le fournisseur, puis les produits
- * ({@link AchatService#modifierAchat}). Aucun chemin ne verrouille deux achats, et la création d'un achat
- * (boutique → fournisseur → produits) ne verrouille aucun achat existant en écriture : il n'y a pas de cycle.</p>
+ * <p><b>Ordre des verrous</b> : ligne de la <b>boutique</b> en premier (c'est aussi elle qui porte le numéro {@code RA-}),
+ * puis l'<b>achat</b>, la fiche du <b>fournisseur</b>, les <b>produits</b> (par identifiant croissant) et les comptes de
+ * trésorerie (lecture) pour l'argent rendu. C'est l'ordre commun à toutes les écritures métier, décrit dans
+ * {@code docs/lot-2.md}, « Ordre des verrous ».</p>
  */
 @Service
 public class RetourAchatService {
@@ -147,21 +144,21 @@ public class RetourAchatService {
      * numéro.
      * <p>
      * Isolation READ COMMITTED, comme le retour de vente : sous REPEATABLE READ, les lectures verrouillées des retours d'un
-     * achat posent des verrous de plage (« gap ») qui, entre deux retours d'achats différents, se croisent avec l'insertion
-     * du retour et provoquent un deadlock InnoDB. Les écritures restent protégées par les verrous de ligne (achat,
-     * fournisseur, produits).
+     * achat posent des verrous de plage (« gap »), qui peuvent croiser l'insertion d'un retour d'une autre boutique. Les
+     * écritures restent protégées par les verrous de ligne (boutique, achat, fournisseur, produits).
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Retour enregistrer(Long achatId, RetourAchatForm form) {
         exigerGerant();
         if (form == null) throw new IllegalArgumentException("Indiquez au moins une quantité à retourner.");
+        // 1. La boutique d'abord (ordre global des verrous), 2. l'achat : deux retours simultanés sur le même achat passent
+        //    l'un après l'autre, et un règlement de cet achat aussi.
+        verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
-        // 1. L'achat d'abord : deux retours simultanés sur le même achat passent l'un après l'autre, et un règlement
-        //    de cet achat aussi.
         Achat achat = verrous.verrouillerAchat(achatId);
         Map<Long, Integer> demandees = quantitesDemandees(form);
         controlerFormulaireNonPerime(achat, form);
-        // 2. La boutique (numéro), 3. le fournisseur, 4. les produits.
+        // 3. Le fournisseur, 4. les produits ; le numéro lit le compteur de la boutique, déjà verrouillée.
         String numero = numerotation.attribuerNumeroRetourAchat();
         Fournisseur fournisseur = achat.getFournisseur() == null ? null : verrous.verrouillerFournisseur(achat.getFournisseur().getId());
 
