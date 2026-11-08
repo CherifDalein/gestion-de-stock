@@ -134,6 +134,8 @@ final class Lot2MigrationScenarios {
                 + "(81,1,'2026-02-01 00:00:00.000000',-10.00,'DECAISSEMENT','Achat récent','ACHAT',1,80,NULL)");
         sql(c, "UPDATE vente SET vendeur_id=3 WHERE id=1");
         sql(c, "UPDATE achat SET utilisateur_id=NULL WHERE id=1");
+        // Un retour déjà enregistré par le code actuel : son total sur la vente ne doit pas être remis à zéro par une relance.
+        sql(c, "UPDATE vente SET montant_retours=10.00 WHERE id=80");
         sql(c, "UPDATE boutique SET prochain_numero_devis=5,prochain_numero_retour_vente=7,prochain_numero_retour_achat=9 WHERE id=1");
         sql(c, "INSERT INTO devis(id,boutique_id,numero,client_id,utilisateur_id,date_devis,date_validite,montant_total,statut,vente_id,note,version) VALUES"
                 + "(80,1,'DV-000001',1,1," + DATE + ",'2026-03-01',100.00,'TRANSFORME',80,'Devis transformé',1)");
@@ -206,7 +208,10 @@ final class Lot2MigrationScenarios {
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM achat WHERE (id=3 AND utilisateur_id=2) OR (id=4 AND utilisateur_id IS NULL) OR (id=1 AND "
                     + (relance ? "utilisateur_id IS NULL" : "utilisateur_id=1") + ")") == 3, "Auteurs d'achats historiques");
         }
+        exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE montant_retours<>0" + (relance ? " AND id<>80" : "")) == 0
+                && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM achat WHERE montant_retours<>0") == 0, "Total des retours mal initialisé");
         if (relance) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=80 AND montant_retours=10.00") == 1, "La relance a réécrit le total des retours");
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=80 AND vendeur_id IS NULL") == 1
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM achat WHERE id=80 AND utilisateur_id IS NULL") == 1, "La relance a réécrit une activité postérieure");
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1 AND prochain_numero_devis=5 AND prochain_numero_retour_vente=7 AND prochain_numero_retour_achat=9") == 1,

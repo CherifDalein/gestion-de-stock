@@ -138,8 +138,13 @@ public class RetourVenteService {
      * Enregistre un retour sur la vente donnée. Tout est écrit dans une seule transaction : le retour et ses lignes, le
      * total des retours de la vente, le stock et le coût moyen, le remboursement éventuel. Un refus annule tout et rend
      * le numéro.
+     * <p>
+     * Isolation READ COMMITTED : sous REPEATABLE READ, les lectures verrouillées des retours d'une vente posent des verrous
+     * de plage (« gap ») qui, entre deux retours de ventes différentes, se croisent avec l'insertion du retour et provoquent
+     * un deadlock InnoDB. En READ COMMITTED, il n'y a pas de verrou de plage et chaque lecture voit les retours déjà validés ;
+     * les écritures restent protégées par les verrous de ligne (vente, client, produits).
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Retour enregistrer(Long venteId, RetourVenteForm form) {
         exigerGerant();
         if (form == null) throw new IllegalArgumentException("Indiquez au moins une quantité à retourner.");
