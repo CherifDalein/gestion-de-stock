@@ -19,8 +19,8 @@ public final class SmtpInscriptionBoutiqueMailer implements InscriptionBoutiqueM
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(properties.getFrom());
         message.setTo(email);
-        message.setSubject("Stock Pro — Créez votre boutique");
-        message.setText("Vous avez demandé à créer une boutique Stock Pro.\n\n"
+        message.setSubject("RFC-COMPTA — Créez votre boutique");
+        message.setText("Vous avez demandé à créer une boutique RFC-COMPTA.\n\n"
                 + "Confirmez votre email puis renseignez votre boutique avec ce lien :\n" + lien
                 + "\n\nCe lien expire dans " + dureeHeures + " heures et ne peut être utilisé qu'une fois."
                 + "\nVotre essai gratuit commencera lorsque vous aurez terminé la création de votre boutique."

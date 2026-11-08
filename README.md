@@ -1,4 +1,4 @@
-# Gestion de stock
+# RFC-COMPTA — gestion de stock
 
 Application Spring Boot pour les produits, achats, ventes et règlements.
 

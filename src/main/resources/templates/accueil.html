@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#15805d">
-    <meta name="description" content="Gérez le stock, les achats, les ventes et la caisse de votre boutique avec Stock Pro. Créez votre espace et commencez votre essai gratuit.">
-    <title>Stock Pro · Votre boutique, en toute clarté</title>
+    <th:block th:replace="~{fragments/marque :: icones}"></th:block>
+    <meta name="description" content="Gérez le stock, les achats, les ventes et la caisse de votre boutique avec RFC-COMPTA. Créez votre espace et commencez votre essai gratuit.">
+    <title>RFC-COMPTA · Votre boutique, en toute clarté</title>
     <link th:href="@{/css/accueil.css}" rel="stylesheet">
 </head>
 <body class="stock-landing">
 <a class="landing-skip" href="#contenu">Aller au contenu</a>
 <header class="landing-header">
     <div class="landing-container landing-nav">
-        <a class="landing-brand" th:href="@{/accueil}" aria-label="Stock Pro, accueil">
-            <span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg></span>
-            <span>Stock Pro</span>
+        <a class="landing-brand" th:href="@{/accueil}" aria-label="RFC-COMPTA, accueil">
+            <img class="landing-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="140" height="56">
         </a>
         <nav class="landing-nav-links" aria-label="Navigation principale">
             <a class="landing-nav-section" href="#fonctionnalites">Fonctionnalités</a>
@@ -32,13 +31,13 @@
             <p class="landing-hero-description">Des achats aux règlements, retrouvez toute l’activité de votre boutique dans un même espace. Moins de recherches, plus de visibilité au quotidien.</p>
             <div class="landing-hero-actions">
                 <a class="landing-button landing-button-primary" th:href="@{/inscription}">Créer ma boutique<span aria-hidden="true">→</span></a>
-                <a class="landing-text-link" href="#fonctionnalites">Découvrir Stock Pro<span aria-hidden="true">↓</span></a>
+                <a class="landing-text-link" href="#fonctionnalites">Découvrir <span style="white-space:nowrap">RFC-COMPTA</span><span aria-hidden="true">↓</span></a>
             </div>
             <p class="landing-trial-caption"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Essai gratuit de <strong th:text="${dureeEssaiJours}">30</strong> jours pour votre boutique</span></p>
         </div>
 
         <div class="landing-preview-wrap">
-            <figure class="landing-preview" aria-label="Exemple illustratif de l’espace de gestion Stock Pro">
+            <figure class="landing-preview" aria-label="Exemple illustratif de l’espace de gestion RFC-COMPTA">
                 <figcaption class="landing-preview-top"><span><span class="landing-preview-dot" aria-hidden="true"></span>Votre espace de gestion</span><span class="landing-example-label">Aperçu illustratif</span></figcaption>
                 <div class="landing-preview-heading"><div><p>Boutique démo</p><h2>Vue d’ensemble</h2></div><span class="landing-preview-avatar" aria-hidden="true">BD</span></div>
                 <div class="landing-preview-stats">
@@ -75,12 +74,12 @@
         <ol class="landing-steps">
             <li><span class="landing-step-number" aria-hidden="true">01</span><div><h3>Validez votre email</h3><p>Recevez un lien personnel à l’adresse que vous utiliserez pour vous connecter.</p></div></li>
             <li><span class="landing-step-number" aria-hidden="true">02</span><div><h3>Créez votre boutique</h3><p>Indiquez son nom, votre nom et choisissez votre mot de passe.</p></div></li>
-            <li><span class="landing-step-number" aria-hidden="true">03</span><div><h3>Commencez votre essai</h3><p>Découvrez Stock Pro pendant <strong th:text="${dureeEssaiJours}">30</strong> jours et gérez vos premières opérations.</p></div></li>
+            <li><span class="landing-step-number" aria-hidden="true">03</span><div><h3>Commencez votre essai</h3><p>Découvrez <span style="white-space:nowrap">RFC-COMPTA</span> pendant <strong th:text="${dureeEssaiJours}">30</strong> jours et gérez vos premières opérations.</p></div></li>
         </ol>
     </section>
 
     <section class="landing-trial landing-container" aria-labelledby="essai-titre">
-        <div><p class="landing-eyebrow">Prenez le temps de découvrir Stock Pro</p><h2 id="essai-titre"><span th:text="${dureeEssaiJours}">30</span> jours pour essayer,<br>avec votre boutique.</h2><p>L’essai commence à la création de votre boutique. Votre espace accueille votre compte de gérant et les utilisateurs de votre équipe.</p></div>
+        <div><p class="landing-eyebrow">Prenez le temps de découvrir <span style="white-space:nowrap">RFC-COMPTA</span></p><h2 id="essai-titre"><span th:text="${dureeEssaiJours}">30</span> jours pour essayer,<br>avec votre boutique.</h2><p>L’essai commence à la création de votre boutique. Votre espace accueille votre compte de gérant et les utilisateurs de votre équipe.</p></div>
         <a class="landing-button landing-button-light" th:href="@{/inscription}">Commencer mon essai<span aria-hidden="true">→</span></a>
     </section>
 
@@ -94,6 +93,6 @@
     </section>
 </main>
 
-<footer class="landing-footer"><div class="landing-container"><a class="landing-brand" th:href="@{/accueil}"><span class="landing-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg></span><span>Stock Pro</span></a><p>Votre boutique, en toute clarté.</p><a th:href="@{/login}">Accéder à mon espace<span aria-hidden="true">↗</span></a></div></footer>
+<footer class="landing-footer"><div class="landing-container"><a class="landing-brand" th:href="@{/accueil}"><img class="landing-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="140" height="56"></a><p>Votre boutique, en toute clarté.</p><a th:href="@{/login}">Accéder à mon espace<span aria-hidden="true">↗</span></a></div></footer>
 </body>
 </html>

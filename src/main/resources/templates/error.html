@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Pro · Une étape à reprendre</title>
+    <th:block th:replace="~{fragments/marque :: icones}"></th:block>
+    <title>RFC-COMPTA · Une étape à reprendre</title>
     <link th:href="@{/css/erreurs.css}" rel="stylesheet">
 </head>
 <body class="stock-error" th:with="code=${status ?: 500}">
 <main class="error-shell" aria-labelledby="errorTitle">
-    <a class="error-brand" th:href="@{/}" aria-label="Stock Pro, revenir à l’accueil">
-        <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="18" width="10" height="10" rx="2"/><rect x="19" y="18" width="10" height="10" rx="2"/><rect x="11" y="3" width="10" height="10" rx="2"/></svg>
-        <span>Stock Pro</span>
+    <a class="error-brand" th:href="@{/}" aria-label="RFC-COMPTA, revenir à l’accueil">
+        <img class="error-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="150" height="60">
     </a>
     <section class="error-card">
         <p class="error-code" th:text="${'Erreur ' + code}">Erreur</p>

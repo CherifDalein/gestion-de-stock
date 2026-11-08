@@ -1,4 +1,4 @@
-# Évolution de Stock Pro vers un SaaS
+# Évolution de RFC-COMPTA vers un SaaS
 
 ## Modèle retenu
 

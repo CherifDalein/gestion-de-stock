@@ -1,7 +1,7 @@
 <div th:fragment="identite" class="document-brand" aria-label="Boutique">
     <img th:if="${logoBoutiquePresent == true}" th:src="@{/boutique/logo}" class="document-brand-logo"
          th:alt="${'Logo de ' + (boutique != null ? boutique.nom : 'la boutique')}" />
-    <span class="document-brand-name" th:text="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.nom)) ? boutique.nom : 'Stock Pro'}">Stock Pro</span>
+    <span class="document-brand-name" th:text="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.nom)) ? boutique.nom : 'Boutique'}">Boutique</span>
     <p>Document de gestion · GNF</p>
     <p class="document-brand-address" th:if="${boutique != null and !#strings.isEmpty(#strings.trim(boutique.adresse))}" th:text="${boutique.adresse}"></p>
     <th:block th:with="principal=${boutique != null and !#strings.isEmpty(#strings.trim(boutique.telephone))},secondaire=${boutique != null and !#strings.isEmpty(#strings.trim(boutique.telephoneSecondaire))}">

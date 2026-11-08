@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#15805d">
+    <th:block th:replace="~{fragments/marque :: icones}"></th:block>
     <meta name="referrer" content="no-referrer">
-    <title>Votre nouvelle boutique · Stock Pro</title>
+    <title>Votre nouvelle boutique · RFC-COMPTA</title>
     <link th:href="@{/css/styles.css}" rel="stylesheet">
     <link th:href="@{/css/auth.css}" rel="stylesheet">
     <link th:href="@{/css/inscription.css}" rel="stylesheet">
@@ -13,10 +13,7 @@
 <body class="stock-auth stock-signup">
 <main class="auth-layout">
     <section class="auth-intro" aria-labelledby="auth-intro-title">
-        <a class="auth-brand" th:href="@{/accueil}" aria-label="Stock Pro, accueil">
-            <span class="auth-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.25l8 4.5"/></svg></span>
-            <span>Stock Pro<span class="auth-brand-caption">Gestion de stock</span></span>
-        </a>
+        <a class="auth-brand" th:href="@{/accueil}" aria-label="RFC-COMPTA, accueil"><img class="auth-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="180" height="72"></a>
         <div class="auth-intro-content">
             <p class="auth-eyebrow">Votre boutique, votre espace</p>
             <h1 id="auth-intro-title">Prêt à gérer<br>votre boutique ?</h1>
@@ -24,7 +21,7 @@
             <ol class="signup-steps" aria-label="Étapes de création">
                 <li th:class="${lienInvalide} ? '' : 'signup-step-done'"><span aria-hidden="true" th:text="${lienInvalide} ? '1' : '✓'">✓</span><div><strong th:text="${lienInvalide} ? 'Validez votre email' : 'Votre email est validé'">Votre email est validé</strong><p>Votre adresse servira à vous connecter.</p></div></li>
                 <li class="signup-step-current" aria-current="step"><span aria-hidden="true">2</span><div><strong>Créez votre boutique</strong><p>Choisissez son nom et votre mot de passe.</p></div></li>
-                <li><span aria-hidden="true">3</span><div><strong>Commencez votre essai</strong><p><span th:text="${dureeEssaiJours}">30</span> jours pour découvrir Stock Pro.</p></div></li>
+                <li><span aria-hidden="true">3</span><div><strong>Commencez votre essai</strong><p><span th:text="${dureeEssaiJours}">30</span> jours pour découvrir <span style="white-space:nowrap">RFC-COMPTA</span>.</p></div></li>
             </ol>
         </div>
         <p class="auth-intro-footer">Une gestion simple, au quotidien.</p>
