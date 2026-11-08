@@ -32,6 +32,25 @@ class FormBindingAdviceTests {
                 .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
     }
 
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({
+            "vente,/ventes/enregistrer,vendeur", "vente,/ventes/enregistrer,vendeur.id", "vente,/ventes/enregistrer,vendeur.nom",
+            "achat,/achats/enregistrer,utilisateur", "achat,/achats/enregistrer,utilisateur.id",
+            "achat,/achats/modifier/1,utilisateur", "achat,/achats/modifier/1,utilisateur.id"})
+    void lesListesBlanchesRefusentLeVendeurEtLAuteurDUnDocument(String nom, String route, String champ) {
+        Object cible = nom.equals("achat") ? new Achat() : new Vente();
+        MockHttpServletRequest requete = new MockHttpServletRequest("POST", route);
+        requete.addParameter(champ, "1");
+        ServletRequestDataBinder binder = new ServletRequestDataBinder(cible, nom);
+        assertThatThrownBy(() -> new FormBindingAdvice().limiterChamps(binder, requete))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        // Même sans paramètre détecté, le binding lui-même ne les accepte pas.
+        MockHttpServletRequest sansParametre = new MockHttpServletRequest("POST", route);
+        ServletRequestDataBinder second = new ServletRequestDataBinder(cible, nom);
+        new FormBindingAdvice().limiterChamps(second, sansParametre);
+        assertThat(second.getAllowedFields()).noneMatch(autorise -> autorise.startsWith("vendeur") || autorise.startsWith("utilisateur"));
+    }
+
     @Test
     void leChampCsrfNeDevientPasUnMarqueurDeChamp() {
         MockHttpServletRequest requete = new MockHttpServletRequest("POST", "/ventes/regler/1");

@@ -29,6 +29,7 @@
                         <th scope="col">Date</th>
                         <th scope="col">Échéance</th>
                         <th scope="col">Fournisseur</th>
+                        <th scope="col">Saisi par</th>
                         <th scope="col">Total</th>
                         <th scope="col">Versé</th>
                         <th scope="col">Reste</th>
@@ -42,6 +43,7 @@
                         <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
                         <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
+                        <td data-saisi-par th:text="${a.utilisateur != null and !#strings.isEmpty(#strings.trim(a.utilisateur.nom)) ? a.utilisateur.nom : 'Non renseigné'}"></td>
                         <td class="fw-bold" th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                         <td class="text-success" ><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                         <td class="text-danger fw-bold"

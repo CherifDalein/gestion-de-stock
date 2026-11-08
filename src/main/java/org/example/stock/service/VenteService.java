@@ -112,10 +112,11 @@ public class VenteService {
         vente.setDateEcheance(echeances.pourCreation(vente.getDateVente(), vente.getResteAPayer(), vente.getDateEcheance(),
                 vente.getBoutique().getDelaiClientsJours()));
         vente.setNumero(numero);
-        Vente venteEnregistree = venteRepository.save(vente);
-
+        // Le vendeur est le compte connecté, toujours lu côté serveur : jamais une valeur du formulaire.
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+        vente.setVendeur(actuel);
+        Vente venteEnregistree = venteRepository.save(vente);
 
         String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
                 (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
@@ -143,9 +144,23 @@ public class VenteService {
         return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Comptes de la boutique courante, désactivés compris (ils ont pu saisir des ventes), proposés par le filtre de vendeur. */
+    public List<Utilisateur> listerVendeursPossibles() {
+        return utilisateurRepository.findAllByBoutiqueIdOrderByNomAscIdAsc(boutiqueService.idBoutiqueCourante());
+    }
+
+    /** Ventes saisies par un vendeur ; l'identifiant doit avoir été validé comme compte de la boutique. */
+    public List<Vente> listerDuVendeur(Long vendeurId) {
+        return venteRepository.findByBoutiqueIdAndVendeurIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante(), vendeurId);
+    }
+
     /** Ventes échues non soldées : reste à payer et échéance antérieure au jour. */
     public List<Vente> listerEchuesNonSoldees() {
         return venteRepository.findEchuesNonSoldees(boutiqueService.idBoutiqueCourante(), echeances.aujourdHui());
+    }
+
+    public List<Vente> listerEchuesNonSoldeesDuVendeur(Long vendeurId) {
+        return venteRepository.findEchuesNonSoldeesDuVendeur(boutiqueService.idBoutiqueCourante(), vendeurId, echeances.aujourdHui());
     }
 
     public Vente trouverParId(Long id) {

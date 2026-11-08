@@ -82,10 +82,11 @@ public class AchatService {
         achat.setDateEcheance(echeances.pourCreation(achat.getDateAchat(), achat.getResteAPayer(), achat.getDateEcheance(),
                 achat.getBoutique().getDelaiFournisseursJours()));
         achat.setNumero(numero);
-        Achat achatEnregistre = achatRepository.save(achat);
-
+        // L'auteur est le compte connecté, lu côté serveur ; une modification ultérieure ne le change pas.
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+        achat.setUtilisateur(actuel);
+        Achat achatEnregistre = achatRepository.save(achat);
 
         String motif = "Achat #" + achatEnregistre.getId() + " - Fournisseur: " + achatEnregistre.getFournisseur().getNom();
         caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel, achat.getComptePaiement());

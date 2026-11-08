@@ -5,15 +5,29 @@
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
         <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <nav class="btn-group" aria-label="Filtrer les ventes">
-                <a th:href="@{/ventes}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? '' : 'active'}"
+                <a th:href="@{/ventes(vendeur=${vendeurChoisi})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? '' : 'active'}"
                    th:attr="aria-current=${filtreEchues ? null : 'page'}">Toutes les ventes</a>
-                <a th:href="@{/ventes(filtre='echues')}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
+                <a th:href="@{/ventes(filtre='echues',vendeur=${vendeurChoisi})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
                    th:attr="aria-current=${filtreEchues ? 'page' : null}">Échues non soldées</a>
             </nav>
             <a th:href="@{/ventes/nouveau}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> Effectuer une vente
             </a>
         </div>
+
+        <form th:if="${vendeursFiltre != null}" method="get" th:action="@{/ventes}" class="mb-4 d-flex flex-wrap gap-2 align-items-end" aria-label="Filtrer par vendeur">
+            <input type="hidden" name="filtre" value="echues" th:if="${filtreEchues}" />
+            <div>
+                <label for="filtreVendeur" class="form-label small mb-1">Vendeur</label>
+                <select id="filtreVendeur" name="vendeur" class="form-select">
+                    <option value="" th:selected="${vendeurChoisi == null}">Tous les vendeurs</option>
+                    <option th:each="u : ${vendeursFiltre}" th:value="${u.id}" th:selected="${vendeurChoisi != null and vendeurChoisi == u.id}"
+                            th:text="${(#strings.isEmpty(#strings.trim(u.nom)) ? 'Compte sans nom' : u.nom) + (u.actif ? '' : ' (compte désactivé)')}"></option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Filtrer</button>
+        </form>
+        <div th:if="${avertissementVendeur}" class="alert alert-warning" role="status" th:text="${avertissementVendeur}"></div>
 
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
@@ -26,6 +40,7 @@
                             <th scope="col">Date</th>
                             <th scope="col">Échéance</th>
                             <th scope="col">Client</th>
+                            <th scope="col">Vendeur</th>
                             <th scope="col">Total</th>
                             <th scope="col">Versé</th>
                             <th scope="col">Reste</th>
@@ -39,6 +54,7 @@
                             <td th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></td>
                             <td class="text-nowrap" th:text="${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                             <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
+                            <td data-vendeur th:text="${v.vendeur != null and !#strings.isEmpty(#strings.trim(v.vendeur.nom)) ? v.vendeur.nom : 'Non renseigné'}"></td>
                             <td class="fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-success" ><span th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(v.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(v.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                             <td class="fw-bold" th:classappend="${v.resteAPayer > 0 ? 'text-danger' : 'text-muted'}"
@@ -83,6 +99,7 @@
                             <div class="col-6">
                                 <strong>Date :</strong> <span th:text="${#temporals.format(v.dateVente, 'dd/MM/yyyy HH:mm')}"></span><br>
                                 <strong>Client :</strong> <span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span><br>
+                                <strong>Vendeur :</strong> <span data-vendeur-detail th:text="${v.vendeur != null and !#strings.isEmpty(#strings.trim(v.vendeur.nom)) ? v.vendeur.nom : 'Non renseigné'}"></span><br>
                                 <strong>Échéance :</strong> <span th:text="${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'dd/MM/yyyy') : 'Aucune'}"></span>
                             </div>
                             <div class="col-6 text-end">
