@@ -54,6 +54,11 @@ public class Vente {
     @ManyToOne(fetch = FetchType.LAZY)
     private Client client;
 
+    /** Compte qui a saisi la vente ; vide pour les ventes sans mouvement de caisse nominatif. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vendeur_id", foreignKey = @ForeignKey(name = "fk_vente_vendeur"))
+    private Utilisateur vendeur;
+
     @OneToMany(mappedBy = "vente", cascade = CascadeType.ALL)
     private List<DetailVente> lignes = new ArrayList<>();
 

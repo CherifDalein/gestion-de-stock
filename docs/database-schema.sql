@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS boutique (
     delai_fournisseurs_jours INT NOT NULL DEFAULT 30,
     prochain_numero_vente BIGINT NOT NULL DEFAULT 1,
     prochain_numero_achat BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_devis BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_retour_vente BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_retour_achat BIGINT NOT NULL DEFAULT 1,
     PRIMARY KEY (id)
 );
 
@@ -126,12 +129,15 @@ CREATE TABLE IF NOT EXISTS achat (
     numero VARCHAR(30) NULL,
     date_echeance DATE NULL,
     avance_utilisee DECIMAL(17,2) NOT NULL DEFAULT 0,
+    utilisateur_id BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_achat_boutique_numero UNIQUE (boutique_id, numero),
     CONSTRAINT fk_achat_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_achat_fournisseur
-        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id)
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),
+    CONSTRAINT fk_achat_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
 );
 
 CREATE TABLE IF NOT EXISTS vente (
@@ -144,12 +150,15 @@ CREATE TABLE IF NOT EXISTS vente (
     numero VARCHAR(30) NULL,
     date_echeance DATE NULL,
     avance_utilisee DECIMAL(17,2) NOT NULL DEFAULT 0,
+    vendeur_id BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_vente_boutique_numero UNIQUE (boutique_id, numero),
     CONSTRAINT fk_vente_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_vente_client
-        FOREIGN KEY (client_id) REFERENCES client (id)
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_vente_vendeur
+        FOREIGN KEY (vendeur_id) REFERENCES utilisateur (id)
 );
 
 CREATE TABLE IF NOT EXISTS detail_achat (
@@ -210,6 +219,98 @@ CREATE TABLE IF NOT EXISTS operation_tresorerie (
     INDEX idx_operation_tresorerie_boutique_date (boutique_id, date_operation, id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Lot 2 : devis et retours avec leurs lignes. Aucune ligne n'est créée par ce script.
+CREATE TABLE IF NOT EXISTS devis (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    numero VARCHAR(30) NOT NULL,
+    client_id BIGINT NULL,
+    utilisateur_id BIGINT NULL,
+    date_devis DATETIME(6) NOT NULL,
+    date_validite DATE NOT NULL,
+    montant_total DECIMAL(17,2) NOT NULL,
+    statut VARCHAR(16) NOT NULL,
+    vente_id BIGINT NULL,
+    note VARCHAR(255) NULL,
+    version BIGINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_devis_boutique_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT uk_devis_vente UNIQUE (vente_id),
+    CONSTRAINT fk_devis_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_devis_client
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_devis_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_devis_vente
+        FOREIGN KEY (vente_id) REFERENCES vente (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS detail_devis (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    devis_id BIGINT NOT NULL,
+    produit_id BIGINT NOT NULL,
+    quantite INT NOT NULL,
+    prix_unitaire DECIMAL(17,2) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_detail_devis_devis
+        FOREIGN KEY (devis_id) REFERENCES devis (id),
+    CONSTRAINT fk_detail_devis_produit
+        FOREIGN KEY (produit_id) REFERENCES produit (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS retour (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    numero VARCHAR(30) NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    vente_id BIGINT NULL,
+    achat_id BIGINT NULL,
+    client_id BIGINT NULL,
+    fournisseur_id BIGINT NULL,
+    utilisateur_id BIGINT NULL,
+    date_retour DATETIME(6) NOT NULL,
+    montant_total DECIMAL(17,2) NOT NULL,
+    montant_rembourse DECIMAL(17,2) NOT NULL DEFAULT 0,
+    compte_tresorerie VARCHAR(16) NULL,
+    montant_avoir DECIMAL(17,2) NOT NULL DEFAULT 0,
+    motif VARCHAR(255) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_retour_boutique_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT fk_retour_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_retour_vente
+        FOREIGN KEY (vente_id) REFERENCES vente (id),
+    CONSTRAINT fk_retour_achat
+        FOREIGN KEY (achat_id) REFERENCES achat (id),
+    CONSTRAINT fk_retour_client
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_retour_fournisseur
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),
+    CONSTRAINT fk_retour_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS detail_retour (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    retour_id BIGINT NOT NULL,
+    produit_id BIGINT NOT NULL,
+    detail_vente_id BIGINT NULL,
+    detail_achat_id BIGINT NULL,
+    quantite INT NOT NULL,
+    prix_unitaire DECIMAL(17,2) NOT NULL,
+    cout_unitaire DECIMAL(17,2) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_detail_retour_retour
+        FOREIGN KEY (retour_id) REFERENCES retour (id),
+    CONSTRAINT fk_detail_retour_produit
+        FOREIGN KEY (produit_id) REFERENCES produit (id),
+    CONSTRAINT fk_detail_retour_detail_vente
+        FOREIGN KEY (detail_vente_id) REFERENCES detail_vente (id),
+    CONSTRAINT fk_detail_retour_detail_achat
+        FOREIGN KEY (detail_achat_id) REFERENCES detail_achat (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS mouvement_caisse (
     id BIGINT NOT NULL AUTO_INCREMENT,
     boutique_id BIGINT NOT NULL,
@@ -225,7 +326,14 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     operation_tresorerie_id BIGINT NULL,
     client_id BIGINT NULL,
     fournisseur_id BIGINT NULL,
+    retour_id BIGINT NULL,
+    annulation_de_id BIGINT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),
+    CONSTRAINT fk_mouvement_caisse_retour
+        FOREIGN KEY (retour_id) REFERENCES retour (id),
+    CONSTRAINT fk_mouvement_caisse_annulation
+        FOREIGN KEY (annulation_de_id) REFERENCES mouvement_caisse (id),
     CONSTRAINT fk_mouvement_caisse_client
         FOREIGN KEY (client_id) REFERENCES client (id),
     CONSTRAINT fk_mouvement_caisse_fournisseur

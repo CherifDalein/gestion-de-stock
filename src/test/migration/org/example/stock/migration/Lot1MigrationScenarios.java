@@ -114,7 +114,7 @@ final class Lot1MigrationScenarios {
         boolean dejaFinalise = Lot1Migration.finalise(c);
         var valeurs = Lot1Migration.valeursLot1(c);
         Lot1Migration.migrer(c, true);
-        exiger(tables.equals(BoutiquesMigration.tables(c)) && BoutiquesMigration.tables(c).size() == 20 && avant.equals(Lot1Migration.photographie(c))
+        exiger(tables.equals(BoutiquesMigration.tables(c)) && BoutiquesMigration.tables(c).keySet().stream().filter(t -> !Lot2Migration.NOUVELLES_TABLES.contains(t)).count() == 20 && avant.equals(Lot1Migration.photographie(c))
                 && schemas.equals(Lot1Migration.schemasAnciens(c)), "Les anciennes données, stocks ou montants ont changé");
         if (dejaFinalise || scenario.equals("reprise_finalisation")) exiger(valeurs.equals(Lot1Migration.valeursLot1(c)), "Des valeurs déjà migrées ont été réécrites");
         verifierValeurs(c, scenario);
