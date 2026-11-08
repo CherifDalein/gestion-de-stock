@@ -43,13 +43,10 @@ import java.util.Set;
  * rendu en argent (mouvement de trésorerie sortant), soit gardé en avoir (avance du client). Le stock revient pour les
  * articles en stock, valorisé au coût figé de la ligne vendue.</p>
  *
- * <p><b>Ordre des verrous</b> : (clôture du démarrage, comme les règlements) → ligne de la <b>vente</b> → ligne de la
- * <b>boutique</b> (numéro {@code RV-}) → fiche du <b>client</b> → <b>produits</b> (par identifiant croissant) → comptes de
- * trésorerie (lecture) pour le remboursement. La vente passe en premier parce que le règlement d'une vente la verrouille
- * puis insère un mouvement de caisse, qui lit la boutique par sa clé étrangère : prendre la boutique avant la vente ferait
- * un cycle avec ce règlement. La vente n'est jamais verrouillée après la boutique, le client ou un produit, et aucun
- * autre chemin ne verrouille deux ventes ; la création d'une vente (boutique → client → produits) ne verrouille aucune
- * vente existante. Il n'y a donc pas de cycle.</p>
+ * <p><b>Ordre des verrous</b> : ligne de la <b>boutique</b> en premier (c'est aussi elle qui porte le numéro {@code RV-}),
+ * puis la <b>vente</b>, la fiche du <b>client</b>, les <b>produits</b> (par identifiant croissant) et les comptes de
+ * trésorerie (lecture) pour le remboursement. C'est l'ordre commun à toutes les écritures métier, décrit dans
+ * {@code docs/lot-2.md}, « Ordre des verrous ».</p>
  */
 @Service
 public class RetourVenteService {
@@ -140,21 +137,22 @@ public class RetourVenteService {
      * le numéro.
      * <p>
      * Isolation READ COMMITTED : sous REPEATABLE READ, les lectures verrouillées des retours d'une vente posent des verrous
-     * de plage (« gap ») qui, entre deux retours de ventes différentes, se croisent avec l'insertion du retour et provoquent
-     * un deadlock InnoDB. En READ COMMITTED, il n'y a pas de verrou de plage et chaque lecture voit les retours déjà validés ;
-     * les écritures restent protégées par les verrous de ligne (vente, client, produits).
+     * de plage (« gap ») qui peuvent croiser l'insertion d'un retour d'une autre boutique. En READ COMMITTED, il n'y a pas de
+     * verrou de plage et chaque lecture voit les retours déjà validés ; les écritures restent protégées par les verrous de
+     * ligne (boutique, vente, client, produits).
      */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Retour enregistrer(Long venteId, RetourVenteForm form) {
         exigerGerant();
         if (form == null) throw new IllegalArgumentException("Indiquez au moins une quantité à retourner.");
+        // 1. La boutique d'abord (ordre global des verrous), 2. la vente : deux retours simultanés sur la même vente passent
+        //    l'un après l'autre, et un règlement de cette vente aussi.
+        verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
-        // 1. La vente d'abord : deux retours simultanés sur la même vente passent l'un après l'autre, et un règlement
-        //    de cette vente aussi.
         Vente vente = verrous.verrouillerVente(venteId);
         Map<Long, Integer> demandees = quantitesDemandees(form);
         controlerFormulaireNonPerime(vente, form);
-        // 2. La boutique (numéro), 3. le client, 4. les produits.
+        // 3. Le client, 4. les produits ; le numéro lit le compteur de la boutique, déjà verrouillée.
         String numero = numerotation.attribuerNumeroRetourVente();
         Client client = vente.getClient() == null ? null : verrous.verrouillerClient(vente.getClient().getId());
 

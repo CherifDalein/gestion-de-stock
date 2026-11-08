@@ -6,6 +6,7 @@ import org.example.stock.enums.Role;
 import org.example.stock.model.Boutique;
 import org.example.stock.model.Emails;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,11 +21,14 @@ public class InitialisationBoutiqueService {
     private final BoutiqueService boutiques;
     private final UtilisateurRepository utilisateurs;
     private final EntityManager em;
+    private final StockLockRepository verrous;
 
-    public InitialisationBoutiqueService(BoutiqueService boutiques, UtilisateurRepository utilisateurs, EntityManager em) {
+    public InitialisationBoutiqueService(BoutiqueService boutiques, UtilisateurRepository utilisateurs, EntityManager em,
+                                         StockLockRepository verrous) {
         this.boutiques = boutiques;
         this.utilisateurs = utilisateurs;
         this.em = em;
+        this.verrous = verrous;
     }
 
     public boolean estOuverte() {
@@ -32,18 +36,19 @@ public class InitialisationBoutiqueService {
         return !boutique.isInitialisationTerminee() && !possedeActivite(boutique.getId(), false);
     }
 
-    /** L'utilisateur est verrouillé avant la boutique, comme pour les saisies initiales. */
+    /** La boutique est verrouillée en premier (ordre global des verrous), puis le compte du gérant en lecture partagée. */
     @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void terminer() {
+        Boutique boutique = verrouillerBoutiqueCourante();
         Utilisateur acteur = administrateur();
         // La lecture partagée protège les droits sans bloquer les clés étrangères d'un encaissement en cours.
         em.refresh(acteur, LockModeType.PESSIMISTIC_READ);
         if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();
         boutiques.exigerAppartenance(acteur.getBoutique());
-        verrouillerBoutiqueCourante().setInitialisationTerminee(true);
+        boutique.setInitialisationTerminee(true);
     }
 
-    /** Appeler avant tout verrou produit ou document. Le verrou est conservé jusqu'au commit. */
+    /** Appeler en tête de transaction, avant tout autre verrou. Le verrou est conservé jusqu'au commit. */
     @Transactional
     public Boutique verrouillerEtExigerOuverte() {
         Boutique boutique = verrouillerBoutiqueCourante();
@@ -53,27 +58,21 @@ public class InitialisationBoutiqueService {
         return boutique;
     }
 
-    /** Une opération échouée annule aussi la clôture dans la même transaction. */
+    /**
+     * Une opération échouée annule aussi la clôture dans la même transaction. Verrouille toujours la ligne boutique
+     * (idempotent si elle est déjà tenue) : c'est le premier verrou de l'ordre global, y compris après le démarrage.
+     */
     @Transactional
     public Boutique verrouillerEtClorePourActivite() {
-        Boutique courante = boutiques.boutiqueCourante();
-        // La clôture est monotone : après le démarrage, elle ne verrouille plus la boutique.
-        // Seules les créations de ventes et d'achats la verrouillent ensuite, pour leur numéro de facture
-        // (NumerotationFactureService) ; les règlements gardent seulement le verrou de leur document.
-        if (courante.isInitialisationTerminee()) return courante;
         Boutique boutique = verrouillerBoutiqueCourante();
-        boutique.setInitialisationTerminee(true);
+        if (!boutique.isInitialisationTerminee()) boutique.setInitialisationTerminee(true);
         return boutique;
     }
 
     private Boutique verrouillerBoutiqueCourante() {
-        Boutique boutique = boutiques.boutiqueCourante();
-        // Un appel CaisseService imbriqué ne doit pas rafraîchir et perdre le flag encore non flushé.
-        if (em.getLockMode(boutique) != LockModeType.PESSIMISTIC_WRITE) {
-            em.refresh(boutique, LockModeType.PESSIMISTIC_WRITE);
-        }
-        boutiques.exigerAppartenance(boutique);
-        return boutique;
+        // Un appel imbriqué (CaisseService…) ne doit pas rafraîchir et perdre le flag encore non flushé : le point d'entrée
+        // unique ne relit pas une ligne déjà verrouillée en écriture.
+        return verrous.verrouillerBoutiqueCourante();
     }
 
     private boolean possedeActivite(Long boutiqueId, boolean lectureCourante) {

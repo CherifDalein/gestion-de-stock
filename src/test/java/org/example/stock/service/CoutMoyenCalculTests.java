@@ -51,6 +51,57 @@ class CoutMoyenCalculTests {
         assertThat(cout(10, "1000.00", 0, "5000")).isEqualByComparingTo("1000.00");
     }
 
+    private static BigDecimal apresRetourAchat(long stockAvant, String coutActuel, long quantite, String prix) {
+        return CoutMoyenService.coutApresRetourAchat(stockAvant, coutActuel == null ? null : new BigDecimal(coutActuel), quantite, new BigDecimal(prix));
+    }
+
+    @Test void unRetourAchatRetireLaValeurDeLaLigneEtRepondereLeReste() {
+        // 10 à 1 000 puis 10 à 2 000 : 1 500. On rend les 10 à 2 000 : (20 × 1 500 − 10 × 2 000) / 10 = 1 000.
+        assertThat(apresRetourAchat(20, "1500.00", 10, "2000")).isEqualByComparingTo("1000.00");
+        // On rend 4 des 10 à 1 000 : (20 × 1 500 − 4 × 1 000) / 16 = 1 625.
+        assertThat(apresRetourAchat(20, "1500.00", 4, "1000")).isEqualByComparingTo("1625.00");
+    }
+
+    @Test void leRetourAchatEstArrondiUneSeuleFois() {
+        // (3 × 1 000,01 − 1 × 1 000,00) / 2 = 1 000,015 : arrondi une fois, vers le haut.
+        assertThat(apresRetourAchat(3, "1000.01", 1, "1000.00")).isEqualByComparingTo("1000.02").hasScaleOf(2);
+        // (3 × 100,00 − 1 × 100,01) / 2 = 99,995 → 100,00 en HALF_UP.
+        assertThat(apresRetourAchat(3, "100.00", 1, "100.01")).isEqualByComparingTo("100.00");
+    }
+
+    @Test void unRetourQuiVideLeStockLaisseLeCoutInchange() {
+        assertThat(apresRetourAchat(10, "1500.00", 10, "2000")).isEqualByComparingTo("1500.00");
+        // Une quantité supérieure au stock (jamais acceptée par le service) ne change pas non plus le coût.
+        assertThat(apresRetourAchat(5, "1500.00", 8, "2000")).isEqualByComparingTo("1500.00");
+    }
+
+    @Test void unRetourQuiDonneraitUnCoutNegatifLeRamenEnZero() {
+        // Stock 12 à 2 000 = 24 000 ; on rend 10 unités valorisées 3 000 = 30 000 : −6 000 / 2 → 0, jamais négatif.
+        assertThat(apresRetourAchat(12, "2000.00", 10, "3000")).isEqualByComparingTo("0.00").hasScaleOf(2);
+    }
+
+    @Test void unRetourAchatSansQuantiteOuSansCoutConnuNeChangeRien() {
+        assertThat(apresRetourAchat(10, "1000.00", 0, "5000")).isEqualByComparingTo("1000.00");
+        assertThat(apresRetourAchat(10, null, 2, "5000")).isNull();
+    }
+
+    @Test void leRejeuTraiteLeRetourAchatCommeUneSortieValoriseeAuPrixDeLaLigne() {
+        var evenements = new ArrayList<>(List.of(
+                new Evenement(Rang.OPERATION, T0, Ordre.ENTREE, 1, 1, 10, new BigDecimal("1000")),
+                new Evenement(Rang.OPERATION, T0.plusHours(1), Ordre.ENTREE, 2, 2, 10, new BigDecimal("2000")),
+                new Evenement(Rang.OPERATION, T0.plusHours(2), Ordre.RETOUR_ACHAT, 1, 2, -10, new BigDecimal("2000"))));
+        assertThat(CoutMoyenService.rejouer(10, null, evenements)).isEqualByComparingTo("1000.00");
+        Collections.reverse(evenements);
+        assertThat(CoutMoyenService.rejouer(10, null, evenements)).isEqualByComparingTo("1000.00");
+        // Le retour qui vide le stock laisse le coût de 1 500 ; une vente de 10 avant lui rend le même résultat.
+        var vide = List.of(
+                new Evenement(Rang.OPERATION, T0, Ordre.ENTREE, 1, 1, 10, new BigDecimal("1000")),
+                new Evenement(Rang.OPERATION, T0.plusHours(1), Ordre.ENTREE, 2, 2, 10, new BigDecimal("2000")),
+                new Evenement(Rang.OPERATION, T0.plusHours(2), Ordre.SORTIE, 1, 1, -10, null),
+                new Evenement(Rang.OPERATION, T0.plusHours(3), Ordre.RETOUR_ACHAT, 1, 2, -10, new BigDecimal("2000")));
+        assertThat(CoutMoyenService.rejouer(0, null, vide)).isEqualByComparingTo("1500.00");
+    }
+
     @Test void leRejeuReproduitLeCalculIncrementalEtIgnoreLOrdreDeLecture() {
         var evenements = new ArrayList<>(List.of(
                 new Evenement(Rang.INITIAL, null, Ordre.ENTREE, 1, 0, 10, new BigDecimal("1000.00")),

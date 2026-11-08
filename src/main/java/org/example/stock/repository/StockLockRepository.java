@@ -3,6 +3,7 @@ package org.example.stock.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
+import org.example.stock.model.Boutique;
 import org.example.stock.model.Client;
 import org.example.stock.model.Devis;
 import org.example.stock.model.Fournisseur;
@@ -20,7 +21,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
-/** Les verrous restent détenus jusqu'à la fin de la transaction métier. */
+/**
+ * Les verrous restent détenus jusqu'à la fin de la transaction métier.
+ *
+ * <p>Ordre global des verrous (voir « Ordre des verrous » dans {@code docs/lot-2.md}) : toute écriture métier commence par
+ * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis), le partenaire (client, fournisseur), les
+ * factures du partenaire, les produits et enfin les comptes de trésorerie.</p>
+ */
 @Repository
 @Transactional(propagation = Propagation.MANDATORY)
 public class StockLockRepository {
@@ -30,6 +37,25 @@ public class StockLockRepository {
     public StockLockRepository(EntityManager entityManager, BoutiqueService boutiques) {
         this.entityManager = entityManager;
         this.boutiques = boutiques;
+    }
+
+    /**
+     * Verrou en écriture de la ligne de la boutique courante : <b>premier verrou</b> de toute écriture métier, avant le
+     * document, le partenaire, les factures, les produits et les comptes. Il sérialise les écritures d'une même boutique
+     * (jamais celles de boutiques différentes) et porte le compteur des numéros de facture.
+     *
+     * <p>À appeler en première instruction de la transaction. Idempotent : si la ligne est déjà verrouillée en écriture
+     * dans la transaction en cours, rien n'est relu, donc aucune modification non flushée de la boutique n'est perdue
+     * (par exemple la clôture du démarrage). Sinon la ligne est rechargée sous verrou, même déjà présente dans le contexte
+     * JPA, pour voir les compteurs et indicateurs validés par la transaction précédente.</p>
+     */
+    public Boutique verrouillerBoutiqueCourante() {
+        Boutique boutique = boutiques.boutiqueCourante();
+        if (entityManager.getLockMode(boutique) != LockModeType.PESSIMISTIC_WRITE) {
+            entityManager.refresh(boutique, LockModeType.PESSIMISTIC_WRITE);
+        }
+        boutiques.exigerAppartenance(boutique);
+        return boutique;
     }
 
     public Map<Long, Produit> verrouillerProduits(Collection<Long> ids) {
@@ -56,13 +82,6 @@ public class StockLockRepository {
         entityManager.refresh(achat, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(achat.getBoutique());
         return achat;
-    }
-
-    /** Identifiant du fournisseur d'un achat de la boutique courante (404 sinon), lu sans verrou pour verrouiller le fournisseur en premier. */
-    public Long idFournisseurDeAchat(Long achatId) {
-        verifierIdentifiant("Achat", achatId, boutiques.idBoutiqueCourante());
-        return entityManager.createQuery("select a.fournisseur.id from Achat a where a.id = :id", Long.class)
-                .setParameter("id", achatId).getResultStream().findFirst().orElse(null);
     }
 
     public Vente verrouillerVente(Long id) {

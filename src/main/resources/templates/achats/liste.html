@@ -3,6 +3,7 @@
         <h1 class="mt-4">Journal des achats</h1>
         <p class="app-page-subtitle">Retrouvez les approvisionnements, leurs règlements et leurs factures.</p>
         <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <div th:if="${param.success != null and param.success[0] == 'modifie'}"
              class="alert alert-success" role="status">Achat modifié avec succès.</div>
         <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
@@ -44,7 +45,7 @@
                         <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                         <td th:text="${a.fournisseur.nom}"></td>
                         <td data-saisi-par th:text="${a.utilisateur != null and !#strings.isEmpty(#strings.trim(a.utilisateur.nom)) ? a.utilisateur.nom : 'Non renseigné'}"></td>
-                        <td class="fw-bold" th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        <td class="fw-bold"><span th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-achat th:text="${'− retours ' + #numbers.formatDecimal(a.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                         <td class="text-success" ><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                         <td class="text-danger fw-bold"
                             th:text="${#numbers.formatDecimal(a.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
@@ -60,9 +61,12 @@
                                    th:classappend="${a.resteAPayer > 0 ? 'btn-primary' : 'btn-outline-primary'}"
                                    th:attr="aria-label=${(a.resteAPayer > 0 ? 'Régler l’achat n° ' : 'Voir les règlements de l’achat n° ') + a.id}"
                                    th:text="${a.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
-                                <a th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-outline-secondary btn-sm app-row-action"
+                                <a th:if="${(a.montantRetours ?: 0) == 0 and #lists.isEmpty(a.retours)}" th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-outline-secondary btn-sm app-row-action"
                                    th:attr="aria-label=${'Modifier les produits de l’achat n° ' + a.id}"
                                    title="Modifier les produits de cet achat">Modifier</a>
+                                <a sec:authorize="hasRole('ADMIN')" th:href="@{/achats/{id}/retour(id=${a.id})}" class="btn btn-outline-primary btn-sm app-row-action" data-bouton-retour
+                                   th:attr="aria-label=${'Retour au fournisseur sur l’achat n° ' + (a.numero ?: a.id)}"
+                                   title="Rendre de la marchandise de cet achat au fournisseur">Retour au fournisseur</a>
                                 <a th:href="@{/factures/achat/{id}(id=${a.id})}"
                                    class="btn btn-outline-primary btn-sm app-row-action"
                                    th:attr="aria-label=${'Voir la facture de l’achat n° ' + a.id}"

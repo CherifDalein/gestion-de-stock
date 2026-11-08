@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 /** Vérifications avec les vrais verrous InnoDB, exclusivement dans une base temporaire. */
 public class CreationOperationsMariaDbTest {
     private final OperationCreationService creations;
+    private final org.example.stock.repository.StockLockRepository verrous;
     private final OperationCreationRepository operations;
     private final TransactionTemplate transaction;
     private final JdbcTemplate jdbc;
@@ -68,6 +69,7 @@ public class CreationOperationsMariaDbTest {
 
     private CreationOperationsMariaDbTest(ConfigurableApplicationContext contexte) {
         creations = contexte.getBean(OperationCreationService.class);
+        verrous = contexte.getBean(org.example.stock.repository.StockLockRepository.class);
         operations = contexte.getBean(OperationCreationRepository.class);
         transaction = new TransactionTemplate(contexte.getBean(PlatformTransactionManager.class));
         transaction.setTimeout(20);
@@ -179,6 +181,8 @@ public class CreationOperationsMariaDbTest {
             Future<OperationCreationService.ResultatCreation> premiere = executor.submit(() -> {
                 connecter("test-admin@example.test");
                 try { return transaction.execute(status -> {
+                    // Ordre global des verrous : la boutique, puis la ligne du jeton.
+                    verrous.verrouillerBoutiqueCourante();
                     operations.verrouiller(jeton).orElseThrow(); verrouPris.countDown(); attendre(secondeDemarree);
                     return creer(type, jeton);
                 }); } finally { SecurityContextHolder.clearContext(); }

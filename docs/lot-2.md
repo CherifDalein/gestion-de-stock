@@ -120,7 +120,7 @@ transformé porte en plus son état.
    la raison du refus.
 2. À l'enregistrement, le formulaire envoie l'identifiant du devis. Dans **la
    même transaction que la vente**, le service prend les verrous dans l'ordre
-   habituel (jeton du formulaire, boutique et numéro de vente), **verrouille le
+   habituel (boutique, jeton du formulaire et numéro de vente, voir [Ordre des verrous](#ordre-des-verrous)), **verrouille le
    devis**, puis vérifie qu'il est de la boutique (sinon 404), toujours
    `EN_COURS`, non expiré, et que les lignes envoyées sont **exactement** celles
    du devis. La vente est alors créée, le devis passe à `TRANSFORME` avec son
@@ -314,7 +314,7 @@ l'agrégat sur MariaDB.
 ## Retour de vente
 
 Un client rapporte de la marchandise d'une vente déjà enregistrée. Le retour réduit d'abord la dette du client sur cette
-vente, puis l'argent est rendu ou gardé en avoir. Les retours d'achat ne font pas partie de ce lot.
+vente, puis l'argent est rendu ou gardé en avoir. Le symétrique côté achats est décrit dans [Retour d'achat](#retour-dachat).
 
 ### Droits
 
@@ -363,16 +363,10 @@ montants, prix, coûts, dates et numéro sont toujours calculés côté serveur.
 
 ### Verrous et concurrence
 
-Ordre : **vente** (ligne verrouillée) → boutique (numéro RV) → client → produits (par identifiant). Les créations et
-règlements existants prennent boutique → client → produits ; le retour ajoute seulement le verrou de la vente **en tête**.
-Il n'y a pas de cycle : un règlement (`reglerVente`) verrouille la vente avant d'écrire son mouvement de caisse, qui pose un
-verrou partagé sur la boutique par sa clé étrangère ; si le retour prenait la boutique avant la vente, l'un tiendrait la boutique
-en attendant la vente de l'autre. Une création de vente n'a pas encore de ligne `vente` : elle ne peut pas croiser un retour sur cette
-vente. Deux retours simultanés sur la même vente s'exécutent l'un après l'autre sur le verrou de la vente et relisent les
-quantités déjà retournées sous ce verrou : au plus la quantité vendue passe.
-
-La transaction du retour est en **READ COMMITTED** : en REPEATABLE READ, les lectures verrouillées des retours d'une vente
-posent des verrous de plage qui provoquaient un deadlock InnoDB entre deux retours de ventes différentes (constaté sur MariaDB).
+Ordre : boutique → **vente** → client → produits (par identifiant), comme toute écriture métier ; voir [Ordre des verrous](#ordre-des-verrous).
+Deux retours simultanés sur la même vente, ou un retour et un règlement de cette vente, s'exécutent l'un après l'autre. Le retour
+relit sous verrou les quantités déjà retournées : au plus la quantité vendue passe. La transaction du retour est en **READ COMMITTED**
+(voir [Isolation](#isolation)).
 
 ### Double envoi
 
@@ -399,4 +393,206 @@ les numéros consécutifs et le double envoi. `RetourVenteMariaDbTest` rejoue la
 
 Les relevés cumulés de client affichent encore le « Montant total » d'origine par facture ; le retour y apparaît par le reste
 et l'avance. Un mois où ventes et retours s'annulent exactement compte comme « vide » dans le graphique. Les retours d'achat et
-les avoirs fournisseur restent à faire.
+les avoirs fournisseur sont décrits dans [Retour d'achat](#retour-dachat).
+
+## Retour d'achat
+
+La boutique rend à son fournisseur de la marchandise qu'il lui a livrée, sur un achat déjà enregistré (« retour au
+fournisseur »). C'est le symétrique du retour de vente : le retour réduit d'abord ce que la boutique doit au fournisseur sur
+cet achat, puis, pour ce qui était déjà payé, le fournisseur rend l'argent ou le garde en avoir. Le formulaire, les verrous, le
+contrôle de double envoi, le niveau d'isolation et les tests suivent ceux du retour de vente.
+
+### Droits
+
+Réservé au gérant (`ADMIN`) : le bouton « Retour au fournisseur » de la liste des achats, `/achats/{id}/retour`, `/retours` et
+`/retours/{id}/imprimer` répondent 403 au caissier (règle `/achats/**` et `/retours/**` dans `SecurityConfig`, contrôle répété
+dans le service). Un achat ou un retour d'une autre boutique est introuvable (404). Le formulaire n'accepte que
+`lignes[i].detailAchatId`, `lignes[i].quantite`, `motif`, `modeRemboursement`, `comptePaiement` et `retoursConnus` (autre champ
+ou valeur répétée : 400) ; montants, prix, coûts, dates, fournisseur et numéro sont toujours calculés côté serveur.
+
+### Règles
+
+- Un retour porte sur **un** achat de la boutique, ligne par ligne. La quantité est un entier ≥ 0, au plus **le plus petit** de
+  (quantité achetée − quantités déjà retournées sur cette ligne, tous retours confondus) et du **stock actuel** du produit : on
+  ne renvoie pas au fournisseur ce qui a déjà été vendu. Le stock est relu sous le verrou du produit ; si l'achat a plusieurs
+  lignes du même produit, leurs quantités se cumulent contre ce stock. Au moins une quantité doit être > 0. Un achat ne contient
+  jamais de service : ce cas est ignoré.
+- Montant du retour **R** = Σ quantité × prix unitaire de la ligne d'achat. `detail_retour` garde ce prix unitaire et, à titre
+  d'information seulement (`cout_unitaire`), le coût moyen du produit juste avant le retour.
+- `achat.montant_retours` += R. **Reste à payer** = max(0, `montant_total` − `montant_retours` − versé − avance utilisée). Le
+  trop-payé d'origine reste max(0, versé − `montant_total`) avec le total d'origine, sinon il serait compté deux fois.
+- Avec **D** = reste à payer juste avant le retour : la part **imputée** = min(R, D) réduit la dette envers le fournisseur, sans
+  aucun mouvement d'argent ; l'**excédent** E = R − min(R, D) (marchandise déjà payée) est soit **rendu par le fournisseur**
+  (`montant_rembourse` = E, mouvement de trésorerie **entrant** de E, source `RETOUR_ACHAT`, sur le compte choisi, lié au retour
+  par `retour_id` et au gérant), soit **gardé en avoir chez le fournisseur** (`montant_avoir` = E, aucun mouvement). Si E = 0,
+  aucun choix n'est demandé. Le choix se fait à chaque retour. L'entrée n'est jamais rattachée à l'achat ni au fournisseur : elle
+  ne figure ni parmi les versements de l'achat ni parmi les règlements du solde de départ.
+- **Avance chez un fournisseur** = formule existante (max(0, solde de départ) + Σ trop-payés − Σ avance utilisée) + Σ
+  `montant_avoir` de ses retours d'achat. `SoldePartenaireRepository` la calcule pour les deux partenaires avec la même requête
+  (colonne `client_id` + type `VENTE`, ou `fournisseur_id` + type `ACHAT`), en agrégat (`factures`, utilisé par la liste des
+  fournisseurs, le total `avancesFournisseurs` et le tableau de bord) comme en lecture verrouillée
+  (`facturesVerrouillees`, utilisée par `avanceDisponibleVerrouillee`). L'avance est consommée automatiquement par l'achat à
+  crédit suivant, comme un trop-payé.
+- **Stock** : `quantite` −= quantité retournée.
+- **Coût moyen**, avec q la quantité retournée, p le prix de la ligne d'achat et S le stock avant le retour :
+  - S − q > 0 : nouveau CMP = (S × CMP − q × p) / (S − q), calculé exactement puis **arrondi une seule fois** (HALF_UP, 2 décimales) ;
+  - S − q = 0 (le stock est vidé) : le CMP **reste inchangé** ;
+  - si le résultat est négatif (on rend plus cher que ce que vaut le reste du stock) : CMP = **0**, jamais négatif.
+
+  Le **recalcul depuis l'historique** (`CoutMoyenService.recalculer`, utilisé par la modification d'un autre achat) rejoue les
+  retours d'achat comme des **sorties** datées de `date_retour`, valorisées au prix de la ligne d'achat, avec exactement la même
+  fonction : il redonne la valeur du calcul au fil de l'eau. À date égale, le retour passe après les entrées, ajustements et ventes.
+- **Achat figé** : un achat qui a au moins un retour **ne peut plus être modifié**. `/achats/modifier/{id}` (GET et POST) refuse
+  avec le message « Cet achat a déjà fait l'objet d'un retour au fournisseur : il ne peut plus être modifié. Ses lignes, ses prix
+  et ses quantités sont figés. » et la liste n'offre plus le bouton « Modifier ». C'est la règle la plus sûre : modifier remplace
+  les lignes (nouveaux identifiants) et recalcule le stock et le CMP depuis l'achat entier, ce qui n'a plus de sens quand une
+  partie de la marchandise est déjà repartie ; les retours, les prix et les quantités restent ainsi cohérents avec la facture.
+  Le règlement du reste à payer reste possible.
+- **Numéro** `RA-000001`, consécutif par boutique (`boutique.prochain_numero_retour_achat`, compteur distinct de celui des
+  `RV-`), rendu en cas de rollback.
+- **Documents** : « Bon de retour fournisseur » (ou « Avoir fournisseur » quand une part est gardée en avoir) A4 imprimable ;
+  lignes « Retours » et « Total net » et numéros de retour sur la facture d'achat ; mention « − retours » dans la liste des
+  achats et ligne « Retours au fournisseur » dans la page de règlement. La liste `/retours` réunit les retours de vente et
+  d'achat avec un filtre Tous / Vente / Achat (`?type=vente` ou `?type=achat`).
+- **Tableau de bord** : rien ne change à part ce qui suit de lui-même. La valeur du stock baisse du stock retiré au CMP corrigé ;
+  les dettes fournisseurs baissent de la part imputée ; le chiffre d'affaires, le bénéfice brut, les dépenses (opérations de type
+  `DEPENSE`) et l'état « Ventes par vendeur » ne comptent que les retours de **vente** (requêtes filtrées sur `type = VENTE`) et
+  ne bougent donc pas. L'argent rendu par le fournisseur est une entrée de trésorerie, pas un revenu.
+
+### Exemples
+
+1. **Achat payé.** Achat 100 000 payé 100 000, retour de 30 000 remboursé : D = 0, imputé 0, E = 30 000. Entrée de caisse de
+   30 000 (source `RETOUR_ACHAT`), reste 0, stock −3 unités.
+2. **Achat à crédit.** Achat 100 000, versé 20 000 (D = 80 000), retour de 30 000 : imputé 30 000, E = 0. Aucun choix, aucun
+   mouvement de trésorerie ; reste 50 000 et dette envers le fournisseur diminuée de 30 000 (80 000 → 50 000).
+3. **Avoir.** Achat 100 000, versé 120 000 (avance 20 000), retour de 30 000 gardé en avoir : D = 0, E = 30 000. L'avance chez le
+   fournisseur passe à 20 000 + 30 000 = 50 000 ; un achat à crédit de 50 000 la consomme entièrement (reste 0, aucun mouvement).
+   Cas mixte : achat 100 000 avec 80 000 versés (D = 20 000), retour de 50 000 : imputé 20 000, E = 30 000 rendus ou en avoir.
+4. **Coût moyen.** 10 unités à 1 000 puis 10 à 2 000 : CMP 1 500, stock 20. Retour des 10 à 2 000 : (20 × 1 500 − 10 × 2 000) / 10
+   = **1 000**. Si, avant, 10 unités avaient été vendues (stock 10, CMP 1 500), le même retour vide le stock : le CMP reste
+   **1 500**. Avec 10 à 1 000 puis 10 à 3 000 (CMP 2 000) et 8 vendues (stock 12, valeur 24 000), le retour des 10 à 3 000 donne
+   (24 000 − 30 000) / 2 < 0 : le CMP est ramené à **0**.
+5. **Stock actuel.** Achat de 10, puis 105 unités vendues sur un stock de 110 : il reste 5 en stock, le retour est plafonné à 5
+   même s'il reste 10 à retourner sur la ligne.
+
+### Verrous et concurrence
+
+Ordre : boutique → **achat** → fournisseur → produits (par identifiant), comme toute écriture métier ; voir [Ordre des verrous](#ordre-des-verrous).
+
+- Deux retours simultanés sur le même achat, ou un retour et un règlement de cet achat, s'exécutent l'un après l'autre sur le
+  verrou de l'achat et relisent sous ce verrou les quantités déjà retournées : au plus la quantité achetée passe. Un retour et une
+  vente simultanés de tout le stock se départagent sur le verrou du produit : un seul passe, le stock ne devient jamais négatif.
+- **Modification d'un achat** (`modifierAchat`) : même ordre que le retour (boutique, achat, fournisseur, produits). Elle relit ensuite
+  sous verrou les retours de l'achat et refuse s'il y en a un : soit la modification passe d'abord (le retour est alors refusé, ses
+  lignes ont changé), soit le retour passe d'abord (la modification est refusée).
+- La transaction du retour et celle de la modification d'achat sont en **READ COMMITTED** (voir [Isolation](#isolation)).
+
+### Double envoi
+
+Même contrôle que le retour de vente : le champ caché `retoursConnus` (nombre de retours de l'achat à l'ouverture du formulaire)
+est comparé sous le verrou de l'achat. Un second envoi du même formulaire, ou d'un formulaire ouvert avant le retour d'un autre
+compte, répond 409, n'enregistre rien et rouvre le formulaire à jour ; le bouton est aussi désactivé dès le premier envoi. Comme
+pour la vente, ce contrôle passe avant les plafonds : la quantité n'est donc jamais dépassée par deux envois simultanés, mais le
+second échoue d'abord sur le formulaire périmé.
+
+### Vérifications
+
+```sh
+./gradlew test --tests '*RetourAchatTests' --tests '*CoutMoyenCalculTests'
+node --test src/test/js/retour-achat.test.cjs
+./gradlew lot2MariaDbTest retourAchatMariaDbTest retourVenteMariaDbTest avancesPartenairesMariaDbTest coutMoyenServiceMariaDbTest tableauDeBordMariaDbTest creationOperationsMariaDbTest
+```
+
+`RetourAchatTests` couvre les trois exemples de montants, l'argent rendu sur un autre compte, l'excédent sans choix, les
+quantités (dépassement, retours successifs, retours simultanés), le plafond du stock après une vente, le coût moyen au fil de
+l'eau **et** rejoué (retour du dernier achat, arrondi, stock vidé, résultat négatif ramené à 0), l'achat figé (GET, POST, service,
+bouton), le tableau de bord, les droits, l'isolation entre deux boutiques, les champs inconnus, les numéros par boutique, le
+double envoi et les documents. `RetourAchatMariaDbTest` rejoue la concurrence avec les verrous InnoDB : retours simultanés sur un
+même achat, retour et règlement, retours sur deux achats du même fournisseur, retour en avoir et achat à crédit, retour et vente
+du dernier stock, retour et modification du même achat (cinq fois).
+
+### Limites connues
+
+- Les relevés cumulés de fournisseur affichent encore le « Montant total » d'origine par facture ; le retour y apparaît par le
+  reste et l'avance.
+- Un retour d'achat n'est pas annulable ; une correction passe par un nouvel achat ou un ajustement d'inventaire.
+
+## Ordre des verrous
+
+Cette section est la seule description de l'ordre des verrous de l'application ; les autres sections et le
+[lot 1](lot-1.md#verrous-et-concurrence) y renvoient. Elle remplace les descriptions locales (« document d'abord », « partenaire
+puis produits »…) qui se contredisaient et produisaient de vrais interblocages InnoDB sur MariaDB.
+
+### La règle
+
+Toute opération d'écriture métier qui modifie l'argent, le stock, les factures, les retours, les avances ou les soldes verrouille
+**d'abord la ligne `boutique` de la boutique courante** (`StockLockRepository.verrouillerBoutiqueCourante()`, `PESSIMISTIC_WRITE`),
+en première instruction de sa transaction, puis, dans cet ordre et seulement ceux dont elle a besoin :
+
+1. la ligne `boutique` (elle porte aussi les compteurs de numéros `FV-`, `FA-`, `FD-`, `RV-`, `RA-`) ;
+2. le document : jeton de création, devis, vente ou achat (un seul document par transaction) ;
+3. le partenaire : fiche du client ou du fournisseur ;
+4. les factures du partenaire : lectures `FOR UPDATE` des ventes ou achats qui portent une avance (`SoldePartenaireService`),
+   des retours et des règlements du solde de départ ;
+5. les produits, par identifiant croissant ;
+6. les comptes de trésorerie.
+
+Rien ne doit être verrouillé avant la boutique : ni document, ni partenaire, ni compte utilisateur. Le verrou est pris une seule
+fois par transaction : un second appel, par exemple depuis `CaisseService` appelé par une vente, ne fait rien et ne relit pas la
+ligne (une modification non flushée, comme la clôture du démarrage, n'est donc pas perdue). Il est tenu jusqu'à la fin de la
+transaction.
+
+Pourquoi la boutique en premier : un mouvement de caisse (règlement, entrée ou sortie) a une clé étrangère vers `boutique`, qui pose
+un verrou partagé sur cette ligne. Toute opération qui insère un mouvement après avoir verrouillé son document ou son partenaire
+attend donc la boutique, que tient une création en attente de ce même document. Avec un ordre unique, aucune de ces attentes ne
+peut former de cycle. Exemple observé avant la règle : une création d'achat tenait la boutique et attendait un achat porteur d'avance
+(lecture `FOR UPDATE`), pendant qu'un retour tenait cet achat et attendait la boutique pour son numéro `RA-`.
+
+### Opérations concernées
+
+| Domaine | Opérations qui verrouillent la boutique en premier |
+|---|---|
+| Achats | création (`enregistrerAchat`), modification (`modifierAchat`), règlement (`reglerAchat`), échéance (`modifierEcheance`) |
+| Ventes | création et transformation d'un devis (`effectuerVente`), règlement (`reglerVente`), échéance (`modifierEcheance`) |
+| Création avec jeton | `OperationCreationService.creerAchat` et `creerVente` (la boutique avant la ligne du jeton) |
+| Retours | `RetourVenteService.enregistrer`, `RetourAchatService.enregistrer` |
+| Soldes de départ | `SoldeDepartService.reglerClient` et `reglerFournisseur` ; `appliquerALaModification` (modification d'une fiche client ou fournisseur avec solde de départ) |
+| Devis | création, prolongation, annulation |
+| Trésorerie | `CaisseService.initialiser`, `depenser`, `transferer` et toute écriture de mouvement (`enregistrerEntree*`, `enregistrerSortie*`) |
+| Inventaire et produits | `InventaireService.initialiser`, `ProduitService.modifierProduit` et `supprimerProduit` ; la fin du démarrage (`InitialisationBoutiqueService.terminer`) |
+| Partenaires | `ClientService.supprimerClient`, `FournisseurService.supprimerFournisseur` |
+
+Les lectures (`readOnly = true`) ne verrouillent rien. La création d'un produit, d'un client, d'un fournisseur ou d'une catégorie
+n'attend aucun autre verrou et n'en tient aucun : elle ne verrouille pas la boutique. L'ouverture d'un formulaire de création
+(`OperationCreationService.ouvrir`) insère seulement la ligne du jeton.
+
+### Isolation
+
+Les retours (vente et achat) et la modification d'achat restent en **READ COMMITTED**. Ils relisent les retours d'un document par
+une lecture verrouillée ; sous REPEATABLE READ elle pose des verrous de plage (« gap ») sur l'index des retours, et ces verrous
+croisent l'insertion d'un retour d'une **autre boutique** (même table, mêmes plages d'index). L'ordre des verrous ne protège pas ce
+cas, puisque deux boutiques ne partagent aucun verrou de boutique. Vérifié sur MariaDB : sans READ COMMITTED, le scénario « deux
+boutiques » de `OrdreVerrousMariaDbTest` donne un interblocage dès le premier tour (insertion dans `retour`). Avec READ COMMITTED,
+les 25 tours passent, et les lectures verrouillées voient toujours les opérations validées.
+
+### Limites connues
+
+- **Les écritures d'une même boutique sont sérialisées** : une vente, un achat, un règlement, un retour, une opération de caisse ou
+  de devis attend la fin de la précédente de sa boutique, même si elles touchent des produits ou des partenaires différents.
+  Pour un commerce de un à trois postes, ces transactions durent quelques millisecondes. Deux boutiques ne s'attendent jamais.
+- Les opérations de compte et d'administration (mon compte, accès des utilisateurs, paramètres de la boutique, réinitialisation du mot
+  de passe, abonnement) gardent leur propre ordre (compte utilisateur, puis boutique en lecture ou en écriture) : elles ne modifient ni
+  l'argent ni le stock et ne sont pas concernées par la règle.
+- Toute nouvelle opération d'écriture métier doit appeler `verrouillerBoutiqueCourante()` avant tout autre verrou.
+
+### Vérifications
+
+```sh
+./gradlew ordreVerrousMariaDbTest retourAchatMariaDbTest retourVenteMariaDbTest
+```
+
+`OrdreVerrousMariaDbTest` croise, 25 fois chacun et avec les vrais verrous InnoDB : création d'achat pour un fournisseur ayant une
+avance et retour en avoir d'un de ses achats ; création de vente pour un client ayant une avance et retour de vente en avoir ;
+règlement d'un achat et retour du même achat ; règlement d'une vente et retour de la même vente ; règlement du solde de départ d'un
+client et vente à ce client ; règlement du solde de départ d'un fournisseur et achat chez lui ; modification d'un achat et création
+d'un achat pour le même fournisseur ; retours et créations croisés dans deux boutiques. Aucun ne doit produire d'erreur.

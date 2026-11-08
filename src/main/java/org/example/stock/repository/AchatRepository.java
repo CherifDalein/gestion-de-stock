@@ -13,7 +13,7 @@ import java.util.Optional;
 
 public interface AchatRepository extends JpaRepository<Achat, Long> {
     Optional<Achat> findByIdAndBoutiqueId(Long id, Long boutiqueId);
-    @EntityGraph(attributePaths = "utilisateur")
+    @EntityGraph(attributePaths = {"utilisateur", "retours"})
     List<Achat> findByBoutiqueIdOrderByDateAchatDesc(Long boutiqueId);
     List<Achat> findByDateAchatAfterAndBoutiqueId(LocalDateTime date, Long boutiqueId);
     List<Achat> findByFournisseurIdAndBoutiqueIdOrderByDateAchatDesc(Long fournisseurId, Long boutiqueId);

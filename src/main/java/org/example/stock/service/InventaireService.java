@@ -53,6 +53,8 @@ public class InventaireService {
     }
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void initialiser(Long id, StockInitialForm formulaire) {
+        // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis le produit.
+        verrous.verrouillerBoutiqueCourante();
         Utilisateur acteur=verrouillerAdministrateur(); valider(formulaire);
         initialisation.verrouillerEtExigerOuverte();
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);

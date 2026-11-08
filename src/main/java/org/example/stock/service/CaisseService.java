@@ -11,6 +11,7 @@ import org.example.stock.model.Montants;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.VenteRepository;
+import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -58,6 +59,7 @@ public class CaisseService {
     @Autowired private Validator validator;
     @Autowired @Qualifier("recoveryClock") private Clock clock;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private StockLockRepository verrous;
     @Autowired private CompteTresorerieBoutiqueRepository comptes;
     @Autowired private OperationTresorerieRepository operations;
 
@@ -104,6 +106,8 @@ public class CaisseService {
 
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public void initialiser(OuvertureCaisseForm formulaire) {
+        // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
+        verrous.verrouillerBoutiqueCourante();
         Utilisateur acteur=gerant();
         entityManager.refresh(acteur,LockModeType.PESSIMISTIC_READ);
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
@@ -206,7 +210,26 @@ public class CaisseService {
         return mouvementRepo.findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(venteId, boutiqueService.idBoutiqueCourante());
     }
 
+    /**
+     * Entrée de trésorerie qui constate l'argent rendu par un fournisseur après un retour d'achat : source
+     * {@code RETOUR_ACHAT}, rattachée au retour (jamais à l'achat, pour ne pas figurer parmi ses versements ni parmi les
+     * règlements du solde de départ du fournisseur). À appeler dans la transaction du retour, après les verrous de la boutique,
+     * de l'achat, du fournisseur et des produits.
+     */
+    @Transactional
+    public void enregistrerEntreeRetourAchat(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, CompteTresorerie compte) {
+        if (retour == null || retour.getId() == null) throw new IllegalArgumentException("Retour introuvable");
+        enregistrerEntree(montant, motif, "RETOUR_ACHAT", utilisateur, null, null, retour, compte);
+    }
+
     private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
+        enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compte);
+    }
+
+    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client,
+                                   Retour retour, CompteTresorerie compte) {
+        // Idempotent : déjà tenu quand l'appel vient d'une vente, d'un règlement ou d'un retour (ordre global des verrous).
+        verrous.verrouillerBoutiqueCourante();
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -236,6 +259,7 @@ public class CaisseService {
         mouvement.setUtilisateur(utilisateur);
         mouvement.setVente(vente);
         mouvement.setClient(client);
+        mouvement.setRetour(retour);
 
         mouvementRepo.save(mouvement);
     }
@@ -276,6 +300,8 @@ public class CaisseService {
 
     private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur,
                                    Retour retour, CompteTresorerie compte) {
+        // Idempotent : déjà tenu quand l'appel vient d'un achat, d'un règlement ou d'un retour (ordre global des verrous).
+        verrous.verrouillerBoutiqueCourante();
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -327,6 +353,8 @@ public class CaisseService {
 
     private boolean executerOperation(OperationTresorerieForm formulaire, TypeOperationTresorerie type,
                                       CompteTresorerie destination) {
+        // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
+        verrous.verrouillerBoutiqueCourante();
         Utilisateur acteur = gerant();
         entityManager.refresh(acteur, LockModeType.PESSIMISTIC_READ);
         if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();
@@ -339,7 +367,7 @@ public class CaisseService {
         }
         var boutique = boutiqueService.boutiqueCourante();
         if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;
-        // Même ordre que les achats/ventes : clôture du démarrage, puis comptes.
+        // Clôture du démarrage (boutique déjà verrouillée), puis comptes.
         initialisation.verrouillerEtClorePourActivite();
         verrouillerComptes(boutique.getId(), formulaire.getCompteSource(), destination);
         if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;

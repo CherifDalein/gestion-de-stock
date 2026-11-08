@@ -88,12 +88,12 @@ public class Retour {
     @OneToMany(mappedBy = "retour", cascade = CascadeType.ALL)
     private List<DetailRetour> lignes = new ArrayList<>();
 
-    /** Partie du retour qui a réduit la créance du client, sans argent : montant − remboursé − avoir. */
+    /** Partie du retour qui a réduit la dette ou la créance du partenaire, sans argent : montant − remboursé − avoir. */
     public BigDecimal getMontantImpute() {
         return Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantRembourse)).subtract(Montants.ouZero(montantAvoir));
     }
 
-    /** Un retour dont l'excédent est gardé en avoir s'imprime comme un « Avoir » ; sinon c'est un « Bon de retour ». */
+    /** Un retour dont l'excédent est gardé en avoir s'imprime comme un « Avoir » ; sinon c'est un « Bon de retour » (retour de vente) ou un « Bon de retour fournisseur » (retour d'achat). */
     public boolean estAvoir() {
         return Montants.ouZero(montantAvoir).signum() > 0;
     }

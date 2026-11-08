@@ -7,6 +7,7 @@ import org.example.stock.service.ProduitService;
 import org.example.stock.service.CaisseService;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EcheanceService;
+import org.example.stock.service.ModificationAchatRefuseeException;
 import org.example.stock.service.ReglementAchatObsoleteException;
 import org.example.stock.form.ReglementAchatForm;
 import org.example.stock.enums.TypeOperationCreation;
@@ -109,9 +110,14 @@ public class AchatController {
     }
 
     @GetMapping("/modifier/{id}")
-    public String afficherModifier(@PathVariable Long id, Model model) {
+    public String afficherModifier(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         Achat achat = service.trouverParId(id);
         if (achat == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Achat introuvable");
+        // Un achat qui a un retour au fournisseur est figé : on l'explique avant d'ouvrir un formulaire inutile.
+        if (service.aDesRetours(id)) {
+            redirectAttributes.addFlashAttribute("error", ModificationAchatRefuseeException.MESSAGE);
+            return "redirect:/achats";
+        }
 
         model.addAttribute("achat", achat);
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
@@ -129,6 +135,9 @@ public class AchatController {
             return "redirect:/achats?success=modifie";
         } catch (ResponseStatusException e) {
             throw e;
+        } catch (ModificationAchatRefuseeException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            return "redirect:/achats";
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e instanceof ConcurrencyFailureException
                     ? "Une autre opération modifie cet achat ou son stock. Réessayez la modification." : e.getMessage());

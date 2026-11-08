@@ -61,6 +61,9 @@ public class VenteService {
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
         }
+        // Ordre global des verrous : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »), puis le devis, le client et
+        // ses factures, puis les produits.
+        stockLockRepository.verrouillerBoutiqueCourante();
         if (vente.getClient() != null) {
             if (vente.getClient().getId() == null) throw new IllegalArgumentException("Client invalide");
             vente.setClient(clientRepository.findByIdAndBoutiqueId(vente.getClient().getId(), boutiqueService.idBoutiqueCourante())
@@ -81,7 +84,6 @@ public class VenteService {
 
         vente.setNumero(NumerotationFactureService.validerSaisie(vente.getNumero()));
         initialisation.verrouillerEtClorePourActivite();
-        // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
         String numero = numerotation.attribuerNumeroVente(vente.getNumero());
         // Devis verrouillé après la boutique, avant le client et les produits ; ses lignes remplacent celles du navigateur.
         Devis devis = devisId == null ? null : devisService.verrouillerPourTransformation(devisId, vente.getLignes());
@@ -202,6 +204,7 @@ public class VenteService {
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
         montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
+        stockLockRepository.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Vente vente = stockLockRepository.verrouillerVente(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(vente.getMontantVerse()), "Le montant déjà versé");
@@ -232,6 +235,7 @@ public class VenteService {
     @Transactional
     public void modifierEcheance(Long id, LocalDate echeance) {
         if (echeance == null) throw new IllegalArgumentException("Choisissez la nouvelle échéance.");
+        stockLockRepository.verrouillerBoutiqueCourante();
         Vente vente = stockLockRepository.verrouillerVente(id);
         if (vente.getResteAPayer().signum() <= 0) {
             throw new IllegalArgumentException("Cette vente est soldée : son échéance n'est plus modifiable.");

@@ -101,6 +101,10 @@
                         <dt>Total de l'achat</dt>
                         <dd th:text="${#numbers.formatDecimal(achatReglement.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
                     </div>
+                    <div th:if="${(achatReglement.montantRetours ?: 0) > 0}">
+                        <dt>Retours au fournisseur</dt>
+                        <dd th:text="${'− ' + #numbers.formatDecimal(achatReglement.montantRetours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
                     <div>
                         <dt>Déjà versé</dt>
                         <dd th:text="${#numbers.formatDecimal(achatReglement.montantVerse ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>

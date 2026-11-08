@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${(retour.estAvoir() ? 'Avoir fournisseur ' : 'Bon de retour fournisseur ') + retour.numero}">Bon de retour fournisseur</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/factures.css}" rel="stylesheet">
+</head>
+<body class="stock-document">
+<main id="stockDocument" class="document-shell" data-document-type="retour-achat"
+      th:with="titre=${retour.estAvoir() ? 'Avoir fournisseur' : 'Bon de retour fournisseur'}">
+    <header class="document-toolbar no-print">
+        <div><p class="document-kicker">Documents</p><h1 th:text="${titre}">Bon de retour fournisseur</h1></div>
+        <div class="document-toolbar-actions">
+            <a th:href="@{/retours}" class="btn btn-outline-secondary" data-document-back>Retour à la liste</a>
+            <button type="button" class="btn btn-primary" data-document-print onclick="window.print()">Imprimer</button>
+        </div>
+    </header>
+    <article class="document-paper" aria-labelledby="documentTitle">
+        <header class="document-paper-header">
+            <div th:replace="~{fragments/identite-boutique :: identite}"></div>
+            <div class="document-heading">
+                <h1 id="documentTitle" th:text="${titre + ' ' + retour.numero}"></h1>
+            </div>
+        </header>
+        <div class="document-identity">
+            <section class="document-contact" aria-label="Fournisseur">
+                <p class="document-kicker">Fournisseur</p>
+                <h2 th:text="${retour.fournisseur != null ? retour.fournisseur.nom : 'Fournisseur non renseigné'}"></h2>
+                <p th:if="${retour.fournisseur != null and !#strings.isEmpty(#strings.trim(retour.fournisseur.telephone))}" th:text="${retour.fournisseur.telephone}"></p>
+                <p th:if="${retour.fournisseur != null and !#strings.isEmpty(#strings.trim(retour.fournisseur.email))}" th:text="${retour.fournisseur.email}"></p>
+                <p th:if="${retour.fournisseur != null and !#strings.isEmpty(#strings.trim(retour.fournisseur.adresse))}" th:text="${retour.fournisseur.adresse}"></p>
+            </section>
+            <dl class="document-metadata">
+                <div><dt>Numéro</dt><dd data-document-number th:text="${retour.numero}"></dd></div>
+                <div><dt>Date</dt><dd th:text="${#temporals.format(retour.dateRetour, 'dd/MM/yyyy HH:mm')}"></dd></div>
+                <div><dt>Achat d’origine</dt><dd data-document-achat th:text="${retour.achat != null ? (retour.achat.numero ?: '#' + retour.achat.id) : 'Non renseigné'}"></dd></div>
+                <div><dt>Enregistré par</dt><dd th:text="${retour.utilisateur != null and !#strings.isEmpty(#strings.trim(retour.utilisateur.nom)) ? retour.utilisateur.nom : 'Non renseigné'}"></dd></div>
+            </dl>
+        </div>
+
+        <div class="document-table-wrap">
+            <table class="document-table document-table--invoice">
+                <caption class="visually-hidden">Marchandises rendues au fournisseur, quantités et prix de l’achat</caption>
+                <thead><tr>
+                    <th scope="col">Produit</th>
+                    <th scope="col" class="document-quantity">Quantité retournée</th>
+                    <th scope="col" class="document-amount">Prix unitaire</th>
+                    <th scope="col" class="document-amount">Total</th>
+                </tr></thead>
+                <tbody>
+                <tr th:each="ligne : ${retour.lignes}" data-document-row>
+                    <td class="document-product" th:text="${ligne.produit.nom}"></td>
+                    <td class="document-quantity" th:text="${ligne.quantite + (ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
+                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <section class="document-summary" aria-label="Récapitulatif du retour">
+            <dl>
+                <div class="document-summary-total"><dt>Montant du retour</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(retour.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantImpute.signum() > 0}"><dt>Déduit de ce que vous deviez au fournisseur</dt><dd data-document-amount="impute" th:text="${#numbers.formatDecimal(retour.montantImpute, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantRembourse.signum() > 0}"><dt th:text="${'Remboursé par le fournisseur (' + (retour.compteTresorerie != null ? retour.compteTresorerie.libelle : '') + ')'}"></dt><dd data-document-amount="rembourse" th:text="${#numbers.formatDecimal(retour.montantRembourse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantAvoir.signum() > 0}"><dt>Avoir gardé chez le fournisseur (avance de la boutique)</dt><dd data-document-amount="avoir" th:text="${#numbers.formatDecimal(retour.montantAvoir, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+            </dl>
+        </section>
+        <p th:if="${retour.motif != null}" class="document-note" th:text="${'Motif : ' + retour.motif}"></p>
+        <footer class="document-footer">Montants exprimés en francs guinéens (GNF).</footer>
+    </article>
+</main>
+</body>
+</html>

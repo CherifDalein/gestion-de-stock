@@ -59,6 +59,17 @@ public class CoutMoyenService {
         enregistrerEntree(produit, quantite, coutFige);
     }
 
+    /**
+     * Retour d'achat : la marchandise sort du stock, valorisée au prix de la ligne d'achat retournée (jamais au CMP du jour).
+     * À appeler sous le verrou du produit, AVANT de retirer la quantité retournée du stock. Un service n'a pas de stock :
+     * il n'est pas concerné.
+     */
+    public void enregistrerRetourAchat(Produit produit, long quantite, BigDecimal prixLigneAchat) {
+        if (produit.getNature() == NatureProduit.SERVICE) return;
+        long stockAvant = produit.getQuantite() == null ? 0 : produit.getQuantite();
+        produit.setCoutMoyen(coutApresRetourAchat(stockAvant, produit.getCoutMoyen(), quantite, prixLigneAchat));
+    }
+
     /** Coût à figer sur une nouvelle ligne de vente : le CMP lu sous le verrou du produit. */
     @Transactional(propagation = Propagation.SUPPORTS)
     public BigDecimal coutUnitaireVente(Produit produit) {
@@ -94,7 +105,25 @@ public class CoutMoyenService {
     }
 
     /**
-     * Rejoue l'historique trié (achats, retours de vente, ajustements, ventes). Le stock que l'historique n'explique pas (antérieur au journal
+     * CMP après un retour d'achat de {@code quantite} unités valorisées {@code prix}, avec S le stock avant le retour :
+     * <ul>
+     *   <li>S − q &gt; 0 : (S × CMP − q × prix) / (S − q), calculé exactement puis arrondi une seule fois ;</li>
+     *   <li>S − q = 0 (le stock est vidé) : le CMP reste inchangé, il n'y a plus rien à valoriser ;</li>
+     *   <li>résultat négatif (on rend plus cher que le coût moyen du reste) : le CMP est ramené à 0, jamais négatif.</li>
+     * </ul>
+     */
+    static BigDecimal coutApresRetourAchat(long stockAvant, BigDecimal coutActuel, long quantite, BigDecimal prix) {
+        if (quantite <= 0 || coutActuel == null) return coutActuel;
+        long restant = stockAvant - quantite;
+        if (restant <= 0) return coutActuel;
+        BigDecimal valeur = coutActuel.multiply(BigDecimal.valueOf(stockAvant))
+                .subtract(Montants.ouZero(prix).multiply(BigDecimal.valueOf(quantite)));
+        if (valeur.signum() < 0) return Montants.ZERO;
+        return Montants.diviser(valeur, restant);
+    }
+
+    /**
+     * Rejoue l'historique trié (achats, retours de vente, retours d'achat, ajustements, ventes). Le stock que l'historique n'explique pas (antérieur au journal
      * d'inventaire) est placé au début, valorisé au premier coût d'entrée connu ; un écart négatif
      * ne change que la quantité et n'a donc pas d'effet sur le CMP.
      */
@@ -114,6 +143,7 @@ public class CoutMoyenService {
         }
         for (Evenement evenement : tries) {
             if (evenement.estEntree()) cout = nouveauCout(stock, cout, evenement.variation(), evenement.prixUnitaire());
+            else if (evenement.estRetourAchat()) cout = coutApresRetourAchat(stock, cout, -evenement.variation(), evenement.prixUnitaire());
             stock += evenement.variation();
         }
         return cout == null ? coutActuel : cout;
@@ -150,6 +180,12 @@ public class CoutMoyenService {
             evenements.add(new Evenement(Rang.OPERATION, (LocalDateTime) l[0], Ordre.ENTREE, (Long) l[1], (Long) l[2],
                     quantite(l[3]), l[4] == null ? null : Montants.ouZero((BigDecimal) l[4])));
         }
+        // Retours d'achat : sorties datées de la date du retour, valorisées au prix de la ligne d'achat retournée.
+        for (Object[] l : lire("select r.dateRetour, r.id, d.id, d.quantite, d.prixUnitaire from DetailRetour d join d.retour r"
+                + " where d.produit.id = :produit and r.boutique.id = :boutique and r.type = org.example.stock.enums.TypeRetour.ACHAT", produitId, boutiqueId)) {
+            evenements.add(new Evenement(Rang.OPERATION, (LocalDateTime) l[0], Ordre.RETOUR_ACHAT, (Long) l[1], (Long) l[2],
+                    -quantite(l[3]), Montants.ouZero((BigDecimal) l[4])));
+        }
         for (Object[] l : lire("select v.dateVente, v.id, d.id, d.quantite from DetailVente d join d.vente v"
                 + " where d.produit.id = :produit and v.boutique.id = :boutique", produitId, boutiqueId)) {
             evenements.add(new Evenement(Rang.OPERATION, (LocalDateTime) l[0], Ordre.SORTIE, (Long) l[1], (Long) l[2],
@@ -170,11 +206,11 @@ public class CoutMoyenService {
     /** Le stock initial précède toujours les opérations : il est réservé au démarrage de la boutique. */
     enum Rang { INITIAL, OPERATION }
 
-    /** À date égale, les entrées passent avant les ajustements puis les sorties. */
-    enum Ordre { ENTREE, AJUSTEMENT, SORTIE }
+    /** À date égale, les entrées passent avant les ajustements, puis les sorties, puis les retours au fournisseur. */
+    enum Ordre { ENTREE, AJUSTEMENT, SORTIE, RETOUR_ACHAT }
 
     /**
-     * Une variation de stock datée. {@code prixUnitaire} n'est renseigné que pour une entrée valorisée.
+     * Une variation de stock datée. {@code prixUnitaire} n'est renseigné que pour une entrée valorisée ou un retour d'achat.
      * Une date absente (document historique) est placée avant les dates connues.
      */
     record Evenement(Rang rang, LocalDateTime date, Ordre ordre, long documentId, long ligneId, long variation,
@@ -186,7 +222,12 @@ public class CoutMoyenService {
                 .thenComparingLong(Evenement::ligneId);
 
         boolean estEntree() {
-            return prixUnitaire != null;
+            return prixUnitaire != null && ordre != Ordre.RETOUR_ACHAT;
+        }
+
+        /** Sortie valorisée au prix de la ligne d'achat retournée : elle fait baisser le CMP quand elle rend plus cher que lui. */
+        boolean estRetourAchat() {
+            return ordre == Ordre.RETOUR_ACHAT;
         }
     }
 }

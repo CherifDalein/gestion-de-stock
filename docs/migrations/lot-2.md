@@ -34,7 +34,7 @@ retour restent à générer par l'application à partir des compteurs ci-dessous
 | `mouvement_caisse` | `retour_id` | BIGINT NULL, clé `fk_mouvement_caisse_retour` vers `retour` | vide : remboursement d'un retour, aucun mouvement existant n'en est un |
 | `mouvement_caisse` | `annulation_de_id` | BIGINT NULL, clé `fk_mouvement_caisse_annulation` vers `mouvement_caisse`, UNIQUE `uk_mouvement_caisse_annulation` | vide : un mouvement qui en annule un autre, au plus une annulation par mouvement |
 | `vente` | `montant_retours` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 : aucun retour de vente n'existe avant ce lot |
-| `achat` | `montant_retours` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 (réservée aux retours d'achat, traités ensuite) |
+| `achat` | `montant_retours` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 : cumul des retours d'achat de la facture, écrit par le retour d'achat |
 | `boutique` | `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` | BIGINT NOT NULL DEFAULT 1 | 1 |
 
 Précisions :
