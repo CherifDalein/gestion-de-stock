@@ -43,6 +43,12 @@ Pour préparer le lot 1 (seuils, unités, services, coût moyen, numéros de fac
 achats existants sont numérotés et reçoivent leur échéance ; stocks, montants
 et mouvements restent inchangés.
 
+Pour préparer le lot 2 (devis, retours et avoirs, vendeur des ventes, annulation
+des règlements), appliquer la [migration du lot 2](docs/migrations/lot-2.md)
+après le lot 1 et une nouvelle sauvegarde. Elle crée quatre tables vides et
+reprend l'auteur des ventes et des achats existants depuis leurs mouvements de
+caisse ; stocks, montants et mouvements restent inchangés.
+
 ## Tests
 
 ```sh
@@ -70,6 +76,7 @@ node --test src/test/js/montants.test.cjs
 - [Caisse, Orange Money, banque et transferts](docs/tresorerie.md)
 - [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)
 - [Préparation du schéma du lot 1](docs/migrations/lot-1.md)
+- [Préparation du schéma du lot 2](docs/migrations/lot-2.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

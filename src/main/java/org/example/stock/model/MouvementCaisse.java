@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_mouvement_caisse_annulation", columnNames = "annulation_de_id"))
 @Getter
 @Setter
 public class MouvementCaisse {
@@ -60,5 +61,15 @@ public class MouvementCaisse {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fournisseur_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_fournisseur"))
     private Fournisseur fournisseur;
+
+    /** Retour dont ce mouvement est le remboursement. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "retour_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_retour"))
+    private Retour retour;
+
+    /** Mouvement que celui-ci annule ; au plus une annulation par mouvement (contrainte d'unicité). */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "annulation_de_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_annulation"))
+    private MouvementCaisse annulationDe;
 
 }

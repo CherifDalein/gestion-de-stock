@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les dix-neuf tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les vingt-quatre tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -47,6 +47,7 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `initialisation_terminee` BOOLEAN NOT NULL DEFAULT FALSE : fermeture irréversible du démarrage, commune au stock initial et au solde initial de caisse ; le premier achat, la première vente ou un mouvement opérationnel de caisse ferme aussi cette phase
 - `delai_clients_jours`, `delai_fournisseurs_jours` INT NOT NULL DEFAULT 30 : délais de paiement proposés par défaut (lot 1, pas encore utilisés)
 - `prochain_numero_vente`, `prochain_numero_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros de facture ; la migration les place après le plus grand identifiant de toute la table pour ne jamais reprendre un numéro migré (lot 1, pas encore utilisés)
+- `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros des devis et des retours, par boutique (lot 2, pas encore utilisés)
 
 ### `logo_boutique`
 
@@ -175,6 +176,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FA-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
 - `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
 - `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
+- `utilisateur_id` BIGINT NULL, FK `fk_achat_utilisateur` -> `utilisateur.id` : compte qui a saisi l'achat ; repris du premier mouvement de caisse nominatif pour les achats migrés, vide sinon (lot 2)
 
 ### `detail_achat`
 - `id` PK
@@ -193,6 +195,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FV-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
 - `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
 - `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
+- `vendeur_id` BIGINT NULL, FK `fk_vente_vendeur` -> `utilisateur.id` : compte qui a saisi la vente ; repris du premier mouvement de caisse nominatif pour les ventes migrées, vide sinon (lot 2)
 
 ### `detail_vente`
 - `id` PK
@@ -216,6 +219,44 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `fournisseur_id` BIGINT NULL, FK `fk_mouvement_caisse_fournisseur` -> `fournisseur.id` : règlement du solde de départ d'un fournisseur (`source=SOLDE_FOURNISSEUR`)
 - `compte` VARCHAR(32) NOT NULL DEFAULT 'CAISSE' : espèces, Orange Money ou banque pour ce mouvement
 - `operation_tresorerie_id` FK optionnelle -> `operation_tresorerie.id`, pour les transferts et dépenses
+- `retour_id` BIGINT NULL, FK `fk_mouvement_caisse_retour` -> `retour.id` : remboursement d'un retour (lot 2)
+- `annulation_de_id` BIGINT NULL, FK `fk_mouvement_caisse_annulation` -> `mouvement_caisse.id`, UNIQUE `uk_mouvement_caisse_annulation` : mouvement qui en annule un autre, au plus une annulation par mouvement (lot 2)
+
+### `devis`
+
+Offre de prix valable jusqu'à une date, sans effet sur le stock ni la caisse tant qu'elle n'est pas transformée en vente (lot 2, pas encore utilisée) :
+- `id` BIGINT PK, auto-incrémenté
+- `boutique_id` BIGINT NOT NULL FK -> `boutique.id`
+- `numero` VARCHAR(30) NOT NULL, UNIQUE (`boutique_id`, `numero`) `uk_devis_boutique_numero`
+- `client_id` BIGINT NULL FK -> `client.id` ; `utilisateur_id` BIGINT NULL FK -> `utilisateur.id` (auteur)
+- `date_devis` DATETIME(6) NOT NULL ; `date_validite` DATE NOT NULL
+- `montant_total` DECIMAL(17,2) NOT NULL
+- `statut` VARCHAR(16) NOT NULL : `EN_COURS`, `TRANSFORME` ou `ANNULE` (`StatutDevis`)
+- `vente_id` BIGINT NULL FK -> `vente.id`, UNIQUE `uk_devis_vente` : un devis ne se transforme qu'en une seule vente
+- `note` VARCHAR(255) NULL
+- `version` BIGINT NOT NULL DEFAULT 0 : version JPA pour détecter les modifications concurrentes
+
+### `detail_devis`
+- `id` PK ; `devis_id` BIGINT NOT NULL FK -> `devis.id` ; `produit_id` BIGINT NOT NULL FK -> `produit.id`
+- `quantite` INT NOT NULL ; `prix_unitaire` DECIMAL(17,2) NOT NULL
+
+### `retour`
+
+Marchandise rendue par un client (`VENTE`) ou à un fournisseur (`ACHAT`) ; le montant total se partage entre un remboursement en trésorerie et un avoir (lot 2, pas encore utilisée) :
+- `id` BIGINT PK, auto-incrémenté
+- `boutique_id` BIGINT NOT NULL FK -> `boutique.id`
+- `numero` VARCHAR(30) NOT NULL, UNIQUE (`boutique_id`, `numero`) `uk_retour_boutique_numero`
+- `type` VARCHAR(16) NOT NULL : `VENTE` ou `ACHAT` (`TypeRetour`)
+- `vente_id`, `achat_id`, `client_id`, `fournisseur_id`, `utilisateur_id` BIGINT NULL, clés étrangères vers `vente`, `achat`, `client`, `fournisseur` et `utilisateur`
+- `date_retour` DATETIME(6) NOT NULL
+- `montant_total` DECIMAL(17,2) NOT NULL ; `montant_rembourse` DECIMAL(17,2) NOT NULL DEFAULT 0 ; `montant_avoir` DECIMAL(17,2) NOT NULL DEFAULT 0
+- `compte_tresorerie` VARCHAR(16) NULL : `CAISSE`, `ORANGE_MONEY` ou `BANQUE` (`CompteTresorerie`), compte du remboursement
+- `motif` VARCHAR(255) NULL
+
+### `detail_retour`
+- `id` PK ; `retour_id` BIGINT NOT NULL FK -> `retour.id` ; `produit_id` BIGINT NOT NULL FK -> `produit.id`
+- `detail_vente_id` BIGINT NULL FK -> `detail_vente.id` ; `detail_achat_id` BIGINT NULL FK -> `detail_achat.id`
+- `quantite` INT NOT NULL ; `prix_unitaire` DECIMAL(17,2) NOT NULL ; `cout_unitaire` DECIMAL(17,2) NULL
 
 ### `operation_creation`
 

@@ -54,6 +54,11 @@ public class Achat {
     @JoinColumn(name = "fournisseur_id")
     private Fournisseur fournisseur;
 
+    /** Compte qui a saisi l'achat ; vide pour les achats sans mouvement de caisse nominatif. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utilisateur_id", foreignKey = @ForeignKey(name = "fk_achat_utilisateur"))
+    private Utilisateur utilisateur;
+
     @OneToMany(mappedBy = "achat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetailAchat> lignes = new ArrayList<>();
 

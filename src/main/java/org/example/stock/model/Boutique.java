@@ -82,6 +82,16 @@ public class Boutique {
     @Column(nullable = false)
     private long prochainNumeroAchat = 1L;
 
+    /** Lot 2 : prochains numéros des devis et des retours, par boutique. */
+    @Column(nullable = false)
+    private long prochainNumeroDevis = 1L;
+
+    @Column(nullable = false)
+    private long prochainNumeroRetourVente = 1L;
+
+    @Column(nullable = false)
+    private long prochainNumeroRetourAchat = 1L;
+
     /** Dates UTC de l'essai public ; null pour les boutiques créées avant son introduction. */
     private LocalDateTime essaiDebut;
 

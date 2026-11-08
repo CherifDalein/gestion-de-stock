@@ -72,7 +72,7 @@ final class IdentiteBoutiqueMigrationScenarios {
         exiger(tables.equals(BoutiquesMigration.tables(c)) && avant.equals(IdentiteBoutiqueMigration.photographie(c))
                 && logos.equals(IdentiteBoutiqueMigration.logos(c)), "Le contrôle a modifié la base");
         IdentiteBoutiqueMigration.migrer(c, true);
-        exiger(BoutiquesMigration.tables(c).size() == 20 && avant.equals(IdentiteBoutiqueMigration.photographie(c))
+        exiger(BoutiquesMigration.tables(c).keySet().stream().filter(t -> !Lot2Migration.NOUVELLES_TABLES.contains(t)).count() == 20 && avant.equals(IdentiteBoutiqueMigration.photographie(c))
                 && schemas.equals(IdentiteBoutiqueMigration.schemasAnciens(c)) && logos.equals(IdentiteBoutiqueMigration.logos(c)), "Les anciennes données ou logos ont changé");
         if (!Set.of("reprise_identite", "relance_logo").contains(scenario))
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE telephone_secondaire IS NOT NULL") == 0, "Téléphone historique inventé");
