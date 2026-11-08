@@ -20,7 +20,9 @@ Le document, son numéro de facture, ses lignes, le stock, la caisse, l'empreint
 
 L'empreinte SHA-256 porte sur les identifiants des relations, le paiement saisi, l'ordre des lignes et leurs quantités, ainsi que les prix unitaires saisis pour les achats. Le numéro de facture saisi à la main (espaces aux bords retirés) et l'échéance saisie y sont ajoutés seulement lorsqu'ils sont présents : l'empreinte d'un formulaire sans ces champs ne change pas. Un renvoi avec un autre numéro ou une autre échéance est donc un conflit (409). Les échelles décimales équivalentes sont normalisées ; un paiement omis reste distinct d'un zéro explicite. Les prix de vente courants ne sont pas réintroduits lors d'une copie.
 
-Le paramètre `jetonCreation` est accepté uniquement sur les deux routes de création, comme le champ `numero` de la facture ; `dateEcheance` est aussi accepté à la modification d’un achat et aux règlements. Les champs internes restent interdits, les en-têtes HTTP exclus du binding et CSRF actif. Les appels internes historiques à `AchatService.enregistrerAchat` et `VenteService.effectuerVente` ne prennent pas de clé ; les deux routes web passent obligatoirement par `OperationCreationService`.
+Le paramètre `jetonCreation` est accepté uniquement sur les deux routes de création, comme le champ `numero` de la facture ; `dateEcheance` est aussi accepté à la modification d’un achat et aux règlements. Les champs internes restent interdits, les en-têtes HTTP exclus du binding et CSRF actif. Une vente issue d'un devis envoie en plus le paramètre `devis` (identifiant du devis), accepté uniquement sur la création de vente et inclus dans l'empreinte ; voir [les devis](lot-2.md#transformation-en-vente).
+
+Les appels internes historiques à `AchatService.enregistrerAchat` et `VenteService.effectuerVente` ne prennent pas de clé ; les deux routes web passent obligatoirement par `OperationCreationService`.
 
 Aucune purge automatique des identifiants n'est ajoutée : supprimer les résultats réussis supprimerait la protection contre leurs renvois ultérieurs. Les formulaires abandonnés expirent mais leurs lignes restent présentes.
 

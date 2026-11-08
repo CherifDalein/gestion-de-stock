@@ -30,6 +30,7 @@ Les rôles et mots de passe des comptes existants ne sont pas modifiés par la m
 | Enregistrer et consulter les ventes | Oui | Oui |
 | Enregistrer et consulter les règlements clients | Oui | Oui |
 | Consulter et imprimer les factures de vente et relevés clients | Oui | Oui |
+| Créer, consulter, imprimer, prolonger, annuler et transformer en vente les devis ([lot 2](lot-2.md#devis)) | Oui | Oui |
 | Gérer les achats et consulter les factures fournisseurs | Oui | Non |
 | Enregistrer et consulter les règlements fournisseurs | Oui | Non |
 | Consulter la caisse globale et ses indicateurs | Oui | Non |
