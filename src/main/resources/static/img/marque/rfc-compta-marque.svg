@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RFC-COMPTA">
+  <!-- Bol et jambe du R, bleu marine -->
+  <path fill="#0B2540" fill-rule="evenodd" d="M150 92 H304 C372 92 414 134 414 196 C414 246 384 282 338 296 L428 404 Q434 418 420 420 H352 Q342 420 336 412 L262 312 H232 L258 280 H300 C330 280 346 262 346 238 V200 C346 172 330 158 300 158 H164 Q122 158 112 196 L104 214 Q96 226 96 206 V150 C96 112 116 92 150 92 Z"/>
+  <!-- Fût du R en deux bandes vertes inclinées -->
+  <path fill="#05A05E" d="M100 230 H286 Q296 230 290 238 L250 286 Q244 292 236 292 H176 L100 380 Z"/>
+  <path fill="#05A05E" d="M188 314 H262 Q270 314 266 320 L202 404 Q196 410 188 410 H120 Z"/>
+  <!-- Trait vert courbe -->
+  <path fill="#05A05E" d="M66 440 C232 430 404 316 432 178 C442 128 420 92 378 86 C400 106 410 136 402 176 C380 290 236 410 66 440 Z"/>
+</svg>

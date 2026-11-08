@@ -4,6 +4,7 @@ body.stock-auth {
     --auth-paper: #ffffff;
     --auth-text: #152c25;
     --auth-muted: #5b6f65;
+    --auth-navy: #0B2540;
     --auth-green: #15805d;
     --auth-green-dark: #106447;
     --auth-border: #dfe8e3;
@@ -90,6 +91,7 @@ body.stock-auth {
 }
 
 .stock-auth .auth-intro h1 {
+    color: var(--auth-navy);
     margin: 0 0 22px;
     font-size: clamp(2.2rem, 4vw, 3.25rem);
     font-weight: 700;
@@ -392,3 +394,6 @@ body.stock-auth {
         transition: none;
     }
 }
+
+.stock-auth .auth-brand-logo { display: block; height: 72px; width: auto; max-width: 100%; }
+@media (max-width: 575.98px) { .stock-auth .auth-brand-logo { height: 56px; } }
