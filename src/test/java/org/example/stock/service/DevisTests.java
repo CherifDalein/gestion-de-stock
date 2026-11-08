@@ -318,6 +318,8 @@ class DevisTests {
         assertThat(prixLignesVente(vente.getId())).containsExactlyInAnyOrder("4500.00", "18000.00");
         assertThat(vente.getMontantTotal()).isEqualByComparingTo("31500");
         assertThat(vente.getNumero()).isEqualTo("FV-000001");
+        // Devis établi par le gérant, vente validée par le caissier : le vendeur est celui qui valide la vente.
+        assertThat(vente.getVendeur().getId()).isEqualTo(utilisateurs.findByEmail(CAISSIER_A).orElseThrow().getId());
         assertThat(stock(rizA)).isEqualTo(97L);
         assertThat(caisse.count()).isEqualTo(1);
         DevisVue devis = devisDe("FD-000001");
