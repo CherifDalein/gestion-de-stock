@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Numéros de facture uniques par boutique : {@code FV-000123} pour les ventes, {@code FA-000123} pour les achats.
+ * Numéros uniques par boutique : {@code FV-000123} pour les ventes, {@code FA-000123} pour les achats, {@code FD-000123} pour les devis.
  *
  * <p>Le compteur est lu et avancé sous le verrou de la ligne boutique, dans la transaction de la création :
  * deux créations simultanées d'une même boutique sont numérotées l'une après l'autre, et une création annulée
@@ -30,7 +30,8 @@ public class NumerotationFactureService {
 
     private enum Type {
         VENTE("FV-", "Vente", "prochain_numero_vente"),
-        ACHAT("FA-", "Achat", "prochain_numero_achat");
+        ACHAT("FA-", "Achat", "prochain_numero_achat"),
+        DEVIS("FD-", "Devis", "prochain_numero_devis");
 
         final String prefixe, entite, colonne;
         Type(String prefixe, String entite, String colonne) {
@@ -46,6 +47,11 @@ public class NumerotationFactureService {
     /** Numéro saisi s'il est libre, sinon numéro automatique tiré du compteur des achats. */
     public String attribuerNumeroAchat(String numeroSaisi) {
         return attribuer(Type.ACHAT, numeroSaisi);
+    }
+
+    /** Numéro automatique d'un devis ({@code FD-000001}), tiré du compteur des devis ; un devis n'a jamais de numéro manuel. */
+    public String attribuerNumeroDevis() {
+        return attribuer(Type.DEVIS, null);
     }
 
     /** Retire les espaces aux bords ; un numéro vide est absent. Ne vérifie pas la longueur. */

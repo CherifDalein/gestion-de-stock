@@ -16,6 +16,10 @@ une présentation adaptée aux ordinateurs et aux téléphones.
 - `static/js/datatables-simple-demo.js` : recherche et pagination en français.
 - `templates/achats/nouveau.html` et `templates/ventes/nouveau.html` : partenaire,
   panier et récapitulatif de règlement.
+- `templates/devis/*.html`, `static/js/devis.js` et `static/css/devis.css` : liste filtrée
+  par état, formulaire à lignes et prix saisis, page du devis et document A4
+  « Devis » (voir [les devis](lot-2.md#devis)). La vente issue d'un devis réutilise
+  `templates/ventes/nouveau.html` avec des lignes verrouillées.
 - `templates/achats/regler.html` et `templates/ventes/regler.html` : détail du
   document, historique des versements et paiement du solde.
 - `static/js/achat.js` et `static/js/panier.js` : calculs exacts, compteur de
@@ -34,6 +38,8 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   individuelles, relevés cumulés et mise en page A4.
 - `templates/caisse/journal.html`, `static/css/caisse.css` et `static/js/caisse.js` :
   soldes, mouvements, filtres et impression du journal.
+- `templates/etats/ventes-par-vendeur.html` et `static/css/etats.css` : état imprimable
+  des ventes par vendeur (voir [le vendeur des ventes](lot-2.md#vendeur-des-ventes)).
 - `templates/categories/*.html`, `static/css/categories.css` et
   `static/js/categories.js` : répertoire des catégories, formulaires et suppression.
 - `static/css/formulaires.css` : présentation commune aux neuf formulaires de

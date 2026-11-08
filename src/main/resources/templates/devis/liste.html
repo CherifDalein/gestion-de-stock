@@ -1,0 +1,65 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4 journal-page">
+        <h1 class="mt-4">Devis</h1>
+        <p class="app-page-subtitle">Propositions de prix : elles ne changent ni le stock, ni la caisse, ni les créances tant qu’elles ne sont pas transformées en vente.</p>
+        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+        <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+            <nav class="btn-group flex-wrap" aria-label="Filtrer les devis par état">
+                <a th:href="@{/devis}" class="btn btn-outline-secondary" th:classappend="${filtre == null ? 'active' : ''}"
+                   th:attr="aria-current=${filtre == null ? 'page' : null}">Tous</a>
+                <a th:each="e : ${etats}" th:href="@{/devis(etat=${e.code})}" class="btn btn-outline-secondary"
+                   th:classappend="${filtre == e ? 'active' : ''}" th:attr="aria-current=${filtre == e ? 'page' : null}"
+                   th:text="${e.libelle}"></a>
+            </nav>
+            <a th:href="@{/devis/nouveau}" class="btn btn-primary">
+                <i class="fas fa-plus" aria-hidden="true"></i> Nouveau devis
+            </a>
+        </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <p id="devisTableHint" class="small text-muted mb-3">Sur écran étroit, faites défiler le tableau horizontalement pour accéder aux actions.</p>
+                <div class="table-responsive journal-table-wrap" role="region" tabindex="0" aria-label="Liste des devis : tableau défilant horizontalement" aria-describedby="devisTableHint">
+                    <table id="datatablesSimple" class="table table-hover journal-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Numéro</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Valable jusqu’au</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Total</th>
+                            <th scope="col">État</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="d : ${devisListe}" th:with="etat=${d.etat(aujourdHui)}">
+                            <td class="text-nowrap" th:text="${d.numero}"></td>
+                            <td th:text="${#temporals.format(d.dateDevis, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="text-nowrap" th:text="${#temporals.format(d.dateValidite, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${d.client != null ? d.client.nom : 'Sans client'}"></td>
+                            <td class="fw-bold" th:text="${#numbers.formatDecimal(d.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td>
+                                <span class="badge" th:text="${etat.libelle}"
+                                      th:classappend="${etat.code == 'en-cours' ? 'bg-primary' : (etat.code == 'expire' ? 'bg-warning text-dark' : (etat.code == 'transforme' ? 'bg-success' : 'bg-secondary'))}"></span>
+                            </td>
+                            <td class="text-center">
+                                <div class="journal-row-actions app-row-actions">
+                                    <a th:href="@{/devis/{id}(id=${d.id})}" class="btn btn-sm btn-outline-primary app-row-action"
+                                       th:attr="aria-label=${'Consulter le devis ' + d.numero}"><i class="fas fa-eye" aria-hidden="true"></i> Voir</a>
+                                    <a th:href="@{/devis/{id}/imprimer(id=${d.id})}" class="btn btn-sm btn-outline-secondary app-row-action"
+                                       th:attr="aria-label=${'Imprimer le devis ' + d.numero}"><i class="fas fa-print" aria-hidden="true"></i> Imprimer</a>
+                                    <a th:if="${d.vente != null}" th:href="@{/factures/vente/{id}(id=${d.vente.id})}" class="btn btn-sm btn-outline-success app-row-action"
+                                       th:attr="aria-label=${'Voir la vente issue du devis ' + d.numero}">Vente</a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(devisListe)}" class="text-muted mb-0">Aucun devis ne correspond à ce filtre.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

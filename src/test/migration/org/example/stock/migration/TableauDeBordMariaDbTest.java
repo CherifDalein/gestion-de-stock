@@ -15,7 +15,9 @@ import org.example.stock.service.TableauDeBordService;
 import org.example.stock.service.TableauDeBordService.EvolutionAnnuelle;
 import org.example.stock.service.TableauDeBordService.Indicateurs;
 import org.example.stock.service.TableauDeBordService.MoisActivite;
+import org.example.stock.service.TableauDeBordService.LigneVendeur;
 import org.example.stock.service.TableauDeBordService.ProduitASurveiller;
+import org.example.stock.service.TableauDeBordService.VentesParVendeur;
 import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -199,7 +201,64 @@ public final class TableauDeBordMariaDbTest {
                 "B voit un produit de A.");
         reussi("isolation des deux boutiques");
 
+        verifierVentesParVendeur();
         verifierCreancesEtDettes();
+    }
+
+    /**
+     * Agrégat par vendeur sur MariaDB : GROUP BY sur une clé étrangère nullable (ventes sans vendeur), centimes, coût absent
+     * compté à 0, bornes [début, fin) autour de minuit et isolation des boutiques.
+     */
+    private void verifierVentesParVendeur() {
+        Env a = environnement("V");
+        Env b = environnement("W");
+        var caissier = new Utilisateur(); caissier.setBoutique(a.boutique()); caissier.setNom("Caissier V"); caissier.setRole(Role.CAISSIER);
+        caissier.setEmail(UUID.randomUUID() + "@tableau-de-bord-mariadb.test"); caissier = utilisateurs.saveAndFlush(caissier);
+        LocalDate debut = LocalDate.of(2026, 7, 1), fin = LocalDate.of(2026, 7, 31);
+        // Gérant : 100,10 − 40 = 60,10 plus une ligne sans coût comptée 50 (110,10) ; caissier : 3 × (10,05 − 4) = 18,15 ; sans vendeur : 200 − 150 = 50.
+        venteDe(a, a.gerant(), debut.atStartOfDay(), "150.10", ligne(a.riz(), 1, "100.10", "40"), ligne(a.huile(), 1, "50", null));
+        venteDe(a, caissier, fin.atTime(23, 59, 59), "30.15", ligne(a.riz(), 3, "10.05", "4"));
+        venteDe(a, null, LocalDate.of(2026, 7, 15).atTime(12, 0), "200", ligne(a.riz(), 1, "200", "150"));
+        venteDe(a, a.gerant(), debut.atStartOfDay().minusNanos(1_000), "9999", ligne(a.riz(), 1, "9999", "1"));
+        venteDe(a, caissier, fin.plusDays(1).atStartOfDay(), "8888", ligne(a.riz(), 1, "8888", "1"));
+        venteDe(b, b.gerant(), LocalDate.of(2026, 7, 10).atStartOfDay(), "77777", ligne(b.riz(), 1, "77777", "7"));
+        venteDe(b, null, LocalDate.of(2026, 7, 10).atStartOfDay(), "66666", ligne(b.riz(), 1, "66666", "6"));
+
+        connecter(a.gerant());
+        VentesParVendeur etat = tableau.ventesParVendeur(debut, fin);
+        exiger(etat.lignes().stream().map(LigneVendeur::nom).toList().equals(List.of("Gérant V", "Caissier V", "Non renseigné")),
+                "Ordre des vendeurs inattendu : " + etat.lignes());
+        ligneVendeur(etat, "Gérant V", 1, "150.10", "110.10", 1, "150.10");
+        ligneVendeur(etat, "Caissier V", 1, "30.15", "18.15", 0, "30.15");
+        ligneVendeur(etat, "Non renseigné", 1, "200", "50", 0, "200");
+        exigerMontant(etat.total().chiffreAffaires(), "380.25", "CA total par vendeur");
+        exigerMontant(etat.total().beneficeBrut(), "178.25", "bénéfice brut total par vendeur");
+        exigerMontant(etat.total().panierMoyen(), "126.75", "panier moyen total");
+        exiger(etat.total().nombreVentes() == 3 && etat.lignesSansCout() == 1, "Total des ventes ou des lignes sans coût inattendu.");
+        exigerMontant(tableau.indicateursDuMois(LocalDate.of(2026, 7, 15)).chiffreAffaires(), "380.25", "CA du mois du tableau de bord");
+        exigerMontant(tableau.indicateursDuMois(LocalDate.of(2026, 7, 15)).beneficeBrut(), "178.25", "bénéfice brut du mois du tableau de bord");
+
+        connecter(b.gerant());
+        VentesParVendeur autre = tableau.ventesParVendeur(debut, fin);
+        exiger(autre.lignes().stream().map(LigneVendeur::nom).toList().equals(List.of("Gérant W", "Non renseigné")),
+                "B voit les comptes de A : " + autre.lignes());
+        exigerMontant(autre.total().chiffreAffaires(), "144443", "CA de B par vendeur");
+        reussi("ventes par vendeur : GROUP BY sur vendeur nullable, centimes, coût absent, bornes et isolation");
+    }
+
+    private void venteDe(Env e, Utilisateur vendeur, LocalDateTime date, String total, DetailVente... lignes) {
+        var vente = new Vente(); vente.setBoutique(e.boutique()); vente.setVendeur(vendeur); vente.setDateVente(date);
+        vente.setMontantTotal(new BigDecimal(total)); vente.setMontantVerse(Montants.ZERO);
+        for (DetailVente ligne : lignes) { ligne.setVente(vente); vente.getLignes().add(ligne); }
+        ventes.saveAndFlush(vente);
+    }
+
+    private static void ligneVendeur(VentesParVendeur etat, String nom, long nombre, String chiffre, String brut, long sansCout, String panier) {
+        LigneVendeur l = etat.lignes().stream().filter(x -> x.nom().equals(nom)).findFirst().orElseThrow();
+        exiger(l.nombreVentes() == nombre && l.lignesSansCout() == sansCout, nom + " : nombre de ventes ou lignes sans coût inattendu.");
+        exigerMontant(l.chiffreAffaires(), chiffre, nom + " : CA");
+        exigerMontant(l.beneficeBrut(), brut, nom + " : bénéfice brut");
+        exigerMontant(l.panierMoyen(), panier, nom + " : panier moyen");
     }
 
     /**

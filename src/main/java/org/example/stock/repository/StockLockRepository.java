@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Client;
+import org.example.stock.model.Devis;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
@@ -72,6 +73,16 @@ public class StockLockRepository {
         entityManager.refresh(vente, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(vente.getBoutique());
         return vente;
+    }
+
+    /** Verrou en écriture d'un devis de la boutique courante (404 sinon), relu sous verrou même s'il est déjà dans le contexte JPA. */
+    public Devis verrouillerDevis(Long id) {
+        verifierIdentifiant("Devis", id, boutiques.idBoutiqueCourante());
+        Devis devis = entityManager.find(Devis.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (devis == null) throw introuvable("Devis");
+        entityManager.refresh(devis, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(devis.getBoutique());
+        return devis;
     }
 
     /**

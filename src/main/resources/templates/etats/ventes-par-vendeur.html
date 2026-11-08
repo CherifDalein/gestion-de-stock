@@ -1,0 +1,84 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page" th:with="aDesVentes=${etat.total.nombreVentes > 0}">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Documents</p>
+                <h1>Ventes par vendeur</h1>
+                <p class="app-page-subtitle">Chiffre d'affaires, bénéfice brut et panier moyen de chaque compte qui a saisi des ventes.</p>
+            </div>
+            <div class="etat-actions">
+                <button type="button" class="btn btn-primary" data-etat-imprimer onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> Imprimer</button>
+            </div>
+        </header>
+
+        <div th:if="${avertissementPeriode}" class="alert alert-warning" role="status" th:text="${avertissementPeriode}"></div>
+
+        <form method="get" th:action="@{/etats/ventes-par-vendeur}" class="etat-periode" aria-label="Choisir la période">
+            <div>
+                <label for="etatDu" class="form-label small mb-1">Du</label>
+                <input id="etatDu" name="du" type="date" class="form-control" required min="2000-01-01" max="9998-12-31" th:value="${du}">
+            </div>
+            <div>
+                <label for="etatAu" class="form-label small mb-1">Au (inclus)</label>
+                <input id="etatAu" name="au" type="date" class="form-control" required min="2000-01-01" max="9998-12-31" th:value="${au}">
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Afficher</button>
+        </form>
+
+        <p class="etat-impression" data-etat-periode
+           th:text="${'Période du ' + #temporals.format(du, 'dd/MM/yyyy') + ' au ' + #temporals.format(au, 'dd/MM/yyyy') + ' inclus · édité le ' + #temporals.format(genereLe, 'dd/MM/yyyy HH:mm')}"></p>
+
+        <section class="card shadow-sm mb-4" aria-labelledby="etatTitre">
+            <div class="card-body">
+                <h2 id="etatTitre" class="h5">Résultats par vendeur</h2>
+                <p id="etatAide" class="small text-muted no-print">Sur écran étroit, faites défiler le tableau horizontalement.</p>
+                <div class="table-responsive etat-table-wrap" role="region" tabindex="0" aria-label="Ventes par vendeur" aria-describedby="etatAide">
+                    <table class="table etat-table" id="etatVendeurs">
+                        <caption class="visually-hidden">Ventes de la période, par vendeur, triées par chiffre d'affaires décroissant</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Vendeur</th>
+                            <th scope="col" class="text-end">Ventes</th>
+                            <th scope="col" class="text-end">Chiffre d'affaires</th>
+                            <th scope="col" class="text-end">Bénéfice brut</th>
+                            <th scope="col" class="text-end">Panier moyen</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="l : ${etat.lignes}" data-vendeur-ligne th:attr="data-vendeur-id=${l.vendeurId}">
+                            <th scope="row" class="etat-nom">
+                                <span th:text="${l.nom}"></span>
+                                <small th:if="${l.desactive}" class="text-muted"> (compte désactivé)</small>
+                            </th>
+                            <td class="text-end" data-colonne="ventes" th:text="${l.nombreVentes}"></td>
+                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${#numbers.formatDecimal(l.chiffreAffaires, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" data-colonne="benefice">
+                                <span th:text="${#numbers.formatDecimal(l.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span>
+                                <small th:if="${l.lignesSansCout > 0}" class="d-block text-muted" data-sans-cout
+                                       th:text="${l.lignesSansCout + (l.lignesSansCout == 1 ? ' ligne sans coût connu, comptée à 0' : ' lignes sans coût connu, comptées à 0')}"></small>
+                            </td>
+                            <td class="text-end" data-colonne="panier" th:text="${#numbers.formatDecimal(l.panierMoyen, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        </tr>
+                        </tbody>
+                        <tfoot>
+                        <tr data-vendeur-total>
+                            <th scope="row">Total</th>
+                            <td class="text-end" data-colonne="ventes" th:text="${etat.total.nombreVentes}"></td>
+                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${#numbers.formatDecimal(etat.total.chiffreAffaires, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" data-colonne="benefice">
+                                <span th:text="${#numbers.formatDecimal(etat.total.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span>
+                                <small th:if="${etat.lignesSansCout > 0}" class="d-block text-muted" data-sans-cout
+                                       th:text="${etat.lignesSansCout + (etat.lignesSansCout == 1 ? ' ligne sans coût connu, comptée à 0' : ' lignes sans coût connu, comptées à 0')}"></small>
+                            </td>
+                            <td class="text-end" data-colonne="panier" th:text="${#numbers.formatDecimal(etat.total.panierMoyen, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <p th:unless="${aDesVentes}" class="text-muted mb-0 mt-3" data-etat-vide>Aucune vente sur cette période.</p>
+                <p class="small text-muted mt-3 mb-0">Le bénéfice brut est calculé au coût figé à la vente (prix unitaire moins coût unitaire, multiplié par la quantité), comme dans le tableau de bord. Le panier moyen est le chiffre d'affaires divisé par le nombre de ventes. « Non renseigné » regroupe les ventes dont le compte n'a pas été enregistré.</p>
+            </div>
+        </section>
+    </div>
+</div>

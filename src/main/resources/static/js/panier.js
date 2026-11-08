@@ -49,9 +49,19 @@ function actualiserOptionStock(option, stock) {
     option.text = `${option.getAttribute('data-nom')} (${libelleQuantite(stock, option.getAttribute('data-unite'))} en stock)`;
 }
 
+// Vente issue d'un devis : les lignes et leurs prix viennent du devis et ne se modifient pas dans le formulaire
+// (le serveur relit de toute façon les prix et les lignes du devis et refuse toute différence).
+function venteIssueDunDevis() {
+    return document.getElementById('formVente')?.dataset.devis === 'true';
+}
+
+// Prix du devis à afficher pour la prochaine ligne chargée, en centimes ; null : prix de la fiche du produit.
+let prixDuDevis = null;
+
 // Reconstitue une ligne envoyée après un refus du serveur : le stock affiché n'empêche pas son retour,
-// le serveur revérifie toujours les quantités.
-function chargerLigneVente(pId, qte) {
+// le serveur revérifie toujours les quantités. prixDevis : prix unitaire du devis (texte), sinon prix de la fiche.
+function chargerLigneVente(pId, qte, prixDevis = null) {
+    prixDuDevis = prixDevis === null || prixDevis === undefined ? null : Montants.lire(prixDevis);
     const select = document.getElementById('selectProduit');
     const option = Array.from(select.options).find(option => option.value === String(pId));
     if (!option || option.disabled || !Number.isSafeInteger(Number(qte)) || Number(qte) <= 0) return;
@@ -61,6 +71,9 @@ function chargerLigneVente(pId, qte) {
 }
 
 function ajouterAuPanier(chargement = false) {
+    // Le prix d'un devis ne vaut que pour la ligne en cours de chargement.
+    const prixImpose = chargement ? prixDuDevis : null;
+    prixDuDevis = null;
     const select = document.getElementById('selectProduit');
     const qtyInput = document.getElementById('inputQuantite');
 
@@ -78,7 +91,7 @@ function ajouterAuPanier(chargement = false) {
     }
 
     const pNom = selectedOption.getAttribute('data-nom');
-    const pPrix = Montants.lire(selectedOption.getAttribute('data-prix'));
+    const pPrix = prixImpose ?? Montants.lire(selectedOption.getAttribute('data-prix'));
     const qty = Number(qtyInput.value);
     if (!Number.isSafeInteger(qty) || qty <= 0 || qty > 2147483647 || pPrix === null || pPrix < 0n) {
         afficherMessageProduit('Vérifiez le prix du produit et saisissez une quantité entière positive.');
@@ -141,7 +154,9 @@ function ajouterAuPanier(chargement = false) {
     button.setAttribute('aria-label', `Retirer ${pNom} du panier`);
     const rowIndex = index;
     button.addEventListener('click', () => supprimerLigne(rowIndex, sousTotal, pId, qty));
-    row.insertCell().appendChild(button);
+    // Les lignes d'un devis ne se retirent pas : il faut annuler le devis et en refaire un autre.
+    if (!venteIssueDunDevis()) row.insertCell().appendChild(button);
+    else row.insertCell().textContent = '—';
 
     tbody.appendChild(row);
     afficherMessageProduit();

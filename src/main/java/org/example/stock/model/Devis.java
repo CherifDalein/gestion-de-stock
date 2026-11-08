@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
+import org.example.stock.enums.EtatDevis;
 import org.example.stock.enums.StatutDevis;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -73,5 +74,27 @@ public class Devis {
     private Long version;
 
     @OneToMany(mappedBy = "devis", cascade = CascadeType.ALL)
+    @OrderBy("id")
     private List<DetailDevis> lignes = new ArrayList<>();
+
+    /**
+     * Expiré : encore en cours mais valable jusqu'à une date <strong>strictement antérieure</strong> au jour donné
+     * (le dernier jour de validité compte encore). Jamais stocké ; le jour vient de {@code EcheanceService.aujourdHui()}.
+     */
+    public boolean estExpire(LocalDate aujourdHui) {
+        return statut == StatutDevis.EN_COURS && aujourdHui != null && dateValidite != null && dateValidite.isBefore(aujourdHui);
+    }
+
+    /** Seul un devis en cours et non expiré peut devenir une vente. */
+    public boolean estTransformable(LocalDate aujourdHui) {
+        return statut == StatutDevis.EN_COURS && !estExpire(aujourdHui);
+    }
+
+    public EtatDevis etat(LocalDate aujourdHui) {
+        return switch (statut) {
+            case TRANSFORME -> EtatDevis.TRANSFORME;
+            case ANNULE -> EtatDevis.ANNULE;
+            case EN_COURS -> estExpire(aujourdHui) ? EtatDevis.EXPIRE : EtatDevis.EN_COURS;
+        };
+    }
 }

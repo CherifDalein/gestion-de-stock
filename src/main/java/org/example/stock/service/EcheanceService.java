@@ -29,6 +29,11 @@ public class EcheanceService {
         return LocalDate.ofInstant(clock.instant(), ZoneId.systemDefault());
     }
 
+    /** Date et heure du serveur, avec la même horloge que {@link #aujourdHui()}. */
+    public LocalDateTime maintenant() {
+        return LocalDateTime.ofInstant(clock.instant(), ZoneId.systemDefault());
+    }
+
     /** Proposition affichée dans un formulaire : date du jour + délai de la boutique. */
     public LocalDate proposer(int delaiJours) {
         return aujourdHui().plusDays(Math.max(0, delaiJours));

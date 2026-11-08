@@ -1,6 +1,7 @@
 package org.example.stock.repository;
 
 import org.example.stock.model.Vente;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +14,11 @@ import java.util.Optional;
 
 public interface VenteRepository extends JpaRepository<Vente, Long> {
     Optional<Vente> findByIdAndBoutiqueId(Long id, Long boutiqueId);
+    @EntityGraph(attributePaths = "vendeur")
     List<Vente> findByBoutiqueIdOrderByDateVenteDesc(Long boutiqueId);
+    /** Ventes d'un vendeur de la boutique : l'identifiant du vendeur est validé par l'appelant. */
+    @EntityGraph(attributePaths = "vendeur")
+    List<Vente> findByBoutiqueIdAndVendeurIdOrderByDateVenteDesc(Long boutiqueId, Long vendeurId);
     List<Vente> findByDateVenteAfterAndBoutiqueId(LocalDateTime date, Long boutiqueId);
     List<Vente> findByClientIdAndBoutiqueIdOrderByDateVenteDesc(Long clientId, Long boutiqueId);
     List<Vente> findByClientIdAndDateVenteAfterAndBoutiqueIdOrderByDateVenteDesc(Long clientId, LocalDateTime date, Long boutiqueId);
@@ -25,6 +30,12 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     @Query("SELECT v FROM Vente v WHERE v.boutique.id = :boutiqueId AND v.dateEcheance < :aujourdHui"
             + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
     List<Vente> findEchuesNonSoldees(@Param("boutiqueId") Long boutiqueId, @Param("aujourdHui") LocalDate aujourdHui);
+
+    /** Mêmes ventes échues non soldées, limitées à un vendeur. */
+    @Query("SELECT v FROM Vente v WHERE v.boutique.id = :boutiqueId AND v.vendeur.id = :vendeurId AND v.dateEcheance < :aujourdHui"
+            + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
+    List<Vente> findEchuesNonSoldeesDuVendeur(@Param("boutiqueId") Long boutiqueId, @Param("vendeurId") Long vendeurId,
+                                              @Param("aujourdHui") LocalDate aujourdHui);
 
     /** Réglé sur les ventes depuis la date : versé plafonné au total (le surplus est une avance) + avance utilisée. */
     @Query("SELECT COALESCE(SUM(CASE WHEN COALESCE(v.montantVerse, 0) > COALESCE(v.montantTotal, 0) THEN COALESCE(v.montantTotal, 0) ELSE COALESCE(v.montantVerse, 0) END + COALESCE(v.avanceUtilisee, 0)), 0) FROM Vente v WHERE v.dateVente >= :date AND v.boutique.id = :boutiqueId")

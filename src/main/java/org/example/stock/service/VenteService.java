@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
 import org.example.stock.model.Client;
+import org.example.stock.model.Devis;
 import org.example.stock.model.DetailVente;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
@@ -41,9 +42,20 @@ public class VenteService {
     @Autowired private NumerotationFactureService numerotation;
     @Autowired private EcheanceService echeances;
     @Autowired private SoldePartenaireService soldes;
+    @Autowired private DevisService devisService;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
+        return effectuerVente(vente, null);
+    }
+
+    /**
+     * Vente, éventuellement issue d'un devis : le devis est alors verrouillé, vérifié (en cours, non expiré, mêmes lignes
+     * et quantités) puis passé à TRANSFORME dans cette transaction ; les prix des lignes sont ceux du devis.
+     * Un refus (stock insuffisant, devis périmé…) annule tout et laisse le devis en cours.
+     */
+    @Transactional
+    public Vente effectuerVente(Vente vente, Long devisId) {
         if (vente.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le paiement.");
         if (vente.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
@@ -71,6 +83,9 @@ public class VenteService {
         initialisation.verrouillerEtClorePourActivite();
         // Verrou de la boutique avant les produits : même ordre que le démarrage et le stock initial.
         String numero = numerotation.attribuerNumeroVente(vente.getNumero());
+        // Devis verrouillé après la boutique, avant le client et les produits ; ses lignes remplacent celles du navigateur.
+        Devis devis = devisId == null ? null : devisService.verrouillerPourTransformation(devisId, vente.getLignes());
+        if (devis != null) vente.setLignes(devisService.lignesDeVente(devis));
         // Fiche du client verrouillée ensuite, avant les produits : deux ventes du même client ne consomment jamais deux fois la même avance.
         Client client = vente.getClient() == null ? null : stockLockRepository.verrouillerClient(vente.getClient().getId());
         Map<Long, Produit> produits = chargerProduits(vente.getLignes().stream()
@@ -96,7 +111,8 @@ public class VenteService {
                 produit.setQuantite(produit.getQuantite() - detail.getQuantite());
             }
 
-            detail.setPrixUnitaire(Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
+            detail.setPrixUnitaire(devis != null ? Montants.positifOuNul(detail.getPrixUnitaire(), "Le prix du devis")
+                    : Montants.positifOuNul(produit.getPrixVente(), "Le prix de vente"));
             detail.setCoutUnitaire(coutMoyen.coutUnitaireVente(produit));
             detail.setVente(vente);
             detail.setProduit(produit);
@@ -112,10 +128,12 @@ public class VenteService {
         vente.setDateEcheance(echeances.pourCreation(vente.getDateVente(), vente.getResteAPayer(), vente.getDateEcheance(),
                 vente.getBoutique().getDelaiClientsJours()));
         vente.setNumero(numero);
-        Vente venteEnregistree = venteRepository.save(vente);
-
+        // Le vendeur est le compte connecté, toujours lu côté serveur : jamais une valeur du formulaire.
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Utilisateur actuel = utilisateurRepository.findByEmail(email).orElse(null);
+        vente.setVendeur(actuel);
+        Vente venteEnregistree = venteRepository.save(vente);
+        if (devis != null) devisService.marquerTransforme(devis, venteEnregistree);
 
         String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
                 (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
@@ -143,9 +161,23 @@ public class VenteService {
         return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Comptes de la boutique courante, désactivés compris (ils ont pu saisir des ventes), proposés par le filtre de vendeur. */
+    public List<Utilisateur> listerVendeursPossibles() {
+        return utilisateurRepository.findAllByBoutiqueIdOrderByNomAscIdAsc(boutiqueService.idBoutiqueCourante());
+    }
+
+    /** Ventes saisies par un vendeur ; l'identifiant doit avoir été validé comme compte de la boutique. */
+    public List<Vente> listerDuVendeur(Long vendeurId) {
+        return venteRepository.findByBoutiqueIdAndVendeurIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante(), vendeurId);
+    }
+
     /** Ventes échues non soldées : reste à payer et échéance antérieure au jour. */
     public List<Vente> listerEchuesNonSoldees() {
         return venteRepository.findEchuesNonSoldees(boutiqueService.idBoutiqueCourante(), echeances.aujourdHui());
+    }
+
+    public List<Vente> listerEchuesNonSoldeesDuVendeur(Long vendeurId) {
+        return venteRepository.findEchuesNonSoldeesDuVendeur(boutiqueService.idBoutiqueCourante(), vendeurId, echeances.aujourdHui());
     }
 
     public Vente trouverParId(Long id) {

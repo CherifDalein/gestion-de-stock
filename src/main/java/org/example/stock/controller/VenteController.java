@@ -1,5 +1,6 @@
 package org.example.stock.controller;
 
+import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.form.ReglementVenteForm;
@@ -20,8 +21,11 @@ import org.example.stock.service.ProduitService;
 import org.example.stock.service.VenteService;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EcheanceService;
+import org.example.stock.service.DevisService;
+import org.example.stock.model.Devis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,6 +35,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/ventes")
@@ -44,20 +50,65 @@ public class VenteController {
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private EcheanceService echeances;
     @Autowired private BoutiqueService boutiques;
+    @Autowired private DevisService devisService;
 
     @GetMapping
-    public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
+    public String listeVentes(@RequestParam(required = false) String filtre,
+                              @RequestParam(name = "vendeur", required = false) List<String> vendeurDemande,
+                              Authentication authentication, Model model) {
         boolean echues = "echues".equals(filtre);
-        model.addAttribute("ventes", echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes());
+        // Le filtre par vendeur est réservé au gérant ; pour un caissier le paramètre est ignoré et la liste reste la même.
+        Long vendeurId = null;
+        if (estGerant(authentication)) {
+            List<Utilisateur> vendeurs = venteService.listerVendeursPossibles();
+            model.addAttribute("vendeursFiltre", vendeurs);
+            vendeurId = vendeurChoisi(vendeurDemande, vendeurs, model);
+        }
+        model.addAttribute("vendeurChoisi", vendeurId);
+        model.addAttribute("ventes", vendeurId == null
+                ? (echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes())
+                : (echues ? venteService.listerEchuesNonSoldeesDuVendeur(vendeurId) : venteService.listerDuVendeur(vendeurId)));
         model.addAttribute("filtreEchues", echues);
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/liste");
         return "dashboard";
     }
 
+    private static boolean estGerant(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(autorite -> "ROLE_ADMIN".equals(autorite.getAuthority()));
+    }
+
+    /**
+     * Un seul identifiant, numérique, qui désigne un compte de la boutique. Tout le reste (texte, valeurs multiples,
+     * compte d'une autre boutique ou inexistant) est ignoré avec un avertissement identique : rien ne révèle l'existence
+     * d'un compte d'une autre boutique.
+     */
+    private static Long vendeurChoisi(List<String> demande, List<Utilisateur> vendeurs, Model model) {
+        if (demande == null || (demande.size() == 1 && demande.getFirst().isBlank())) return null;
+        if (demande.size() == 1 && demande.getFirst().strip().matches("\\d{1,18}")) {
+            long id = Long.parseLong(demande.getFirst().strip());
+            if (vendeurs.stream().anyMatch(vendeur -> vendeur.getId() == id)) return id;
+        }
+        model.addAttribute("avertissementVendeur", "Ce vendeur n'existe pas dans votre boutique : toutes les ventes sont affichées.");
+        return null;
+    }
+
     @GetMapping("/nouveau")
-    public String nouveauFormulaire(Model model) {
-        model.addAttribute("vente", new Vente());
+    public String nouveauFormulaire(@RequestParam(required = false) Long devis, RedirectAttributes redirectAttributes, Model model) {
+        Vente nouvelle = new Vente();
+        if (devis != null) {
+            // Vente issue d'un devis : client et lignes sont repris du devis (404 s'il est d'une autre boutique).
+            Devis source = devisService.trouver(devis);
+            String refus = devisService.raisonRefusTransformation(source);
+            if (refus != null) {
+                redirectAttributes.addFlashAttribute("error", refus);
+                return "redirect:/devis/" + devis;
+            }
+            nouvelle.setClient(source.getClient());
+            model.addAttribute("devisVente", source);
+        }
+        model.addAttribute("vente", nouvelle);
         model.addAttribute("jetonCreation", creations.ouvrir(TypeOperationCreation.VENTE));
         model.addAttribute("clients", clientService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
@@ -69,7 +120,8 @@ public class VenteController {
 
     @PostMapping("/enregistrer")
     public String enregistrerVente(@ModelAttribute("vente") Vente vente, BindingResult result,
-                                  @RequestParam(required = false) String jetonCreation, RedirectAttributes redirectAttributes,
+                                  @RequestParam(required = false) String jetonCreation, @RequestParam(required = false) Long devis,
+                                  RedirectAttributes redirectAttributes,
                                   Model model, HttpServletResponse response) {
         FormBindingAdvice.verifier(result);
         model.addAttribute("jetonCreation", jetonCreation);
@@ -77,7 +129,7 @@ public class VenteController {
         String numeroSaisi = vente.getNumero();
         var echeanceSaisie = vente.getDateEcheance();
         try {
-            var resultat = creations.creerVente(jetonCreation, vente);
+            var resultat = creations.creerVente(jetonCreation, vente, devis);
             redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
                     ? "Cette vente est déjà enregistrée. Le stock et la caisse n'ont pas été modifiés une seconde fois."
                     : "Vente enregistrée avec succès !");
@@ -91,6 +143,8 @@ public class VenteController {
             }
             vente.setNumero(numeroSaisi);
             vente.setDateEcheance(echeanceSaisie);
+            // Après un refus d'une vente issue d'un devis, le formulaire reprend les lignes et les prix du devis.
+            if (devis != null) model.addAttribute("devisVente", devisService.trouver(devis));
             model.addAttribute("clients", clientService.listerTous());
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("initialisationOuverte", initialisation.estOuverte());

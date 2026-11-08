@@ -5,7 +5,9 @@ import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.model.Montants;
 import org.example.stock.model.Produit;
 import org.example.stock.repository.SoldePartenaireRepository.Totaux;
+import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.TableauDeBordRepository;
+import org.example.stock.repository.UtilisateurRepository;
 import org.example.stock.service.SoldePartenaireService.Retards;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,9 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,11 +47,87 @@ public class TableauDeBordService {
     private final TableauDeBordRepository requetes;
     private final BoutiqueService boutiqueService;
     private final SoldePartenaireService soldes;
+    private final UtilisateurRepository utilisateurs;
 
-    public TableauDeBordService(TableauDeBordRepository requetes, BoutiqueService boutiqueService, SoldePartenaireService soldes) {
+    public TableauDeBordService(TableauDeBordRepository requetes, BoutiqueService boutiqueService, SoldePartenaireService soldes,
+                                UtilisateurRepository utilisateurs) {
         this.requetes = requetes;
         this.boutiqueService = boutiqueService;
         this.soldes = soldes;
+        this.utilisateurs = utilisateurs;
+    }
+
+    /** Libellé de la ligne des ventes sans vendeur (ventes antérieures au lot 2 sans mouvement de caisse nominatif). */
+    public static final String VENDEUR_NON_RENSEIGNE = "Non renseigné";
+
+    /**
+     * Ventes par vendeur du {@code du} au {@code au} inclus (période semi-ouverte [du 0 h, lendemain de au 0 h)), pour la
+     * boutique du compte connecté. Réservé au gérant : le contrôleur et la configuration de sécurité refusent le caissier.
+     * Les comptes actifs de la boutique figurent même sans vente ; un compte désactivé ou de la plateforme n'apparaît que
+     * s'il a vendu. Les vendeurs sont triés par chiffre d'affaires décroissant (puis nom) ; la ligne « Non renseigné »
+     * (ventes sans vendeur) suit, uniquement s'il en existe, puis le total, égal au chiffre d'affaires du tableau de bord.
+     */
+    public VentesParVendeur ventesParVendeur(LocalDate du, LocalDate au) {
+        if (du == null || au == null || au.isBefore(du)) throw new IllegalArgumentException("Période invalide.");
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        LocalDateTime debut = du.atStartOfDay();
+        LocalDateTime fin = au.plusDays(1).atStartOfDay();
+        Map<Long, Utilisateur> comptes = new HashMap<>();
+        utilisateurs.findAllByBoutiqueIdOrderByNomAscIdAsc(boutiqueId).forEach(compte -> comptes.put(compte.getId(), compte));
+
+        Map<Long, Cumul> cumuls = new HashMap<>();
+        Cumul sansVendeur = new Cumul();
+        for (Object[] ligne : requetes.ventesParVendeur(boutiqueId, debut, fin)) {
+            Cumul cumul = cumulDe(ligne[0], comptes, cumuls, sansVendeur);
+            cumul.ventes += ((Number) ligne[1]).longValue();
+            cumul.chiffreAffaires = cumul.chiffreAffaires.add(montant(ligne[2]));
+        }
+        for (Object[] ligne : requetes.beneficeBrutParVendeur(boutiqueId, debut, fin)) {
+            Cumul cumul = cumulDe(ligne[0], comptes, cumuls, sansVendeur);
+            cumul.beneficeBrut = cumul.beneficeBrut.add(montant(ligne[1]));
+            cumul.sansCout += ((Number) ligne[2]).longValue();
+        }
+        List<LigneVendeur> lignes = new ArrayList<>();
+        for (Utilisateur compte : comptes.values()) {
+            Cumul cumul = cumuls.get(compte.getId());
+            boolean aVendu = cumul != null && cumul.ventes > 0;
+            if (!aVendu && (!compte.isActif() || compte.isAdministrateurPlateforme())) continue;
+            lignes.add(cumul == null ? new Cumul().ligne(compte) : cumul.ligne(compte));
+        }
+        lignes.sort(Comparator.comparing(LigneVendeur::chiffreAffaires).reversed()
+                .thenComparing(ligne -> ligne.nom().toLowerCase(java.util.Locale.ROOT)).thenComparing(LigneVendeur::vendeurId));
+        if (sansVendeur.ventes > 0) lignes.add(sansVendeur.ligne(null));
+
+        Cumul total = new Cumul();
+        for (LigneVendeur ligne : lignes) {
+            total.ventes += ligne.nombreVentes(); total.sansCout += ligne.lignesSansCout();
+            total.chiffreAffaires = total.chiffreAffaires.add(ligne.chiffreAffaires());
+            total.beneficeBrut = total.beneficeBrut.add(ligne.beneficeBrut());
+        }
+        return new VentesParVendeur(du, au, List.copyOf(lignes), total.ligne(null), total.sansCout);
+    }
+
+    /** Un identifiant vide, ou qui n'est pas un compte de la boutique, rejoint la ligne « Non renseigné » : le total reste exact. */
+    private static Cumul cumulDe(Object vendeurId, Map<Long, Utilisateur> comptes, Map<Long, Cumul> cumuls, Cumul sansVendeur) {
+        if (vendeurId == null) return sansVendeur;
+        Long id = ((Number) vendeurId).longValue();
+        return comptes.containsKey(id) ? cumuls.computeIfAbsent(id, cle -> new Cumul()) : sansVendeur;
+    }
+
+    private static final class Cumul {
+        long ventes;
+        long sansCout;
+        BigDecimal chiffreAffaires = Montants.ZERO;
+        BigDecimal beneficeBrut = Montants.ZERO;
+
+        LigneVendeur ligne(Utilisateur compte) {
+            BigDecimal panier = ventes == 0 ? Montants.ZERO
+                    : chiffreAffaires.divide(BigDecimal.valueOf(ventes), 2, RoundingMode.HALF_UP);
+            String nom = compte == null ? VENDEUR_NON_RENSEIGNE
+                    : (compte.getNom() == null || compte.getNom().isBlank() ? "Compte sans nom" : compte.getNom());
+            return new LigneVendeur(compte == null ? null : compte.getId(), nom, compte != null && !compte.isActif(),
+                    ventes, chiffreAffaires, beneficeBrut, sansCout, panier);
+        }
     }
 
     /**
@@ -205,6 +286,12 @@ public class TableauDeBordService {
     public record CreancesDettes(BigDecimal creances, BigDecimal creancesEnRetard, BigDecimal dettes, BigDecimal dettesEnRetard,
                                  BigDecimal avancesClients, BigDecimal avancesFournisseurs, BigDecimal positionNette,
                                  Retards clientsEnRetard, Retards fournisseursEnRetard) {}
+
+    /** Ligne de l'état « Ventes par vendeur » ; {@code vendeurId} est vide pour « Non renseigné » et pour le total. */
+    public record LigneVendeur(Long vendeurId, String nom, boolean desactive, long nombreVentes, BigDecimal chiffreAffaires,
+                               BigDecimal beneficeBrut, long lignesSansCout, BigDecimal panierMoyen) {}
+
+    public record VentesParVendeur(LocalDate du, LocalDate au, List<LigneVendeur> lignes, LigneVendeur total, long lignesSansCout) {}
 
     public record ValeurStock(BigDecimal valeur, long nombreProduits) {}
 
