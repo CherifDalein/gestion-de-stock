@@ -180,8 +180,8 @@ que la quantité et n'a donc aucun effet sur le CMP.
 ### Concurrence
 
 Les achats, ventes, stocks initiaux et corrections verrouillent déjà les
-produits concernés (verrou pessimiste, toujours dans le même ordre) avant de
-modifier le stock. Le CMP est lu et écrit sous ce même verrou : un achat et une
+produits concernés (verrou pessimiste, ordre décrit dans
+[Ordre des verrous](lot-2.md#ordre-des-verrous)) avant de modifier le stock. Le CMP est lu et écrit sous ce même verrou : un achat et une
 vente simultanés sur le même produit sont appliqués l'un après l'autre, et la
 ligne de vente fige le coût correspondant à cet ordre. Lors d'une correction,
 l'historique est relu avec des lectures verrouillées, qui voient aussi les
@@ -265,9 +265,8 @@ insensible à la casse, `fv-1` et `FV-1` sont le même numéro.
 ### Concurrence
 
 Le compteur est lu (`SELECT … FOR UPDATE`) et avancé sous le verrou de la ligne
-`boutique`, dans la transaction de la création. Ce verrou est pris juste après
-la clôture éventuelle du démarrage, avant les produits et avant toute insertion,
-dans le même ordre que le démarrage et le stock initial. Conséquences :
+`boutique`, dans la transaction de la création. Ce verrou est le premier de toute
+écriture métier (voir [Ordre des verrous](lot-2.md#ordre-des-verrous)). Conséquences :
 
 - deux créations simultanées d'une même boutique reçoivent deux numéros
   différents, l'une attend la fin de l'autre ;
@@ -605,10 +604,9 @@ dettes » du tableau de bord n'est pas encore branché.
 
 ### Verrous et concurrence
 
-À la création, l'ordre des verrous est : ligne `boutique` (numérotation), ligne du
-**partenaire** (`PESSIMISTIC_WRITE`), puis les produits. Le règlement d'un solde
-prend la boutique, puis le partenaire. `modifierAchat` verrouille l'achat, puis le
-fournisseur (voir [le retour d'achat](lot-2.md#verrous-et-concurrence-1)). Sous MariaDB (REPEATABLE READ), l'avance est relue par des lectures
+L'ordre des verrous est unique pour toutes les écritures (boutique, document, partenaire,
+factures du partenaire, produits, comptes) : voir [Ordre des verrous](lot-2.md#ordre-des-verrous).
+Sous MariaDB (REPEATABLE READ), l'avance est relue par des lectures
 verrouillantes (`FOR UPDATE`) pour voir les opérations validées après l'instantané.
 Deux ventes simultanées d'un même client avec 20 000 d'avance consomment donc
 exactement 20 000 au total. Un renvoi du même jeton ne consomme pas l'avance deux

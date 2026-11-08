@@ -120,7 +120,7 @@ transformé porte en plus son état.
    la raison du refus.
 2. À l'enregistrement, le formulaire envoie l'identifiant du devis. Dans **la
    même transaction que la vente**, le service prend les verrous dans l'ordre
-   habituel (jeton du formulaire, boutique et numéro de vente), **verrouille le
+   habituel (boutique, jeton du formulaire et numéro de vente, voir [Ordre des verrous](#ordre-des-verrous)), **verrouille le
    devis**, puis vérifie qu'il est de la boutique (sinon 404), toujours
    `EN_COURS`, non expiré, et que les lignes envoyées sont **exactement** celles
    du devis. La vente est alors créée, le devis passe à `TRANSFORME` avec son
@@ -363,16 +363,10 @@ montants, prix, coûts, dates et numéro sont toujours calculés côté serveur.
 
 ### Verrous et concurrence
 
-Ordre : **vente** (ligne verrouillée) → boutique (numéro RV) → client → produits (par identifiant). Les créations et
-règlements existants prennent boutique → client → produits ; le retour ajoute seulement le verrou de la vente **en tête**.
-Il n'y a pas de cycle : un règlement (`reglerVente`) verrouille la vente avant d'écrire son mouvement de caisse, qui pose un
-verrou partagé sur la boutique par sa clé étrangère ; si le retour prenait la boutique avant la vente, l'un tiendrait la boutique
-en attendant la vente de l'autre. Une création de vente n'a pas encore de ligne `vente` : elle ne peut pas croiser un retour sur cette
-vente. Deux retours simultanés sur la même vente s'exécutent l'un après l'autre sur le verrou de la vente et relisent les
-quantités déjà retournées sous ce verrou : au plus la quantité vendue passe.
-
-La transaction du retour est en **READ COMMITTED** : en REPEATABLE READ, les lectures verrouillées des retours d'une vente
-posent des verrous de plage qui provoquaient un deadlock InnoDB entre deux retours de ventes différentes (constaté sur MariaDB).
+Ordre : boutique → **vente** → client → produits (par identifiant), comme toute écriture métier ; voir [Ordre des verrous](#ordre-des-verrous).
+Deux retours simultanés sur la même vente, ou un retour et un règlement de cette vente, s'exécutent l'un après l'autre. Le retour
+relit sous verrou les quantités déjà retournées : au plus la quantité vendue passe. La transaction du retour est en **READ COMMITTED**
+(voir [Isolation](#isolation)).
 
 ### Double envoi
 
@@ -483,28 +477,15 @@ ou valeur répétée : 400) ; montants, prix, coûts, dates, fournisseur et num�
 
 ### Verrous et concurrence
 
-Ordre : **achat** (ligne verrouillée) → boutique (numéro RA) → fournisseur → produits (par identifiant). Les créations et
-règlements existants prennent boutique → fournisseur → produits ; le retour ajoute seulement le verrou de l'achat **en tête**.
+Ordre : boutique → **achat** → fournisseur → produits (par identifiant), comme toute écriture métier ; voir [Ordre des verrous](#ordre-des-verrous).
 
-- **Règlement d'un achat** (`reglerAchat`) : il verrouille l'achat avant d'écrire son mouvement de caisse, qui pose un verrou
-  partagé sur la boutique par sa clé étrangère. Si le retour prenait la boutique avant l'achat, l'un tiendrait la boutique en
-  attendant l'achat de l'autre. Avec l'achat en premier, les deux s'exécutent l'un après l'autre sur le verrou de l'achat : pas de
-  cycle (scénario MariaDB : un retour et un règlement simultanés se cumulent).
-- **Modification d'un achat** : `modifierAchat` prenait le fournisseur **avant** l'achat. Avec un retour (achat → fournisseur), cela
-  formait un cycle sur le même achat. La modification prend donc désormais, comme le retour, l'**achat, puis le fournisseur, puis
-  les produits** ; elle relit ensuite sous verrou les retours de l'achat et refuse s'il y en a un. Les deux opérations sur le même
-  achat s'exécutent l'une après l'autre : soit la modification passe d'abord (le retour est alors refusé, ses lignes ont changé),
-  soit le retour passe d'abord (la modification est refusée). Elle passe aussi en **READ COMMITTED** : en REPEATABLE READ, la lecture
-  verrouillée des retours de l'achat poserait un verrou de plage qui croiserait l'insertion d'un retour sur un autre achat du même
-  fournisseur.
-- **Création d'un achat** (boutique → fournisseur → produits) : elle ne verrouille aucun achat existant en écriture (hormis la
-  lecture verrouillée des achats portant une avance, voir les limites) ; une création n'a pas encore de ligne `achat`.
-- Deux retours simultanés sur le même achat s'exécutent l'un après l'autre sur le verrou de l'achat et relisent sous ce verrou les
-  quantités déjà retournées : au plus la quantité achetée passe. Un retour et une vente simultanés de tout le stock se
-  départagent sur le verrou du produit : un seul passe, le stock ne devient jamais négatif.
-
-La transaction du retour est en **READ COMMITTED**, comme celle du retour de vente : en REPEATABLE READ, les lectures verrouillées
-des retours d'un achat posent des verrous de plage qui provoqueraient un deadlock InnoDB entre deux retours d'achats différents.
+- Deux retours simultanés sur le même achat, ou un retour et un règlement de cet achat, s'exécutent l'un après l'autre sur le
+  verrou de l'achat et relisent sous ce verrou les quantités déjà retournées : au plus la quantité achetée passe. Un retour et une
+  vente simultanés de tout le stock se départagent sur le verrou du produit : un seul passe, le stock ne devient jamais négatif.
+- **Modification d'un achat** (`modifierAchat`) : même ordre que le retour (boutique, achat, fournisseur, produits). Elle relit ensuite
+  sous verrou les retours de l'achat et refuse s'il y en a un : soit la modification passe d'abord (le retour est alors refusé, ses
+  lignes ont changé), soit le retour passe d'abord (la modification est refusée).
+- La transaction du retour et celle de la modification d'achat sont en **READ COMMITTED** (voir [Isolation](#isolation)).
 
 ### Double envoi
 
@@ -534,10 +515,84 @@ du dernier stock, retour et modification du même achat (cinq fois).
 
 - Les relevés cumulés de fournisseur affichent encore le « Montant total » d'origine par facture ; le retour y apparaît par le
   reste et l'avance.
-- Comme pour le retour de vente, une opération qui relit les avances d'un fournisseur sous verrou (création d'un achat, solde de
-  départ) lit `FOR UPDATE` les achats qui portent un trop-payé ou une avance utilisée, après avoir verrouillé la fiche du
-  fournisseur. Si elle croise un retour **sur un de ces achats**, l'ordre achat → fournisseur du retour et fournisseur → achat de
-  cette lecture peuvent se croiser : InnoDB détecte le deadlock, une des deux transactions est annulée en entier (aucun état
-  partiel) et l'écran invite à réessayer. Le cas est rare (il demande un achat portant déjà une avance, touché au même instant
-  par une création pour le même fournisseur).
 - Un retour d'achat n'est pas annulable ; une correction passe par un nouvel achat ou un ajustement d'inventaire.
+
+## Ordre des verrous
+
+Cette section est la seule description de l'ordre des verrous de l'application ; les autres sections et le
+[lot 1](lot-1.md#verrous-et-concurrence) y renvoient. Elle remplace les descriptions locales (« document d'abord », « partenaire
+puis produits »…) qui se contredisaient et produisaient de vrais interblocages InnoDB sur MariaDB.
+
+### La règle
+
+Toute opération d'écriture métier qui modifie l'argent, le stock, les factures, les retours, les avances ou les soldes verrouille
+**d'abord la ligne `boutique` de la boutique courante** (`StockLockRepository.verrouillerBoutiqueCourante()`, `PESSIMISTIC_WRITE`),
+en première instruction de sa transaction, puis, dans cet ordre et seulement ceux dont elle a besoin :
+
+1. la ligne `boutique` (elle porte aussi les compteurs de numéros `FV-`, `FA-`, `FD-`, `RV-`, `RA-`) ;
+2. le document : jeton de création, devis, vente ou achat (un seul document par transaction) ;
+3. le partenaire : fiche du client ou du fournisseur ;
+4. les factures du partenaire : lectures `FOR UPDATE` des ventes ou achats qui portent une avance (`SoldePartenaireService`),
+   des retours et des règlements du solde de départ ;
+5. les produits, par identifiant croissant ;
+6. les comptes de trésorerie.
+
+Rien ne doit être verrouillé avant la boutique : ni document, ni partenaire, ni compte utilisateur. Le verrou est pris une seule
+fois par transaction : un second appel, par exemple depuis `CaisseService` appelé par une vente, ne fait rien et ne relit pas la
+ligne (une modification non flushée, comme la clôture du démarrage, n'est donc pas perdue). Il est tenu jusqu'à la fin de la
+transaction.
+
+Pourquoi la boutique en premier : un mouvement de caisse (règlement, entrée ou sortie) a une clé étrangère vers `boutique`, qui pose
+un verrou partagé sur cette ligne. Toute opération qui insère un mouvement après avoir verrouillé son document ou son partenaire
+attend donc la boutique, que tient une création en attente de ce même document. Avec un ordre unique, aucune de ces attentes ne
+peut former de cycle. Exemple observé avant la règle : une création d'achat tenait la boutique et attendait un achat porteur d'avance
+(lecture `FOR UPDATE`), pendant qu'un retour tenait cet achat et attendait la boutique pour son numéro `RA-`.
+
+### Opérations concernées
+
+| Domaine | Opérations qui verrouillent la boutique en premier |
+|---|---|
+| Achats | création (`enregistrerAchat`), modification (`modifierAchat`), règlement (`reglerAchat`), échéance (`modifierEcheance`) |
+| Ventes | création et transformation d'un devis (`effectuerVente`), règlement (`reglerVente`), échéance (`modifierEcheance`) |
+| Création avec jeton | `OperationCreationService.creerAchat` et `creerVente` (la boutique avant la ligne du jeton) |
+| Retours | `RetourVenteService.enregistrer`, `RetourAchatService.enregistrer` |
+| Soldes de départ | `SoldeDepartService.reglerClient` et `reglerFournisseur` ; `appliquerALaModification` (modification d'une fiche client ou fournisseur avec solde de départ) |
+| Devis | création, prolongation, annulation |
+| Trésorerie | `CaisseService.initialiser`, `depenser`, `transferer` et toute écriture de mouvement (`enregistrerEntree*`, `enregistrerSortie*`) |
+| Inventaire et produits | `InventaireService.initialiser`, `ProduitService.modifierProduit` et `supprimerProduit` ; la fin du démarrage (`InitialisationBoutiqueService.terminer`) |
+| Partenaires | `ClientService.supprimerClient`, `FournisseurService.supprimerFournisseur` |
+
+Les lectures (`readOnly = true`) ne verrouillent rien. La création d'un produit, d'un client, d'un fournisseur ou d'une catégorie
+n'attend aucun autre verrou et n'en tient aucun : elle ne verrouille pas la boutique. L'ouverture d'un formulaire de création
+(`OperationCreationService.ouvrir`) insère seulement la ligne du jeton.
+
+### Isolation
+
+Les retours (vente et achat) et la modification d'achat restent en **READ COMMITTED**. Ils relisent les retours d'un document par
+une lecture verrouillée ; sous REPEATABLE READ elle pose des verrous de plage (« gap ») sur l'index des retours, et ces verrous
+croisent l'insertion d'un retour d'une **autre boutique** (même table, mêmes plages d'index). L'ordre des verrous ne protège pas ce
+cas, puisque deux boutiques ne partagent aucun verrou de boutique. Vérifié sur MariaDB : sans READ COMMITTED, le scénario « deux
+boutiques » de `OrdreVerrousMariaDbTest` donne un interblocage dès le premier tour (insertion dans `retour`). Avec READ COMMITTED,
+les 25 tours passent, et les lectures verrouillées voient toujours les opérations validées.
+
+### Limites connues
+
+- **Les écritures d'une même boutique sont sérialisées** : une vente, un achat, un règlement, un retour, une opération de caisse ou
+  de devis attend la fin de la précédente de sa boutique, même si elles touchent des produits ou des partenaires différents.
+  Pour un commerce de un à trois postes, ces transactions durent quelques millisecondes. Deux boutiques ne s'attendent jamais.
+- Les opérations de compte et d'administration (mon compte, accès des utilisateurs, paramètres de la boutique, réinitialisation du mot
+  de passe, abonnement) gardent leur propre ordre (compte utilisateur, puis boutique en lecture ou en écriture) : elles ne modifient ni
+  l'argent ni le stock et ne sont pas concernées par la règle.
+- Toute nouvelle opération d'écriture métier doit appeler `verrouillerBoutiqueCourante()` avant tout autre verrou.
+
+### Vérifications
+
+```sh
+./gradlew ordreVerrousMariaDbTest retourAchatMariaDbTest retourVenteMariaDbTest
+```
+
+`OrdreVerrousMariaDbTest` croise, 25 fois chacun et avec les vrais verrous InnoDB : création d'achat pour un fournisseur ayant une
+avance et retour en avoir d'un de ses achats ; création de vente pour un client ayant une avance et retour de vente en avoir ;
+règlement d'un achat et retour du même achat ; règlement d'une vente et retour de la même vente ; règlement du solde de départ d'un
+client et vente à ce client ; règlement du solde de départ d'un fournisseur et achat chez lui ; modification d'un achat et création
+d'un achat pour le même fournisseur ; retours et créations croisés dans deux boutiques. Aucun ne doit produire d'erreur.
