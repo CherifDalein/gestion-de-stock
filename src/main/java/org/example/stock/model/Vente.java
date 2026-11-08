@@ -47,6 +47,13 @@ public class Vente {
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal montantVerse;
 
+    /**
+     * Valeur totale des marchandises retournées sur cette facture (Σ montant des retours de vente). Elle ne s'écrit que
+     * sous le verrou de la vente, par le retour de vente ; le total effectif est {@code montantTotal − montantRetours}.
+     */
+    @Column(nullable = false, precision = 17, scale = 2)
+    private BigDecimal montantRetours = Montants.ZERO;
+
     /** Compte de l'encaissement saisi, indépendant de ceux des règlements suivants. */
     @Transient
     private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
@@ -62,16 +69,30 @@ public class Vente {
     @OneToMany(mappedBy = "vente", cascade = CascadeType.ALL)
     private List<DetailVente> lignes = new ArrayList<>();
 
+    /** Retours de vente enregistrés sur cette facture, du premier au dernier ; lecture seule. */
+    @OneToMany(mappedBy = "vente")
+    @OrderBy("id ASC")
+    private List<Retour> retours = new ArrayList<>();
+
+    /** Total effectif = total d'origine − marchandises retournées : la base du reste à payer et du chiffre d'affaires net. */
+    public BigDecimal getTotalEffectif() {
+        return Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantRetours));
+    }
+
     /**
-     * Reste à payer = max(0, total − versé − avance utilisée). Un trop-payé ou une avance qui couvre tout le total
-     * donne zéro : le reste n'est jamais négatif.
+     * Reste à payer = max(0, total effectif − versé − avance utilisée), avec total effectif = total − retours. Un
+     * trop-payé ou une avance qui couvre tout le total donne zéro : le reste n'est jamais négatif.
      */
     public BigDecimal getResteAPayer() {
-        BigDecimal reste = Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantVerse)).subtract(Montants.ouZero(avanceUtilisee));
+        BigDecimal reste = getTotalEffectif().subtract(Montants.ouZero(montantVerse)).subtract(Montants.ouZero(avanceUtilisee));
         return reste.signum() < 0 ? Montants.ZERO : reste;
     }
 
-    /** Surplus = max(0, versé − total) : la part versée au-delà du total, devenue une avance du partenaire. */
+    /**
+     * Surplus d'origine = max(0, versé − total d'origine) : l'avance née à la création. Il se calcule avec le total
+     * d'origine et non avec le total effectif : l'excédent créé par un retour est traité par le retour lui-même
+     * (remboursement ou avoir), sinon il serait compté deux fois.
+     */
     public BigDecimal getSurplus() {
         BigDecimal surplus = Montants.ouZero(montantVerse).subtract(Montants.ouZero(montantTotal));
         return surplus.signum() < 0 ? Montants.ZERO : surplus;

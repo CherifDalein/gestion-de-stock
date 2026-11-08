@@ -5,6 +5,7 @@ import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Client;
 import org.example.stock.model.Fournisseur;
+import org.example.stock.model.Retour;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.MouvementCaisseRepository;
@@ -258,7 +259,23 @@ public class CaisseService {
         return mouvementRepo.findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(achatId, boutiqueService.idBoutiqueCourante());
     }
 
+    /**
+     * Sortie de trésorerie qui rembourse un client après un retour de vente : source {@code RETOUR_VENTE}, rattachée au
+     * retour (jamais à la vente, pour ne pas figurer parmi ses versements). À appeler dans la transaction du retour,
+     * après les verrous de la boutique, du client et des produits.
+     */
+    @Transactional
+    public void enregistrerSortieRetourVente(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, CompteTresorerie compte) {
+        if (retour == null || retour.getId() == null) throw new IllegalArgumentException("Retour introuvable");
+        enregistrerSortie(montant, motif, "RETOUR_VENTE", utilisateur, null, null, retour, compte);
+    }
+
     private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, CompteTresorerie compte) {
+        enregistrerSortie(montant, motif, source, utilisateur, achat, fournisseur, null, compte);
+    }
+
+    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur,
+                                   Retour retour, CompteTresorerie compte) {
         verifierSourceOperationnelle(source);
         exigerCompte(compte);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -291,6 +308,7 @@ public class CaisseService {
         mouvement.setUtilisateur(utilisateur);
         mouvement.setAchat(achat);
         mouvement.setFournisseur(fournisseur);
+        mouvement.setRetour(retour);
 
         mouvementRepo.save(mouvement);
     }

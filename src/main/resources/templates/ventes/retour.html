@@ -1,0 +1,152 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Ventes · Retour</p>
+                <h1>Retour de la vente <span th:text="${formulaire.vente.numero ?: '#' + formulaire.vente.id}"></span></h1>
+                <p class="app-page-subtitle">Le client rend de la marchandise. Choisissez, ligne par ligne, la quantité retournée : le serveur recalcule le montant, remet le stock et règle la partie à rembourser.</p>
+            </div>
+            <div class="app-actions">
+                <a th:href="@{/ventes}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour aux ventes
+                </a>
+            </div>
+        </header>
+
+        <div th:if="${error}" id="retourErreur" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+        <form th:action="@{/ventes/{id}/retour(id=${formulaire.vente.id})}" method="post" id="formRetourVente" class="operation-form"
+              th:attr="data-reste=${#numbers.formatDecimal(formulaire.resteAPayer, 1, 'NONE', 2, 'POINT')},data-avec-client=${formulaire.avecClient}">
+            <input type="hidden" name="retoursConnus" th:value="${formulaire.retoursConnus}" />
+            <div class="operation-layout">
+                <div class="operation-workspace">
+                    <section class="operation-panel" aria-labelledby="retourInfosTitre">
+                        <div class="operation-panel-header">
+                            <div>
+                                <h2 id="retourInfosTitre">Vente d’origine</h2>
+                                <p>Les prix du retour sont ceux de la vente.</p>
+                            </div>
+                        </div>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Client</dt><dd class="col-sm-8" th:text="${formulaire.vente.client != null ? formulaire.vente.client.nom : 'Client de passage'}"></dd>
+                            <dt class="col-sm-4">Date</dt><dd class="col-sm-8" th:text="${#temporals.format(formulaire.vente.dateVente, 'dd/MM/yyyy HH:mm')}"></dd>
+                            <dt class="col-sm-4">Total de la vente</dt><dd class="col-sm-8" th:text="${#numbers.formatDecimal(formulaire.vente.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd>
+                            <dt class="col-sm-4" th:if="${(formulaire.vente.montantRetours ?: 0) > 0}">Déjà retourné</dt>
+                            <dd class="col-sm-8" th:if="${(formulaire.vente.montantRetours ?: 0) > 0}" th:text="${#numbers.formatDecimal(formulaire.vente.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd>
+                            <dt class="col-sm-4">Reste à payer par le client</dt><dd class="col-sm-8" id="retourResteAvant" th:text="${#numbers.formatDecimal(formulaire.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd>
+                        </dl>
+                    </section>
+
+                    <section class="operation-panel" aria-labelledby="retourLignesTitre">
+                        <div class="operation-panel-header">
+                            <div>
+                                <h2 id="retourLignesTitre">Marchandise retournée</h2>
+                                <p>Saisissez 0 pour une ligne qui ne revient pas. Au moins une quantité doit être supérieure à 0.</p>
+                            </div>
+                        </div>
+                        <div th:unless="${formulaire.peutRetourner()}" class="alert alert-warning" role="status">Tout ce qui a été vendu a déjà été retourné : il ne reste rien à retourner sur cette vente.</div>
+                        <div class="table-responsive operation-cart-table">
+                            <table class="table table-hover mb-0">
+                                <caption class="visually-hidden">Lignes de la vente, quantités déjà retournées et quantité retournée</caption>
+                                <thead>
+                                <tr>
+                                    <th scope="col">Produit</th>
+                                    <th scope="col" class="text-end">Prix unitaire</th>
+                                    <th scope="col" class="text-end">Vendue</th>
+                                    <th scope="col" class="text-end">Déjà retournée</th>
+                                    <th scope="col" class="text-end">Maximum</th>
+                                    <th scope="col" class="text-end">Quantité retournée</th>
+                                    <th scope="col" class="text-end">Montant</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="l, it : ${formulaire.lignes}" data-ligne-retour
+                                    th:attr="data-prix=${#numbers.formatDecimal(l.prixUnitaire, 1, 'NONE', 2, 'POINT')},data-max=${l.maximum}">
+                                    <td>
+                                        <span th:text="${l.produit}"></span>
+                                        <small th:if="${l.service}" class="d-block text-muted">Service : ni stock ni coût</small>
+                                        <input type="hidden" th:name="${'lignes[' + it.index + '].detailVenteId'}" th:value="${l.detailVenteId}" />
+                                    </td>
+                                    <td class="text-end text-nowrap" th:text="${#numbers.formatDecimal(l.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                                    <td class="text-end" th:text="${l.quantiteVendue + (l.unite != null ? ' ' + l.unite : '')}"></td>
+                                    <td class="text-end" th:text="${l.dejaRetournee}"></td>
+                                    <td class="text-end fw-semibold" th:text="${l.maximum}"></td>
+                                    <td class="text-end">
+                                        <input type="number" class="form-control retour-quantite" min="0" step="1" inputmode="numeric"
+                                               th:name="${'lignes[' + it.index + '].quantite'}" th:max="${l.maximum}"
+                                               th:value="${quantitesSaisies != null and quantitesSaisies[l.detailVenteId] != null ? quantitesSaisies[l.detailVenteId] : 0}"
+                                               th:disabled="${l.maximum == 0}"
+                                               th:attr="aria-label=${'Quantité retournée de ' + l.produit + ', au plus ' + l.maximum}" />
+                                    </td>
+                                    <td class="text-end text-nowrap fw-bold" data-montant-ligne>0.00 GNF</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <section class="operation-panel" aria-labelledby="retourMotifTitre">
+                        <div class="operation-panel-header"><div><h2 id="retourMotifTitre">Motif</h2><p>Facultatif, 255 caractères au plus.</p></div></div>
+                        <input type="text" id="motif" name="motif" class="form-control" maxlength="255" autocomplete="off"
+                               th:value="${retourVenteForm.motif}" placeholder="Article défectueux, erreur de commande…" aria-label="Motif du retour">
+                    </section>
+                </div>
+
+                <aside class="operation-summary operation-panel" aria-labelledby="retourResumeTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="retourResumeTitre">Montant du retour</h2>
+                            <p>Calcul affiché à titre indicatif : le serveur recalcule.</p>
+                        </div>
+                    </div>
+                    <div class="operation-summary-total">
+                        <span>Montant du retour</span>
+                        <strong class="operation-total-value"><span id="retourMontant">0.00</span> GNF</strong>
+                    </div>
+                    <dl class="operation-summary-lines">
+                        <div>
+                            <dt>Réduit la dette du client</dt>
+                            <dd><span id="retourImpute">0.00</span> GNF</dd>
+                        </div>
+                        <div>
+                            <dt>À rembourser ou garder en avoir</dt>
+                            <dd><span id="retourExcedent">0.00</span> GNF</dd>
+                        </div>
+                    </dl>
+                    <p id="retourExplication" class="operation-note">Saisissez une quantité pour voir le détail.</p>
+
+                    <fieldset id="retourChoix" class="mb-3" hidden>
+                        <legend class="form-label fw-semibold">Que faire de l’excédent ?</legend>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="modeRemboursement" id="modeArgent" value="ARGENT" disabled
+                                   th:checked="${retourVenteForm.modeRemboursement != null and retourVenteForm.modeRemboursement.name() == 'ARGENT'}">
+                            <label class="form-check-label" for="modeArgent">Rendre l’argent</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="modeRemboursement" id="modeAvoir" value="AVOIR" disabled
+                                   th:checked="${retourVenteForm.modeRemboursement != null and retourVenteForm.modeRemboursement.name() == 'AVOIR'}">
+                            <label class="form-check-label" for="modeAvoir">Garder en avoir</label>
+                            <small id="avoirIndisponible" class="d-block text-muted" hidden>Une vente sans client ne peut être remboursée qu’en argent.</small>
+                        </div>
+                        <div id="retourCompteBloc" class="operation-field mt-3" hidden>
+                            <label for="comptePaiement" class="form-label">Compte qui rend l’argent</label>
+                            <select id="comptePaiement" name="comptePaiement" class="form-select" disabled>
+                                <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"
+                                        th:selected="${retourVenteForm.comptePaiement != null and retourVenteForm.comptePaiement == compte}"></option>
+                            </select>
+                            <p class="operation-field-help">Une sortie de ce montant est inscrite dans la trésorerie.</p>
+                        </div>
+                    </fieldset>
+                </aside>
+            </div>
+            <div class="operation-actions">
+                <a th:href="@{/ventes}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary" id="boutonRetour" th:disabled="${!formulaire.peutRetourner()}">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Enregistrer le retour
+                </button>
+            </div>
+        </form>
+    </div>
+    <script th:src="@{/js/montants.js}"></script>
+    <script th:src="@{/js/retour-vente.js}"></script>
+</div>

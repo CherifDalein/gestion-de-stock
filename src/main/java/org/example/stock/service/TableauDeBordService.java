@@ -87,16 +87,27 @@ public class TableauDeBordService {
             cumul.beneficeBrut = cumul.beneficeBrut.add(montant(ligne[1]));
             cumul.sansCout += ((Number) ligne[2]).longValue();
         }
+        // Un retour de vente se compte à sa date, en négatif, pour le vendeur de la vente d'origine.
+        for (Object[] ligne : requetes.retoursDeVenteParVendeur(boutiqueId, debut, fin)) {
+            Cumul cumul = cumulDe(ligne[0], comptes, cumuls, sansVendeur);
+            cumul.retours += ((Number) ligne[1]).longValue();
+            cumul.chiffreAffaires = cumul.chiffreAffaires.subtract(montant(ligne[2]));
+        }
+        for (Object[] ligne : requetes.beneficeDesRetoursDeVenteParVendeur(boutiqueId, debut, fin)) {
+            Cumul cumul = cumulDe(ligne[0], comptes, cumuls, sansVendeur);
+            cumul.beneficeBrut = cumul.beneficeBrut.subtract(montant(ligne[1]));
+        }
         List<LigneVendeur> lignes = new ArrayList<>();
         for (Utilisateur compte : comptes.values()) {
             Cumul cumul = cumuls.get(compte.getId());
-            boolean aVendu = cumul != null && cumul.ventes > 0;
+            // Un compte qui n'a que des retours sur la période figure aussi : le total reste égal au chiffre d'affaires net.
+            boolean aVendu = cumul != null && (cumul.ventes > 0 || cumul.retours > 0);
             if (!aVendu && (!compte.isActif() || compte.isAdministrateurPlateforme())) continue;
             lignes.add(cumul == null ? new Cumul().ligne(compte) : cumul.ligne(compte));
         }
         lignes.sort(Comparator.comparing(LigneVendeur::chiffreAffaires).reversed()
                 .thenComparing(ligne -> ligne.nom().toLowerCase(java.util.Locale.ROOT)).thenComparing(LigneVendeur::vendeurId));
-        if (sansVendeur.ventes > 0) lignes.add(sansVendeur.ligne(null));
+        if (sansVendeur.ventes > 0 || sansVendeur.retours > 0) lignes.add(sansVendeur.ligne(null));
 
         Cumul total = new Cumul();
         for (LigneVendeur ligne : lignes) {
@@ -116,6 +127,7 @@ public class TableauDeBordService {
 
     private static final class Cumul {
         long ventes;
+        long retours;
         long sansCout;
         BigDecimal chiffreAffaires = Montants.ZERO;
         BigDecimal beneficeBrut = Montants.ZERO;
@@ -149,7 +161,13 @@ public class TableauDeBordService {
     /** Chiffre d'affaires du jour : seul indicateur d'activité partagé avec le caissier. */
     public BigDecimal chiffreAffairesDuJour(LocalDate jour) {
         Periode periode = Periode.jour(jour);
-        return montant(requetes.chiffreAffaires(boutiqueService.idBoutiqueCourante(), periode.debut(), periode.fin()));
+        return chiffreAffairesNet(boutiqueService.idBoutiqueCourante(), periode);
+    }
+
+    /** Chiffre d'affaires net : ventes de la période − retours de vente de la période (comptés à la date du retour). */
+    private BigDecimal chiffreAffairesNet(Long boutiqueId, Periode periode) {
+        return montant(requetes.chiffreAffaires(boutiqueId, periode.debut(), periode.fin()))
+                .subtract(montant(requetes.retoursDeVente(boutiqueId, periode.debut(), periode.fin())));
     }
 
     public Indicateurs indicateursDuJour(LocalDate jour) {
@@ -196,8 +214,11 @@ public class TableauDeBordService {
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
         LocalDateTime debut = LocalDate.of(annee, 1, 1).atStartOfDay();
         LocalDateTime fin = debut.plusYears(1);
-        BigDecimal[] ventes = parMois(requetes.chiffreAffairesParMois(boutiqueId, debut, fin));
-        BigDecimal[] brut = parMois(requetes.beneficeBrutParMois(boutiqueId, debut, fin));
+        // Les retours de vente se retranchent du mois de leur date, pas de celui de la vente d'origine.
+        BigDecimal[] ventes = moins(parMois(requetes.chiffreAffairesParMois(boutiqueId, debut, fin)),
+                parMois(requetes.retoursDeVenteParMois(boutiqueId, debut, fin)));
+        BigDecimal[] brut = moins(parMois(requetes.beneficeBrutParMois(boutiqueId, debut, fin)),
+                parMois(requetes.beneficeDesRetoursDeVenteParMois(boutiqueId, debut, fin)));
         BigDecimal[] depenses = parMois(requetes.depensesParMois(boutiqueId, TypeOperationTresorerie.DEPENSE, debut, fin));
 
         BigDecimal maxPositif = Montants.ZERO;
@@ -232,12 +253,19 @@ public class TableauDeBordService {
 
     private Indicateurs indicateurs(Periode periode) {
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
-        BigDecimal chiffreAffaires = montant(requetes.chiffreAffaires(boutiqueId, periode.debut(), periode.fin()));
-        BigDecimal brut = montant(requetes.beneficeBrut(boutiqueId, periode.debut(), periode.fin()));
+        BigDecimal chiffreAffaires = chiffreAffairesNet(boutiqueId, periode);
+        BigDecimal brut = montant(requetes.beneficeBrut(boutiqueId, periode.debut(), periode.fin()))
+                .subtract(montant(requetes.beneficeDesRetoursDeVente(boutiqueId, periode.debut(), periode.fin())));
         long sansCout = requetes.lignesSansCout(boutiqueId, periode.debut(), periode.fin());
         BigDecimal depenses = montant(requetes.depenses(boutiqueId, TypeOperationTresorerie.DEPENSE,
                 periode.debut(), periode.fin()));
         return new Indicateurs(chiffreAffaires, brut, depenses, brut.subtract(depenses), sansCout);
+    }
+
+    private static BigDecimal[] moins(BigDecimal[] valeurs, BigDecimal[] retraits) {
+        BigDecimal[] resultat = new BigDecimal[12];
+        for (int i = 0; i < 12; i++) resultat[i] = valeurs[i].subtract(retraits[i]);
+        return resultat;
     }
 
     private static BigDecimal[] parMois(List<Object[]> lignes) {

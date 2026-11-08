@@ -31,8 +31,8 @@ import java.util.Map;
  * solde est positif a reçu une avance de la boutique.</p>
  *
  * <ul>
- *   <li>avance disponible d'un client = max(0, −solde de départ) + Σ max(0, versé − total) − Σ avance utilisée
- *       de ses ventes ; celle d'un fournisseur = max(0, solde de départ) + Σ trop-payés − Σ avance utilisée de ses achats ;</li>
+ *   <li>avance disponible d'un client = max(0, −solde de départ) + Σ max(0, versé − total d'origine) + Σ avoirs de ses
+ *       retours de vente − Σ avance utilisée de ses ventes ; celle d'un fournisseur = max(0, solde de départ) + Σ trop-payés − Σ avance utilisée de ses achats ;</li>
  *   <li>reste du solde de départ = montant dû (client : solde positif ; fournisseur : solde négatif) − Σ règlements.</li>
  * </ul>
  *
@@ -232,7 +232,7 @@ public class SoldePartenaireService {
     }
 
     private static BigDecimal avanceBrute(BigDecimal partieSolde, Factures factures) {
-        return partieSolde.max(BigDecimal.ZERO).add(factures.surplus()).subtract(factures.avanceUtilisee());
+        return partieSolde.max(BigDecimal.ZERO).add(factures.surplus()).add(factures.avoirs()).subtract(factures.avanceUtilisee());
     }
 
     private SoldePartenaire construire(Partenaire type, BigDecimal soldeInitial, LocalDate echeance, BigDecimal regle, Factures factures) {

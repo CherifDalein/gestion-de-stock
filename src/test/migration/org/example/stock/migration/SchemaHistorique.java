@@ -16,7 +16,7 @@ public final class SchemaHistorique {
             "CONSTRAINT uk_vente_boutique_numero UNIQUE (boutique_id, numero),", "CONSTRAINT uk_achat_boutique_numero UNIQUE (boutique_id, numero),");
     private static final List<String> LIGNES_LOT2 = List.of(
             "prochain_numero_devis BIGINT NOT NULL DEFAULT 1,", "prochain_numero_retour_vente BIGINT NOT NULL DEFAULT 1,", "prochain_numero_retour_achat BIGINT NOT NULL DEFAULT 1,",
-            "vendeur_id BIGINT NULL,", "retour_id BIGINT NULL,", "annulation_de_id BIGINT NULL,",
+            "montant_retours DECIMAL(17,2) NOT NULL DEFAULT 0,", "vendeur_id BIGINT NULL,", "retour_id BIGINT NULL,", "annulation_de_id BIGINT NULL,",
             "CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),");
     private SchemaHistorique() {}
 

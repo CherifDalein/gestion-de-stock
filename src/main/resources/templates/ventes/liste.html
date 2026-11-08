@@ -55,7 +55,7 @@
                             <td class="text-nowrap" th:text="${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                             <td th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></td>
                             <td data-vendeur th:text="${v.vendeur != null and !#strings.isEmpty(#strings.trim(v.vendeur.nom)) ? v.vendeur.nom : 'Non renseigné'}"></td>
-                            <td class="fw-bold" th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="fw-bold"><span th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(v.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-vente th:text="${'− retours ' + #numbers.formatDecimal(v.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                             <td class="text-success" ><span th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(v.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(v.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                             <td class="fw-bold" th:classappend="${v.resteAPayer > 0 ? 'text-danger' : 'text-muted'}"
                                 th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
@@ -104,11 +104,15 @@
                             </div>
                             <div class="col-6 text-end">
                                 <p class="mb-1">Total facture : <strong th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></strong></p>
+                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1 text-muted" data-detail-retours>Retours : <strong th:text="${'− ' + #numbers.formatDecimal(v.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></strong></p>
+                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1" data-detail-total-net>Total net : <strong th:text="${#numbers.formatDecimal(v.totalEffectif, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></strong></p>
                                 <p class="mb-1 text-success">Montant reçu : <strong th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></strong></p>
                                 <p th:if="${(v.avanceUtilisee ?: 0) > 0}" class="mb-1 text-success">Avance du client utilisée : <strong th:text="${#numbers.formatDecimal(v.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></strong></p>
                                 <h4 class="text-danger">Reste à payer : <span th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'POINT')}"></span> GNF</h4>
                             </div>
                         </div>
+                        <p th:unless="${#lists.isEmpty(v.retours)}" class="small mb-3" data-detail-numeros-retours>Retours enregistrés :
+                            <span th:each="r, it : ${v.retours}"><span th:text="${r.numero}"></span><span th:unless="${it.last}">, </span></span></p>
                         <table class="table table-sm table-striped">
                             <thead class="table-light">
                             <tr>
@@ -130,6 +134,10 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <a sec:authorize="hasRole('ADMIN')" th:href="@{/ventes/{id}/retour(id=${v.id})}" class="btn btn-outline-primary" data-bouton-retour
+                           th:attr="aria-label=${'Enregistrer un retour sur la vente n° ' + (v.numero ?: v.id)}">
+                            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Retour
+                        </a>
                         <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-primary">
                             <i class="fas fa-print" aria-hidden="true"></i> Imprimer le reçu
                         </a>

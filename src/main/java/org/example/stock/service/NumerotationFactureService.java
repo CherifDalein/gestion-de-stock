@@ -7,7 +7,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Numéros uniques par boutique : {@code FV-000123} pour les ventes, {@code FA-000123} pour les achats, {@code FD-000123} pour les devis.
+ * Numéros uniques par boutique : {@code FV-000123} pour les ventes, {@code FA-000123} pour les achats, {@code FD-000123} pour les devis,
+ * {@code RV-000123} pour les retours de vente.
  *
  * <p>Le compteur est lu et avancé sous le verrou de la ligne boutique, dans la transaction de la création :
  * deux créations simultanées d'une même boutique sont numérotées l'une après l'autre, et une création annulée
@@ -31,7 +32,8 @@ public class NumerotationFactureService {
     private enum Type {
         VENTE("FV-", "Vente", "prochain_numero_vente"),
         ACHAT("FA-", "Achat", "prochain_numero_achat"),
-        DEVIS("FD-", "Devis", "prochain_numero_devis");
+        DEVIS("FD-", "Devis", "prochain_numero_devis"),
+        RETOUR_VENTE("RV-", "Retour", "prochain_numero_retour_vente");
 
         final String prefixe, entite, colonne;
         Type(String prefixe, String entite, String colonne) {
@@ -52,6 +54,11 @@ public class NumerotationFactureService {
     /** Numéro automatique d'un devis ({@code FD-000001}), tiré du compteur des devis ; un devis n'a jamais de numéro manuel. */
     public String attribuerNumeroDevis() {
         return attribuer(Type.DEVIS, null);
+    }
+
+    /** Numéro automatique d'un retour de vente ({@code RV-000001}), tiré du compteur des retours de vente ; jamais de numéro manuel. */
+    public String attribuerNumeroRetourVente() {
+        return attribuer(Type.RETOUR_VENTE, null);
     }
 
     /** Retire les espaces aux bords ; un numéro vide est absent. Ne vérifie pas la longueur. */

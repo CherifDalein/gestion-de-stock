@@ -1,0 +1,48 @@
+<div th:fragment="content">
+    <div class="container-fluid px-4 journal-page">
+        <h1 class="mt-4">Retours de vente</h1>
+        <p class="app-page-subtitle">Marchandises rendues par les clients, avec ce qui a été remboursé en argent ou gardé en avoir. Un retour s’enregistre depuis le détail d’une vente.</p>
+        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <p id="retoursTableHint" class="small text-muted mb-3">Sur écran étroit, faites défiler le tableau horizontalement pour accéder aux actions.</p>
+                <div class="table-responsive journal-table-wrap" role="region" tabindex="0" aria-label="Retours de vente : tableau défilant horizontalement" aria-describedby="retoursTableHint">
+                    <table id="datatablesSimple" class="table table-hover journal-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Numéro</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Vente d’origine</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Montant</th>
+                            <th scope="col">Remboursé</th>
+                            <th scope="col">Avoir</th>
+                            <th scope="col" class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="r : ${retoursVente}">
+                            <td class="text-nowrap" th:text="${r.numero}"></td>
+                            <td th:text="${#temporals.format(r.dateRetour, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td class="text-nowrap" th:text="${r.vente != null ? (r.vente.numero ?: '#' + r.vente.id) : '—'}"></td>
+                            <td th:text="${r.client != null ? r.client.nom : 'Client de passage'}"></td>
+                            <td class="fw-bold text-nowrap" th:text="${#numbers.formatDecimal(r.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantRembourse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantAvoir, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-center">
+                                <div class="journal-row-actions app-row-actions">
+                                    <a th:href="@{/retours/{id}/imprimer(id=${r.id})}" class="btn btn-sm btn-outline-primary app-row-action"
+                                       th:attr="aria-label=${'Imprimer le ' + (r.estAvoir() ? 'avoir ' : 'bon de retour ') + r.numero}"><i class="fas fa-print" aria-hidden="true"></i> Imprimer</a>
+                                    <a th:if="${r.vente != null}" th:href="@{/factures/vente/{id}(id=${r.vente.id})}" class="btn btn-sm btn-outline-secondary app-row-action"
+                                       th:attr="aria-label=${'Voir la facture de la vente ' + (r.vente.numero ?: r.vente.id)}">Facture</a>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <p th:if="${#lists.isEmpty(retoursVente)}" class="text-muted mb-0">Aucun retour de vente enregistré.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

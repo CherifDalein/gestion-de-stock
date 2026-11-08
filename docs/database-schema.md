@@ -176,6 +176,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FA-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
 - `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
 - `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
+- `montant_retours` DECIMAL(17,2) NOT NULL DEFAULT 0 : valeur totale des marchandises retournées à ce fournisseur sur la facture ; 0 pour tous les achats existants, alimentée par les retours d'achat (lot 2, pas encore utilisée)
 - `utilisateur_id` BIGINT NULL, FK `fk_achat_utilisateur` -> `utilisateur.id` : compte qui a saisi l'achat ; repris du premier mouvement de caisse nominatif pour les achats migrés, vide sinon (lot 2)
 
 ### `detail_achat`
@@ -195,6 +196,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FV-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
 - `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
 - `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
+- `montant_retours` DECIMAL(17,2) NOT NULL DEFAULT 0 : valeur totale des marchandises retournées par le client sur la facture (Σ `retour.montant_total` de ses retours de vente) ; 0 pour toutes les ventes existantes. Total effectif = `montant_total` − `montant_retours` (lot 2)
 - `vendeur_id` BIGINT NULL, FK `fk_vente_vendeur` -> `utilisateur.id` : compte qui a saisi la vente ; repris du premier mouvement de caisse nominatif pour les ventes migrées, vide sinon (lot 2)
 
 ### `detail_vente`
@@ -242,7 +244,7 @@ Offre de prix valable jusqu'à une date, sans effet sur le stock ni la caisse ta
 
 ### `retour`
 
-Marchandise rendue par un client (`VENTE`) ou à un fournisseur (`ACHAT`) ; le montant total se partage entre un remboursement en trésorerie et un avoir (lot 2, pas encore utilisée) :
+Marchandise rendue par un client (`VENTE`, livrée par le retour de vente) ou à un fournisseur (`ACHAT`, pas encore utilisé) ; le montant total se répartit entre une partie qui réduit la créance (aucun argent), un remboursement en trésorerie et un avoir (lot 2) :
 - `id` BIGINT PK, auto-incrémenté
 - `boutique_id` BIGINT NOT NULL FK -> `boutique.id`
 - `numero` VARCHAR(30) NOT NULL, UNIQUE (`boutique_id`, `numero`) `uk_retour_boutique_numero`
@@ -409,6 +411,7 @@ erDiagram
         VARCHAR numero
         DATE date_echeance
         DECIMAL avance_utilisee
+        DECIMAL montant_retours
     }
     DETAIL_ACHAT {
         BIGINT id PK
@@ -428,6 +431,7 @@ erDiagram
         VARCHAR numero
         DATE date_echeance
         DECIMAL avance_utilisee
+        DECIMAL montant_retours
     }
     DETAIL_VENTE {
         BIGINT id PK
