@@ -33,9 +33,13 @@ retour restent à générer par l'application à partir des compteurs ci-dessous
 | `achat` | `utilisateur_id` | BIGINT NULL, clé `fk_achat_utilisateur` vers `utilisateur` | même règle pour les mouvements de l'achat |
 | `mouvement_caisse` | `retour_id` | BIGINT NULL, clé `fk_mouvement_caisse_retour` vers `retour` | vide : remboursement d'un retour, aucun mouvement existant n'en est un |
 | `mouvement_caisse` | `annulation_de_id` | BIGINT NULL, clé `fk_mouvement_caisse_annulation` vers `mouvement_caisse`, UNIQUE `uk_mouvement_caisse_annulation` | vide : un mouvement qui en annule un autre, au plus une annulation par mouvement |
+| `vente` | `montant_retours` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 : aucun retour de vente n'existe avant ce lot |
+| `achat` | `montant_retours` | DECIMAL(17,2) NOT NULL DEFAULT 0 | 0 (réservée aux retours d'achat, traités ensuite) |
 | `boutique` | `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` | BIGINT NOT NULL DEFAULT 1 | 1 |
 
 Précisions :
+
+- **Total des retours.** `montant_retours` est le cumul des retours de la vente ; il vaut 0 à la migration et une relance ne le réécrit jamais (le scénario « relance » vérifie qu'un total déjà enregistré est conservé).
 
 - **Vendeur et auteur.** Pour chaque vente (resp. achat), la migration retient
   le mouvement de caisse rattaché au document qui a le plus petit identifiant

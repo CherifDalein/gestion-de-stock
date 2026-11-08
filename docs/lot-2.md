@@ -310,3 +310,93 @@ compare chaque chiffre de l'état à un calcul fait à la main sur un jeu de don
 (bornes de minuit, coût absent, centimes, ligne « Non renseigné », autre boutique exclue,
 période invalide, 403 du caissier). Le scénario de `TableauDeBordMariaDbTest` reprend
 l'agrégat sur MariaDB.
+
+## Retour de vente
+
+Un client rapporte de la marchandise d'une vente déjà enregistrée. Le retour réduit d'abord la dette du client sur cette
+vente, puis l'argent est rendu ou gardé en avoir. Les retours d'achat ne font pas partie de ce lot.
+
+### Droits
+
+Réservé au gérant (`ADMIN`) : le bouton « Retour » du détail d'une vente, `/ventes/{id}/retour`, `/retours` et
+`/retours/{id}/imprimer` répondent 403 au caissier (règle dans `SecurityConfig`, contrôle répété dans le service). Une vente
+ou un retour d'une autre boutique est introuvable (404). Le formulaire n'accepte que `lignes[i].detailVenteId`,
+`lignes[i].quantite`, `motif`, `modeRemboursement`, `comptePaiement` et `retoursConnus` (autre champ ou valeur répétée : 400) ;
+montants, prix, coûts, dates et numéro sont toujours calculés côté serveur.
+
+### Règles
+
+- Un retour porte sur **une** vente de la boutique, ligne par ligne. La quantité est un entier ≥ 0, au plus la quantité vendue
+  moins ce qui a déjà été retourné sur cette ligne (tous retours confondus) ; au moins une quantité doit être > 0.
+- Montant du retour **R** = Σ quantité × prix unitaire de la ligne de vente. Le prix **et le coût unitaire** de la ligne sont
+  recopiés sur la ligne de retour (`detail_retour`) : ils ne changent plus.
+- **Total effectif** = `montant_total` − `montant_retours`. **Reste à payer** = max(0, total effectif − versé − avance
+  utilisée). Le surplus d'origine reste max(0, versé − `montant_total`) avec le total d'origine, sinon il serait compté
+  deux fois.
+- Avec **D** = reste à payer juste avant le retour : la part **imputée** = min(R, D) réduit la dette, sans aucun
+  mouvement d'argent ; l'**excédent** E = R − min(R, D) est soit **rendu** (`montant_rembourse` = E, sortie de trésorerie
+  de source `RETOUR_VENTE` sur le compte choisi, liée au retour et au gérant), soit **gardé en avoir** (`montant_avoir` = E,
+  aucun mouvement). Si E = 0, aucun choix n'est demandé. Le choix se fait à chaque retour.
+- Une vente **sans client** ne peut être remboursée qu'en argent (l'avoir est refusé).
+- **Avance du client** = formule existante + Σ `montant_avoir` de ses retours de vente. Elle est consommée
+  automatiquement par la vente à crédit suivante, comme un surplus.
+- **Stock** : un produit en stock reprend la quantité retournée. Le **CMP** reçoit une entrée au **coût figé** de la ligne :
+  (stock × CMP + quantité × coût figé) / (stock + quantité), jamais au CMP du jour. Le recalcul depuis l'historique
+  (`CoutMoyenService`) rejoue les retours comme des entrées datées de `date_retour`. Un service retourné ne touche ni le
+  stock ni le coût. Une ligne migrée sans coût figé remet la quantité en stock sans changer le CMP.
+- **Tableau de bord et état « Ventes par vendeur »** : chiffre d'affaires et bénéfice brut sont nets des retours, comptés à
+  **la date du retour** en négatif (CA − R ; bénéfice − Σ (prix − coût figé) × quantité). Dans l'état par vendeur le retour est
+  attribué au vendeur de la vente d'origine ; la ligne « Non renseigné » s'applique aux ventes sans vendeur.
+- **Numéro** `RV-000001`, consécutif par boutique (`boutique.prochain_numero_retour_vente`), rendu en cas de rollback.
+- **Documents** : « Bon de retour » (ou « Avoir » quand une part est gardée en avoir) A4 imprimable, lignes « Retours » et
+  « Total net » et numéros de retour sur la facture et le détail de la vente.
+
+### Exemples
+
+1. **Vente payée.** Vente 100 000 payée 100 000, retour de 30 000 : D = 0, imputé 0, E = 30 000. En argent : sortie de caisse de
+   30 000, reste 0, chiffre d'affaires net 70 000.
+2. **Vente à crédit.** Vente 100 000, versé 20 000 (D = 80 000), retour de 30 000 : imputé 30 000, E = 0. Aucun choix, aucun
+   mouvement de trésorerie ; reste 50 000 et créance du client diminuée de 30 000.
+3. **Avance et avoir.** Vente 100 000, versé 120 000 (avance 20 000), retour de 30 000 gardé en avoir : D = 0, E = 30 000.
+   L'avance passe à 20 000 + 30 000 = 50 000 ; une vente à crédit de 50 000 la consomme entièrement (reste 0).
+   Cas mixte : vente 100 000 avec 80 000 versés (D = 20 000), retour de 50 000 : imputé 20 000, E = 30 000 rendus ou en avoir.
+
+### Verrous et concurrence
+
+Ordre : **vente** (ligne verrouillée) → boutique (numéro RV) → client → produits (par identifiant). Les créations et
+règlements existants prennent boutique → client → produits ; le retour ajoute seulement le verrou de la vente **en tête**.
+Il n'y a pas de cycle : un règlement (`reglerVente`) verrouille la vente avant d'écrire son mouvement de caisse, qui pose un
+verrou partagé sur la boutique par sa clé étrangère ; si le retour prenait la boutique avant la vente, l'un tiendrait la boutique
+en attendant la vente de l'autre. Une création de vente n'a pas encore de ligne `vente` : elle ne peut pas croiser un retour sur cette
+vente. Deux retours simultanés sur la même vente s'exécutent l'un après l'autre sur le verrou de la vente et relisent les
+quantités déjà retournées sous ce verrou : au plus la quantité vendue passe.
+
+La transaction du retour est en **READ COMMITTED** : en REPEATABLE READ, les lectures verrouillées des retours d'une vente
+posent des verrous de plage qui provoquaient un deadlock InnoDB entre deux retours de ventes différentes (constaté sur MariaDB).
+
+### Double envoi
+
+Le jeton de `OperationCreationService` suppose une table et une clé propres aux créations d'achats et de ventes ; le schéma du lot
+n'ajoute que deux colonnes. Le contrôle équivalent est le champ caché `retoursConnus` : nombre de retours de la vente au moment de
+l'ouverture du formulaire, comparé sous le verrou de la vente. Un second envoi du même formulaire, ou d'un formulaire ouvert
+avant le retour d'un autre compte, répond 409, n'enregistre rien et rouvre le formulaire à jour. Le bouton est aussi désactivé
+dès le premier envoi.
+
+### Vérifications
+
+```sh
+./gradlew test --tests '*RetourVenteTests'
+node --test src/test/js/retour-vente.test.cjs
+./gradlew lot2MariaDbTest retourVenteMariaDbTest avancesPartenairesMariaDbTest coutMoyenServiceMariaDbTest tableauDeBordMariaDbTest creationOperationsMariaDbTest
+```
+
+`RetourVenteTests` couvre les trois exemples ci-dessus, la vente payée par avance, la vente sans client, les quantités
+(dépassement, retours successifs, retours simultanés), le stock et le coût figé avec le rejeu de l'historique, le service,
+le tableau de bord et l'état par vendeur à la date du retour, les droits, l'isolation entre deux boutiques, les champs inconnus,
+les numéros consécutifs et le double envoi. `RetourVenteMariaDbTest` rejoue la concurrence avec les verrous InnoDB.
+
+### Limites connues
+
+Les relevés cumulés de client affichent encore le « Montant total » d'origine par facture ; le retour y apparaît par le reste
+et l'avance. Un mois où ventes et retours s'annulent exactement compte comme « vide » dans le graphique. Les retours d'achat et
+les avoirs fournisseur restent à faire.
