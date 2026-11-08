@@ -10,6 +10,8 @@ import org.example.stock.form.RetourAchatForm;
 import org.example.stock.form.RetourVenteForm;
 import org.example.stock.model.*;
 import org.example.stock.service.AchatService;
+import org.example.stock.service.AnnulationReglementService;
+import org.example.stock.service.ReglementVenteObsoleteException;
 import org.example.stock.service.OperationCreationService;
 import org.example.stock.service.RetourAchatService;
 import org.example.stock.service.RetourVenteService;
@@ -58,6 +60,7 @@ public class OrdreVerrousMariaDbTest {
     private final AchatService achatService;
     private final VenteService venteService;
     private final SoldeDepartService soldeDepartService;
+    private final AnnulationReglementService annulationService;
     private final TransactionTemplate transaction;
     private final JdbcTemplate jdbc;
     private EntityManager em;
@@ -102,6 +105,7 @@ public class OrdreVerrousMariaDbTest {
         achatService = contexte.getBean(AchatService.class);
         venteService = contexte.getBean(VenteService.class);
         soldeDepartService = contexte.getBean(SoldeDepartService.class);
+        annulationService = contexte.getBean(AnnulationReglementService.class);
         transaction = new TransactionTemplate(contexte.getBean(PlatformTransactionManager.class));
         transaction.setTimeout(30);
         jdbc = contexte.getBean(JdbcTemplate.class);
@@ -213,6 +217,35 @@ public class OrdreVerrousMariaDbTest {
                     () -> retournerAchat(a, achatA, 1, ModeRemboursement.AVOIR), () -> retournerAchat(b, achatB, 1, ModeRemboursement.ARGENT),
                     () -> retournerVente(b, venteB, 1, ModeRemboursement.AVOIR), () -> achat(a, a.fournisseurAvanceId, 1, "0"));
         }
+        // Fonds de départ de la caisse : les scénarios précédents l'ont vidée, et annuler un encaissement exige le solde du compte.
+        jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte) SELECT boutique_id,NOW(6),100000000,'OUVERTURE','Fonds de test','SOLDE_INITIAL','CAISSE' FROM utilisateur WHERE email=?", a.email);
+        // 7. Annulation d'un règlement + nouveau règlement de la même vente (le second peut légitimement être périmé si l'annulation passe d'abord).
+        for (int tour = 0; tour < TOURS; tour++) {
+            connecter(a);
+            vente(a, a.clientId, 8, "40000"); // 40 000 encaissés : la caisse peut rendre le règlement annulé
+            long credit = dernier("vente");
+            reglerVente(a, credit, "10000", new BigDecimal("40000"));
+            long reglement = decimal("SELECT MAX(id) FROM mouvement_caisse WHERE source='REGLEMENT_VENTE' AND vente_id=" + credit).longValue();
+            simultanesSansErreur("annulation de règlement+nouveau règlement #" + tour,
+                    () -> annulerReglementVente(a, credit, reglement, false),
+                    () -> { try { reglerVente(a, credit, "5000", new BigDecimal("50000")); } catch (ReglementVenteObsoleteException perime) { /* annulation passée avant */ } });
+            BigDecimal verse = decimal("SELECT montant_verse FROM vente WHERE id=" + credit);
+            exiger(verse.compareTo(new BigDecimal("45000")) == 0 || verse.compareTo(new BigDecimal("40000")) == 0, "Montant versé cohérent après annulation : " + verse);
+            exiger(decimal("SELECT COUNT(*) FROM mouvement_caisse WHERE source='ANNULATION' AND annulation_de_id=" + reglement).compareTo(BigDecimal.ONE) == 0, "Une seule annulation");
+        }
+        // 8. Annulation d'un règlement + retour de la même facture : le retour postérieur interdit l'annulation, sinon l'annulation passe.
+        for (int tour = 0; tour < TOURS; tour++) {
+            connecter(a);
+            vente(a, a.clientId, 8, "40000"); // 40 000 encaissés : la caisse peut rendre le règlement annulé
+            long credit = dernier("vente");
+            reglerVente(a, credit, "10000", new BigDecimal("40000"));
+            long reglement = decimal("SELECT MAX(id) FROM mouvement_caisse WHERE source='REGLEMENT_VENTE' AND vente_id=" + credit).longValue();
+            simultanesSansErreur("annulation de règlement+retour #" + tour,
+                    () -> annulerReglementVente(a, credit, reglement, true), () -> retournerVente(a, credit, 1, null));
+            boolean annule = decimal("SELECT COUNT(*) FROM mouvement_caisse WHERE annulation_de_id=" + reglement).signum() > 0;
+            exiger(decimal("SELECT montant_verse FROM vente WHERE id=" + credit).compareTo(new BigDecimal(annule ? "40000" : "50000")) == 0, "Montant versé cohérent (annulé=" + annule + ")");
+            exiger(decimal("SELECT montant_retours FROM vente WHERE id=" + credit).compareTo(new BigDecimal("12000")) == 0, "Retour enregistré");
+        }
         // Invariants finaux : numéros distincts par boutique, aucune avance utilisée en excès.
         for (String table : List.of("achat", "vente", "retour")) {
             exiger(decimal("SELECT COUNT(*) - COUNT(DISTINCT boutique_id, numero) FROM " + table).signum() == 0, "Numéros distincts par boutique : " + table);
@@ -271,6 +304,13 @@ public class OrdreVerrousMariaDbTest {
     private void reglerSoldeFournisseur(Boutiquier t, long fournisseurId, String montant, BigDecimal attendu) {
         connecter(t);
         try { soldeDepartService.reglerFournisseur(fournisseurId, new BigDecimal(montant), attendu, CompteTresorerie.CAISSE, null); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void annulerReglementVente(Boutiquier t, long venteId, long mouvementId, boolean refusAdmis) {
+        connecter(t);
+        try { annulationService.annulerReglementVente(venteId, mouvementId, "Erreur de saisie"); }
+        catch (IllegalArgumentException refus) { if (!refusAdmis) throw refus; }
         finally { SecurityContextHolder.clearContext(); }
     }
 
