@@ -1,5 +1,6 @@
 package org.example.stock.controller;
 
+import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
 import org.example.stock.form.ReglementVenteForm;
@@ -24,6 +25,7 @@ import org.example.stock.service.DevisService;
 import org.example.stock.model.Devis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -33,6 +35,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/ventes")
@@ -49,13 +53,45 @@ public class VenteController {
     @Autowired private DevisService devisService;
 
     @GetMapping
-    public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
+    public String listeVentes(@RequestParam(required = false) String filtre,
+                              @RequestParam(name = "vendeur", required = false) List<String> vendeurDemande,
+                              Authentication authentication, Model model) {
         boolean echues = "echues".equals(filtre);
-        model.addAttribute("ventes", echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes());
+        // Le filtre par vendeur est réservé au gérant ; pour un caissier le paramètre est ignoré et la liste reste la même.
+        Long vendeurId = null;
+        if (estGerant(authentication)) {
+            List<Utilisateur> vendeurs = venteService.listerVendeursPossibles();
+            model.addAttribute("vendeursFiltre", vendeurs);
+            vendeurId = vendeurChoisi(vendeurDemande, vendeurs, model);
+        }
+        model.addAttribute("vendeurChoisi", vendeurId);
+        model.addAttribute("ventes", vendeurId == null
+                ? (echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes())
+                : (echues ? venteService.listerEchuesNonSoldeesDuVendeur(vendeurId) : venteService.listerDuVendeur(vendeurId)));
         model.addAttribute("filtreEchues", echues);
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/liste");
         return "dashboard";
+    }
+
+    private static boolean estGerant(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(autorite -> "ROLE_ADMIN".equals(autorite.getAuthority()));
+    }
+
+    /**
+     * Un seul identifiant, numérique, qui désigne un compte de la boutique. Tout le reste (texte, valeurs multiples,
+     * compte d'une autre boutique ou inexistant) est ignoré avec un avertissement identique : rien ne révèle l'existence
+     * d'un compte d'une autre boutique.
+     */
+    private static Long vendeurChoisi(List<String> demande, List<Utilisateur> vendeurs, Model model) {
+        if (demande == null || (demande.size() == 1 && demande.getFirst().isBlank())) return null;
+        if (demande.size() == 1 && demande.getFirst().strip().matches("\\d{1,18}")) {
+            long id = Long.parseLong(demande.getFirst().strip());
+            if (vendeurs.stream().anyMatch(vendeur -> vendeur.getId() == id)) return id;
+        }
+        model.addAttribute("avertissementVendeur", "Ce vendeur n'existe pas dans votre boutique : toutes les ventes sont affichées.");
+        return null;
     }
 
     @GetMapping("/nouveau")

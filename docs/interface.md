@@ -38,6 +38,8 @@ une présentation adaptée aux ordinateurs et aux téléphones.
   individuelles, relevés cumulés et mise en page A4.
 - `templates/caisse/journal.html`, `static/css/caisse.css` et `static/js/caisse.js` :
   soldes, mouvements, filtres et impression du journal.
+- `templates/etats/ventes-par-vendeur.html` et `static/css/etats.css` : état imprimable
+  des ventes par vendeur (voir [le vendeur des ventes](lot-2.md#vendeur-des-ventes)).
 - `templates/categories/*.html`, `static/css/categories.css` et
   `static/js/categories.js` : répertoire des catégories, formulaires et suppression.
 - `static/css/formulaires.css` : présentation commune aux neuf formulaires de

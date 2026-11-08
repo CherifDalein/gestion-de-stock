@@ -86,4 +86,22 @@ public interface TableauDeBordRepository extends Repository<Vente, Long> {
             + "AND p.quantite IS NOT NULL AND (p.quantite <= 0 OR p.quantite <= COALESCE(p.seuilAlerte, :seuilParDefaut))")
     long nombreProduitsASurveiller(@Param("boutiqueId") Long boutiqueId, @Param("nature") NatureProduit nature,
                                    @Param("seuilParDefaut") Long seuilParDefaut);
+
+    /** Ventes par vendeur : [identifiant du vendeur (vide si non renseigné), nombre de ventes, Σ montant total]. */
+    @Query("SELECT v.vendeur.id, COUNT(v), COALESCE(SUM(v.montantTotal), 0) FROM Vente v WHERE v.boutique.id = :boutiqueId "
+            + "AND v.dateVente >= :debut AND v.dateVente < :fin GROUP BY v.vendeur.id")
+    List<Object[]> ventesParVendeur(@Param("boutiqueId") Long boutiqueId,
+                                    @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /**
+     * Bénéfice brut par vendeur au coût figé : [identifiant du vendeur, Σ marge, lignes sans coût connu].
+     * Un coût absent compte pour 0, comme dans le tableau de bord.
+     */
+    @Query("SELECT v.vendeur.id, "
+            + "COALESCE(SUM((COALESCE(d.prixUnitaire, 0) - COALESCE(d.coutUnitaire, 0)) * COALESCE(d.quantite, 0)), 0), "
+            + "COUNT(CASE WHEN d.coutUnitaire IS NULL THEN 1 END) "
+            + "FROM DetailVente d JOIN d.vente v WHERE v.boutique.id = :boutiqueId "
+            + "AND v.dateVente >= :debut AND v.dateVente < :fin GROUP BY v.vendeur.id")
+    List<Object[]> beneficeBrutParVendeur(@Param("boutiqueId") Long boutiqueId,
+                                          @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 }

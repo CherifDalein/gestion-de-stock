@@ -1,6 +1,7 @@
 package org.example.stock.repository;
 
 import org.example.stock.model.Achat;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 public interface AchatRepository extends JpaRepository<Achat, Long> {
     Optional<Achat> findByIdAndBoutiqueId(Long id, Long boutiqueId);
+    @EntityGraph(attributePaths = "utilisateur")
     List<Achat> findByBoutiqueIdOrderByDateAchatDesc(Long boutiqueId);
     List<Achat> findByDateAchatAfterAndBoutiqueId(LocalDateTime date, Long boutiqueId);
     List<Achat> findByFournisseurIdAndBoutiqueIdOrderByDateAchatDesc(Long fournisseurId, Long boutiqueId);

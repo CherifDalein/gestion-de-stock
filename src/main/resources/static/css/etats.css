@@ -1,0 +1,37 @@
+/* États imprimables (ventes par vendeur) : chargé par la page de l'état seulement. */
+#stockEtat { max-width: 1100px; margin-inline: auto; padding: 0; min-width: 0; }
+#stockEtat .etat-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+#stockEtat .etat-header h1 { margin-bottom: 0; }
+#stockEtat .etat-periode { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 18px; }
+#stockEtat .etat-impression { display: none; margin: 0 0 4mm; font-size: .8rem; }
+#stockEtat .etat-table { min-width: 640px; margin-bottom: 0; font-variant-numeric: tabular-nums; }
+#stockEtat .etat-table > thead > tr > th { white-space: nowrap; }
+#stockEtat .etat-table > tfoot > tr > * { border-top: 2px solid var(--app-border); font-weight: 700; }
+#stockEtat .etat-nom { font-weight: 650; overflow-wrap: anywhere; }
+#stockEtat .etat-table-wrap:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
+@media (max-width: 767px) {
+    #stockEtat .etat-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+}
+@media print {
+    @page { size: A4 portrait; margin: 13mm 11mm; }
+    /* styles.css masque toute l'application pour l'impression d'une fenêtre modale : on rétablit l'état. */
+    body.stock-app, body.stock-app #layoutSidenav, body.stock-app #layoutSidenav_content, body.stock-app #mainContent,
+    #stockEtat, #stockEtat * { visibility: visible !important; }
+    body.stock-app { background: #fff !important; color: #152c25; margin: 0 !important; font-size: 9pt; line-height: 1.35; }
+    body.stock-app :is(.app-topbar, .app-skip-link, #layoutSidenav_nav, .app-mobile-backdrop, .app-footer) { display: none !important; }
+    body.stock-app #layoutSidenav { display: block !important; }
+    body.stock-app #layoutSidenav #layoutSidenav_content, body.stock-app #mainContent { display: block !important; position: static !important; margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 0 !important; overflow: visible !important; transform: none !important; }
+    body.stock-app #layoutSidenav #layoutSidenav_content::before { display: none !important; }
+    #stockEtat { max-width: none; margin: 0; padding: 0; }
+    #stockEtat :is(.etat-actions, .etat-periode, .no-print, .alert) { display: none !important; }
+    #stockEtat .etat-header { display: block; margin-bottom: 4mm; }
+    #stockEtat .etat-header h1 { font-size: 18pt; }
+    #stockEtat .etat-impression { display: block; }
+    #stockEtat .card { border: 0; box-shadow: none; }
+    #stockEtat .card-body { padding: 0; }
+    #stockEtat .etat-table-wrap { overflow: visible !important; border: 0; }
+    #stockEtat .etat-table { width: 100%; min-width: 0; font-size: 8.5pt; border-collapse: collapse; }
+    #stockEtat .etat-table thead { display: table-header-group; }
+    #stockEtat .etat-table tr { break-inside: avoid; page-break-inside: avoid; }
+    #stockEtat .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding: 2mm 1.5mm; border-bottom: 1px solid #dfe8e3; background: transparent; box-shadow: none; }
+}

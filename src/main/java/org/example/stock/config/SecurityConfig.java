@@ -35,6 +35,7 @@ public class SecurityConfig {
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/boutique/**", "/utilisateurs", "/utilisateurs/**", "/register", "/categories/**", "/produits/**", "/fournisseurs/**",
                                 "/achats/**", "/caisse/**", "/factures/achat/**", "/factures/fournisseur/**").hasRole("ADMIN")
+                        .requestMatchers("/etats", "/etats/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )
                 .formLogin(form -> form
