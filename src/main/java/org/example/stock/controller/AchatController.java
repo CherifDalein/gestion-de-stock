@@ -213,7 +213,9 @@ public class AchatController {
 
     private void preparerReglement(Achat achat, Model model) {
         model.addAttribute("achatReglement", achat);
-        model.addAttribute("reglements", caisseService.listerReglementsAchat(achat.getId()));
+        var reglements = caisseService.listerReglementsAchat(achat.getId());
+        model.addAttribute("reglements", reglements);
+        model.addAttribute("annulations", caisseService.annulationsDe(reglements));
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "achats/regler");
     }

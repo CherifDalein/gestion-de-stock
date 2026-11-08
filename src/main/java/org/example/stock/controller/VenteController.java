@@ -222,7 +222,9 @@ public class VenteController {
 
     private void preparerReglement(Vente vente, Model model) {
         model.addAttribute("venteReglement", vente);
-        model.addAttribute("reglements", caisseService.listerReglementsVente(vente.getId()));
+        var reglements = caisseService.listerReglementsVente(vente.getId());
+        model.addAttribute("reglements", reglements);
+        model.addAttribute("annulations", caisseService.annulationsDe(reglements));
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/regler");
     }

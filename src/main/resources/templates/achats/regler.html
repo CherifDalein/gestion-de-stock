@@ -69,14 +69,18 @@
                                 <th scope="col" class="text-end">Montant payé</th>
                                 <th scope="col">Compte débité</th>
                                 <th scope="col">Enregistré par</th>
+                                <th scope="col" sec:authorize="hasRole('ADMIN')"><span class="visually-hidden">Annulation</span></th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr th:each="r : ${reglements}">
-                                <td th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                                <td><span th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                                    <th:block th:replace="~{fragments/annulation-reglement :: mention(${r}, ${annulations.get(r.id)})}"></th:block></td>
                                 <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
                                 <td class="text-nowrap" th:text="${r.compte.libelle}"></td>
                                 <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
+                                <td class="text-end" sec:authorize="hasRole('ADMIN')">
+                                    <th:block th:replace="~{fragments/annulation-reglement :: bouton(${r}, ${annulations.get(r.id)}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/annuler/' + r.id})}"></th:block></td>
                             </tr>
                             </tbody>
                         </table>

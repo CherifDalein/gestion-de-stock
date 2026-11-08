@@ -373,7 +373,7 @@ class ReglementVenteTests {
             invocation.callRealMethod();
             caisse.flush();
             throw new IllegalStateException("Erreur de caisse simulée");
-        }).when(cible).enregistrerEntreeVente(any(BigDecimal.class), anyString(), any(Vente.class), any(Utilisateur.class), any(CompteTresorerie.class));
+        }).when(cible).enregistrerEntreeReglementVente(any(BigDecimal.class), anyString(), any(Vente.class), any(Utilisateur.class), any(CompteTresorerie.class));
         assertThatThrownBy(() -> venteService.reglerVente(vente.getId(), new BigDecimal("10000"), new BigDecimal("50000")))
                 .hasMessage("Erreur de caisse simulée");
         verifierInitial();

@@ -112,7 +112,7 @@ public class SoldeDepartService {
             BigDecimal actuel = Montants.ouZero(soldeActuel);
             boolean change = signe.compareTo(actuel) != 0 || !Objects.equals(echeance, echeanceActuelle);
             // Bloqué après usage : un règlement du solde ou une avance consommée par une facture (quelle qu'en soit l'origine) le figent.
-            if (change && (soldes.reglementsVerrouilles(type, id).signum() > 0 || soldes.avanceUtiliseeVerrouillee(type, id))) {
+            if (change && (soldes.reglementsVerrouilles(type, id).brut().signum() > 0 || soldes.avanceUtiliseeVerrouillee(type, id))) {
                 throw new IllegalArgumentException("Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. "
                         + "Une correction se fera par un ajustement de solde.");
             }
@@ -136,7 +136,7 @@ public class SoldeDepartService {
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Client client = verrous.verrouillerClient(clientId);
-        BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.CLIENT, clientId);
+        BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.CLIENT, clientId).net();
         BigDecimal reste = reste(Montants.ouZero(client.getSoldeInitial()).max(BigDecimal.ZERO), regle);
         controlerMontant(montant, reglementAttendu, regle, reste);
         if (nouvelleEcheance != null && reste.subtract(montant).signum() > 0) {
@@ -153,7 +153,7 @@ public class SoldeDepartService {
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(fournisseurId);
-        BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.FOURNISSEUR, fournisseurId);
+        BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.FOURNISSEUR, fournisseurId).net();
         BigDecimal reste = reste(Montants.ouZero(fournisseur.getSoldeInitial()).negate().max(BigDecimal.ZERO), regle);
         controlerMontant(montant, reglementAttendu, regle, reste);
         if (nouvelleEcheance != null && reste.subtract(montant).signum() > 0) {

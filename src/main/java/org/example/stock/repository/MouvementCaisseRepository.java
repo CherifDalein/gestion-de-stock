@@ -1,6 +1,7 @@
 package org.example.stock.repository;
 
 import org.example.stock.model.MouvementCaisse;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,13 +38,33 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.montant < 0 AND (m.source IS NULL OR m.source <> 'TRANSFERT') AND m.boutique.id = :boutiqueId")
     BigDecimal calculerSortiesDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
 
+    @EntityGraph(attributePaths = "annulationDe")
     List<MouvementCaisse> findByBoutiqueIdOrderByDateMouvementDesc(Long boutiqueId);
     List<MouvementCaisse> findBySourceAndBoutiqueId(String source, Long boutiqueId);
+    @EntityGraph(attributePaths = "annulationDe")
     List<MouvementCaisse> findByAchatIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long achatId, Long boutiqueId);
+    @EntityGraph(attributePaths = "annulationDe")
     List<MouvementCaisse> findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long venteId, Long boutiqueId);
     List<MouvementCaisse> findByClientIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long clientId, String source, Long boutiqueId);
     List<MouvementCaisse> findByFournisseurIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long fournisseurId, String source, Long boutiqueId);
+    @EntityGraph(attributePaths = "annulationDe")
+    List<MouvementCaisse> findByClientIdAndSourceInAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long clientId, java.util.Collection<String> sources, Long boutiqueId);
+    @EntityGraph(attributePaths = "annulationDe")
+    List<MouvementCaisse> findByFournisseurIdAndSourceInAndBoutiqueIdOrderByDateMouvementDescIdDesc(Long fournisseurId, java.util.Collection<String> sources, Long boutiqueId);
+    @EntityGraph(attributePaths = "annulationDe")
     List<MouvementCaisse> findByDateMouvementGreaterThanEqualAndBoutiqueIdOrderByDateMouvementDesc(LocalDateTime date, Long boutiqueId);
+
+    /** Annulations (avec leur auteur) des mouvements donnés, dans la boutique : au plus une par mouvement. */
+    @Query("SELECT a FROM MouvementCaisse a LEFT JOIN FETCH a.utilisateur WHERE a.boutique.id = :boutiqueId AND a.annulationDe.id IN :ids")
+    List<MouvementCaisse> findAnnulationsDe(@Param("boutiqueId") Long boutiqueId, @Param("ids") java.util.Collection<Long> ids);
+
+    /** Toutes les annulations de la boutique (journal de caisse) : une requête, quel que soit le nombre de mouvements. */
+    @Query("SELECT a FROM MouvementCaisse a LEFT JOIN FETCH a.utilisateur WHERE a.boutique.id = :boutiqueId AND a.annulationDe IS NOT NULL")
+    List<MouvementCaisse> findAnnulationsDeLaBoutique(@Param("boutiqueId") Long boutiqueId);
+
+    boolean existsByAnnulationDeId(Long id);
+
+    java.util.Optional<MouvementCaisse> findByIdAndBoutiqueId(Long id, Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m")
     BigDecimal calculerSoldeTotal();

@@ -78,6 +78,7 @@ public class CaisseController {
         LocalDate aujourdHui = LocalDate.now();
 
         model.addAttribute("mouvements", caisseService.listerTous());
+        model.addAttribute("annulations", caisseService.annulationsDeLaBoutique());
         model.addAttribute("mouvementsDuJour", caisseService.getMouvementsDuJour(aujourdHui));
         model.addAttribute("soldeTotal", caisseService.getSoldeActuel());
         model.addAttribute("soldeOuverture", caisseService.getSoldeOuverture(aujourdHui));

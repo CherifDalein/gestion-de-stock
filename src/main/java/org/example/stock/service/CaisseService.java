@@ -8,6 +8,7 @@ import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Retour;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
+import org.example.stock.model.SourceMouvement;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.VenteRepository;
@@ -183,27 +184,62 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, "VENTE", utilisateur, vente, null, compte);
+        enregistrerEntree(montant, motif, SourceMouvement.VENTE, utilisateur, vente, null, compte);
+    }
+
+    /**
+     * Entrée d'un règlement ultérieur d'une vente (page de règlement) : source {@code REGLEMENT_VENTE}, distincte de
+     * {@code VENTE} (paiement saisi à la création) pour que seul le règlement ultérieur soit annulable.
+     */
+    @Transactional
+    public void enregistrerEntreeReglementVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerEntree(montant, motif, SourceMouvement.REGLEMENT_VENTE, utilisateur, vente, null, compte);
     }
 
     /** Entrée d'un règlement du solde de départ d'un client : mouvement de trésorerie rattaché au client, sans vente. */
     @Transactional
     public void enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, "SOLDE_CLIENT", utilisateur, null, client, compte);
+        enregistrerEntree(montant, motif, SourceMouvement.SOLDE_CLIENT, utilisateur, null, client, compte);
     }
 
     /** Sortie d'un règlement du solde de départ d'un fournisseur : mouvement de trésorerie rattaché au fournisseur, sans achat. */
     @Transactional
     public void enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, "SOLDE_FOURNISSEUR", utilisateur, null, fournisseur, compte);
+        enregistrerSortie(montant, motif, SourceMouvement.SOLDE_FOURNISSEUR, utilisateur, null, fournisseur, compte);
     }
 
+    /** Règlements du solde de départ d'un client et leurs annulations, du plus récent au plus ancien. */
     public List<MouvementCaisse> listerReglementsSoldeClient(Long clientId) {
-        return mouvementRepo.findByClientIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(clientId, "SOLDE_CLIENT", boutiqueService.idBoutiqueCourante());
+        return mouvementRepo.findByClientIdAndSourceInAndBoutiqueIdOrderByDateMouvementDescIdDesc(clientId,
+                List.of(SourceMouvement.SOLDE_CLIENT, SourceMouvement.ANNULATION), boutiqueService.idBoutiqueCourante());
     }
 
     public List<MouvementCaisse> listerReglementsSoldeFournisseur(Long fournisseurId) {
-        return mouvementRepo.findByFournisseurIdAndSourceAndBoutiqueIdOrderByDateMouvementDescIdDesc(fournisseurId, "SOLDE_FOURNISSEUR", boutiqueService.idBoutiqueCourante());
+        return mouvementRepo.findByFournisseurIdAndSourceInAndBoutiqueIdOrderByDateMouvementDescIdDesc(fournisseurId,
+                List.of(SourceMouvement.SOLDE_FOURNISSEUR, SourceMouvement.ANNULATION), boutiqueService.idBoutiqueCourante());
+    }
+
+    /**
+     * Annulations des mouvements donnés, par identifiant du mouvement annulé : une seule requête pour une liste entière
+     * (journal, historique d'un règlement). Un mouvement sans annulation n'a pas d'entrée.
+     */
+    /** Annulations de toute la boutique, par identifiant du mouvement annulé (journal de caisse). */
+    public Map<Long, MouvementCaisse> annulationsDeLaBoutique() {
+        Map<Long, MouvementCaisse> resultat = new java.util.HashMap<>();
+        for (MouvementCaisse annulation : mouvementRepo.findAnnulationsDeLaBoutique(boutiqueService.idBoutiqueCourante())) {
+            resultat.put(annulation.getAnnulationDe().getId(), annulation);
+        }
+        return resultat;
+    }
+
+    public Map<Long, MouvementCaisse> annulationsDe(List<MouvementCaisse> mouvements) {
+        List<Long> ids = mouvements.stream().map(MouvementCaisse::getId).filter(Objects::nonNull).toList();
+        Map<Long, MouvementCaisse> resultat = new java.util.HashMap<>();
+        if (ids.isEmpty()) return resultat;
+        for (MouvementCaisse annulation : mouvementRepo.findAnnulationsDe(boutiqueService.idBoutiqueCourante(), ids)) {
+            resultat.put(annulation.getAnnulationDe().getId(), annulation);
+        }
+        return resultat;
     }
 
     public List<MouvementCaisse> listerReglementsVente(Long venteId) {
@@ -276,7 +312,13 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, "ACHAT", utilisateur, achat, null, compte);
+        enregistrerSortie(montant, motif, SourceMouvement.ACHAT, utilisateur, achat, null, compte);
+    }
+
+    /** Sortie d'un règlement ultérieur d'un achat : source {@code REGLEMENT_ACHAT}, distincte du paiement saisi à la création. */
+    @Transactional
+    public void enregistrerSortieReglementAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
+        enregistrerSortie(montant, motif, SourceMouvement.REGLEMENT_ACHAT, utilisateur, achat, null, compte);
     }
 
     public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
@@ -337,6 +379,53 @@ public class CaisseService {
         mouvement.setRetour(retour);
 
         mouvementRepo.save(mouvement);
+    }
+
+    /**
+     * Annule un mouvement par un mouvement inverse : même compte, montant opposé, source {@code ANNULATION}, lié à l'origine
+     * par {@code annulation_de_id}, avec le motif saisi par le gérant. Le mouvement d'origine n'est ni modifié ni supprimé.
+     * La contrainte d'unicité de {@code annulation_de_id} refuse une seconde annulation du même mouvement.
+     *
+     * <p>L'annulation d'un encaissement est une sortie : elle suit la règle des dépenses et des transferts (le compte doit
+     * disposer de la somme, même message). L'annulation d'un paiement est une entrée, sans contrôle. À appeler dans la
+     * transaction de l'annulation, après les verrous de la boutique, du document et du partenaire ; les comptes sont
+     * verrouillés ici, en dernier. Les règles propres à chaque règlement sont contrôlées par
+     * {@link AnnulationReglementService}.</p>
+     */
+    @Transactional
+    public MouvementCaisse enregistrerAnnulation(MouvementCaisse origine, String motif, Utilisateur acteur) {
+        verrous.verrouillerBoutiqueCourante();
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        if (origine == null || origine.getId() == null || origine.getBoutique() == null || !Objects.equals(origine.getBoutique().getId(), boutiqueId)) {
+            throw new IllegalArgumentException("Mouvement introuvable");
+        }
+        BigDecimal montant = Montants.valider(origine.getMontant(), "Le montant de caisse");
+        if (montant.signum() == 0) throw new IllegalArgumentException("Un mouvement sans montant ne s'annule pas.");
+        acteur = utilisateurDeLaBoutique(acteur);
+        CompteTresorerie compte = origine.getCompte();
+        verrouillerComptes(boutiqueId, compte);
+        if (montant.signum() > 0) {
+            // L'annulation d'un encaissement sort l'argent du compte : même règle et même message qu'une dépense.
+            BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compte));
+            if (solde.compareTo(montant) < 0) {
+                throw new IllegalArgumentException("Solde insuffisant sur le compte " + compte.getLibelle() + ".");
+            }
+        }
+        MouvementCaisse annulation = new MouvementCaisse();
+        annulation.setBoutique(boutiqueService.boutiqueCourante());
+        annulation.setCompte(compte);
+        annulation.setMontant(montant.negate());
+        annulation.setType(montant.signum() > 0 ? "SORTIE" : "ENTREE");
+        annulation.setSource(SourceMouvement.ANNULATION);
+        annulation.setMotif(motif);
+        annulation.setDateMouvement(LocalDateTime.now());
+        annulation.setUtilisateur(acteur);
+        annulation.setVente(origine.getVente());
+        annulation.setAchat(origine.getAchat());
+        annulation.setClient(origine.getClient());
+        annulation.setFournisseur(origine.getFournisseur());
+        annulation.setAnnulationDe(origine);
+        return mouvementRepo.saveAndFlush(annulation);
     }
 
     /** Retourne true pour la répétition exacte d'un formulaire déjà traité. */

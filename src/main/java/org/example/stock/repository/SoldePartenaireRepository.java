@@ -49,11 +49,28 @@ public class SoldePartenaireRepository {
         }
     }
 
+    /**
+     * Règlements du solde de départ d'un partenaire, en valeur absolue : {@code net} = règlements − leurs annulations (ce qui
+     * reste réglé, base du reste à régler) ; {@code brut} = Σ des règlements enregistrés, annulés ou non (un solde de
+     * départ qui a servi une fois reste figé, même après annulation).
+     */
+    public record Reglements(BigDecimal net, BigDecimal brut) {
+        public static final Reglements AUCUN = new Reglements(BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
     /** Total et part dont l'échéance est strictement antérieure au jour donné. */
     public record Totaux(BigDecimal total, BigDecimal enRetard) {}
 
     /** Montant en retard d'un partenaire de la boutique et plus ancienne échéance dépassée. */
     public record RetardPartenaire(Long id, String nom, BigDecimal montant, LocalDate plusAncienneEcheance) {}
+
+    /**
+     * Un règlement du solde de départ compte pour son montant ; son annulation (source {@code ANNULATION}, rattachée au même
+     * partenaire par la même colonne) le retranche. Les annulations des règlements de factures ne portent jamais cette colonne.
+     */
+    private static final String NET_REGLEMENT = "CASE WHEN source = 'ANNULATION' THEN -ABS(montant) ELSE ABS(montant) END";
+    private static final String NET_REGLEMENT_M = "CASE WHEN m.source = 'ANNULATION' THEN -ABS(m.montant) ELSE ABS(m.montant) END";
+    private static final String BRUT_REGLEMENT = "CASE WHEN source = 'ANNULATION' THEN 0 ELSE ABS(montant) END";
 
     /** Reste à payer = max(0, total effectif − versé − avance utilisée), avec total effectif = total − retours. */
     private static final String RESTE = "GREATEST(COALESCE(montant_total,0) - COALESCE(montant_retours,0) - COALESCE(montant_verse,0) - COALESCE(avance_utilisee,0), 0)";
@@ -100,24 +117,25 @@ public class SoldePartenaireRepository {
         return resultat;
     }
 
-    /** Σ des règlements du solde de départ, en valeur absolue, par partenaire de la boutique. */
-    public Map<Long, BigDecimal> reglementsSoldeDepart(Partenaire type, Long boutiqueId) {
+    /** Règlements du solde de départ (nets de leurs annulations, et bruts), par partenaire de la boutique. */
+    public Map<Long, Reglements> reglementsSoldeDepart(Partenaire type, Long boutiqueId) {
         return lireReglements(type, boutiqueId, null);
     }
 
-    public BigDecimal reglementsSoldeDepart(Partenaire type, Long boutiqueId, Long partenaireId) {
-        return lireReglements(type, boutiqueId, partenaireId).getOrDefault(partenaireId, BigDecimal.ZERO);
+    public Reglements reglementsSoldeDepart(Partenaire type, Long boutiqueId, Long partenaireId) {
+        return lireReglements(type, boutiqueId, partenaireId).getOrDefault(partenaireId, Reglements.AUCUN);
     }
 
-    private Map<Long, BigDecimal> lireReglements(Partenaire type, Long boutiqueId, Long partenaireId) {
-        var requete = entityManager.createNativeQuery("SELECT " + type.colonne + ", COALESCE(SUM(ABS(montant)),0) FROM mouvement_caisse WHERE boutique_id = :boutique AND source = :source AND "
+    private Map<Long, Reglements> lireReglements(Partenaire type, Long boutiqueId, Long partenaireId) {
+        var requete = entityManager.createNativeQuery("SELECT " + type.colonne + ", COALESCE(SUM(" + NET_REGLEMENT + "),0), COALESCE(SUM(" + BRUT_REGLEMENT
+                + "),0) FROM mouvement_caisse WHERE boutique_id = :boutique AND source IN (:source, 'ANNULATION') AND "
                 + type.colonne + " IS NOT NULL" + (partenaireId == null ? "" : " AND " + type.colonne + " = :partenaire") + " GROUP BY " + type.colonne)
                 .setParameter("boutique", boutiqueId).setParameter("source", type.source);
         if (partenaireId != null) requete.setParameter("partenaire", partenaireId);
-        Map<Long, BigDecimal> resultat = new LinkedHashMap<>();
+        Map<Long, Reglements> resultat = new LinkedHashMap<>();
         for (Object ligne : requete.getResultList()) {
             Object[] colonnes = (Object[]) ligne;
-            resultat.put(((Number) colonnes[0]).longValue(), montant(colonnes[1]));
+            resultat.put(((Number) colonnes[0]).longValue(), new Reglements(montant(colonnes[1]), montant(colonnes[2])));
         }
         return resultat;
     }
@@ -155,14 +173,19 @@ public class SoldePartenaireRepository {
                 .setParameter("boutique", boutiqueId).setParameter("partenaire", partenaireId).getResultList().isEmpty();
     }
 
-    /** Lecture verrouillée des règlements du solde de départ d'un partenaire. */
-    public BigDecimal reglementsVerrouilles(Partenaire type, Long boutiqueId, Long partenaireId) {
-        List<?> lignes = entityManager.createNativeQuery("SELECT montant FROM mouvement_caisse WHERE boutique_id = :boutique AND source = :source AND "
+    /** Lecture verrouillée des règlements du solde de départ d'un partenaire et de leurs annulations. */
+    public Reglements reglementsVerrouilles(Partenaire type, Long boutiqueId, Long partenaireId) {
+        List<?> lignes = entityManager.createNativeQuery("SELECT montant, source FROM mouvement_caisse WHERE boutique_id = :boutique AND source IN (:source, 'ANNULATION') AND "
                         + type.colonne + " = :partenaire FOR UPDATE")
                 .setParameter("boutique", boutiqueId).setParameter("source", type.source).setParameter("partenaire", partenaireId).getResultList();
-        BigDecimal total = BigDecimal.ZERO;
-        for (Object ligne : lignes) total = total.add(montant(ligne).abs());
-        return total;
+        BigDecimal net = BigDecimal.ZERO, brut = BigDecimal.ZERO;
+        for (Object ligne : lignes) {
+            Object[] colonnes = (Object[]) ligne;
+            BigDecimal valeur = montant(colonnes[0]).abs();
+            if ("ANNULATION".equals(colonnes[1])) net = net.subtract(valeur);
+            else { net = net.add(valeur); brut = brut.add(valeur); }
+        }
+        return new Reglements(net, brut);
     }
 
     /** Σ des restes à payer des factures de la boutique (avec ou sans partenaire) et part en retard. */
@@ -182,8 +205,8 @@ public class SoldePartenaireRepository {
         Object[] soldes = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + du + "),0), COALESCE(SUM(CASE WHEN echeance_solde_initial < :jour THEN " + du
                         + " ELSE 0 END),0) FROM " + type.table + " WHERE boutique_id = :boutique")
                 .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).getSingleResult();
-        Object[] regles = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(ABS(m.montant)),0), COALESCE(SUM(CASE WHEN p.echeance_solde_initial < :jour THEN ABS(m.montant) ELSE 0 END),0)"
-                        + " FROM mouvement_caisse m JOIN " + type.table + " p ON p.id = m." + type.colonne + " WHERE m.boutique_id = :boutique AND m.source = :source")
+        Object[] regles = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + NET_REGLEMENT_M + "),0), COALESCE(SUM(CASE WHEN p.echeance_solde_initial < :jour THEN " + NET_REGLEMENT_M + " ELSE 0 END),0)"
+                        + " FROM mouvement_caisse m JOIN " + type.table + " p ON p.id = m." + type.colonne + " WHERE m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')")
                 .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).setParameter("source", type.source).getSingleResult();
         return new Totaux(montant(soldes[0]).subtract(montant(regles[0])), montant(soldes[1]).subtract(montant(regles[1])));
     }
@@ -206,8 +229,8 @@ public class SoldePartenaireRepository {
             noms.put(id, String.valueOf(c[1])); montants.put(id, montant(c[2])); echeances.put(id, date(c[3]));
         }
         String du = type == Partenaire.CLIENT ? "GREATEST(p.solde_initial, 0)" : "GREATEST(-p.solde_initial, 0)";
-        for (Object ligne : entityManager.createNativeQuery("SELECT p.id, p.nom, " + du + " - COALESCE(SUM(ABS(m.montant)),0), p.echeance_solde_initial FROM " + type.table
-                        + " p LEFT JOIN mouvement_caisse m ON m." + type.colonne + " = p.id AND m.boutique_id = :boutique AND m.source = :source"
+        for (Object ligne : entityManager.createNativeQuery("SELECT p.id, p.nom, " + du + " - COALESCE(SUM(" + NET_REGLEMENT_M + "),0), p.echeance_solde_initial FROM " + type.table
+                        + " p LEFT JOIN mouvement_caisse m ON m." + type.colonne + " = p.id AND m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')"
                         + " WHERE p.boutique_id = :boutique AND p.echeance_solde_initial < :jour AND " + du + " > 0"
                         + " GROUP BY p.id, p.nom, p.solde_initial, p.echeance_solde_initial")
                 .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).setParameter("source", type.source).getResultList()) {

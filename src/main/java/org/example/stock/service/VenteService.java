@@ -228,7 +228,7 @@ public class VenteService {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Vente #" + id + " - Client: "
                 + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
-        caisseService.enregistrerEntreeVente(montant, motif, vente, actuel, comptePaiement);
+        caisseService.enregistrerEntreeReglementVente(montant, motif, vente, actuel, comptePaiement);
     }
 
     /** Change seulement l'échéance d'une vente qui a encore un reste à payer. */

@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm", "retourAchatForm"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm", "retourAchatForm", "annulationReglement"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
         // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
@@ -43,6 +43,8 @@ public class FormBindingAdvice {
             case "retourAchatForm" -> new String[]{"lignes[*].detailAchatId", "lignes[*].quantite", "motif", "modeRemboursement", "comptePaiement", "retoursConnus"};
             case "reglementAchat", "reglementVente" -> new String[]{"montant", "montantVerseAttendu", "comptePaiement", "dateEcheance"};
             case "reglementSolde" -> new String[]{"montant", "reglementAttendu", "comptePaiement", "dateEcheance"};
+            // Annulation d'un règlement : seul le motif vient du navigateur ; le mouvement et son document viennent de l'adresse.
+            case "annulationReglement" -> new String[]{"motif"};
             case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference", "unite", "seuilAlerte",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
@@ -95,6 +97,9 @@ public class FormBindingAdvice {
             if (parametre.equals("confirmationSoldeDepart") && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule confirmation du solde de départ peut être envoyée");
             }
+            if (binder.getObjectName().equals("annulationReglement") && parametre.equals("motif") && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul motif peut être envoyé");
+            }
             if ((parametre.equals("numero") || parametre.equals("dateEcheance")) && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul numéro et une seule échéance peuvent être saisis");
             }
@@ -109,8 +114,8 @@ public class FormBindingAdvice {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Champ de formulaire non autorisé");
             }
         }
-        // L'id de route peut être ajouté par Spring, mais il n'est jamais accepté comme paramètre client.
-        binder.setAllowedFields(Stream.concat(Stream.of(champs), Stream.of("_csrf", "id")).toArray(String[]::new));
+        // L'id de route (et celui du mouvement d'une annulation) peut être ajouté par Spring, mais il n'est jamais accepté comme paramètre client.
+        binder.setAllowedFields(Stream.concat(Stream.of(champs), Stream.of("_csrf", "id", "mouvementId")).toArray(String[]::new));
         binder.registerCustomEditor(Categorie.class, reference(id -> {
             Categorie categorie = new Categorie(); categorie.setId(id); return categorie;
         }));

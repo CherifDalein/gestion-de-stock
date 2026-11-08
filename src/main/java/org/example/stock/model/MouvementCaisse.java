@@ -39,7 +39,7 @@ public class MouvementCaisse {
     private BigDecimal montant; // Positif pour entrée, Négatif pour sortie
     private String type; // ENTRÉE, SORTIE
     private String motif; // Ex: "Vente #45"
-    private String source; // "VENTE", "ACHAT", "DEPENSE", "AJUSTEMENT"
+    private String source; // Voir SourceMouvement : "VENTE", "REGLEMENT_VENTE", "ACHAT", "REGLEMENT_ACHAT", "SOLDE_CLIENT", "ANNULATION"…
 
     @ManyToOne
     private Utilisateur utilisateur;
@@ -67,7 +67,10 @@ public class MouvementCaisse {
     @JoinColumn(name = "retour_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_retour"))
     private Retour retour;
 
-    /** Mouvement que celui-ci annule ; au plus une annulation par mouvement (contrainte d'unicité). */
+    /**
+     * Mouvement que celui-ci annule (source {@code ANNULATION}, montant opposé, même compte, motif saisi par le gérant) ;
+     * au plus une annulation par mouvement (contrainte d'unicité). Le mouvement d'origine n'est jamais modifié.
+     */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "annulation_de_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_annulation"))
     private MouvementCaisse annulationDe;
