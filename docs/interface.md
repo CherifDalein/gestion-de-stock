@@ -1,4 +1,4 @@
-# Interface Stock Pro
+# Interface RFC-COMPTA
 
 Le thème clair avec accents verts s’applique à la navigation, au tableau de bord,
 aux tableaux et aux formulaires. La connexion et la création de comptes utilisent

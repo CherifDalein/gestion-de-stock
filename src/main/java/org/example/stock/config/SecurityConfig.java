@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, UtilisateurRepository utilisateurs) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**").permitAll()
+                        .requestMatchers("/login", "/error", "/css/**", "/js/**", "/assets/**", "/img/**", "/site.webmanifest").permitAll()
                         .requestMatchers("/mot-de-passe-oublie", "/reinitialiser-mot-de-passe").permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/accueil").permitAll()
                         .requestMatchers("/inscription", "/inscription/confirmer").permitAll()

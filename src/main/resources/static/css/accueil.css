@@ -1,5 +1,6 @@
-/* Public Stock Pro home. Local assets only; no JavaScript is required. */
+/* Public RFC-COMPTA home. Local assets only; no JavaScript is required. */
 .stock-landing {
+    --landing-navy: #0B2540;
     --landing-green: #15805d;
     --landing-green-dark: #106447;
     --landing-ink: #152c25;
@@ -34,7 +35,7 @@
 .landing-eyebrow { color: var(--landing-green-dark); font-size: .73rem; font-weight: 750; letter-spacing: .085em; line-height: 1.6; text-transform: uppercase; }
 .landing-hero-copy > .landing-eyebrow { display: flex; align-items: center; gap: 9px; margin-bottom: 24px; }
 .landing-hero-copy > .landing-eyebrow > span { width: 7px; height: 7px; border-radius: 50%; background: var(--landing-green); flex-shrink: 0; }
-.landing-hero h1 { font-size: clamp(2.8rem, 4.5vw, 4.3rem); font-weight: 720; line-height: 1.09; letter-spacing: -.06em; }
+.landing-hero h1 { color: var(--landing-navy); font-size: clamp(2.8rem, 4.5vw, 4.3rem); font-weight: 720; line-height: 1.09; letter-spacing: -.06em; }
 .landing-hero h1 em { color: var(--landing-green); font-style: normal; }
 .landing-hero-description { max-width: 465px; margin-top: 26px !important; color: var(--landing-muted); font-size: 1rem; line-height: 1.8; }
 .landing-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 23px; margin-top: 32px; }
@@ -216,3 +217,7 @@
     .landing-preview, .landing-team-note { box-shadow: none; }
     .landing-feature, .landing-trial, .landing-steps li { break-inside: avoid; }
 }
+
+.landing-brand-logo { display: block; height: 56px; width: auto; max-width: 100%; }
+.landing-footer .landing-brand-logo { height: 44px; }
+@media (max-width: 575.98px) { .landing-brand-logo { height: 44px; } }

@@ -2,7 +2,7 @@ body.stock-error { margin: 0; background: #f4f7f6; color: #152c25; font-family: 
 body.stock-error * { box-sizing: border-box; }
 body.stock-error .error-shell { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
 body.stock-error .error-brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 36px; color: #152c25; text-decoration: none; font-size: 1.15rem; font-weight: 750; }
-body.stock-error .error-brand svg { width: 42px; height: 42px; padding: 9px; background: #15805d; border-radius: 11px; fill: #fff; }
+body.stock-error .error-brand-logo { display: block; height: 60px; width: auto; max-width: 100%; }
 body.stock-error .error-card { padding: 40px; background: #fff; border: 1px solid #dfe8e3; border-radius: 18px; box-shadow: 0 6px 24px rgb(21 44 37 / 4%); }
 body.stock-error .error-code { margin: 0 0 12px; color: #106448; font-size: .8rem; font-weight: 650; }
 body.stock-error h1 { margin: 0 0 18px; font-size: clamp(1.6rem, 5vw, 2.25rem); line-height: 1.2; letter-spacing: -.04em; }

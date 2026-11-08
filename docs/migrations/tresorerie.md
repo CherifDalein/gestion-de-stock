@@ -4,7 +4,7 @@ Chaque boutique possède trois comptes de suivi : `CAISSE` (espèces),
 `ORANGE_MONEY` et `BANQUE`. Les encaissements des ventes, les paiements des
 achats et les règlements ultérieurs portent le compte choisi pour chaque
 versement. Une facture peut donc recevoir plusieurs versements sur des comptes
-différents. Ces écritures enregistrent les paiements saisis dans Stock Pro ;
+différents. Ces écritures enregistrent les paiements saisis dans RFC-COMPTA ;
 elles n'effectuent aucun virement ou paiement auprès d'un opérateur externe.
 
 Le journal montre le compte de chaque mouvement et les trois soldes séparés.

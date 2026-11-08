@@ -1,6 +1,6 @@
 # Rattachement des données existantes aux boutiques
 
-Cette migration transforme une base Stock Pro existante en conservant les identifiants, les comptes, les empreintes de mots de passe, les prix, les quantités, les paiements et les historiques. Les neuf tables racines sont rattachées à une **Boutique principale** : utilisateurs, catégories, clients, fournisseurs, produits, achats, ventes, mouvements de caisse et jetons de création. Les lignes d'achat et de vente appartiennent à la boutique de leur document ; elles ne reçoivent pas de colonne supplémentaire.
+Cette migration transforme une base RFC-COMPTA existante en conservant les identifiants, les comptes, les empreintes de mots de passe, les prix, les quantités, les paiements et les historiques. Les neuf tables racines sont rattachées à une **Boutique principale** : utilisateurs, catégories, clients, fournisseurs, produits, achats, ventes, mouvements de caisse et jetons de création. Les lignes d'achat et de vente appartiennent à la boutique de leur document ; elles ne reçoivent pas de colonne supplémentaire.
 
 ## Préparation
 
