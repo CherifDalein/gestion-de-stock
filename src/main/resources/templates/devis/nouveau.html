@@ -1,0 +1,149 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Devis</p>
+                <h1>Nouveau devis</h1>
+                <p class="app-page-subtitle">Proposez un prix à un client. Un devis ne change ni le stock ni la caisse.</p>
+            </div>
+            <a th:href="@{/devis}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des devis
+            </a>
+        </header>
+
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+        <form th:action="@{/devis/enregistrer}" th:object="${devisForm}" method="post" id="formDevis" class="operation-form">
+            <div class="operation-layout">
+            <div class="operation-workspace">
+                <section class="operation-panel" aria-labelledby="devisClientTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="devisClientTitre">Client et validité</h2>
+                            <p>Le client est facultatif. Le numéro du devis est attribué automatiquement.</p>
+                        </div>
+                    </div>
+                    <div class="operation-field">
+                        <label for="client" class="form-label">Client <span class="text-muted">(facultatif)</span></label>
+                        <select class="form-select" th:field="*{client}" id="client">
+                            <option value="">Sans client</option>
+                            <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom}"></option>
+                        </select>
+                    </div>
+                    <div class="operation-field">
+                        <label for="dateValidite" class="form-label">Valable jusqu’au</label>
+                        <input type="date" id="dateValidite" name="dateValidite" class="form-control" required aria-describedby="dateValiditeAide"
+                               th:value="${#temporals.format(devisForm.dateValidite, 'yyyy-MM-dd')}"
+                               th:min="${#temporals.format(aujourdHui, 'yyyy-MM-dd')}">
+                        <p id="dateValiditeAide" class="operation-field-help">Proposée à 30 jours. Après cette date, le devis est « Expiré » ; vous pourrez le prolonger.</p>
+                    </div>
+                    <div class="operation-field">
+                        <label for="note" class="form-label">Note <span class="text-muted">(facultative)</span></label>
+                        <input type="text" id="note" name="note" class="form-control" maxlength="255" autocomplete="off"
+                               th:value="${devisForm.note}" placeholder="Conditions, délai de livraison…">
+                    </div>
+                </section>
+
+                <section class="operation-panel" aria-labelledby="devisLignesTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="devisLignesTitre">Lignes du devis</h2>
+                            <p>Produits ou services, quantités et prix proposés. Les lignes ne se modifient plus après l’enregistrement.</p>
+                        </div>
+                        <span id="panierCompteur" class="operation-count" aria-live="polite">0 ligne</span>
+                    </div>
+
+                    <div class="operation-compose operation-compose--purchase">
+                        <div class="operation-field">
+                            <label for="selectProduit" class="form-label">Produit ou service</label>
+                            <select class="form-select" id="selectProduit">
+                                <option value="">Choisir un produit…</option>
+                                <option th:each="p : ${produits}"
+                                        th:value="${p.id}"
+                                        th:data-nom="${p.nom}"
+                                        th:data-prix="${p.prixDefinis ? p.prixVente : null}"
+                                        th:data-prix-definis="${p.prixDefinis}"
+                                        th:data-unite="${p.unite}"
+                                        th:disabled="${!p.prixDefinis}"
+                                        th:text="${p.estService() ? p.nom + ' · Service' : (p.prixDefinis ? p.nom : p.nom + ' · Prix à définir')}"></option>
+                            </select>
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputQuantite" class="form-label">Quantité</label>
+                            <input type="number" id="inputQuantite" class="form-control" value="1" min="1" step="1">
+                        </div>
+                        <div class="operation-field">
+                            <label for="inputPrix" class="form-label">Prix unitaire (GNF)</label>
+                            <input type="number" id="inputPrix" class="form-control" min="0" step="0.01" placeholder="Prix de vente proposé">
+                        </div>
+                        <div class="operation-add">
+                            <button type="button" class="btn btn-primary w-100" id="boutonAjouterLigne">
+                                <i class="fas fa-plus me-2" aria-hidden="true"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                    <p class="operation-field-help">Le prix de vente du produit est proposé ; vous pouvez le modifier pour ce devis. Les produits sans prix défini ne peuvent pas figurer dans un devis.</p>
+                    <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
+
+                    <div id="panierVide" class="operation-empty">
+                        <span class="operation-empty-icon"><i class="fas fa-file-invoice" aria-hidden="true"></i></span>
+                        <h3>Aucune ligne</h3>
+                        <p>Ajoutez un premier produit pour préparer le devis.</p>
+                    </div>
+                    <div id="panierTable" class="table-responsive operation-cart-table" hidden>
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th scope="col">Produit</th>
+                                <th scope="col" class="text-end">Prix unitaire</th>
+                                <th scope="col" class="text-end">Quantité</th>
+                                <th scope="col" class="text-end">Sous-total</th>
+                                <th scope="col" class="text-end">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody id="panierBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="operation-summary">
+                <section class="operation-panel" aria-labelledby="devisTotalTitre">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="devisTotalTitre">Total</h2>
+                            <p>Recalculé par le serveur à l’enregistrement.</p>
+                        </div>
+                    </div>
+                    <div class="operation-summary-total">
+                        <span>Total du devis</span>
+                        <div class="operation-total-value"><strong id="totalDevis">0.00</strong> <span class="operation-currency">GNF</span></div>
+                    </div>
+                    <div class="operation-note">
+                        <i class="fas fa-circle-info" aria-hidden="true"></i>
+                        <p>Un devis est une proposition de prix, pas une facture : aucun paiement n’est demandé et rien n’est déduit du stock. Vous pourrez le transformer en vente tant qu’il est en cours et valable.</p>
+                    </div>
+                </section>
+            </aside>
+            </div>
+            <div class="operation-actions">
+                <a th:href="@{/devis}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary" id="boutonCreerDevis"><i class="fas fa-check" aria-hidden="true"></i> Créer le devis</button>
+            </div>
+        </form>
+    </div>
+    <script th:src="@{/js/montants.js}"></script>
+    <script th:src="@{/js/devis.js}"></script>
+    <script th:inline="javascript">
+        // Après un refus, les lignes saisies sont reconstituées à partir de la saisie envoyée.
+        document.addEventListener('DOMContentLoaded', function() {
+            /*[# th:each="ligne : ${devisForm.lignes}"]*/
+            chargerLigneDevis(
+                /*[[${ligne.produit != null ? ligne.produit.id : null}]]*/ null,
+                /*[[${ligne.quantite}]]*/ null,
+                /*[[${ligne.prixUnitaire != null ? ligne.prixUnitaire.toPlainString() : null}]]*/ null
+            );
+            /*[/]*/
+        });
+    </script>
+</div>

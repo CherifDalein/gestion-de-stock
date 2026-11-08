@@ -172,6 +172,9 @@ public class ProduitService {
         if (possedeLigne("DetailAchat", id) || possedeLigne("DetailVente", id)) {
             throw new IllegalArgumentException("Ce produit figure dans un achat ou une vente et doit être conservé pour préserver l’historique.");
         }
+        if (possedeLigne("DetailDevis", id)) {
+            throw new IllegalArgumentException("Ce produit figure dans un devis et doit être conservé pour préserver l’historique.");
+        }
         produitRepository.delete(produit);
     }
 

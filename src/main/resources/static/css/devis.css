@@ -1,0 +1,7 @@
+/* États d'un devis sur le document imprimable. */
+body.stock-document .document-status[data-status=en-cours] { color: #106448; background: #eaf5ee; }
+body.stock-document .document-status[data-status=expire] { color: #805810; background: #fff3d9; }
+body.stock-document .document-status[data-status=transforme] { color: #106448; background: #eaf5ee; }
+body.stock-document .document-status[data-status=annule] { color: #a43a37; background: #fceceb; }
+body.stock-document .document-notice { margin: 18px 0 0; padding: 10px 14px; border: 1px solid #c9d3cc; border-radius: 6px; font-weight: 600; text-align: center; }
+body.stock-document .document-note { margin: 14px 0 0; white-space: pre-wrap; }

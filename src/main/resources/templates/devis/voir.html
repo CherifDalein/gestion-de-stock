@@ -1,0 +1,98 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation" th:with="etat=${devis.etat(aujourdHui)}">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker">Devis</p>
+                <h1>Devis <span th:text="${devis.numero}"></span></h1>
+                <p class="app-page-subtitle">Proposition de prix : ce n’est pas une facture.</p>
+            </div>
+            <a th:href="@{/devis}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i> Liste des devis
+            </a>
+        </header>
+
+        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+
+        <div class="operation-layout">
+        <div class="operation-workspace">
+            <section class="operation-panel" aria-labelledby="devisInfosTitre">
+                <div class="operation-panel-header">
+                    <div>
+                        <h2 id="devisInfosTitre">Informations</h2>
+                    </div>
+                    <span class="badge" id="devisEtat" th:text="${etat.libelle}"
+                          th:classappend="${etat.code == 'en-cours' ? 'bg-primary' : (etat.code == 'expire' ? 'bg-warning text-dark' : (etat.code == 'transforme' ? 'bg-success' : 'bg-secondary'))}"></span>
+                </div>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Numéro</dt><dd class="col-sm-8" th:text="${devis.numero}"></dd>
+                    <dt class="col-sm-4">Date du devis</dt><dd class="col-sm-8" th:text="${#temporals.format(devis.dateDevis, 'dd/MM/yyyy HH:mm')}"></dd>
+                    <dt class="col-sm-4">Valable jusqu’au</dt><dd class="col-sm-8" th:text="${#temporals.format(devis.dateValidite, 'dd/MM/yyyy')}"></dd>
+                    <dt class="col-sm-4">Client</dt><dd class="col-sm-8" th:text="${devis.client != null ? devis.client.nom : 'Sans client'}"></dd>
+                    <dt class="col-sm-4" th:if="${devis.utilisateur != null}">Établi par</dt><dd class="col-sm-8" th:if="${devis.utilisateur != null}" th:text="${devis.utilisateur.nom}"></dd>
+                    <dt class="col-sm-4" th:if="${devis.note != null}">Note</dt><dd class="col-sm-8" th:if="${devis.note != null}" th:text="${devis.note}"></dd>
+                    <dt class="col-sm-4" th:if="${devis.vente != null}">Vente</dt>
+                    <dd class="col-sm-8" th:if="${devis.vente != null}"><a id="lienVenteDevis" th:href="@{/factures/vente/{id}(id=${devis.vente.id})}"
+                        th:text="${'Voir la vente ' + (devis.vente.numero ?: '#' + devis.vente.id)}"></a></dd>
+                </dl>
+            </section>
+
+            <section class="operation-panel" aria-labelledby="devisLignesTitre">
+                <div class="operation-panel-header"><div><h2 id="devisLignesTitre">Lignes</h2></div></div>
+                <div class="table-responsive operation-cart-table">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                        <tr>
+                            <th scope="col">Produit</th>
+                            <th scope="col" class="text-end">Prix unitaire</th>
+                            <th scope="col" class="text-end">Quantité</th>
+                            <th scope="col" class="text-end">Sous-total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="ligne : ${devis.lignes}">
+                            <td th:text="${ligne.produit.nom}"></td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" th:text="${ligne.quantite + (ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <aside class="operation-summary">
+            <section class="operation-panel" aria-labelledby="devisActionsTitre">
+                <div class="operation-panel-header"><div><h2 id="devisActionsTitre">Actions</h2></div></div>
+                <div class="operation-summary-total">
+                    <span>Total du devis</span>
+                    <div class="operation-total-value"><strong th:text="${#numbers.formatDecimal(devis.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT')}"></strong> <span class="operation-currency">GNF</span></div>
+                </div>
+                <div class="d-grid gap-2 mb-3">
+                    <a th:if="${devis.estTransformable(aujourdHui)}" id="boutonTransformer" th:href="@{/ventes/nouveau(devis=${devis.id})}" class="btn btn-primary">
+                        <i class="fas fa-bag-shopping me-2" aria-hidden="true"></i> Transformer en vente
+                    </a>
+                    <a th:href="@{/devis/{id}/imprimer(id=${devis.id})}" class="btn btn-outline-secondary" id="boutonImprimerDevis">
+                        <i class="fas fa-print me-2" aria-hidden="true"></i> Imprimer
+                    </a>
+                </div>
+
+                <form th:if="${devis.statut.name() == 'EN_COURS'}" th:action="@{/devis/{id}/prolonger(id=${devis.id})}" th:object="${prolongationDevis}" method="post" class="operation-field">
+                    <label for="dateValiditeProlongee" class="form-label">Prolonger la validité</label>
+                    <input type="date" id="dateValiditeProlongee" name="dateValidite" class="form-control" required
+                           th:value="${#temporals.format(prolongationDevis.dateValidite, 'yyyy-MM-dd')}"
+                           th:min="${#temporals.format(aujourdHui, 'yyyy-MM-dd')}">
+                    <button type="submit" class="btn btn-outline-primary mt-2">Prolonger</button>
+                </form>
+
+                <form th:if="${devis.statut.name() == 'EN_COURS'}" th:action="@{/devis/{id}/annuler(id=${devis.id})}" method="post"
+                      class="operation-field" onsubmit="return confirm('Annuler ce devis ? Un devis annulé ne peut plus être modifié ni transformé en vente.');">
+                    <button type="submit" class="btn btn-outline-danger" id="boutonAnnulerDevis">Annuler le devis</button>
+                </form>
+                <p th:if="${devis.statut.name() != 'EN_COURS'}" class="operation-field-help mb-0">Ce devis est définitif : il ne se modifie plus.</p>
+            </section>
+        </aside>
+        </div>
+    </div>
+</div>

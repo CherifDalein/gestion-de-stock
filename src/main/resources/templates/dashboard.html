@@ -59,6 +59,9 @@
                     <a class="nav-link" th:href="@{/ventes}" th:classappend="${#strings.startsWith(page, 'ventes/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'ventes/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i></span>Ventes
                     </a>
+                    <a class="nav-link" th:href="@{/devis}" th:classappend="${#strings.startsWith(page, 'devis/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'devis/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>Devis
+                    </a>
                     <a class="nav-link" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'achats/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'achats/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span>Achats
                     </a>

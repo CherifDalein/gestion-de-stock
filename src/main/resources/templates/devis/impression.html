@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Devis ' + devis.numero}">Devis</title>
+    <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/factures.css}" rel="stylesheet">
+    <link th:href="@{/css/devis.css}" rel="stylesheet">
+</head>
+<body class="stock-document">
+<main id="stockDocument" class="document-shell" data-document-type="devis" th:with="etat=${devis.etat(aujourdHui)}">
+    <header class="document-toolbar no-print">
+        <div><p class="document-kicker">Documents</p><h1>Devis</h1></div>
+        <div class="document-toolbar-actions">
+            <a th:href="@{/devis/{id}(id=${devis.id})}" class="btn btn-outline-secondary" data-document-back>Retour au devis</a>
+            <button type="button" class="btn btn-primary" data-document-print onclick="window.print()">Imprimer</button>
+        </div>
+    </header>
+    <article class="document-paper" aria-labelledby="documentTitle">
+        <header class="document-paper-header">
+            <div th:replace="~{fragments/identite-boutique :: identite}"></div>
+            <div class="document-heading">
+                <h1 id="documentTitle" th:text="${'Devis ' + devis.numero}"></h1>
+                <span class="document-status" th:if="${etat.code != 'en-cours'}" th:attr="data-status=${etat.code}" th:text="${etat.libelle}"></span>
+            </div>
+        </header>
+        <div class="document-identity">
+            <section class="document-contact" aria-label="Client">
+                <p class="document-kicker">Client</p>
+                <h2 th:text="${devis.client != null ? devis.client.nom : 'Client non précisé'}"></h2>
+                <p th:if="${devis.client != null and !#strings.isEmpty(#strings.trim(devis.client.telephone))}" th:text="${devis.client.telephone}"></p>
+                <p th:if="${devis.client != null and !#strings.isEmpty(#strings.trim(devis.client.email))}" th:text="${devis.client.email}"></p>
+                <p th:if="${devis.client != null and !#strings.isEmpty(#strings.trim(devis.client.adresse))}" th:text="${devis.client.adresse}"></p>
+            </section>
+            <dl class="document-metadata">
+                <div><dt>Numéro</dt><dd data-document-number th:text="${devis.numero}"></dd></div>
+                <div><dt>Date</dt><dd th:text="${#temporals.format(devis.dateDevis, 'dd/MM/yyyy')}"></dd></div>
+                <div><dt>Valable jusqu’au</dt><dd data-document-validity th:text="${#temporals.format(devis.dateValidite, 'dd/MM/yyyy')}"></dd></div>
+            </dl>
+        </div>
+
+        <div class="document-table-wrap">
+            <table class="document-table document-table--invoice">
+                <caption class="visually-hidden">Produits, quantités et prix proposés</caption>
+                <thead><tr>
+                    <th scope="col">Produit</th>
+                    <th scope="col" class="document-quantity">Quantité</th>
+                    <th scope="col" class="document-amount">Prix unitaire</th>
+                    <th scope="col" class="document-amount">Total</th>
+                </tr></thead>
+                <tbody>
+                <tr th:each="ligne : ${devis.lignes}" data-document-row>
+                    <td class="document-product" th:text="${ligne.produit.nom}"></td>
+                    <td class="document-quantity" th:text="${ligne.quantite + (ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
+                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <section class="document-summary" aria-label="Total du devis">
+            <dl>
+                <div class="document-summary-total"><dt>Total du devis</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(devis.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+            </dl>
+        </section>
+        <p th:if="${devis.note != null}" class="document-note" th:text="${devis.note}"></p>
+        <p class="document-notice" data-document-notice>Ce devis n'est pas une facture.</p>
+        <footer class="document-footer">Montants exprimés en francs guinéens (GNF).</footer>
+    </article>
+</main>
+</body>
+</html>
