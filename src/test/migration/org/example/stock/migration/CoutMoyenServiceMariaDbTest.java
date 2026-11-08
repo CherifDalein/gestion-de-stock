@@ -7,6 +7,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.validation.Validator;
 import org.example.stock.config.TrialProperties;
 import org.example.stock.enums.Role;
+import org.example.stock.form.RetourAchatForm;
 import org.example.stock.form.StockInitialForm;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
@@ -49,6 +50,7 @@ public final class CoutMoyenServiceMariaDbTest {
     private static final String PREFIXE = "stock_cout_moyen_service_test_";
     private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 7, 10, 15);
     private final AchatService achats;
+    private final RetourAchatService retoursAchat;
     private final VenteService ventes;
     private final InventaireService inventaire;
     private final ProduitService catalogue;
@@ -63,6 +65,7 @@ public final class CoutMoyenServiceMariaDbTest {
 
     private CoutMoyenServiceMariaDbTest(AnnotationConfigApplicationContext contexte) {
         achats = contexte.getBean(AchatService.class);
+        retoursAchat = contexte.getBean(RetourAchatService.class);
         ventes = contexte.getBean(VenteService.class);
         inventaire = contexte.getBean(InventaireService.class);
         catalogue = contexte.getBean(ProduitService.class);
@@ -127,6 +130,7 @@ public final class CoutMoyenServiceMariaDbTest {
     private void verifier() throws Exception {
         sequenceEtDecimales();
         modificationDAchat();
+        retourDAchat();
         venteQuiAttendUnAchat();
         achatQuiAttendUneVente();
         correctionApresInstantaneAnterieur();
@@ -157,6 +161,39 @@ public final class CoutMoyenServiceMariaDbTest {
         exigerCout(e, "1700.00", "La correction n'a pas rejoué l'historique.");
         exiger(egal(coutFige(vente), "1000.00"), "La correction a réécrit le coût d'une vente passée.");
         reussi("correction d'un ancien achat sans réécrire les ventes");
+    }
+
+    /** Le retour d'achat sort du stock au prix de sa ligne ; la correction d'un autre achat le rejoue et retrouve la même valeur. */
+    private void retourDAchat() {
+        Env e = environnement();
+        var premier = achats.enregistrerAchat(achat(e, 10, "1000"));
+        var second = achats.enregistrerAchat(achat(e, 10, "2000"));
+        exigerCout(e, "1500.00", "Le coût incrémental est incorrect.");
+        retoursAchat.enregistrer(second.getId(), retour(second, 10));
+        exigerCout(e, "1000.00", "(20 × 1 500 − 10 × 2 000) / 10 n'a pas donné 1 000.");
+        exiger(stock(e) == 10, "Le retour n'a pas retiré le stock.");
+        achats.modifierAchat(premier.getId(), modification(e, 10, "1000"));
+        exigerCout(e, "1000.00", "Le rejeu n'a pas retrouvé le coût du retour d'achat.");
+        // Un coût négatif est ramené à zéro, au fil de l'eau comme au rejeu.
+        Env n = environnement();
+        var un = achats.enregistrerAchat(achat(n, 10, "1000"));
+        var deux = achats.enregistrerAchat(achat(n, 10, "3000"));
+        ventes.effectuerVente(vente(n, 8));
+        retoursAchat.enregistrer(deux.getId(), retour(deux, 10));
+        exigerCout(n, "0.00", "Le coût négatif n'a pas été ramené à 0.");
+        achats.enregistrerAchat(achat(n, 10, "500")); // (2 × 0 + 10 × 500) / 12 : le plancher à 0 pèse dans la moyenne suivante
+        exigerCout(n, "416.67", "L'achat suivant n'est pas parti du coût ramené à 0.");
+        achats.modifierAchat(un.getId(), modification(n, 10, "1000"));
+        exigerCout(n, "416.67", "Le rejeu n'a pas retrouvé le coût ramené à 0.");
+        // Un achat qui a un retour ne peut plus être modifié.
+        try { achats.modifierAchat(deux.getId(), modification(n, 10, "3000")); exiger(false, "L'achat avec retour a été modifié."); }
+        catch (ModificationAchatRefuseeException attendu) { }
+        reussi("retour d'achat : coût au fil de l'eau, rejeu, plancher à 0 et achat figé");
+    }
+
+    private static RetourAchatForm retour(Achat achat, int quantite) {
+        var ligne = new RetourAchatForm.Ligne(); ligne.setDetailAchatId(achat.getLignes().getFirst().getId()); ligne.setQuantite(quantite);
+        var form = new RetourAchatForm(); form.getLignes().add(ligne); form.setRetoursConnus(0L); return form;
     }
 
     private void venteQuiAttendUnAchat() throws Exception {
@@ -387,7 +424,8 @@ public final class CoutMoyenServiceMariaDbTest {
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
     @Import({AchatService.class, VenteService.class, InventaireService.class, ProduitService.class, CoutMoyenService.class,
             CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class,
-            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class, DevisService.class})
+            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class, DevisService.class,
+            RetourAchatService.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
