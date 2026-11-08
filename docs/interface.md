@@ -43,6 +43,10 @@ une présentation adaptée aux ordinateurs et aux téléphones.
 - `templates/ventes/retour.html` et `static/js/retour-vente.js` : formulaire de retour, montant en direct
   (`textContent` seulement) ; `templates/retours/liste.html` et `impression.html` : liste et bon de retour ou avoir A4
   (voir [le retour de vente](lot-2.md#retour-de-vente)).
+- `templates/achats/retour.html` et `static/js/retour-achat.js` : formulaire de retour au fournisseur (quantités plafonnées par
+  le reste à retourner et le stock actuel) ; `templates/retours/liste.html` réunit les retours de vente et d'achat avec un filtre,
+  `templates/retours/impression_achat.html` : bon de retour fournisseur ou avoir fournisseur A4
+  (voir [le retour d'achat](lot-2.md#retour-dachat)).
 - `templates/categories/*.html`, `static/css/categories.css` et
   `static/js/categories.js` : répertoire des catégories, formulaires et suppression.
 - `static/css/formulaires.css` : présentation commune aux neuf formulaires de

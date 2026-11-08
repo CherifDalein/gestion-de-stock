@@ -47,7 +47,7 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `initialisation_terminee` BOOLEAN NOT NULL DEFAULT FALSE : fermeture irréversible du démarrage, commune au stock initial et au solde initial de caisse ; le premier achat, la première vente ou un mouvement opérationnel de caisse ferme aussi cette phase
 - `delai_clients_jours`, `delai_fournisseurs_jours` INT NOT NULL DEFAULT 30 : délais de paiement proposés par défaut (lot 1, pas encore utilisés)
 - `prochain_numero_vente`, `prochain_numero_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros de facture ; la migration les place après le plus grand identifiant de toute la table pour ne jamais reprendre un numéro migré (lot 1, pas encore utilisés)
-- `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros des devis et des retours, par boutique (lot 2, pas encore utilisés)
+- `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros des devis et des retours, par boutique (lot 2 ; `RV-` et `RA-` pour les retours de vente et d'achat)
 
 ### `logo_boutique`
 
@@ -176,7 +176,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `numero` VARCHAR(30) NULL : numéro de facture, UNIQUE (`boutique_id`, `numero`) ; `FA-` + identifiant sur six chiffres pour les documents migrés, encore vide pour les nouveaux (lot 1)
 - `date_echeance` DATE NULL : échéance du reste à payer ; date du document + 30 jours pour les documents migrés restant à payer, vide sinon (lot 1)
 - `avance_utilisee` DECIMAL(17,2) NOT NULL DEFAULT 0 : part réglée par une avance du partenaire (lot 1)
-- `montant_retours` DECIMAL(17,2) NOT NULL DEFAULT 0 : valeur totale des marchandises retournées à ce fournisseur sur la facture ; 0 pour tous les achats existants, alimentée par les retours d'achat (lot 2, pas encore utilisée)
+- `montant_retours` DECIMAL(17,2) NOT NULL DEFAULT 0 : valeur totale des marchandises retournées à ce fournisseur sur la facture ; 0 pour tous les achats existants, alimentée par les retours d'achat (lot 2) ; un achat qui a un retour ne peut plus être modifié
 - `utilisateur_id` BIGINT NULL, FK `fk_achat_utilisateur` -> `utilisateur.id` : compte qui a saisi l'achat ; repris du premier mouvement de caisse nominatif pour les achats migrés, vide sinon (lot 2)
 
 ### `detail_achat`
@@ -244,7 +244,7 @@ Offre de prix valable jusqu'à une date, sans effet sur le stock ni la caisse ta
 
 ### `retour`
 
-Marchandise rendue par un client (`VENTE`, livrée par le retour de vente) ou à un fournisseur (`ACHAT`, pas encore utilisé) ; le montant total se répartit entre une partie qui réduit la créance (aucun argent), un remboursement en trésorerie et un avoir (lot 2) :
+Marchandise rendue par un client (`VENTE`, livrée par le retour de vente) ou à un fournisseur (`ACHAT`, livré par le retour d'achat) ; le montant total se répartit entre une partie qui réduit la créance (aucun argent), un remboursement en trésorerie et un avoir (lot 2) :
 - `id` BIGINT PK, auto-incrémenté
 - `boutique_id` BIGINT NOT NULL FK -> `boutique.id`
 - `numero` VARCHAR(30) NOT NULL, UNIQUE (`boutique_id`, `numero`) `uk_retour_boutique_numero`

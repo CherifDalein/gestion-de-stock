@@ -52,3 +52,7 @@ Le script de sauvegarde exporte automatiquement cette nouvelle table avec le res
 Les tests H2 utilisent des transactions distinctes et vérifient les doubles POST, les copies après changement de stock/prix, les paniers de plusieurs lignes, les paiements partiels, les rollbacks et réessais, l'expiration, les propriétaires/types, les champs manipulés et CSRF. Le parcours MariaDB crée uniquement une base `stock_creation_test_*`, exerce les vrais services et verrous InnoDB, puis ferme l'application de test et supprime cette base. Il n'écrit aucun document de test dans `stock_pro`.
 
 Après la migration locale et le redémarrage de MySQL dans XAMPP, le parcours HTTP réel a également validé connexion administrateur, accueil, formulaires achat/vente avec identifiants distincts et CSRF, puis déconnexion. Aucun document ni paiement de test n'a été créé dans la base locale ; seules les deux ouvertures de formulaire ont ajouté des jetons non consommés.
+
+## Retour d'achat
+
+Même principe que le retour de vente : pas de jeton, le formulaire porte `retoursConnus` (nombre de retours de l'achat à l'ouverture), comparé sous le verrou de l'achat. Une copie du même envoi reçoit 409 et n'enregistre rien (voir [le retour d'achat](lot-2.md#double-envoi-1)).

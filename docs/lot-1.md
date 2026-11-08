@@ -607,8 +607,8 @@ dettes » du tableau de bord n'est pas encore branché.
 
 À la création, l'ordre des verrous est : ligne `boutique` (numérotation), ligne du
 **partenaire** (`PESSIMISTIC_WRITE`), puis les produits. Le règlement d'un solde
-prend la boutique, puis le partenaire. `modifierAchat` verrouille le fournisseur
-avant l'achat. Sous MariaDB (REPEATABLE READ), l'avance est relue par des lectures
+prend la boutique, puis le partenaire. `modifierAchat` verrouille l'achat, puis le
+fournisseur (voir [le retour d'achat](lot-2.md#verrous-et-concurrence-1)). Sous MariaDB (REPEATABLE READ), l'avance est relue par des lectures
 verrouillantes (`FOR UPDATE`) pour voir les opérations validées après l'instantané.
 Deux ventes simultanées d'un même client avec 20 000 d'avance consomment donc
 exactement 20 000 au total. Un renvoi du même jeton ne consomme pas l'avance deux
