@@ -48,6 +48,17 @@ public class CoutMoyenService {
         produit.setCoutMoyen(nouveauCout(stockAvant, produit.getCoutMoyen(), quantite, prixUnitaire));
     }
 
+    /**
+     * Retour de vente : la marchandise rentre en stock comme une entrée valorisée au coût unitaire figé de la ligne de
+     * vente d'origine, jamais au CMP du jour ni au prix de vente. À appeler sous le verrou du produit, AVANT d'ajouter
+     * la quantité retournée au stock. Une ligne dont le coût figé est inconnu (vente migrée sans coût) remet la
+     * quantité en stock sans changer le CMP.
+     */
+    public void enregistrerRetourVente(Produit produit, long quantite, BigDecimal coutFige) {
+        if (coutFige == null) return;
+        enregistrerEntree(produit, quantite, coutFige);
+    }
+
     /** Coût à figer sur une nouvelle ligne de vente : le CMP lu sous le verrou du produit. */
     @Transactional(propagation = Propagation.SUPPORTS)
     public BigDecimal coutUnitaireVente(Produit produit) {
@@ -83,7 +94,7 @@ public class CoutMoyenService {
     }
 
     /**
-     * Rejoue l'historique trié. Le stock que l'historique n'explique pas (antérieur au journal
+     * Rejoue l'historique trié (achats, retours de vente, ajustements, ventes). Le stock que l'historique n'explique pas (antérieur au journal
      * d'inventaire) est placé au début, valorisé au premier coût d'entrée connu ; un écart négatif
      * ne change que la quantité et n'a donc pas d'effet sur le CMP.
      */
@@ -132,6 +143,12 @@ public class CoutMoyenService {
                 + " where d.produit.id = :produit and a.boutique.id = :boutique", produitId, boutiqueId)) {
             evenements.add(new Evenement(Rang.OPERATION, (LocalDateTime) l[0], Ordre.ENTREE, (Long) l[1], (Long) l[2],
                     quantite(l[3]), Montants.ouZero((BigDecimal) l[4])));
+        }
+        // Retours de vente : entrées datées de la date du retour, au coût figé de la ligne ; sans coût connu, la quantité seule.
+        for (Object[] l : lire("select r.dateRetour, r.id, d.id, d.quantite, d.coutUnitaire from DetailRetour d join d.retour r"
+                + " where d.produit.id = :produit and r.boutique.id = :boutique and r.type = org.example.stock.enums.TypeRetour.VENTE", produitId, boutiqueId)) {
+            evenements.add(new Evenement(Rang.OPERATION, (LocalDateTime) l[0], Ordre.ENTREE, (Long) l[1], (Long) l[2],
+                    quantite(l[3]), l[4] == null ? null : Montants.ouZero((BigDecimal) l[4])));
         }
         for (Object[] l : lire("select v.dateVente, v.id, d.id, d.quantite from DetailVente d join d.vente v"
                 + " where d.produit.id = :produit and v.boutique.id = :boutique", produitId, boutiqueId)) {

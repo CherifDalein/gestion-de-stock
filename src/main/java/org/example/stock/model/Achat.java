@@ -46,6 +46,10 @@ public class Achat {
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")
     private BigDecimal montantVerse;
 
+    /** Valeur totale des marchandises retournées au fournisseur sur cette facture ; 0 tant qu'aucun retour d'achat n'existe. */
+    @Column(nullable = false, precision = 17, scale = 2)
+    private BigDecimal montantRetours = Montants.ZERO;
+
     /** Compte du versement saisi ; chaque paiement est archivé dans le journal de trésorerie. */
     @Transient
     private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
@@ -63,11 +67,12 @@ public class Achat {
     private List<DetailAchat> lignes = new ArrayList<>();
 
     /**
-     * Reste à payer = max(0, total − versé − avance utilisée). Un trop-payé ou une avance qui couvre tout le total
+     * Reste à payer = max(0, total − retours − versé − avance utilisée). Un trop-payé ou une avance qui couvre tout le total
      * donne zéro : le reste n'est jamais négatif.
      */
     public BigDecimal getResteAPayer() {
-        BigDecimal reste = Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantVerse)).subtract(Montants.ouZero(avanceUtilisee));
+        BigDecimal reste = Montants.ouZero(montantTotal).subtract(Montants.ouZero(montantRetours))
+                .subtract(Montants.ouZero(montantVerse)).subtract(Montants.ouZero(avanceUtilisee));
         return reste.signum() < 0 ? Montants.ZERO : reste;
     }
 

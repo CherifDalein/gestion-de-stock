@@ -24,27 +24,27 @@ public interface VenteRepository extends JpaRepository<Vente, Long> {
     List<Vente> findByClientIdAndDateVenteAfterAndBoutiqueIdOrderByDateVenteDesc(Long clientId, LocalDateTime date, Long boutiqueId);
 
     /**
-     * Échues non soldées : reste à payer positif (total − versé − avance utilisée, valeurs vides comptées zéro)
+     * Échues non soldées : reste à payer positif (total − retours − versé − avance utilisée, valeurs vides comptées zéro)
      * et échéance strictement antérieure au jour.
      */
     @Query("SELECT v FROM Vente v WHERE v.boutique.id = :boutiqueId AND v.dateEcheance < :aujourdHui"
-            + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
+            + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
     List<Vente> findEchuesNonSoldees(@Param("boutiqueId") Long boutiqueId, @Param("aujourdHui") LocalDate aujourdHui);
 
     /** Mêmes ventes échues non soldées, limitées à un vendeur. */
     @Query("SELECT v FROM Vente v WHERE v.boutique.id = :boutiqueId AND v.vendeur.id = :vendeurId AND v.dateEcheance < :aujourdHui"
-            + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
+            + " AND COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) - COALESCE(v.montantVerse, 0) - COALESCE(v.avanceUtilisee, 0) > 0 ORDER BY v.dateEcheance ASC, v.id ASC")
     List<Vente> findEchuesNonSoldeesDuVendeur(@Param("boutiqueId") Long boutiqueId, @Param("vendeurId") Long vendeurId,
                                               @Param("aujourdHui") LocalDate aujourdHui);
 
-    /** Réglé sur les ventes depuis la date : versé plafonné au total (le surplus est une avance) + avance utilisée. */
-    @Query("SELECT COALESCE(SUM(CASE WHEN COALESCE(v.montantVerse, 0) > COALESCE(v.montantTotal, 0) THEN COALESCE(v.montantTotal, 0) ELSE COALESCE(v.montantVerse, 0) END + COALESCE(v.avanceUtilisee, 0)), 0) FROM Vente v WHERE v.dateVente >= :date AND v.boutique.id = :boutiqueId")
+    /** Réglé sur les ventes depuis la date : versé + avance utilisée, plafonné au total effectif (total − retours ; le surplus est une avance ou un remboursement). */
+    @Query("SELECT COALESCE(SUM(CASE WHEN COALESCE(v.montantVerse, 0) + COALESCE(v.avanceUtilisee, 0) > COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) THEN COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) ELSE COALESCE(v.montantVerse, 0) + COALESCE(v.avanceUtilisee, 0) END), 0) FROM Vente v WHERE v.dateVente >= :date AND v.boutique.id = :boutiqueId")
     BigDecimal calculerTotalVentesDepuis(@Param("date") LocalDateTime date, @Param("boutiqueId") Long boutiqueId);
     List<Vente> findByDateVenteAfter(LocalDateTime date);
     List<Vente> findAllByOrderByDateVenteDesc();
     List<Vente> findByClientIdAndDateVenteAfterOrderByDateVenteDesc(Long clientId, LocalDateTime date);
     List<Vente> findByClientIdOrderByDateVenteDesc(Long clientId);
 
-    @Query("SELECT COALESCE(SUM(CASE WHEN COALESCE(v.montantVerse, 0) > COALESCE(v.montantTotal, 0) THEN COALESCE(v.montantTotal, 0) ELSE COALESCE(v.montantVerse, 0) END + COALESCE(v.avanceUtilisee, 0)), 0) FROM Vente v WHERE v.dateVente >= :date")
+    @Query("SELECT COALESCE(SUM(CASE WHEN COALESCE(v.montantVerse, 0) + COALESCE(v.avanceUtilisee, 0) > COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) THEN COALESCE(v.montantTotal, 0) - COALESCE(v.montantRetours, 0) ELSE COALESCE(v.montantVerse, 0) + COALESCE(v.avanceUtilisee, 0) END), 0) FROM Vente v WHERE v.dateVente >= :date")
     BigDecimal calculerTotalVentesDepuis(@Param("date") LocalDateTime date);
 }

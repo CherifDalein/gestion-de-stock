@@ -27,15 +27,25 @@ public class SoldePartenaireRepository {
         FOURNISSEUR("fournisseur", "achat", "fournisseur_id", "SOLDE_FOURNISSEUR");
 
         final String table, factures, colonne, source;
+        /** Seuls les clients ont des avoirs (retours de vente) ; les retours d'achat seront traités avec leur propre fonction. */
+        final boolean avoirs;
 
         Partenaire(String table, String factures, String colonne, String source) {
             this.table = table; this.factures = factures; this.colonne = colonne; this.source = source;
+            this.avoirs = "client".equals(table);
         }
     }
 
-    /** Somme par partenaire des trop-payés, des avances utilisées et des restes à payer de ses factures. */
-    public record Factures(BigDecimal surplus, BigDecimal avanceUtilisee, BigDecimal reste) {
-        public static final Factures VIDE = new Factures(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+    /**
+     * Somme par partenaire des trop-payés (calculés avec le total d'origine), des avances utilisées, des restes à payer
+     * de ses factures (calculés avec le total effectif, retours déduits) et des avoirs de ses retours de vente.
+     */
+    public record Factures(BigDecimal surplus, BigDecimal avanceUtilisee, BigDecimal reste, BigDecimal avoirs) {
+        public static final Factures VIDE = new Factures(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+
+        public Factures(BigDecimal surplus, BigDecimal avanceUtilisee, BigDecimal reste) {
+            this(surplus, avanceUtilisee, reste, BigDecimal.ZERO);
+        }
     }
 
     /** Total et part dont l'échéance est strictement antérieure au jour donné. */
@@ -44,8 +54,10 @@ public class SoldePartenaireRepository {
     /** Montant en retard d'un partenaire de la boutique et plus ancienne échéance dépassée. */
     public record RetardPartenaire(Long id, String nom, BigDecimal montant, LocalDate plusAncienneEcheance) {}
 
-    private static final String RESTE = "GREATEST(COALESCE(montant_total,0) - COALESCE(montant_verse,0) - COALESCE(avance_utilisee,0), 0)";
-    private static final String RESTE_F = "GREATEST(COALESCE(f.montant_total,0) - COALESCE(f.montant_verse,0) - COALESCE(f.avance_utilisee,0), 0)";
+    /** Reste à payer = max(0, total effectif − versé − avance utilisée), avec total effectif = total − retours. */
+    private static final String RESTE = "GREATEST(COALESCE(montant_total,0) - COALESCE(montant_retours,0) - COALESCE(montant_verse,0) - COALESCE(avance_utilisee,0), 0)";
+    private static final String RESTE_F = "GREATEST(COALESCE(f.montant_total,0) - COALESCE(f.montant_retours,0) - COALESCE(f.montant_verse,0) - COALESCE(f.avance_utilisee,0), 0)";
+    /** Trop-payé d'origine : calculé avec le total d'origine, jamais avec le total effectif (l'excédent d'un retour est traité par le retour). */
     private static final String SURPLUS = "GREATEST(COALESCE(montant_verse,0) - COALESCE(montant_total,0), 0)";
 
     private final EntityManager entityManager;
@@ -74,6 +86,18 @@ public class SoldePartenaireRepository {
             Object[] colonnes = (Object[]) ligne;
             resultat.put(((Number) colonnes[0]).longValue(), new Factures(montant(colonnes[1]), montant(colonnes[2]), montant(colonnes[3])));
         }
+        if (type.avoirs) {
+            // Avoirs des retours de vente : une avance du client, en plus des trop-payés.
+            var avoirs = entityManager.createNativeQuery("SELECT client_id, COALESCE(SUM(montant_avoir),0) FROM retour WHERE boutique_id = :boutique AND type = 'VENTE' AND client_id IS NOT NULL"
+                            + (partenaireId == null ? "" : " AND client_id = :partenaire") + " GROUP BY client_id")
+                    .setParameter("boutique", boutiqueId);
+            if (partenaireId != null) avoirs.setParameter("partenaire", partenaireId);
+            for (Object ligne : avoirs.getResultList()) {
+                Object[] colonnes = (Object[]) ligne;
+                Factures actuel = resultat.getOrDefault(((Number) colonnes[0]).longValue(), Factures.VIDE);
+                resultat.put(((Number) colonnes[0]).longValue(), new Factures(actuel.surplus(), actuel.avanceUtilisee(), actuel.reste(), montant(colonnes[1])));
+            }
+        }
         return resultat;
     }
 
@@ -100,21 +124,27 @@ public class SoldePartenaireRepository {
     }
 
     /**
-     * Lecture verrouillée des seules factures qui portent une avance (trop-payé ou avance utilisée) d'un partenaire.
-     * Chaque élément est {surplus, avanceUtilisee}.
+     * Lecture verrouillée des seules factures qui portent une avance (trop-payé ou avance utilisée) d'un partenaire,
+     * et des avoirs de ses retours de vente. Le trop-payé reste calculé avec le total d'origine.
      */
     public Factures facturesVerrouillees(Partenaire type, Long boutiqueId, Long partenaireId) {
         List<?> lignes = entityManager.createNativeQuery("SELECT COALESCE(montant_verse,0), COALESCE(montant_total,0), COALESCE(avance_utilisee,0) FROM " + type.factures
                         + " WHERE boutique_id = :boutique AND " + type.colonne + " = :partenaire AND (COALESCE(montant_verse,0) > COALESCE(montant_total,0) OR COALESCE(avance_utilisee,0) > 0) FOR UPDATE")
                 .setParameter("boutique", boutiqueId).setParameter("partenaire", partenaireId).getResultList();
-        BigDecimal surplus = BigDecimal.ZERO, utilisee = BigDecimal.ZERO;
+        BigDecimal surplus = BigDecimal.ZERO, utilisee = BigDecimal.ZERO, avoirs = BigDecimal.ZERO;
         for (Object ligne : new ArrayList<>(lignes)) {
             Object[] colonnes = (Object[]) ligne;
             BigDecimal verse = montant(colonnes[0]), total = montant(colonnes[1]);
             if (verse.compareTo(total) > 0) surplus = surplus.add(verse.subtract(total));
             utilisee = utilisee.add(montant(colonnes[2]));
         }
-        return new Factures(surplus, utilisee, BigDecimal.ZERO);
+        if (type.avoirs) {
+            for (Object montantAvoir : entityManager.createNativeQuery("SELECT montant_avoir FROM retour WHERE boutique_id = :boutique AND type = 'VENTE' AND client_id = :partenaire AND montant_avoir > 0 FOR UPDATE")
+                    .setParameter("boutique", boutiqueId).setParameter("partenaire", partenaireId).getResultList()) {
+                avoirs = avoirs.add(montant(montantAvoir));
+            }
+        }
+        return new Factures(surplus, utilisee, BigDecimal.ZERO, avoirs);
     }
 
     /**

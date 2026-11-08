@@ -7,7 +7,8 @@ import java.util.*;
 
 /**
  * Tables et colonnes du lot 2 (devis, retours et avoirs, vendeur des ventes, annulation des règlements).
- * Les quatre tables sont créées vides. Seules deux colonnes reprennent l'existant, {@code vente.vendeur_id} et
+ * Les quatre tables sont créées vides. {@code vente.montant_retours} et {@code achat.montant_retours} sont ajoutées à 0
+ * (valeur par défaut, rien à reprendre). Seules deux colonnes reprennent l'existant, {@code vente.vendeur_id} et
  * {@code achat.utilisateur_id}, remplies dans une seule transaction avec l'auteur du premier mouvement de caisse nominatif.
  * {@code boutique.prochain_numero_retour_achat NOT NULL} marque la fin de l'initialisation et interdit toute nouvelle
  * écriture de ces valeurs lors d'une relance. Aucun stock, montant ou mouvement n'est modifié.
@@ -99,7 +100,10 @@ public final class Lot2Migration {
             new Lot1Migration.Champ("mouvement_caisse", "annulation_de_id", "BIGINT NULL", null, BIGINT, 0, 0, true, null),
             new Lot1Migration.Champ("boutique", "prochain_numero_devis", "BIGINT DEFAULT 1 NOT NULL", null, BIGINT, 0, 0, false, "1"),
             new Lot1Migration.Champ("boutique", "prochain_numero_retour_vente", "BIGINT DEFAULT 1 NOT NULL", null, BIGINT, 0, 0, false, "1"),
-            new Lot1Migration.Champ("boutique", "prochain_numero_retour_achat", "BIGINT DEFAULT 1 NOT NULL", "BIGINT NULL", BIGINT, 0, 0, false, "1"));
+            new Lot1Migration.Champ("boutique", "prochain_numero_retour_achat", "BIGINT DEFAULT 1 NOT NULL", "BIGINT NULL", BIGINT, 0, 0, false, "1"),
+            // Valeur totale des marchandises retournées sur la facture : 0 pour tous les documents existants (aucune valeur à reprendre).
+            new Lot1Migration.Champ("vente", "montant_retours", "DECIMAL(17,2) DEFAULT 0 NOT NULL", null, DECIMAL, 17, 2, false, "0"),
+            new Lot1Migration.Champ("achat", "montant_retours", "DECIMAL(17,2) DEFAULT 0 NOT NULL", null, DECIMAL, 17, 2, false, "0"));
     private static final Lot1Migration.Champ MARQUEUR = CHAMPS.get(6);
     /** Clés étrangères des colonnes ajoutées aux tables existantes. */
     static final List<Cle> CLES = List.of(

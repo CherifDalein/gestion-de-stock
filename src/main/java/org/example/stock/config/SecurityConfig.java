@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/boutique/logo").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/acces-boutique", "/produits").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
+                        // Le retour de vente et ses documents sont réservés au gérant : à placer avant les règles larges des ventes.
+                        .requestMatchers("/ventes/*/retour", "/ventes/*/retour/**", "/retours", "/retours/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**", "/devis/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")

@@ -39,6 +39,38 @@ public interface TableauDeBordRepository extends Repository<Vente, Long> {
     long lignesSansCout(@Param("boutiqueId") Long boutiqueId,
                         @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
+    /**
+     * Retours de vente de la période, comptés à LEUR date (date du retour) : Σ montant total. Ils se retranchent du
+     * chiffre d'affaires. Les retours d'achat n'en font pas partie.
+     */
+    @Query("SELECT COALESCE(SUM(r.montantTotal), 0) FROM Retour r WHERE r.boutique.id = :boutiqueId "
+            + "AND r.type = org.example.stock.enums.TypeRetour.VENTE AND r.dateRetour >= :debut AND r.dateRetour < :fin")
+    BigDecimal retoursDeVente(@Param("boutiqueId") Long boutiqueId,
+                              @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Marge des marchandises retournées : Σ (prix unitaire − coût figé) × quantité retournée, à retrancher du bénéfice brut. */
+    @Query("SELECT COALESCE(SUM((COALESCE(d.prixUnitaire, 0) - COALESCE(d.coutUnitaire, 0)) * COALESCE(d.quantite, 0)), 0) "
+            + "FROM DetailRetour d JOIN d.retour r WHERE r.boutique.id = :boutiqueId "
+            + "AND r.type = org.example.stock.enums.TypeRetour.VENTE AND r.dateRetour >= :debut AND r.dateRetour < :fin")
+    BigDecimal beneficeDesRetoursDeVente(@Param("boutiqueId") Long boutiqueId,
+                                         @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Retours de vente par mois (date du retour) : [mois (1-12), Σ montant total]. */
+    @Query("SELECT EXTRACT(MONTH FROM r.dateRetour), COALESCE(SUM(r.montantTotal), 0) FROM Retour r "
+            + "WHERE r.boutique.id = :boutiqueId AND r.type = org.example.stock.enums.TypeRetour.VENTE "
+            + "AND r.dateRetour >= :debut AND r.dateRetour < :fin GROUP BY EXTRACT(MONTH FROM r.dateRetour)")
+    List<Object[]> retoursDeVenteParMois(@Param("boutiqueId") Long boutiqueId,
+                                         @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Marge des retours de vente par mois (date du retour) : [mois (1-12), Σ marge]. */
+    @Query("SELECT EXTRACT(MONTH FROM r.dateRetour), "
+            + "COALESCE(SUM((COALESCE(d.prixUnitaire, 0) - COALESCE(d.coutUnitaire, 0)) * COALESCE(d.quantite, 0)), 0) "
+            + "FROM DetailRetour d JOIN d.retour r WHERE r.boutique.id = :boutiqueId "
+            + "AND r.type = org.example.stock.enums.TypeRetour.VENTE "
+            + "AND r.dateRetour >= :debut AND r.dateRetour < :fin GROUP BY EXTRACT(MONTH FROM r.dateRetour)")
+    List<Object[]> beneficeDesRetoursDeVenteParMois(@Param("boutiqueId") Long boutiqueId,
+                                                    @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
     /** Dépenses : opérations de trésorerie de type DEPENSE (les achats et transferts n'en sont pas). */
     @Query("SELECT COALESCE(SUM(o.montant), 0) FROM OperationTresorerie o WHERE o.boutique.id = :boutiqueId "
             + "AND o.type = :type AND o.dateOperation >= :debut AND o.dateOperation < :fin")
@@ -104,4 +136,22 @@ public interface TableauDeBordRepository extends Repository<Vente, Long> {
             + "AND v.dateVente >= :debut AND v.dateVente < :fin GROUP BY v.vendeur.id")
     List<Object[]> beneficeBrutParVendeur(@Param("boutiqueId") Long boutiqueId,
                                           @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /**
+     * Retours de vente par vendeur de la vente d'origine (date du retour) : [identifiant du vendeur (vide si non
+     * renseigné), nombre de retours, Σ montant total].
+     */
+    @Query("SELECT v.vendeur.id, COUNT(r), COALESCE(SUM(r.montantTotal), 0) FROM Retour r JOIN r.vente v WHERE r.boutique.id = :boutiqueId "
+            + "AND r.type = org.example.stock.enums.TypeRetour.VENTE AND r.dateRetour >= :debut AND r.dateRetour < :fin GROUP BY v.vendeur.id")
+    List<Object[]> retoursDeVenteParVendeur(@Param("boutiqueId") Long boutiqueId,
+                                            @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Marge des retours de vente par vendeur de la vente d'origine : [identifiant du vendeur, Σ marge]. */
+    @Query("SELECT v.vendeur.id, "
+            + "COALESCE(SUM((COALESCE(d.prixUnitaire, 0) - COALESCE(d.coutUnitaire, 0)) * COALESCE(d.quantite, 0)), 0) "
+            + "FROM DetailRetour d JOIN d.retour r JOIN r.vente v WHERE r.boutique.id = :boutiqueId "
+            + "AND r.type = org.example.stock.enums.TypeRetour.VENTE "
+            + "AND r.dateRetour >= :debut AND r.dateRetour < :fin GROUP BY v.vendeur.id")
+    List<Object[]> beneficeDesRetoursDeVenteParVendeur(@Param("boutiqueId") Long boutiqueId,
+                                                       @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 }

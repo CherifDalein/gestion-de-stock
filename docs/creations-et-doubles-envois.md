@@ -26,6 +26,10 @@ Les appels internes historiques à `AchatService.enregistrerAchat` et `VenteServ
 
 Aucune purge automatique des identifiants n'est ajoutée : supprimer les résultats réussis supprimerait la protection contre leurs renvois ultérieurs. Les formulaires abandonnés expirent mais leurs lignes restent présentes.
 
+## Retour de vente
+
+Le retour de vente n'utilise pas de jeton : le formulaire porte `retoursConnus` (nombre de retours de la vente à l'ouverture), comparé sous le verrou de la vente. Une copie du même envoi reçoit 409 et n'enregistre rien (voir [le retour de vente](lot-2.md#double-envoi)).
+
 ## Base existante et installation
 
 1. Arrêter l'application, y compris `bootRun`/DevTools, avant compilation et modification du schéma.

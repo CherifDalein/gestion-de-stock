@@ -387,7 +387,7 @@ public final class CoutMoyenServiceMariaDbTest {
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
     @Import({AchatService.class, VenteService.class, InventaireService.class, ProduitService.class, CoutMoyenService.class,
             CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class,
-            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class})
+            StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class, DevisService.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
