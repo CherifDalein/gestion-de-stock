@@ -22,6 +22,20 @@ Les caissiers peuvent choisir le compte des encaissements clients. Les achats,
 la consultation de la trésorerie, les dépenses et les transferts restent
 réservés au gérant, selon les droits existants de l'application.
 
+## Annulation d'un règlement
+
+Un règlement ultérieur d'une vente ou d'un achat, ou le règlement d'un solde de
+départ de client ou de fournisseur, peut être annulé par le gérant depuis la
+page de règlement (bouton « Annuler », motif obligatoire). Rien n'est effacé :
+un mouvement inverse (montant opposé, même compte) est ajouté au journal. Le
+règlement d'origine affiche « Annulé le … » et son motif, le mouvement inverse
+« Annulation du mouvement du … ». Les soldes des comptes et le total comptent
+les deux mouvements. Annuler un encaissement retire de l'argent d'un compte : le
+compte doit avoir le solde nécessaire, comme pour une dépense. Le paiement
+saisi à la création d'une vente ou d'un achat, les dépenses, transferts et
+retours ne s'annulent pas. Détail des règles dans
+[Annulation d'un règlement](lot-2.md#annulation-dun-règlement).
+
 ## Transferts et dépenses
 
 Dans **Trésorerie**, choisir **Transférer des fonds**, puis le compte de départ,
