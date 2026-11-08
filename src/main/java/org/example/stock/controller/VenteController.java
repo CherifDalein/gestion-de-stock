@@ -20,6 +20,8 @@ import org.example.stock.service.ProduitService;
 import org.example.stock.service.VenteService;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EcheanceService;
+import org.example.stock.service.DevisService;
+import org.example.stock.model.Devis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Controller;
@@ -44,6 +46,7 @@ public class VenteController {
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private EcheanceService echeances;
     @Autowired private BoutiqueService boutiques;
+    @Autowired private DevisService devisService;
 
     @GetMapping
     public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
@@ -56,8 +59,20 @@ public class VenteController {
     }
 
     @GetMapping("/nouveau")
-    public String nouveauFormulaire(Model model) {
-        model.addAttribute("vente", new Vente());
+    public String nouveauFormulaire(@RequestParam(required = false) Long devis, RedirectAttributes redirectAttributes, Model model) {
+        Vente nouvelle = new Vente();
+        if (devis != null) {
+            // Vente issue d'un devis : client et lignes sont repris du devis (404 s'il est d'une autre boutique).
+            Devis source = devisService.trouver(devis);
+            String refus = devisService.raisonRefusTransformation(source);
+            if (refus != null) {
+                redirectAttributes.addFlashAttribute("error", refus);
+                return "redirect:/devis/" + devis;
+            }
+            nouvelle.setClient(source.getClient());
+            model.addAttribute("devisVente", source);
+        }
+        model.addAttribute("vente", nouvelle);
         model.addAttribute("jetonCreation", creations.ouvrir(TypeOperationCreation.VENTE));
         model.addAttribute("clients", clientService.listerTous());
         model.addAttribute("produits", produitService.listerTous());
@@ -69,7 +84,8 @@ public class VenteController {
 
     @PostMapping("/enregistrer")
     public String enregistrerVente(@ModelAttribute("vente") Vente vente, BindingResult result,
-                                  @RequestParam(required = false) String jetonCreation, RedirectAttributes redirectAttributes,
+                                  @RequestParam(required = false) String jetonCreation, @RequestParam(required = false) Long devis,
+                                  RedirectAttributes redirectAttributes,
                                   Model model, HttpServletResponse response) {
         FormBindingAdvice.verifier(result);
         model.addAttribute("jetonCreation", jetonCreation);
@@ -77,7 +93,7 @@ public class VenteController {
         String numeroSaisi = vente.getNumero();
         var echeanceSaisie = vente.getDateEcheance();
         try {
-            var resultat = creations.creerVente(jetonCreation, vente);
+            var resultat = creations.creerVente(jetonCreation, vente, devis);
             redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
                     ? "Cette vente est déjà enregistrée. Le stock et la caisse n'ont pas été modifiés une seconde fois."
                     : "Vente enregistrée avec succès !");
@@ -91,6 +107,8 @@ public class VenteController {
             }
             vente.setNumero(numeroSaisi);
             vente.setDateEcheance(echeanceSaisie);
+            // Après un refus d'une vente issue d'un devis, le formulaire reprend les lignes et les prix du devis.
+            if (devis != null) model.addAttribute("devisVente", devisService.trouver(devis));
             model.addAttribute("clients", clientService.listerTous());
             model.addAttribute("produits", produitService.listerTous());
             model.addAttribute("initialisationOuverte", initialisation.estOuverte());

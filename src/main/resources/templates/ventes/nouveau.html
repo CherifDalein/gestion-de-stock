@@ -15,8 +15,16 @@
         <a th:if="${creationConflit}" th:href="@{/ventes/nouveau}" class="btn btn-primary mb-3">Ouvrir une nouvelle vente</a>
         <p th:if="${initialisationOuverte}" class="operation-start-note"><i class="fas fa-circle-info" aria-hidden="true"></i><span>Valider la première vente termine le démarrage de toute la boutique. Vérifiez que tous les stocks initiaux et les soldes initiaux de trésorerie sont renseignés avant de continuer. <a sec:authorize="hasRole('ADMIN')" th:href="@{/boutique/parametres}">Vérifier le démarrage</a></span></p>
 
-        <form th:action="@{/ventes/enregistrer}" th:object="${vente}" method="post" id="formVente" class="operation-form">
+        <div th:if="${devisVente != null}" class="operation-note mb-3" id="devisVenteInfo">
+            <i class="fas fa-file-invoice" aria-hidden="true"></i>
+            <p class="mb-0">Vente issue du devis <strong th:text="${devisVente.numero}"></strong> : les produits, les quantités et les prix du devis sont repris et ne peuvent pas être modifiés.
+                Pour changer le contenu, <a th:href="@{/devis/{id}(id=${devisVente.id})}">annulez le devis</a> et établissez-en un autre. Le stock est contrôlé à l’enregistrement ; si le stock manque, le devis reste en cours.</p>
+        </div>
+
+        <form th:action="@{/ventes/enregistrer}" th:object="${vente}" method="post" id="formVente" class="operation-form"
+              th:attr="data-devis=${devisVente != null ? 'true' : null}">
             <input type="hidden" name="jetonCreation" th:value="${jetonCreation}">
+            <input type="hidden" name="devis" th:if="${devisVente != null}" th:value="${devisVente.id}">
 
             <div class="operation-layout">
             <div class="operation-workspace">
@@ -55,7 +63,7 @@
                         <span id="panierCompteur" class="operation-count" aria-live="polite">0 ligne</span>
                     </div>
 
-                    <div class="operation-compose operation-compose--sale">
+                    <div class="operation-compose operation-compose--sale" th:attr="hidden=${devisVente != null ? 'hidden' : null}" th:styleappend="${devisVente != null} ? 'display: none'">
                         <div class="operation-field">
                             <label for="selectProduit" class="form-label">Produit</label>
                             <select class="form-select" id="selectProduit">
@@ -82,7 +90,7 @@
                             </button>
                         </div>
                     </div>
-                    <p class="operation-field-help">Les services se vendent sans stock. Les produits sans prix ne peuvent pas être vendus. Leurs prix se définissent lors d’un achat, ou avec le stock initial pendant le démarrage de la boutique.</p>
+                    <p class="operation-field-help" th:unless="${devisVente != null}">Les services se vendent sans stock. Les produits sans prix ne peuvent pas être vendus. Leurs prix se définissent lors d’un achat, ou avec le stock initial pendant le démarrage de la boutique.</p>
                     <p id="produitFeedback" class="operation-feedback" role="status" aria-live="polite" hidden></p>
 
                     <div id="panierVide" class="operation-empty">
@@ -166,11 +174,23 @@
     <script th:inline="javascript">
         // Après un refus, le panier saisi est reconstitué à partir des lignes envoyées.
         document.addEventListener('DOMContentLoaded', function() {
+            /*[# th:if="${devisVente == null}"]*/
             /*[# th:each="ligne : ${vente.lignes}"]*/
             chargerLigneVente(
                 /*[[${ligne.produit != null ? ligne.produit.id : null}]]*/ null,
                 /*[[${ligne.quantite}]]*/ null
             );
+            /*[/]*/
+            /*[/]*/
+            // Vente issue d'un devis : lignes et prix repris du devis, jamais de la saisie.
+            /*[# th:if="${devisVente != null}"]*/
+            /*[# th:each="ligne : ${devisVente.lignes}"]*/
+            chargerLigneVente(
+                /*[[${ligne.produit.id}]]*/ null,
+                /*[[${ligne.quantite}]]*/ null,
+                /*[[${ligne.prixUnitaire.toPlainString()}]]*/ null
+            );
+            /*[/]*/
             /*[/]*/
         });
     </script>

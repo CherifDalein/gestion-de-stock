@@ -78,15 +78,21 @@ public class OperationCreationService {
 
     @Transactional
     public ResultatCreation creerVente(String jeton, Vente vente) {
+        return creerVente(jeton, vente, null);
+    }
+
+    /** Vente issue d'un devis si {@code devisId} est donné : l'identifiant du devis fait partie de l'empreinte du formulaire. */
+    @Transactional
+    public ResultatCreation creerVente(String jeton, Vente vente, Long devisId) {
         OperationCreation operation = verrouiller(jeton, TypeOperationCreation.VENTE);
-        String empreinte = empreinte(null, vente);
+        String empreinte = empreinte(null, vente, true, devisId);
         if (operation.getVente() != null) {
             verifierResultat(Vente.class, operation.getVente().getId());
             verifierCopie(operation, empreinte);
             return new ResultatCreation(operation.getVente().getId(), true);
         }
         verifierValidite(operation);
-        Vente enregistree = ventes.effectuerVente(vente);
+        Vente enregistree = ventes.effectuerVente(vente, devisId);
         operation.setVente(enregistree);
         operation.setEmpreinte(empreinte);
         return new ResultatCreation(enregistree.getId(), false);
@@ -166,6 +172,10 @@ public class OperationCreationService {
     }
 
     private static String empreinte(Achat achat, Vente vente, boolean inclureTarifVente) {
+        return empreinte(achat, vente, inclureTarifVente, null);
+    }
+
+    private static String empreinte(Achat achat, Vente vente, boolean inclureTarifVente, Long devisId) {
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             try (DataOutputStream out = new DataOutputStream(bytes)) {
@@ -208,6 +218,10 @@ public class OperationCreationService {
                 if (echeance != null) {
                     out.writeUTF("ECHEANCE");
                     out.writeUTF(echeance.toString());
+                }
+                if (devisId != null) {
+                    out.writeUTF("DEVIS");
+                    out.writeLong(devisId);
                 }
             }
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes.toByteArray()));
