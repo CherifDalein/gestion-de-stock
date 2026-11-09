@@ -253,6 +253,81 @@ contiennent **les mêmes ventes** ; recherche sans accents ; en-têtes de télé
 (en-têtes, valeurs, texte du PDF) ; l'autre boutique est exclue ; dépassement de limite ; paramètres invalides ; accès sans connexion ;
 lecture seule.
 
+## Exports des listes
+
+Chaque liste ci-dessous a ses boutons **Excel** et **PDF** (`btn-outline-success` / `btn-outline-danger`, à côté du bouton d'action de la page),
+construits comme ceux du pilote des ventes : l'export contient **exactement les lignes de la liste affichée** (mêmes filtres, même recherche),
+de la boutique du compte connecté, avec les droits de l'écran. Toutes les routes sont des `GET` en lecture seule, placées sous le préfixe de la
+page (elles héritent de sa règle de sécurité), et un paramètre invalide, répété ou trop long donne **400**.
+
+| Liste | Routes (`.../excel`, `.../pdf`) | Droits | Colonnes | Filtres respectés | Totaux |
+|---|---|---|---|---|---|
+| Achats | `/achats/export` | gérant ; caissier 403 | Numéro, Date, Fournisseur, Saisi par, Total, Retours, Versé, Avance utilisée, Reste, Statut, Échéance (11, paysage) | `filtre=echues`, `q` | nombre d'achats, Σ total, retours, versé, avance, reste |
+| Produits | `/produits/export` | gérant **et** caissier (règle ajoutée dans `SecurityConfig`) | Référence, Produit, Catégorie, Nature, Unité, Quantité, Seuil d'alerte, État du stock, Prix de vente (9, paysage). **Gérant seulement** : Fournisseur, Coût moyen, Dernier prix d'achat, Marge unitaire, Taux de marge, Valeur du stock (15, paysage) | `categorie=<id>`, `stock=en-stock\|disponible\|faible\|rupture\|a-surveiller\|service`, `q` | nombre de produits ; gérant : Σ valeur du stock |
+| Clients | `/clients/export` | gérant et caissier, comme l'écran (solde et avance sont visibles du caissier) | Nom, Téléphone, Email, Adresse, Me doit, Je dois, Avance disponible, Dont solde de départ (8, paysage) | `contact=telephone\|email\|sans-contact`, `q` | nombre de fiches, Σ de chaque montant |
+| Fournisseurs | `/fournisseurs/export` | gérant ; caissier 403 | mêmes colonnes que les clients | `contact`, `q` | idem |
+| Devis | `/devis/export` | gérant et caissier | Numéro, Date, Client, Auteur, Total, Valable jusqu'au, État (7, portrait) | `etat=en-cours\|expire\|transforme\|annule`, `q` | nombre de devis, Σ total |
+| Retours | `/retours/export` | gérant ; caissier 403 | Numéro, Type, Date, Document d'origine, Client / fournisseur, Montant, Remboursé, Avoir (8, paysage) | `type=vente\|achat`, `q` | nombre de retours, Σ montant, remboursé, avoir |
+| Journal de trésorerie | `/caisse/export` | gérant ; caissier 403 (comme `/caisse/journal`) | Date et heure, Compte, Sens, Montant (signé), Source, Motif, Utilisateur, Annulation (8, paysage) | `compte=CAISSE\|ORANGE_MONEY\|BANQUE`, `source=<libellé affiché>`, `sens=entree\|sortie\|neutre\|inconnu`, `du`, `au` (jours inclus), `q` | nombre de mouvements, Σ montant (net) ; en notes : entrées et sorties de la sélection, soldes par compte, solde total et indicateurs du jour de l'écran |
+| Catégories | `/categories/export` | gérant ; caissier 403 | Nom, Nombre de produits (2, portrait) | `q` | nombre de catégories, Σ produits |
+
+### Règles communes
+
+- **Format du papier** : A4 **paysage au-delà de 7 colonnes**, portrait sinon (`LivraisonExport.formatPour`, appliqué par tous les exports de cette tâche).
+- **Nom du fichier** : `<liste>_<date du jour>.xlsx|pdf` ; le journal de trésorerie avec une période : `tresorerie_<du>_<au>.xlsx|pdf`.
+- **Volume** : lecture de `limite + 1` lignes au plus, **filtres de base de données compris dans la limite** (statut échu, état d'un devis, type de retour, compte, source,
+  sens et période du journal). Les filtres calculés ou textuels (recherche `q`, état du stock, catégorie et coordonnées des répertoires, qui n'existent que dans la
+  page) sont appliqués après la lecture : une liste de plus de 20 000 lignes avant ces filtres est refusée, jamais tronquée. Retour à la liste avec l'alerte
+  « Cet export dépasse 20 000 lignes… » ; le filtre revient quand la page le lit dans son adresse (`/achats?filtre=echues`, `/devis?etat=…`, `/retours?type=…`,
+  `/produits?stock=…`, `/clients?contact=…`).
+- **Tri** : celui des écrans à l'ouverture de la page (achats et devis du plus récent au plus ancien, retours idem, journal par date décroissante, échus par échéance,
+  produits par référence, répertoires et catégories par nom, avec comparaison « naturelle » `REF-2` avant `REF-10`). Le tri choisi dans le navigateur n'est pas transmis.
+- **Recherche** : la barre de la page est côté navigateur ; `export-liste.js` ajoute son texte sous `q`, le serveur garde les lignes dont **chaque mot** figure dans le texte
+  de la ligne, sans accents ni casse (`RechercheListe`). Pour les répertoires, un mot de chiffres retrouve aussi un téléphone écrit autrement ; pour le journal, la recherche
+  porte aussi sur la mention d'annulation. La recherche des produits couvre le fournisseur **pour le gérant seulement**, comme l'écran.
+- **Le caissier n'a ni coût, ni marge, ni trésorerie** : pour les produits, `ProduitExportService` décide avec `DroitsExport.estGerant()` et ne lit ni le coût moyen, ni le dernier prix
+  d'achat, ni le fournisseur ; aucun paramètre n'élargit ce droit. Les listes réservées au gérant le revérifient dans leur service (`DroitsExport.exigerGerant()`, 403) en plus de la
+  règle de sécurité de leur route.
+
+### Ce que les exports ajoutent au socle (génériques)
+
+| Ajout | Rôle |
+|---|---|
+| `LivraisonExport` | fabrique la réponse Excel ou PDF d'un `TableauExport` (nom de fichier, paysage au-delà de 7 colonnes, retour à la liste si trop volumineux) : un contrôleur d'export tient en quelques lignes |
+| `RechercheListe` | recherche sans accents ni casse (reprise du pilote, utilisée aussi par `VenteExportService`), tri naturel |
+| `ParametresListe` | lecture stricte des paramètres (`q`, choix, identifiant, date, période) : 400 sur toute valeur invalide |
+| `DroitsExport.exigerGerant()` | seconde barrière des listes réservées au gérant |
+| `export-liste.js` | accepte `data-export-champs="q=#champ;stock=#autre;source=#liste@libelle"` pour les pages qui filtrent avec leurs propres champs (produits, répertoires, journal, catégories) ; le lien est recalculé au clic (les boutons « Réinitialiser » de ces pages changent les champs sans événement). Sans cet attribut, comportement du pilote (barre de recherche simple-datatables) |
+| `pdf/base.html` | les **intitulés** de colonnes numériques peuvent passer à la ligne (valeurs toujours sur une ligne) : un tableau de 15 colonnes tient sur une page paysage |
+
+### Détails par liste
+
+- **Achats** : statut « Réglé », « À régler » ou « À régler (en retard) » ; « Saisi par » vaut « Non renseigné » sans compte. Le libellé « Versé » est celui de l'écran.
+- **Produits** : « Nature » vaut « Article » ou « Service » ; quantité et seuil sont vides pour un service ; une fiche dont les prix ne sont pas définis n'a ni prix, ni coût, ni marge
+  (« À définir » à l'écran). Valeur du stock = quantité × coût moyen pondéré (articles aux prix définis). Le taux de marge est un vrai pourcentage Excel (`15,6 %`).
+- **Clients et fournisseurs** : « Me doit » est ce que la personne doit à la boutique, « Je dois » ce que la boutique lui doit (solde net de l'écran, avance déduite) ; « Avance
+  disponible » et « Dont solde de départ » sont ceux de l'écran. Les cellules à zéro sont vides.
+- **Devis** : l'état est celui calculé de l'écran (« Expiré » = en cours dont la validité est passée). L'auteur est ajouté à ce que l'écran montre.
+- **Retours** : retours de vente et d'achat mêlés, du plus récent au plus ancien ; la boutique et le gérant sont vérifiés aussi par `RetourVenteService` et `RetourAchatService`.
+- **Journal de trésorerie** : « Sens » vaut Entrée, Sortie, Sans variation ou Non renseigné (« (correction) » pour une correction d'entrée) ; le montant est signé ; « Annulation » porte
+  « Annulé le … · motif : … » sur un mouvement annulé et « Annulation du mouvement du … » sur l'annulation ; le motif d'une dépense ou d'un transfert est suivi de sa référence
+  (« Dépense #12 »). Les soldes (par compte et total) et les indicateurs de la journée sont ceux de l'écran, **indépendants des filtres** comme à l'écran ; `source` est le libellé
+  affiché dans la liste déroulante (« Solde initial », « VENTE », « Non renseignée »…).
+- **Catégories** : la page ne propose qu'une recherche (identifiant ou nom).
+
+### Vérifications des listes
+
+```sh
+./gradlew test --tests '*ListesCommercialesExportTests' --tests '*ListesCatalogueExportTests' --tests '*TresorerieExportTests' --tests '*ListeExportOutilsTests'
+node --test src/test/js/export-liste.test.cjs
+EXPORT_DEMO_DIR=/tmp/demo ./gradlew test --tests '*ListesCatalogueExportTests'   # PDF de démonstration des produits (gérant et caissier), clients, fournisseurs, catégories
+```
+
+Chaque classe a deux boutiques, un gérant et un caissier, et compare les nombres au calcul à la main : Excel ouvert avec POI (nombres et dates réels, totaux), PDF qui commence par `%PDF`
+et contient le nom de la boutique et des lignes attendues, les filtres comparés à la liste de l'écran (modèle du contrôleur), l'autre boutique exclue, 403 pour un rôle non autorisé,
+aucune formule dans les cellules, dépassement de limite, paramètres invalides, accès sans connexion, présence des boutons et de leurs champs de filtre sur la page. Le caissier n'a, dans
+les produits, aucun coût, marge, fournisseur ni valeur de stock (en-têtes, nombres, texte du PDF, recherche) et reçoit 403 sur le journal de trésorerie.
+
 ## Limites connues
 
 - Les montants Excel sont des `double` (15 chiffres significatifs) ; un montant de plus de 15 chiffres perdrait ses centimes.
@@ -260,5 +335,6 @@ lecture seule.
   et réduisez les textes, ou écrivez un gabarit dédié.
 - Le logo est celui du service de logos (PNG normalisé) : il est imprimé à 17 mm de haut au plus.
 - Le PDF n'est pas PDF/A et n'est pas signé.
+- Le tri choisi dans le navigateur (colonnes cliquées) n'est pas transmis aux exports des listes : ils suivent l'ordre d'ouverture de la page.
 - La recherche serveur reproduit celle de l'écran mais pas à la lettre (l'écran cherche dans le texte affiché, y compris « GNF » ;
   l'export cherche numéro, dates, client, vendeur, montants et statut).
