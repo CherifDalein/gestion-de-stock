@@ -16,7 +16,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="ligne, it : ${tableau.lignes}" th:class="${it.odd ? 'pair' : ''}">
+        <tr th:each="ligne, it : ${tableau.lignes}" th:class="${tableau.estSousTotal(it.index) ? 'soustotal' : (it.odd ? 'pair' : '')}">
             <td th:each="cellule, ic : ${ligne}" th:class="${(tableau.colonnes[ic.index].numerique ? 'num ' : '') + (tableau.colonnes[ic.index].sansRetour ? 'nw' : '')}" th:text="${cellule}">valeur</td>
         </tr>
         <tr th:if="${#lists.isEmpty(tableau.lignes)}">

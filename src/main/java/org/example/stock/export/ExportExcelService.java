@@ -34,9 +34,28 @@ public class ExportExcelService {
     private static final int LARGEUR_MIN = 8, LARGEUR_MAX = 60;
 
     public byte[] ecrire(TableauExport tableau, ContexteDocument contexte) {
+        return ecrire(List.of(tableau), contexte);
+    }
+
+    /**
+     * Classeur de plusieurs feuilles, une par tableau (états en plusieurs parties : bilan…). Chaque feuille a son en-tête
+     * complet ; les noms de feuille doivent être distincts (comparés sans tenir compte de la casse, après correction).
+     */
+    public byte[] ecrire(List<TableauExport> tableaux, ContexteDocument contexte) {
+        if (tableaux == null || tableaux.isEmpty()) throw new IllegalArgumentException("Un classeur doit avoir au moins une feuille");
         try (Workbook classeur = new XSSFWorkbook(); ByteArrayOutputStream sortie = new ByteArrayOutputStream()) {
-            Sheet feuille = classeur.createSheet(WorkbookUtil.createSafeSheetName(tableau.getNomFeuille()));
             Styles styles = new Styles(classeur);
+            for (TableauExport tableau : tableaux) ecrireFeuille(classeur, styles, tableau, contexte);
+            classeur.write(sortie);
+            return sortie.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Écriture du fichier Excel impossible", e);
+        }
+    }
+
+    private void ecrireFeuille(Workbook classeur, Styles styles, TableauExport tableau, ContexteDocument contexte) {
+        {
+            Sheet feuille = classeur.createSheet(WorkbookUtil.createSafeSheetName(tableau.getNomFeuille()));
             List<Colonne> colonnes = tableau.getColonnes();
             int[] largeurs = new int[colonnes.size()];
             for (int i = 0; i < largeurs.length; i++) largeurs[i] = colonnes.get(i).titre().length() + 3;
@@ -59,8 +78,9 @@ public class ExportExcelService {
                 ecrireTexte(cellule, colonnes.get(c).titre(), styles.entete(colonnes.get(c)), styles);
             }
 
+            int rang = 0;
             for (List<Object> valeurs : tableau.getLignes()) {
-                ecrireLigne(feuille.createRow(ligne++), colonnes, valeurs, styles, largeurs, false);
+                ecrireLigne(feuille.createRow(ligne++), colonnes, valeurs, styles, largeurs, tableau.getSousTotaux().contains(rang++));
             }
             int derniereDonnee = ligne - 1;
             if (tableau.getTotaux() != null) {
@@ -80,11 +100,6 @@ public class ExportExcelService {
             impression.setFitHeight((short) 0);
             feuille.setFitToPage(true);
             feuille.setRepeatingRows(new CellRangeAddress(ligneEntetes, ligneEntetes, -1, -1));
-
-            classeur.write(sortie);
-            return sortie.toByteArray();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Écriture du fichier Excel impossible", e);
         }
     }
 
