@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!--
+  Gabarit de base des documents PDF (openhtmltopdf). Ce fichier doit rester du XHTML VALIDE : balises fermées
+  (<br />, <img ... />), attributs entre guillemets, entités numériques (&#160;) et non nommées (&nbsp;), pas de
+  JavaScript, pas de Bootstrap, pas de flexbox ni de grille CSS (utiliser des <table> pour aligner).
+  Mode d'emploi : docs/lot-4.md, section « Socle d'export ».
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr" th:fragment="page(corps)">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title th:text="${titre}">Document</title>
+    <meta name="author" th:content="${doc.nomBoutique}" content="Boutique" />
+    <style th:utext="${cssPage}">@page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }</style>
+    <style>
+        body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1f2933; margin: 0; padding: 0; line-height: 1.35; }
+        body.paysage { font-size: 8.5pt; }
+        body.ticket { font-size: 8pt; }
+        h1 { font-size: 15pt; margin: 0 0 2mm 0; color: #14532d; }
+        p { margin: 0 0 1.5mm 0; }
+        table { border-collapse: collapse; }
+        table.entete { width: 100%; margin-bottom: 3mm; border-bottom: 0.6mm solid #15803d; }
+        table.entete td { vertical-align: top; padding: 0 0 3mm 0; }
+        td.entete-edition { text-align: right; font-size: 8pt; color: #4b5563; width: 38%; }
+        table.marque td { vertical-align: middle; padding: 0 3mm 0 0; }
+        img.logo { max-height: 17mm; max-width: 38mm; }
+        div.entete-ticket { text-align: center; border-bottom: 0.4mm dashed #374151; margin-bottom: 2mm; padding-bottom: 2mm; }
+        div.entete-ticket img.logo { max-height: 14mm; max-width: 40mm; }
+        .nom-boutique { font-size: 14pt; font-weight: bold; color: #14532d; margin-bottom: 0.8mm; }
+        .coordonnees { font-size: 8pt; color: #4b5563; margin: 0; }
+        .filtres { font-size: 8.5pt; color: #374151; margin-bottom: 1mm; }
+        .note { font-size: 8pt; color: #6b7280; margin-top: 2mm; }
+        table.tableau { width: 100%; margin-top: 3mm; -fs-table-paginate: paginate; }
+        table.tableau th { background-color: #166534; color: #ffffff; font-weight: bold; text-align: left; padding: 1.6mm 1.8mm; border: 0; }
+        table.tableau td { padding: 1.3mm 1.8mm; border-bottom: 0.2mm solid #d1d5db; vertical-align: top; }
+        table.tableau tr { page-break-inside: avoid; }
+        table.tableau thead { display: table-header-group; }
+        table.tableau tr.pair td { background-color: #f3f6f4; }
+        table.tableau.dense { font-size: 7.5pt; }
+        table.tableau.dense th { padding: 1.3mm 1.2mm; }
+        table.tableau.dense td { padding: 1.1mm 1.2mm; }
+        table.tableau .nw { white-space: nowrap; }
+        table.tableau .num { text-align: right; white-space: nowrap; }
+        table.tableau tr.totaux td { font-weight: bold; background-color: #e5efe8; border-top: 0.5mm solid #166534; border-bottom: 0.5mm solid #166534; }
+        table.tableau td.vide { text-align: center; color: #6b7280; padding: 6mm 0; }
+    </style>
+</head>
+<body th:classappend="${format.estPaysage() ? 'paysage' : (format.estTicket() ? 'ticket' : '')}">
+<!-- En-tête de boutique réutilisable seul : th:replace="~{pdf/base :: entete}" -->
+<th:block th:fragment="entete">
+<table class="entete" th:unless="${format.estTicket()}">
+    <tr>
+        <td>
+            <table class="marque">
+                <tr>
+                    <td th:if="${doc.aUnLogo()}"><img class="logo" th:src="${doc.logoDataUri}" alt="" /></td>
+                    <td>
+                        <div class="nom-boutique" th:text="${doc.nomBoutique}">Boutique</div>
+                        <p class="coordonnees" th:each="ligne : ${doc.coordonnees()}" th:text="${ligne}">Adresse</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td class="entete-edition">
+            <div>Édité le <span th:text="${doc.editeLeTexte()}">01/01/2026 08:00</span></div>
+            <div th:if="${doc.editeur() != null and !#strings.isEmpty(doc.editeur())}">par <span th:text="${doc.editeur()}">Utilisateur</span></div>
+        </td>
+    </tr>
+</table>
+<div class="entete-ticket" th:if="${format.estTicket()}">
+    <div th:if="${doc.aUnLogo()}"><img class="logo" th:src="${doc.logoDataUri}" alt="" /></div>
+    <div class="nom-boutique" th:text="${doc.nomBoutique}">Boutique</div>
+    <p class="coordonnees" th:each="ligne : ${doc.coordonnees()}" th:text="${ligne}">Adresse</p>
+    <p class="coordonnees">Édité le <span th:text="${doc.editeLeTexte()}">01/01/2026 08:00</span><span th:if="${doc.editeur() != null and !#strings.isEmpty(doc.editeur())}" th:text="${' par ' + doc.editeur()}"></span></p>
+</div>
+</th:block>
+<div th:replace="${corps}"></div>
+</body>
+</html>

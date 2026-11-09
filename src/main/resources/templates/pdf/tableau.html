@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<!--
+  Gabarit générique « liste / état » : reçoit `tableau` (DocumentPdfService.TableauVue) et `titre`.
+  Il sert d'exemple de gabarit enfant : il se contente de fournir le fragment #contenu au gabarit de base.
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:replace="~{pdf/base :: page(~{::div#contenu})}">
+<body>
+<div id="contenu">
+    <h1 th:text="${tableau.titre}">Titre</h1>
+    <p class="filtres" th:if="${!#strings.isEmpty(tableau.filtres)}" th:text="${tableau.filtres}">Période</p>
+    <p class="filtres" th:if="${tableau.aDesMontants()}">Montants en GNF</p>
+    <table class="tableau" th:classappend="${tableau.dense ? 'dense' : ''}">
+        <thead>
+        <tr>
+            <th th:each="c : ${tableau.colonnes}" th:class="${(c.numerique ? 'num ' : '') + (c.sansRetour ? 'nw' : '')}" th:text="${c.titre}">Colonne</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ligne, it : ${tableau.lignes}" th:class="${it.odd ? 'pair' : ''}">
+            <td th:each="cellule, ic : ${ligne}" th:class="${(tableau.colonnes[ic.index].numerique ? 'num ' : '') + (tableau.colonnes[ic.index].sansRetour ? 'nw' : '')}" th:text="${cellule}">valeur</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(tableau.lignes)}">
+            <td class="vide" th:colspan="${#lists.size(tableau.colonnes)}">Aucune ligne pour ces filtres.</td>
+        </tr>
+        <tr class="totaux" th:if="${tableau.totaux != null}">
+            <td th:each="cellule, ic : ${tableau.totaux}" th:class="${(tableau.colonnes[ic.index].numerique ? 'num ' : '') + (tableau.colonnes[ic.index].sansRetour ? 'nw' : '')}" th:text="${cellule}">total</td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="note" th:each="note : ${tableau.notes}" th:text="${note}">Note</p>
+</div>
+</body>
+</html>
