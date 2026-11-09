@@ -21,6 +21,7 @@ import org.example.stock.service.ProduitService;
 import org.example.stock.service.VenteService;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EcheanceService;
+import org.example.stock.service.FiltreVentes;
 import org.example.stock.service.DevisService;
 import org.example.stock.model.Devis;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -55,6 +57,8 @@ public class VenteController {
     @GetMapping
     public String listeVentes(@RequestParam(required = false) String filtre,
                               @RequestParam(name = "vendeur", required = false) List<String> vendeurDemande,
+                              @RequestParam(name = "du", required = false) List<String> duDemande,
+                              @RequestParam(name = "au", required = false) List<String> auDemande,
                               Authentication authentication, Model model) {
         boolean echues = "echues".equals(filtre);
         // Le filtre par vendeur est réservé au gérant ; pour un caissier le paramètre est ignoré et la liste reste la même.
@@ -64,10 +68,27 @@ public class VenteController {
             model.addAttribute("vendeursFiltre", vendeurs);
             vendeurId = vendeurChoisi(vendeurDemande, vendeurs, model);
         }
+        // Période (facultative, bornes incluses) : invalide, elle est ignorée avec un avertissement et toutes les dates sont affichées.
+        LocalDate du = null, au = null;
+        try {
+            du = FiltreVentes.analyserDate(duDemande);
+            au = FiltreVentes.analyserDate(auDemande);
+            if (!FiltreVentes.periodeCoherente(du, au)) throw new IllegalArgumentException("Période incohérente");
+        } catch (IllegalArgumentException e) {
+            du = null; au = null;
+            model.addAttribute("avertissementPeriode", "La période demandée est invalide : toutes les dates sont affichées.");
+        }
         model.addAttribute("vendeurChoisi", vendeurId);
-        model.addAttribute("ventes", vendeurId == null
-                ? (echues ? venteService.listerEchuesNonSoldees() : venteService.listerToutes())
-                : (echues ? venteService.listerEchuesNonSoldeesDuVendeur(vendeurId) : venteService.listerDuVendeur(vendeurId)));
+        model.addAttribute("periodeDu", du);
+        model.addAttribute("periodeAu", au);
+        model.addAttribute("ventes", venteService.rechercher(new FiltreVentes(echues, vendeurId, du, au)));
+        // Les boutons Excel et PDF reprennent exactement les filtres affichés (chaîne vide sans filtre).
+        var exportQuery = org.springframework.web.util.UriComponentsBuilder.newInstance();
+        if (echues) exportQuery.queryParam("filtre", "echues");
+        if (vendeurId != null) exportQuery.queryParam("vendeur", vendeurId);
+        if (du != null) exportQuery.queryParam("du", du);
+        if (au != null) exportQuery.queryParam("au", au);
+        model.addAttribute("exportQuery", exportQuery.build().toUriString());
         model.addAttribute("filtreEchues", echues);
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "ventes/liste");
