@@ -3,6 +3,7 @@ package org.example.stock.repository;
 import org.example.stock.model.Vente;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,7 +13,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-public interface VenteRepository extends JpaRepository<Vente, Long> {
+public interface VenteRepository extends JpaRepository<Vente, Long>, JpaSpecificationExecutor<Vente> {
     Optional<Vente> findByIdAndBoutiqueId(Long id, Long boutiqueId);
     @EntityGraph(attributePaths = "vendeur")
     List<Vente> findByBoutiqueIdOrderByDateVenteDesc(Long boutiqueId);

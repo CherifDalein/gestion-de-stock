@@ -16,12 +16,18 @@ import org.example.stock.repository.VenteRepository;
 import org.example.stock.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -161,6 +167,49 @@ public class VenteService {
 
     public List<Vente> listerToutes() {
         return venteRepository.findByBoutiqueIdOrderByDateVenteDesc(boutiqueService.idBoutiqueCourante());
+    }
+
+    /**
+     * Ventes de la boutique courante selon les filtres de l'écran /ventes : c'est aussi la source des exports Excel et PDF.
+     * Tri : les plus récentes d'abord ; pour « échues non soldées », échéance la plus ancienne d'abord.
+     */
+    public List<Vente> rechercher(FiltreVentes filtre) {
+        return venteRepository.findAll(specification(filtre), tri(filtre));
+    }
+
+    /** Comme {@link #rechercher(FiltreVentes)} mais lit au plus {@code max + 1} lignes : plus de {@code max} résultats signale un dépassement. */
+    public List<Vente> rechercher(FiltreVentes filtre, int max) {
+        return venteRepository.findAll(specification(filtre), PageRequest.of(0, max + 1, tri(filtre))).getContent();
+    }
+
+    private static Sort tri(FiltreVentes filtre) {
+        return filtre.echues() ? Sort.by(Sort.Order.asc("dateEcheance"), Sort.Order.asc("id"))
+                : Sort.by(Sort.Order.desc("dateVente"), Sort.Order.desc("id"));
+    }
+
+    private Specification<Vente> specification(FiltreVentes filtre) {
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        LocalDate aujourdHui = echeances.aujourdHui();
+        return (vente, requete, cb) -> {
+            if (requete.getResultType() != Long.class && requete.getResultType() != long.class) {
+                vente.fetch("vendeur", JoinType.LEFT);
+                vente.fetch("client", JoinType.LEFT);
+            }
+            List<Predicate> conditions = new ArrayList<>();
+            conditions.add(cb.equal(vente.get("boutique").get("id"), boutiqueId));
+            if (filtre.vendeurId() != null) conditions.add(cb.equal(vente.get("vendeur").get("id"), filtre.vendeurId()));
+            if (filtre.du() != null) conditions.add(cb.greaterThanOrEqualTo(vente.<LocalDateTime>get("dateVente"), filtre.du().atStartOfDay()));
+            if (filtre.au() != null) conditions.add(cb.lessThan(vente.<LocalDateTime>get("dateVente"), filtre.au().plusDays(1).atStartOfDay()));
+            if (filtre.echues()) {
+                conditions.add(cb.lessThan(vente.<LocalDate>get("dateEcheance"), aujourdHui));
+                var reste = cb.diff(cb.diff(cb.diff(cb.coalesce(vente.<BigDecimal>get("montantTotal"), BigDecimal.ZERO),
+                                cb.coalesce(vente.<BigDecimal>get("montantRetours"), BigDecimal.ZERO)),
+                        cb.coalesce(vente.<BigDecimal>get("montantVerse"), BigDecimal.ZERO)),
+                        cb.coalesce(vente.<BigDecimal>get("avanceUtilisee"), BigDecimal.ZERO));
+                conditions.add(cb.greaterThan(reste, BigDecimal.ZERO));
+            }
+            return cb.and(conditions.toArray(Predicate[]::new));
+        };
     }
 
     /** Comptes de la boutique courante, désactivés compris (ils ont pu saisir des ventes), proposés par le filtre de vendeur. */

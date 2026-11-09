@@ -1,23 +1,35 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Journal des ventes</h1>
         <p class="app-page-subtitle">Retrouvez les ventes, leurs règlements et leurs justificatifs.</p>
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <nav class="btn-group" aria-label="Filtrer les ventes">
-                <a th:href="@{/ventes(vendeur=${vendeurChoisi})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? '' : 'active'}"
+                <a th:href="@{/ventes(vendeur=${vendeurChoisi},du=${periodeDu != null ? periodeDu.toString() : null},au=${periodeAu != null ? periodeAu.toString() : null})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? '' : 'active'}"
                    th:attr="aria-current=${filtreEchues ? null : 'page'}">Toutes les ventes</a>
-                <a th:href="@{/ventes(filtre='echues',vendeur=${vendeurChoisi})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
+                <a th:href="@{/ventes(filtre='echues',vendeur=${vendeurChoisi},du=${periodeDu != null ? periodeDu.toString() : null},au=${periodeAu != null ? periodeAu.toString() : null})}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
                    th:attr="aria-current=${filtreEchues ? 'page' : null}">Échues non soldées</a>
             </nav>
-            <a th:href="@{/ventes/nouveau}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Effectuer une vente
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="|@{/ventes/export/excel}${exportQuery}|"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="|@{/ventes/export/pdf}${exportQuery}|"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/ventes/nouveau}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Effectuer une vente
+                </a>
+            </div>
         </div>
 
-        <form th:if="${vendeursFiltre != null}" method="get" th:action="@{/ventes}" class="mb-4 d-flex flex-wrap gap-2 align-items-end" aria-label="Filtrer par vendeur">
+        <form method="get" th:action="@{/ventes}" class="mb-4 d-flex flex-wrap gap-2 align-items-end" aria-label="Filtrer les ventes par vendeur et par période">
             <input type="hidden" name="filtre" value="echues" th:if="${filtreEchues}" />
-            <div>
+            <div th:if="${vendeursFiltre != null}">
                 <label for="filtreVendeur" class="form-label small mb-1">Vendeur</label>
                 <select id="filtreVendeur" name="vendeur" class="form-select">
                     <option value="" th:selected="${vendeurChoisi == null}">Tous les vendeurs</option>
@@ -25,9 +37,19 @@
                             th:text="${(#strings.isEmpty(#strings.trim(u.nom)) ? 'Compte sans nom' : u.nom) + (u.actif ? '' : ' (compte désactivé)')}"></option>
                 </select>
             </div>
+            <div>
+                <label for="filtreDu" class="form-label small mb-1">Du</label>
+                <input id="filtreDu" name="du" type="date" class="form-control" min="2000-01-01" max="9998-12-31" th:value="${periodeDu}">
+            </div>
+            <div>
+                <label for="filtreAu" class="form-label small mb-1">Au (inclus)</label>
+                <input id="filtreAu" name="au" type="date" class="form-control" min="2000-01-01" max="9998-12-31" th:value="${periodeAu}">
+            </div>
             <button type="submit" class="btn btn-outline-primary">Filtrer</button>
+            <a th:if="${periodeDu != null or periodeAu != null or vendeurChoisi != null}" th:href="@{/ventes(filtre=${filtreEchues ? 'echues' : null})}" class="btn btn-link">Effacer les filtres</a>
         </form>
         <div th:if="${avertissementVendeur}" class="alert alert-warning" role="status" th:text="${avertissementVendeur}"></div>
+        <div th:if="${avertissementPeriode}" class="alert alert-warning" role="status" th:text="${avertissementPeriode}"></div>
 
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
