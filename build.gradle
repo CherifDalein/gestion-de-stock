@@ -34,6 +34,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    // Lot 4 : PDF (HTML/CSS -> PDF, PDFBox embarqué) et Excel. POI 5.5.x : la 6.0.0 change l'API et n'apporte rien ici.
+    implementation 'io.github.openhtmltopdf:openhtmltopdf-pdfbox:1.1.110'
+    implementation 'org.apache.poi:poi-ooxml:5.5.1'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
