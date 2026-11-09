@@ -51,6 +51,8 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Chaque classe @SpringBootTest à base H2 distincte garde son contexte en cache : 512 Mo (défaut) ne suffisent plus.
+    maxHeapSize = '1g'
 }
 
 jar {
