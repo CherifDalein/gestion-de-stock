@@ -244,6 +244,17 @@ public class AchatService {
         return achatRepository.findByBoutiqueIdOrderByDateAchatDesc(boutiqueService.idBoutiqueCourante());
     }
 
+    /**
+     * Les achats de la liste affichée (tous, ou seulement les échus non soldés), au plus {@code max + 1} : plus de {@code max}
+     * résultats signale un dépassement de la limite d'export. Mêmes achats et même ordre que l'écran.
+     */
+    public List<Achat> listerPourExport(boolean echus, int max) {
+        var page = org.springframework.data.domain.PageRequest.of(0, max + 1);
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        return echus ? achatRepository.findEchusNonSoldesPourExport(boutiqueId, echeances.aujourdHui(), page)
+                : achatRepository.findPourExport(boutiqueId, page);
+    }
+
     /** Achats échus non soldés : reste à payer et échéance antérieure au jour. */
     public List<Achat> listerEchusNonSoldes() {
         return achatRepository.findEchusNonSoldes(boutiqueService.idBoutiqueCourante(), echeances.aujourdHui());

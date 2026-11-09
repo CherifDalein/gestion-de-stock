@@ -1,9 +1,11 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Retours</h1>
         <p class="app-page-subtitle">Marchandises rendues par les clients (retours de vente) et rendues aux fournisseurs (retours d’achat), avec ce qui a été remboursé en argent ou gardé en avoir. Un retour de vente s’enregistre depuis le détail d’une vente, un retour au fournisseur depuis la liste des achats.</p>
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
-        <nav class="btn-group mb-4" aria-label="Filtrer les retours par type">
+        <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <nav class="btn-group" aria-label="Filtrer les retours par type">
             <a th:href="@{/retours}" class="btn btn-outline-secondary" th:classappend="${filtreType == 'tous' ? 'active' : ''}"
                th:attr="aria-current=${filtreType == 'tous' ? 'page' : null}">Tous</a>
             <a th:href="@{/retours(type='vente')}" class="btn btn-outline-secondary" th:classappend="${filtreType == 'vente' ? 'active' : ''}"
@@ -11,6 +13,17 @@
             <a th:href="@{/retours(type='achat')}" class="btn btn-outline-secondary" th:classappend="${filtreType == 'achat' ? 'active' : ''}"
                th:attr="aria-current=${filtreType == 'achat' ? 'page' : null}">Achat</a>
         </nav>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="${filtreType != 'tous'} ? @{/retours/export/excel(type=${filtreType})} : @{/retours/export/excel}"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="${filtreType != 'tous'} ? @{/retours/export/pdf(type=${filtreType})} : @{/retours/export/pdf}"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+            </div>
+        </div>
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
                 <p id="retoursTableHint" class="small text-muted mb-3">Sur écran étroit, faites défiler le tableau horizontalement pour accéder aux actions.</p>

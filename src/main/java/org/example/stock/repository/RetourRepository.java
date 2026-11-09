@@ -2,6 +2,7 @@ package org.example.stock.repository;
 
 import org.example.stock.enums.TypeRetour;
 import org.example.stock.model.Retour;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,10 +17,19 @@ public interface RetourRepository extends JpaRepository<Retour, Long> {
     @EntityGraph(attributePaths = {"vente", "client", "utilisateur"})
     List<Retour> findByBoutiqueIdAndTypeOrderByDateRetourDescIdDesc(Long boutiqueId, TypeRetour type);
 
+    /** Même liste, lue par page (limite d'export). */
+    @EntityGraph(attributePaths = {"vente", "client", "utilisateur"})
+    List<Retour> findByBoutiqueIdAndTypeOrderByDateRetourDescIdDesc(Long boutiqueId, TypeRetour type, Pageable page);
+
     /** Retours d'achat de la boutique, du plus récent au plus ancien, avec l'achat, le fournisseur et l'auteur. */
     @EntityGraph(attributePaths = {"achat", "fournisseur", "utilisateur"})
     @Query("SELECT r FROM Retour r WHERE r.boutique.id = :boutiqueId AND r.type = org.example.stock.enums.TypeRetour.ACHAT ORDER BY r.dateRetour DESC, r.id DESC")
     List<Retour> retoursAchat(@Param("boutiqueId") Long boutiqueId);
+
+    /** Même liste, lue par page (limite d'export). */
+    @EntityGraph(attributePaths = {"achat", "fournisseur", "utilisateur"})
+    @Query("SELECT r FROM Retour r WHERE r.boutique.id = :boutiqueId AND r.type = org.example.stock.enums.TypeRetour.ACHAT ORDER BY r.dateRetour DESC, r.id DESC")
+    List<Retour> retoursAchat(@Param("boutiqueId") Long boutiqueId, Pageable page);
 
     /**
      * Numéros des retours d'une vente datés à partir d'une date : ceux qu'un règlement fait à cette date ne peut plus voir

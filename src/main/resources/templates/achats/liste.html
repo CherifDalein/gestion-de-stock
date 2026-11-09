@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Journal des achats</h1>
         <p class="app-page-subtitle">Retrouvez les approvisionnements, leurs règlements et leurs factures.</p>
@@ -13,9 +14,19 @@
                 <a th:href="@{/achats(filtre='echues')}" class="btn btn-outline-secondary" th:classappend="${filtreEchues ? 'active' : ''}"
                    th:attr="aria-current=${filtreEchues ? 'page' : null}">Échus non soldés</a>
             </nav>
-            <a th:href="@{/achats/nouveau}" class="btn btn-primary">
-                <i class="fas fa-truck" aria-hidden="true"></i> Nouvel approvisionnement
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="${filtreEchues} ? @{/achats/export/excel(filtre='echues')} : @{/achats/export/excel}"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="${filtreEchues} ? @{/achats/export/pdf(filtre='echues')} : @{/achats/export/pdf}"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/achats/nouveau}" class="btn btn-primary">
+                    <i class="fas fa-truck" aria-hidden="true"></i> Nouvel approvisionnement
+                </a>
+            </div>
         </div>
 
         <div class="card mb-4 shadow-sm">

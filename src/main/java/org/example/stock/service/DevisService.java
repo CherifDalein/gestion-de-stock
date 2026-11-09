@@ -15,6 +15,8 @@ import org.example.stock.repository.DevisRepository;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -152,14 +154,23 @@ public class DevisService {
 
     /** Liste de la boutique, du plus récent au plus ancien, filtrée par état affiché ({@code null} : tous). */
     public List<Devis> lister(EtatDevis etat) {
+        return lister(etat, Pageable.unpaged());
+    }
+
+    /** Comme {@link #lister(EtatDevis)} mais lit au plus {@code max + 1} devis : plus de {@code max} résultats signale un dépassement. */
+    public List<Devis> lister(EtatDevis etat, int max) {
+        return lister(etat, PageRequest.of(0, max + 1));
+    }
+
+    private List<Devis> lister(EtatDevis etat, Pageable page) {
         Long boutiqueId = boutiques.idBoutiqueCourante();
         LocalDate jour = echeances.aujourdHui();
-        if (etat == null) return devis.findTous(boutiqueId);
+        if (etat == null) return devis.findTous(boutiqueId, page);
         return switch (etat) {
-            case EN_COURS -> devis.findEnCoursValables(boutiqueId, jour);
-            case EXPIRE -> devis.findExpires(boutiqueId, jour);
-            case TRANSFORME -> devis.findParStatut(boutiqueId, StatutDevis.TRANSFORME);
-            case ANNULE -> devis.findParStatut(boutiqueId, StatutDevis.ANNULE);
+            case EN_COURS -> devis.findEnCoursValables(boutiqueId, jour, page);
+            case EXPIRE -> devis.findExpires(boutiqueId, jour, page);
+            case TRANSFORME -> devis.findParStatut(boutiqueId, StatutDevis.TRANSFORME, page);
+            case ANNULE -> devis.findParStatut(boutiqueId, StatutDevis.ANNULE, page);
         };
     }
 
