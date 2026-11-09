@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <link th:href="@{/css/categories.css}" rel="stylesheet" />
     <div id="stockCategories" class="container-fluid categories-page" th:with="totalCategories=${#lists.size(categories)}">
         <header class="categories-header">
@@ -7,9 +8,19 @@
                 <h1>Catégories</h1>
                 <p class="app-page-subtitle">Organisez vos produits pour les retrouver plus facilement.</p>
             </div>
-            <a th:href="@{/categories/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
-                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter une catégorie
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="@{/categories/export/excel}" data-export-champs="q=#categoriesSearch"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="@{/categories/export/pdf}" data-export-champs="q=#categoriesSearch"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/categories/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Ajouter une catégorie
+                </a>
+            </div>
         </header>
 
         <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>

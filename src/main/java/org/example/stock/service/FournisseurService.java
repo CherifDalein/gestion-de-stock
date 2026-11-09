@@ -30,6 +30,11 @@ public class FournisseurService {
         return fournisseurRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Comme {@link #listerTous()} mais lit au plus {@code max + 1} fiches (export : plus de {@code max} signale un dépassement). */
+    public List<Fournisseur> listerPourExport(int max) {
+        return fournisseurRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante(), org.springframework.data.domain.PageRequest.of(0, max + 1, org.springframework.data.domain.Sort.by("id")));
+    }
+
     @Transactional
     public Fournisseur enregistrer(Fournisseur f) {
         if (f.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");

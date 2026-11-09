@@ -29,6 +29,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/mon-abonnement").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/boutique/logo").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/acces-boutique", "/produits").hasAnyRole("ADMIN", "CAISSIER")
+                        // Export de la liste des produits : mêmes droits que la liste (le caissier n'y reçoit aucun coût). À placer avant « /produits/** ».
+                        .requestMatchers(HttpMethod.GET, "/produits/export/excel", "/produits/export/pdf").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
                         // Le retour d'achat (/achats/{id}/retour) est couvert par la règle « /achats/** » réservée au gérant, plus bas.
                         // Le retour de vente et ses documents sont réservés au gérant : à placer avant les règles larges des ventes.
