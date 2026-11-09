@@ -395,6 +395,13 @@ tasks.register('coutMoyenServiceMariaDbTest', JavaExec) {
     mainClass = 'org.example.stock.migration.CoutMoyenServiceMariaDbTest'
 }
 
+tasks.register('etatsMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie les requêtes des états du gérant (trésorerie, encaissements, dépenses, créances, relevés, stock) sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.EtatsMariaDbTest'
+}
+
 tasks.register('tableauDeBordMariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie les requêtes agrégées du tableau de bord (sommes, regroupement par mois, bornes et isolation) sur MariaDB temporaire'

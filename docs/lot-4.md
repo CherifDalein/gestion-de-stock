@@ -262,3 +262,125 @@ lecture seule.
 - Le PDF n'est pas PDF/A et n'est pas signé.
 - La recherche serveur reproduit celle de l'écran mais pas à la lettre (l'écran cherche dans le texte affiché, y compris « GNF » ;
   l'export cherche numéro, dates, client, vendeur, montants et statut).
+
+## États du gérant
+
+Huit états, réservés au gérant (`ADMIN`), sous le menu **États** (`/etats`). Chacun s'affiche à l'écran et se télécharge en **PDF** et en **Excel**
+par le socle d'export (même boutique, mêmes chiffres dans les trois formes). Le caissier reçoit **403** sur toutes les adresses `/etats/**`
+(règle de `SecurityConfig` + contrôle `DroitsEtats.exigerGerant()` dans chaque service) ; un visiteur sans compte est renvoyé vers la connexion.
+
+| État | Page | Export (`/export/pdf`, `/export/excel`) | Paramètre |
+|---|---|---|---|
+| Bilan de la période | `/etats/bilan` | oui | période `du` / `au` |
+| État des créances | `/etats/creances` | oui | `date` de référence |
+| État des dettes | `/etats/dettes` | oui | `date` de référence |
+| Relevé des créances d'un client | `/etats/releve/client/{id}` | oui | période |
+| Relevé des dettes d'un fournisseur | `/etats/releve/fournisseur/{id}` | oui | période |
+| État du stock | `/etats/stock` | oui | aucun (jour de l'édition) |
+| Liste des dépenses | `/etats/depenses` | oui | période |
+| Liste des encaissements | `/etats/encaissements` | oui | période |
+| Ventes par vendeur | `/etats/ventes-par-vendeur` (page existante) | oui (nouveau) | période |
+
+Les relevés s'ouvrent depuis les listes des clients et des fournisseurs (lien « Relevé des créances » / « Relevé des dettes », gérant seulement).
+Sans paramètre, la période est le **mois courant** (de l'horloge `recoveryClock`, comme `EcheanceService.aujourdHui()`). Les bornes sont celles du
+tableau de bord : `[du à 0 h, au + 1 jour à 0 h)`, le jour `au` est donc inclus. Années acceptées : 2000 à 9998 ; `au` ne peut précéder `du`.
+**Période invalide** : la page s'affiche avec un avertissement (mois courant) et jamais de 500 ; l'export répond **400** ; un format autre que
+`pdf` ou `excel` répond 404 ; un partenaire d'une autre boutique répond 404.
+
+### Ce qui est réutilisé, ce qui est propre aux états
+
+Aucun chiffre commun avec le tableau de bord n'est recalculé : les états **appellent** les mêmes méthodes, donc donnent exactement les mêmes
+nombres (un test compare les objets entiers, égalité de `record`).
+
+| Chiffre | Source |
+|---|---|
+| Chiffre d'affaires net, bénéfice brut, dépenses, bénéfice net | `TableauDeBordService.indicateursDeLaPeriode` (même méthode privée que `indicateursDuMois`) |
+| Créances, dettes, en retard, avances, position nette | `TableauDeBordService.creancesEtDettes()` → `SoldePartenaireService` |
+| Valeur du stock | `TableauDeBordService.valeurStock()` |
+| Ventes par vendeur | `TableauDeBordService.ventesParVendeur` |
+| Détail des créances et des dettes | `SoldePartenaireService` (soldes, reste du solde de départ, avance) + `EtatsRepository` (factures non soldées) |
+| Trésorerie, encaissements, listes, relevés | `EtatsRepository` (nouveau, lecture seule, toutes les requêtes filtrées par boutique) |
+
+Quand un état montre un total qui existe aussi ailleurs, il le **rapproche** et refuse de s'éditer en cas d'écart (message « relancez l'état ») :
+valeur du stock, total des dépenses, total des créances/dettes, avances, retards. Ce n'est jamais un chiffre arrondi pour « faire tomber juste ».
+
+### Définitions exactes
+
+**Bilan de la période** (5 tableaux ; un onglet Excel chacun).
+- *Ventes de la période* : somme des totaux des ventes dont la date est dans la période. *Retours de vente* : somme des retours à **leur** date.
+  *Chiffre d'affaires net* = ventes − retours.
+- *Coût des ventes* = chiffre d'affaires net − bénéfice brut : Σ coût moyen figé à la vente × quantité, net du coût des marchandises retournées.
+  *Bénéfice brut* = Σ (prix − coût figé) × quantité des ventes − marge des retours. Une ligne sans coût connu est comptée à 0 (signalée par une note).
+- *Dépenses* = opérations de trésorerie de type DEPENSE de la période (annulées ou non : une dépense ne s'annule pas dans l'application).
+  Les achats de marchandises et les transferts n'en sont pas. *Bénéfice net* = bénéfice brut − dépenses (peut être négatif).
+- *Trésorerie par compte* (caisse, Orange Money, banque), lue dans le journal `mouvement_caisse` : **début** = somme des mouvements avant le début de
+  la période (un mouvement sans date compte comme antérieur) ; **fonds de départ** saisis dans la période ; **encaissements** (montants positifs) et
+  **décaissements** (négatifs) hors fonds, transferts et annulations ; **annulations de règlements** (net, signées) ; **transferts** (net, somme nulle
+  sur les trois comptes) ; **fin = début + fonds + encaissements + décaissements + annulations + transferts**. Pour une période qui va jusqu'au jour de
+  l'édition, la fin égale `CaisseService.getSoldeCompte` (testé). Une dépense annulée par écriture inverse voit son annulation dans la colonne
+  *annulations*, pas dans les décaissements.
+- *Par nature* : ventes payées à la création, règlements de ventes, règlements de soldes de départ des clients, remboursements reçus des fournisseurs
+  (encaissements) ; achats payés à la création, règlements d'achats, règlements de soldes de départ des fournisseurs, remboursements aux clients,
+  dépenses (décaissements).
+- *Créances, dettes, avances* : **situation du jour de l'édition**, identique au tableau de bord (voir limites).
+- *Valeur du stock* : **valeur au jour de l'édition** (quantité × coût moyen actuel, services exclus), libellé comme tel dans le titre, le tableau
+  et la note. La valeur à la fin de la période n'est **pas** affichée : le coût moyen n'est pas conservé jour par jour, la reconstituer serait inventer.
+- Les apports, emprunts et autres produits et charges ne figurent pas (note : lot 3).
+
+**État des créances / des dettes** (date de référence ; par défaut le jour). Pour chaque client (fournisseur) : les factures dont le reste est positif
+(numéro, date, échéance, **total effectif** = total − retours, **versé**, **avance utilisée**, **reste** = max(0, total effectif − versé − avance utilisée),
+jours de retard), le **reste du solde de départ** (départ − règlements nets des annulations), l'**avance disponible** (en négatif) et le total du partenaire.
+Une ligne **« Ventes sans client »** (« Achats sans fournisseur ») regroupe les factures sans partenaire. Tri : montant en retard décroissant, puis reste
+décroissant, puis plus ancienne échéance, puis nom. Une échéance est en retard quand elle est **strictement antérieure** à la date de référence ; les jours
+de retard sont l'écart en jours. Le total (hors avances) est celui de `SoldePartenaireService` ; le récapitulatif donne restes des factures, restes des
+soldes de départ, total, dont en retard, avances et solde net (créances − avances des clients ; dettes − avances chez les fournisseurs).
+
+**Relevé d'un partenaire** (période). Le livre reprend, pour ce partenaire seulement : solde de départ de la fiche, factures, versements à la création,
+règlements, annulations de règlement, retours (réduisent la créance ou la dette), remboursements de retour (argent rendu ou reçu), avoirs (ligne sans
+mouvement d'argent, la part gardée reste en avance) et règlements du solde de départ. Solde positif : le client doit (la boutique doit, pour un fournisseur) ;
+négatif : avance. Les opérations antérieures à la période sont reportées en une ligne, les opérations postérieures ne sont pas listées (une note le dit).
+Le solde final de toutes les opérations est **comparé à la fiche** (`soldeNet`) : une note « Concordance » ou « ATTENTION » l'indique ; les tests exigent
+« Concordance » sur tout le jeu de données.
+
+**État du stock** : par catégorie, pour chaque produit en stock (services exclus) : quantité, unité, coût moyen, valeur = quantité × coût moyen, seuil
+d'alerte, état (Disponible, Stock faible quand quantité ≤ seuil, Rupture à 0) ; total par catégorie et total général (égal à `valeurStock()`).
+
+**Liste des dépenses** : date, compte, motif (l'application n'a pas de catégorie de dépense), utilisateur, montant, statut ; total, puis total et nombre par
+compte. Une dépense portant une écriture inverse est signalée « Annulée le … » et reste comptée, comme au tableau de bord.
+
+**Liste des encaissements** : tous les mouvements positifs de la période hors fonds de départ, transferts et annulations, avec compte, source
+(paiement à la vente, règlement de vente, règlement de solde de départ d'un client, remboursement d'un fournisseur), document, client ou fournisseur,
+utilisateur et statut « Annulé le … (motif) ». Un deuxième tableau liste les **annulations d'encaissements** (en négatif) ; le troisième donne, par compte,
+encaissements, annulations et net. Les annulations de décaissements (règlement d'achat, dépense…) ne sont pas des encaissements : une note les signale.
+
+**Ventes par vendeur** : page existante inchangée, avec les boutons PDF et Excel ; le total est le chiffre d'affaires net du bilan.
+
+### Limites
+
+- **Historique** : l'application ne conserve ni les restes à payer ni le coût moyen jour par jour. Créances, dettes, avances et valeur du stock sont donc
+  ceux du **jour de l'édition** ; la date de l'état des créances et des dettes ne sert qu'à décider des retards. Le bilan d'une période passée affiche
+  ces chiffres avec la mention de leur date.
+- Pas de catégories de dépense ; une dépense ne s'annule pas (le drapeau d'annulation est défensif).
+- Les excédents de retour gardés en avoir n'apparaissent pas dans la trésorerie (aucun mouvement d'argent).
+- Volume : 20 000 lignes par état (`LimiteExport`) ; au-delà, l'export est refusé avec un message.
+- Les montants Excel sont des nombres (15 chiffres significatifs), les PDF reprennent le format du socle (milliers séparés par une espace insécable).
+
+### Extensions du socle (ajouts, rien de retiré)
+
+`TableauExport.sousTotal(...)` (ligne mise en valeur dans les trois formes), `ExportExcelService.ecrire(List<TableauExport>, …)` (un onglet par tableau,
+noms uniques), `DocumentPdfService.rendreEtat(...)` (gabarit `pdf/etat`, plusieurs tableaux sur le même document) et le style `.section-etat` de `pdf/base`.
+
+### Vérifications
+
+```bash
+./gradlew test --no-daemon --tests '*EtatsGerantTests'   # jeu de données fixe, calculs à la main, PDF, Excel, droits, deux boutiques
+service mariadb start && ./gradlew etatsMariaDbTest --no-daemon   # requêtes des états sur MariaDB jetable
+ETATS_SORTIE=/chemin/dossier ./gradlew test --no-daemon --tests '*EtatsGerantTests.ecrit*'   # écrit les PDF pour la revue visuelle
+pdftoppm -png -r 70 bilan.pdf bilan                      # puis ouvrir les images
+```
+
+`EtatsGerantTests` construit avec les vrais services deux boutiques : fonds de départ, ventes comptant, à crédit, avec avance utilisée et surplus, règlement
+puis annulation, retours en argent, en avoir et imputés, achats, retours d'achat, dépenses, transfert, règlements de soldes de départ, une vente et un achat
+anciens sans partenaire, opérations hors période (mai et juillet). Chaque total est commenté avec son calcul. Résultats de référence, période du 01/06 au 30/06/2026 :
+chiffre d'affaires net 166 000, bénéfice brut 96 000, dépenses 142 000, bénéfice net −46 000, trésorerie 1 080 000 → 1 039 000, créances 185 000, dettes 129 000,
+valeur du stock 946 000.
