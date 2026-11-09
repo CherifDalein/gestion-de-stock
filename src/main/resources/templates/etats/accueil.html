@@ -1,0 +1,24 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page" data-etat="accueil">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">États</p>
+                <h1>États du gérant</h1>
+                <p class="app-page-subtitle">Bilan, créances, dettes, stock, dépenses et encaissements, en PDF et en Excel. Réservés au gérant.</p>
+            </div>
+        </header>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4" th:each="e : ${cartes}">
+                <a class="card shadow-sm h-100 text-decoration-none" th:href="@{'/etats/' + ${e.code}}" th:attr="data-etat-lien=${e.code}">
+                    <div class="card-body">
+                        <h2 class="h5" th:text="${e.titre}">État</h2>
+                        <p class="mb-0 text-muted" th:text="${e.description}">Description</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <p class="small text-muted mt-4 mb-0">Le relevé des dettes d'un fournisseur (ou des créances d'un client) s'ouvre depuis la liste des
+            <a th:href="@{/fournisseurs}">fournisseurs</a> ou des <a th:href="@{/clients}">clients</a>, avec le lien « Relevé des dettes » ou « Relevé des créances ».</p>
+    </div>
+</div>
