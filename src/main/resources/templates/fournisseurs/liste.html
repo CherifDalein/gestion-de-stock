@@ -124,6 +124,7 @@
                             <div class="partners-document-actions app-row-actions">
                                 <a th:href="@{/factures/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Achats de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Achats</span></a>
                                 <a th:href="@{/factures/fournisseur/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                                <a th:href="@{/etats/releve/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé des dettes de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des dettes</span></a>
                             </div>
                         </td>
                     </tr>

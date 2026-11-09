@@ -124,6 +124,7 @@
                             <div class="partners-document-actions app-row-actions">
                                 <a th:href="@{/factures/client/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Factures de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Factures</span></a>
                                 <a th:href="@{/factures/client/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                                <a sec:authorize="hasRole('ADMIN')" th:href="@{/etats/releve/client/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé des créances de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des créances</span></a>
                             </div>
                         </td>
                     </tr>
