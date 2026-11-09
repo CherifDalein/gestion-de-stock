@@ -59,6 +59,10 @@ Les styles d’authentification sont limités à `body.stock-auth`; le thème co
 les CDN déjà présents. Si Simple DataTables ne charge pas, la liste reste visible
 dans un tableau avec défilement horizontal.
 
+- `templates/pdf/*.html`, `static/js/export-liste.js` et le paquet `org.example.stock.export` : socle des
+  exports PDF et Excel, boutons « Excel » et « PDF » du journal des ventes
+  (voir [le socle d'export](lot-4.md#socle-dexport)).
+
 ## Vérification
 
 Exécuter `./gradlew test` pour les contrôles existants des formulaires, du CSRF
