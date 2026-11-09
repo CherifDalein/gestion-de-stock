@@ -40,6 +40,8 @@
         table.tableau.dense td { padding: 1.1mm 1.2mm; }
         table.tableau .nw { white-space: nowrap; }
         table.tableau .num { text-align: right; white-space: nowrap; }
+        /* Les intitulés de colonnes peuvent passer à la ligne même quand les valeurs ne le peuvent pas (tableaux larges). */
+        table.tableau th.num, table.tableau th.nw { white-space: normal; }
         table.tableau tr.totaux td { font-weight: bold; background-color: #e5efe8; border-top: 0.5mm solid #166534; border-bottom: 0.5mm solid #166534; }
         table.tableau td.vide { text-align: center; color: #6b7280; padding: 6mm 0; }
     </style>
