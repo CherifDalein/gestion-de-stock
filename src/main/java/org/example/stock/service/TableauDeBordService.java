@@ -178,6 +178,16 @@ public class TableauDeBordService {
         return indicateurs(Periode.mois(jour));
     }
 
+    /**
+     * Mêmes indicateurs que ceux du jour et du mois, pour une période quelconque {@code du} à {@code au} inclus
+     * (semi-ouverte : de {@code du} 0 h au lendemain de {@code au} 0 h). C'est le calcul des états du gérant : le bilan donne
+     * exactement les chiffres du tableau de bord.
+     */
+    public Indicateurs indicateursDeLaPeriode(LocalDate du, LocalDate au) {
+        if (du == null || au == null || au.isBefore(du)) throw new IllegalArgumentException("Période invalide.");
+        return indicateurs(new Periode(du.atStartOfDay(), au.plusDays(1).atStartOfDay()));
+    }
+
     public ValeurStock valeurStock() {
         List<Object[]> lignes = requetes.valeurStock(boutiqueService.idBoutiqueCourante(), NatureProduit.STOCK);
         Object[] ligne = lignes.isEmpty() ? new Object[]{null, 0L} : lignes.getFirst();

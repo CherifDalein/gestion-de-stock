@@ -26,6 +26,7 @@ public final class TableauExport {
     private final List<String> notes = new ArrayList<>();
     private List<Colonne> colonnes = List.of();
     private final List<List<Object>> lignes = new ArrayList<>();
+    private final java.util.Set<Integer> sousTotaux = new java.util.TreeSet<>();
     private List<Object> totaux;
 
     private TableauExport(String titre) {
@@ -57,6 +58,16 @@ public final class TableauExport {
         return this;
     }
 
+    /**
+     * Ajoute une ligne de sous-total (mise en évidence : gras, filet) au milieu des données, par exemple le total d'un groupe.
+     * Elle fait partie des lignes ; seule sa présentation change.
+     */
+    public TableauExport sousTotal(Object... cellules) {
+        ligne(cellules);
+        sousTotaux.add(lignes.size() - 1);
+        return this;
+    }
+
     /** Ligne de totaux, une valeur par colonne (null pour vide) ; la première cellule porte en général le libellé « Total ». */
     public TableauExport totaux(Object... cellules) {
         verifierLargeur(cellules.length);
@@ -76,5 +87,7 @@ public final class TableauExport {
     public List<Colonne> getColonnes() { return colonnes; }
     public List<List<Object>> getLignes() { return java.util.Collections.unmodifiableList(lignes); }
     public List<Object> getTotaux() { return totaux; }
+    /** Rangs (à partir de 0) des lignes ajoutées par {@link #sousTotal(Object...)}. */
+    public java.util.Set<Integer> getSousTotaux() { return java.util.Collections.unmodifiableSet(sousTotaux); }
     public boolean aDesMontants() { return colonnes.stream().anyMatch(c -> c.type() == TypeColonne.MONTANT); }
 }

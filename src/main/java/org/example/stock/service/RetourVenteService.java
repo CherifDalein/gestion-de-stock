@@ -118,6 +118,14 @@ public class RetourVenteService {
         return retours.findByBoutiqueIdAndTypeOrderByDateRetourDescIdDesc(boutiques.idBoutiqueCourante(), TypeRetour.VENTE);
     }
 
+    /** Comme {@link #lister()} mais lit au plus {@code max + 1} retours (export : plus de {@code max} signale un dépassement). */
+    @Transactional(readOnly = true)
+    public List<Retour> lister(int max) {
+        exigerGerant();
+        return retours.findByBoutiqueIdAndTypeOrderByDateRetourDescIdDesc(boutiques.idBoutiqueCourante(), TypeRetour.VENTE,
+                org.springframework.data.domain.PageRequest.of(0, max + 1));
+    }
+
     /** Un retour de vente de la boutique courante ; un retour d'une autre boutique ou d'achat est introuvable (404). */
     @Transactional(readOnly = true)
     public Retour trouver(Long id) {

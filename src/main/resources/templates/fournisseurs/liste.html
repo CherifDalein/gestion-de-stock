@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="fournisseur" data-partner-label="fournisseur"
          th:with="totalPartenaires=${#lists.size(fournisseurs)}, avecTelephone=${#lists.size(fournisseurs.?[telephone != null and !#strings.isEmpty(#strings.trim(telephone))])}, avecEmail=${#lists.size(fournisseurs.?[email != null and !#strings.isEmpty(#strings.trim(email))])}, sansContact=${#lists.size(fournisseurs.?[(telephone == null or #strings.isEmpty(#strings.trim(telephone))) and (email == null or #strings.isEmpty(#strings.trim(email)))])}">
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
@@ -8,9 +9,19 @@
                 <h1>Fournisseurs</h1>
                 <p class="app-page-subtitle">Retrouvez vos fournisseurs, leurs coordonnées et leurs achats.</p>
             </div>
-            <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
-                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un fournisseur
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="@{/fournisseurs/export/excel}" data-export-champs="q=#partenairesSearch;contact=#partenairesContact"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="@{/fournisseurs/export/pdf}" data-export-champs="q=#partenairesSearch;contact=#partenairesContact"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un fournisseur
+                </a>
+            </div>
         </header>
 
         <section class="partners-metrics" aria-label="Coordonnées des fournisseurs">
@@ -124,6 +135,7 @@
                             <div class="partners-document-actions app-row-actions">
                                 <a th:href="@{/factures/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Achats de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Achats</span></a>
                                 <a th:href="@{/factures/fournisseur/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                                <a th:href="@{/etats/releve/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé des dettes de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des dettes</span></a>
                             </div>
                         </td>
                     </tr>

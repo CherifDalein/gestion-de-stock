@@ -8,6 +8,8 @@
                 <p class="app-page-subtitle">Chiffre d'affaires, bénéfice brut et panier moyen de chaque compte qui a saisi des ventes.</p>
             </div>
             <div class="etat-actions">
+                <a th:href="@{/etats/ventes-par-vendeur/export/excel(du=${du},au=${au})}" class="btn btn-outline-success" data-etat-export="excel"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+                <a th:href="@{/etats/ventes-par-vendeur/export/pdf(du=${du},au=${au})}" class="btn btn-outline-danger" data-etat-export="pdf"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
                 <button type="button" class="btn btn-primary" data-etat-imprimer onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> Imprimer</button>
             </div>
         </header>

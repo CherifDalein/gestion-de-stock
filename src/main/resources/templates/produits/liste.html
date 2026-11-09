@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div id="stockProduits" class="container-fluid stock-products"
          th:with="estAdmin=${#authorization.expression('hasRole(''ADMIN'')')}, totalProduits=${resume.total}, produitsEnStock=${resume.enStock}, produitsFaibles=${resume.faibles}, produitsRupture=${resume.ruptures}">
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
@@ -9,9 +10,19 @@
                 <h1>Produits</h1>
                 <p class="app-page-subtitle">Retrouvez vos produits et services, leurs prix et l’état de vos stocks.</p>
             </div>
-            <a th:href="@{/produits/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
-                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un produit
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="@{/produits/export/excel}" data-export-champs="q=#produitsSearch;categorie=#produitsCategory;stock=#produitsStock"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="@{/produits/export/pdf}" data-export-champs="q=#produitsSearch;categorie=#produitsCategory;stock=#produitsStock"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/produits/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un produit
+                </a>
+            </div>
         </header>
 
         <section class="products-metrics" aria-label="État du catalogue">

@@ -125,6 +125,13 @@ public class RetourAchatService {
         return retours.retoursAchat(boutiques.idBoutiqueCourante());
     }
 
+    /** Comme {@link #lister()} mais lit au plus {@code max + 1} retours (export : plus de {@code max} signale un dépassement). */
+    @Transactional(readOnly = true)
+    public List<Retour> lister(int max) {
+        exigerGerant();
+        return retours.retoursAchat(boutiques.idBoutiqueCourante(), org.springframework.data.domain.PageRequest.of(0, max + 1));
+    }
+
     /** Un retour d'achat de la boutique courante ; un retour d'une autre boutique ou de vente est introuvable (404). */
     @Transactional(readOnly = true)
     public Retour trouver(Long id) {

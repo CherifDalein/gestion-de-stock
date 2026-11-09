@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="client" data-partner-label="client"
          th:with="totalPartenaires=${#lists.size(clients)}, avecTelephone=${#lists.size(clients.?[telephone != null and !#strings.isEmpty(#strings.trim(telephone))])}, avecEmail=${#lists.size(clients.?[email != null and !#strings.isEmpty(#strings.trim(email))])}, sansContact=${#lists.size(clients.?[(telephone == null or #strings.isEmpty(#strings.trim(telephone))) and (email == null or #strings.isEmpty(#strings.trim(email)))])}">
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
@@ -8,9 +9,19 @@
                 <h1>Clients</h1>
                 <p class="app-page-subtitle">Retrouvez vos clients, leurs coordonnées et leurs factures.</p>
             </div>
-            <a th:href="@{/clients/nouveau}" class="btn btn-primary" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')">
-                <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un client
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="@{/clients/export/excel}" data-export-champs="q=#partenairesSearch;contact=#partenairesContact"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="@{/clients/export/pdf}" data-export-champs="q=#partenairesSearch;contact=#partenairesContact"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/clients/nouveau}" class="btn btn-primary" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Ajouter un client
+                </a>
+            </div>
         </header>
 
         <section class="partners-metrics" aria-label="Coordonnées des clients">
@@ -124,6 +135,7 @@
                             <div class="partners-document-actions app-row-actions">
                                 <a th:href="@{/factures/client/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Factures de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Factures</span></a>
                                 <a th:href="@{/factures/client/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                                <a sec:authorize="hasRole('ADMIN')" th:href="@{/etats/releve/client/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé des créances de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des créances</span></a>
                             </div>
                         </td>
                     </tr>

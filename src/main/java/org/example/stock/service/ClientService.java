@@ -31,6 +31,11 @@ public class ClientService {
         return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Comme {@link #listerTous()} mais lit au plus {@code max + 1} fiches (export : plus de {@code max} signale un dépassement). */
+    public List<Client> listerPourExport(int max) {
+        return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante(), org.springframework.data.domain.PageRequest.of(0, max + 1, org.springframework.data.domain.Sort.by("id")));
+    }
+
     @Transactional
     public Client enregistrerClient(Client client) {
         if (client.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");

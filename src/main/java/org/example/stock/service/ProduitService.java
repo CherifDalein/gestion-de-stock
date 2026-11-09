@@ -31,6 +31,12 @@ public class ProduitService {
         return produitRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
 
+    /** Comme {@link #listerTous()} mais lit au plus {@code max + 1} produits, catégorie et fournisseur inclus (export : plus de {@code max} signale un dépassement). */
+    public List<Produit> listerPourExport(int max) {
+        return produitRepository.findPourExportByBoutiqueId(boutiqueService.idBoutiqueCourante(),
+                org.springframework.data.domain.PageRequest.of(0, max + 1, org.springframework.data.domain.Sort.by("id")));
+    }
+
     public Produit trouverParId(Long id) {
         return produitRepository.findByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable"));

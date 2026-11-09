@@ -3,6 +3,7 @@ package org.example.stock.repository;
 import org.example.stock.model.MouvementCaisse;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
-public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse, Long> {
+public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse, Long>, JpaSpecificationExecutor<MouvementCaisse> {
     boolean existsByBoutiqueId(Long boutiqueId);
     boolean existsByBoutiqueIdAndCompte(Long boutiqueId, CompteTresorerie compte);
 

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!--
+  Gabarit des états en plusieurs parties (bilan, créances, dettes…) : reçoit `titre`, `parametres`, `notes` et `sections`
+  (liste de DocumentPdfService.TableauVue). Chaque section a son titre, son tableau et ses notes.
+  XHTML strict : voir docs/lot-4.md, section « Socle d'export ».
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:replace="~{pdf/base :: page(~{::div#contenu})}">
+<body>
+<div id="contenu">
+    <h1 th:text="${titre}">Titre</h1>
+    <p class="filtres" th:if="${!#strings.isEmpty(parametres)}" th:text="${parametres}">Période</p>
+    <p class="filtres">Montants en GNF</p>
+    <p class="note-etat" th:each="note : ${notes}" th:text="${note}">Note</p>
+    <div class="section-etat" th:each="section, is : ${sections}">
+        <h2 th:if="${section.titre != titre}" th:text="${section.titre}">Section</h2>
+        <table class="tableau" th:classappend="${section.dense ? 'dense' : ''}">
+            <thead>
+            <tr>
+                <th th:each="c : ${section.colonnes}" th:class="${(c.numerique ? 'num ' : '') + (c.sansRetour ? 'nw' : '')}" th:text="${c.titre}">Colonne</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="ligne, it : ${section.lignes}" th:class="${section.estSousTotal(it.index) ? 'soustotal' : (it.odd ? 'pair' : '')}">
+                <td th:each="cellule, ic : ${ligne}" th:class="${(section.colonnes[ic.index].numerique ? 'num ' : '') + (section.colonnes[ic.index].sansRetour ? 'nw' : '')}" th:text="${cellule}">valeur</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(section.lignes)}">
+                <td class="vide" th:colspan="${#lists.size(section.colonnes)}">Aucune ligne.</td>
+            </tr>
+            <tr class="totaux" th:if="${section.totaux != null}">
+                <td th:each="cellule, ic : ${section.totaux}" th:class="${(section.colonnes[ic.index].numerique ? 'num ' : '') + (section.colonnes[ic.index].sansRetour ? 'nw' : '')}" th:text="${cellule}">total</td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="note" th:each="note : ${section.notes}" th:text="${note}">Note</p>
+    </div>
+</div>
+</body>
+</html>

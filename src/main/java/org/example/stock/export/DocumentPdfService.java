@@ -61,6 +61,20 @@ public class DocumentPdfService {
         return rendre("pdf/tableau", variables, contexte, format);
     }
 
+    /**
+     * Rend un état en plusieurs parties (bilan, états de créances…) : un titre, la période ou les paramètres, des notes
+     * générales, puis chaque tableau avec son propre titre. Gabarit {@code pdf/etat}.
+     */
+    public byte[] rendreEtat(String titre, String parametres, List<String> notes, List<TableauExport> sections,
+                             ContexteDocument contexte, FormatPapier format) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("titre", titre);
+        variables.put("parametres", parametres == null ? "" : parametres);
+        variables.put("notes", notes == null ? List.of() : notes);
+        variables.put("sections", sections.stream().map(DocumentPdfService::vue).toList());
+        return rendre("pdf/etat", variables, contexte, format);
+    }
+
     /** Rend le gabarit {@code templates/<gabarit>.html} (ex. « pdf/recu-vente ») avec les variables données. */
     public byte[] rendre(String gabarit, Map<String, Object> variables, FormatPapier format) {
         return rendre(gabarit, variables, contextes.courant(), format);
@@ -113,16 +127,21 @@ public class DocumentPdfService {
     public record ColonneVue(String titre, boolean numerique, boolean sansRetour) { }
 
     public record TableauVue(String titre, String filtres, List<String> notes, List<ColonneVue> colonnes, List<List<String>> lignes,
-                             List<String> totaux, boolean aDesMontants, boolean dense) { }
+                             List<String> totaux, boolean aDesMontants, boolean dense, java.util.Set<Integer> sousTotaux) {
+        /** Vrai pour une ligne de sous-total (gras, filet). */
+        public boolean estSousTotal(int rang) { return sousTotaux.contains(rang); }
+    }
 
-    private static TableauVue vue(TableauExport t) {
+    /** Vue d'un tableau pour un gabarit (PDF) ou une page : les cellules sont déjà mises en forme comme dans le PDF. */
+    public static TableauVue vue(TableauExport t) {
         List<Colonne> colonnes = t.getColonnes();
         List<List<String>> lignes = new ArrayList<>();
         for (List<Object> ligne : t.getLignes()) lignes.add(textes(colonnes, ligne, false));
         return new TableauVue(t.getTitre(), t.getFiltres(), t.getNotes(),
                 colonnes.stream().map(c -> new ColonneVue(c.titre(), c.estNumerique(), c.estNumerique() || c.sansRetour()
                         || c.type() == TypeColonne.DATE || c.type() == TypeColonne.DATE_HEURE)).toList(),
-                lignes, t.getTotaux() == null ? null : textes(colonnes, t.getTotaux(), true), t.aDesMontants(), colonnes.size() > 8);
+                lignes, t.getTotaux() == null ? null : textes(colonnes, t.getTotaux(), true), t.aDesMontants(), colonnes.size() > 8,
+                t.getSousTotaux());
     }
 
     private static List<String> textes(List<Colonne> colonnes, List<Object> valeurs, boolean totaux) {

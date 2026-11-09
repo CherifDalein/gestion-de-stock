@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Devis</h1>
         <p class="app-page-subtitle">Propositions de prix : elles ne changent ni le stock, ni la caisse, ni les créances tant qu’elles ne sont pas transformées en vente.</p>
@@ -12,9 +13,19 @@
                    th:classappend="${filtre == e ? 'active' : ''}" th:attr="aria-current=${filtre == e ? 'page' : null}"
                    th:text="${e.libelle}"></a>
             </nav>
-            <a th:href="@{/devis/nouveau}" class="btn btn-primary">
-                <i class="fas fa-plus" aria-hidden="true"></i> Nouveau devis
-            </a>
+            <div class="d-flex flex-wrap gap-2">
+                <a th:href="${filtre != null} ? @{/devis/export/excel(etat=${filtre.code})} : @{/devis/export/excel}"
+                   class="btn btn-outline-success" data-export-liste="excel" aria-label="Exporter la liste affichée au format Excel">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                </a>
+                <a th:href="${filtre != null} ? @{/devis/export/pdf(etat=${filtre.code})} : @{/devis/export/pdf}"
+                   class="btn btn-outline-danger" data-export-liste="pdf" aria-label="Exporter la liste affichée au format PDF">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+                </a>
+                <a th:href="@{/devis/nouveau}" class="btn btn-primary">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Nouveau devis
+                </a>
+            </div>
         </div>
 
         <div class="card mb-4 shadow-sm">

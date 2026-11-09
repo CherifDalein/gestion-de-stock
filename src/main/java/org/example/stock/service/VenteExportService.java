@@ -9,10 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * Export de la liste des ventes (Excel et PDF) : c'est l'exemple de référence du socle d'export (docs/lot-4.md).
@@ -22,7 +20,6 @@ import java.util.regex.Pattern;
 @Service
 @Transactional(readOnly = true)
 public class VenteExportService {
-    private static final Pattern MARQUES = Pattern.compile("\\p{M}+");
     private static final int PAQUET = 1000;
 
     private final VenteService ventes;
@@ -128,21 +125,11 @@ public class VenteExportService {
 
     /** Montant en chiffres seuls, avec et sans séparateur de milliers : « 1500000 » et « 1 500 000 » retrouvent la vente. */
     private static String brut(BigDecimal m) {
-        BigDecimal valeur = Montants.ouZero(m);
-        return valeur.toPlainString() + " " + Textes.montant(valeur).replace(' ', ' ');
+        return RechercheListe.montantRecherchable(Montants.ouZero(m));
     }
 
     static boolean correspond(String recherche, String texte) {
-        String cible = simplifier(texte);
-        for (String mot : simplifier(recherche).split("\\s+")) {
-            if (!mot.isEmpty() && !cible.contains(mot)) return false;
-        }
-        return true;
-    }
-
-    private static String simplifier(String texte) {
-        return MARQUES.matcher(Normalizer.normalize(texte == null ? "" : texte, Normalizer.Form.NFD)).replaceAll("")
-                .replace(' ', ' ').toLowerCase(Locale.ROOT);
+        return RechercheListe.correspond(recherche, texte);
     }
 
     // ----- Bénéfices (gérant) -----

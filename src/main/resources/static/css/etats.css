@@ -35,3 +35,14 @@
     #stockEtat .etat-table tr { break-inside: avoid; page-break-inside: avoid; }
     #stockEtat .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding: 2mm 1.5mm; border-bottom: 1px solid #dfe8e3; background: transparent; box-shadow: none; }
 }
+
+/* États du gérant (section « États ») : lignes de sous-total, nombres alignés, cartes de l'accueil. */
+#stockEtat .etat-nombre { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#stockEtat .etat-table > tbody > tr.etat-soustotal > * { font-weight: 700; background: rgba(21, 128, 61, .07); border-top: 1px solid var(--app-border); }
+#stockEtat .etat-table > tfoot > tr > td { border-top: 2px solid var(--app-border); font-weight: 700; }
+#stockEtat .etat-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+#stockEtat a.card:hover, #stockEtat a.card:focus-visible { border-color: var(--app-green); }
+@media print {
+    #stockEtat .etat-table > tbody > tr.etat-soustotal > * { background: #eef4f0; }
+    #stockEtat .etat-table > tfoot > tr > td { font-weight: 700; border-top: 2px solid #1f2933; }
+}
