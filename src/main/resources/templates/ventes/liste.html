@@ -4,6 +4,7 @@
         <h1 class="mt-4">Journal des ventes</h1>
         <p class="app-page-subtitle">Retrouvez les ventes, leurs règlements et leurs justificatifs.</p>
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <div th:replace="~{fragments/recu :: bandeau}"></div>
         <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
         <div class="mb-4 d-flex flex-wrap gap-2 justify-content-between align-items-center">
             <nav class="btn-group" aria-label="Filtrer les ventes">
@@ -92,6 +93,10 @@
                                        th:classappend="${v.resteAPayer > 0 ? 'btn-primary' : 'btn-outline-primary'}"
                                        th:text="${v.resteAPayer > 0 ? 'Régler' : 'Règlements'}"
                                        th:attr="aria-label=${(v.resteAPayer > 0 ? 'Régler la vente n° ' : 'Consulter les règlements de la vente n° ') + (v.numero ?: v.id)}"></a>
+                                    <a th:href="@{/ventes/recu/{id}(id=${v.id})}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm app-row-action" data-recu-vente
+                                       th:attr="aria-label=${'Imprimer le reçu de la vente n° ' + (v.numero ?: v.id)}">
+                                        <i class="fas fa-print" aria-hidden="true"></i> Reçu
+                                    </a>
                                     <button type="button" class="btn btn-outline-primary btn-sm app-row-action"
                                             data-bs-toggle="modal"
                                             th:data-bs-target="'#modalVente' + ${v.id}"
@@ -161,7 +166,7 @@
                             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Retour
                         </a>
                         <a th:href="@{/factures/vente/{id}(id=${v.id})}" class="btn btn-primary">
-                            <i class="fas fa-print" aria-hidden="true"></i> Imprimer le reçu
+                            <i class="fas fa-print" aria-hidden="true"></i> Imprimer la facture
                         </a>
                     </div>
                 </div>

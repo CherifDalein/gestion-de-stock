@@ -38,6 +38,7 @@ public class SoldeDepartController {
     @Autowired private ClientService clientService;
     @Autowired private FournisseurService fournisseurService;
     @Autowired private CaisseService caisseService;
+    @Autowired private org.example.stock.recu.RecuService recus;
 
     /** Avance disponible d'un client, à titre d'information : le calcul qui fait foi reste celui du serveur, sous verrou. */
     @GetMapping("/clients/{id}/avance")
@@ -71,8 +72,10 @@ public class SoldeDepartController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                soldeDepart.reglerClient(id, formulaire.getMontant(), formulaire.getReglementAttendu(), formulaire.getComptePaiement(), formulaire.getDateEcheance());
+                Long mouvementId = soldeDepart.reglerClient(id, formulaire.getMontant(), formulaire.getReglementAttendu(), formulaire.getComptePaiement(), formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Règlement du solde de départ enregistré avec succès.");
+                String recu = recus.proposer("/clients/solde/regler/" + id + "/recu/" + mouvementId);
+                if (recu != null) redirectAttributes.addFlashAttribute("recuUrl", recu);
                 return "redirect:/clients/solde/regler/" + id;
             } catch (ReglementSoldeObsoleteException | ConcurrencyFailureException e) {
                 response.setStatus(HttpStatus.CONFLICT.value());
@@ -118,8 +121,10 @@ public class SoldeDepartController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                soldeDepart.reglerFournisseur(id, formulaire.getMontant(), formulaire.getReglementAttendu(), formulaire.getComptePaiement(), formulaire.getDateEcheance());
+                Long mouvementId = soldeDepart.reglerFournisseur(id, formulaire.getMontant(), formulaire.getReglementAttendu(), formulaire.getComptePaiement(), formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Règlement du solde de départ enregistré avec succès.");
+                String recu = recus.proposer("/fournisseurs/solde/regler/" + id + "/recu/" + mouvementId);
+                if (recu != null) redirectAttributes.addFlashAttribute("recuUrl", recu);
                 return "redirect:/fournisseurs/solde/regler/" + id;
             } catch (ReglementSoldeObsoleteException | ConcurrencyFailureException e) {
                 response.setStatus(HttpStatus.CONFLICT.value());

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!--
+  Reçu de règlement (encaissement d'une vente, paiement d'un achat, règlement d'un solde de départ), A4 ou ticket 80 mm.
+  Reçoit `recu` (org.example.stock.recu.RecuReglement) et `titre`. Un règlement annulé ensuite porte « ANNULÉ le … ».
+  Les styles sont dans resources/pdf/recu-reglement.css. XHTML strict : voir docs/lot-4.md, « PDF : gabarits XHTML et pièges ».
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:replace="~{pdf/base :: page(~{::div#contenu})}">
+<body>
+<div id="contenu">
+    <!-- ===== Ticket 80 mm ===== -->
+    <div class="ticket-recu" th:if="${format.estTicket()}">
+        <p class="recu-titre">REÇU DE RÈGLEMENT</p>
+        <p class="ref" th:text="${recu.reference}">Règlement n° 1</p>
+        <div class="annule" th:if="${recu.annule()}">
+            <div class="gros" th:text="${recu.annuleLe}">ANNULÉ le 09/11/2026 14:05</div>
+            <div class="detail" th:if="${recu.annulationMotif != null}" th:text="${'Motif : ' + recu.annulationMotif}">Motif</div>
+            <div class="detail" th:if="${recu.annulationAuteur != null}" th:text="${'Par ' + recu.annulationAuteur}">Par</div>
+            <div class="detail">Ce reçu ne vaut plus justificatif de paiement.</div>
+        </div>
+        <p th:text="${recu.nature}">Règlement d'une vente</p>
+        <div class="sep"></div>
+        <table class="infos">
+            <tr><td class="etiquette">Date</td><td class="val" th:text="${recu.date}">09/11/2026 14:05</td></tr>
+            <tr><td class="etiquette">Document</td><td class="val" th:text="${recu.document}">Vente FV-000001</td></tr>
+            <tr th:if="${recu.partenaire != null}"><td class="etiquette" th:text="${recu.encaissement ? 'Client' : 'Fournisseur'}">Client</td><td class="val" th:text="${recu.partenaire}">Nom</td></tr>
+            <tr><td class="etiquette" th:text="${recu.encaissement ? 'Compte crédité' : 'Compte débité'}">Compte</td><td class="val" th:text="${recu.compte}">Caisse (espèces)</td></tr>
+            <tr><td class="etiquette">Enregistré par</td><td class="val" th:text="${recu.auteur}">Auteur</td></tr>
+        </table>
+        <div class="sep"></div>
+        <table class="infos">
+            <tr class="barre" th:classappend="${recu.annule() ? 'barre' : ''}"><td class="etiquette fort">Réglé</td><td class="val fort" style="text-align: right;" th:text="${recu.montant + ' GNF'}">0 GNF</td></tr>
+            <tr><td class="etiquette" th:text="${recu.soldeApres ? 'Reste (soldé)' : 'Reste à régler'}">Reste</td><td class="val" style="text-align: right;" th:text="${recu.reste + ' GNF'}">0 GNF</td></tr>
+        </table>
+        <div class="sep"></div>
+        <p class="mention" th:text="${recu.mention}">Merci pour votre règlement.</p>
+    </div>
+
+    <!-- ===== A4 ===== -->
+    <div th:unless="${format.estTicket()}">
+        <h1 class="recu-titre">Reçu de règlement</h1>
+        <p class="recu-nature"><span th:text="${recu.nature}">Règlement d'une vente</span> · <b th:text="${recu.reference}">Règlement n° 1</b></p>
+        <div class="annule" th:if="${recu.annule()}">
+            <div class="gros" th:text="${recu.annuleLe}">ANNULÉ le 09/11/2026 14:05</div>
+            <div class="detail" th:if="${recu.annulationMotif != null}" th:text="${'Motif : ' + recu.annulationMotif}">Motif</div>
+            <div class="detail" th:if="${recu.annulationAuteur != null}" th:text="${'Annulation enregistrée par ' + recu.annulationAuteur}">Par</div>
+            <div class="detail">Ce reçu ne vaut plus justificatif de paiement.</div>
+        </div>
+        <table class="infos">
+            <tr><td class="etiquette">Date du règlement</td><td th:text="${recu.date}">09/11/2026 14:05</td></tr>
+            <tr><td class="etiquette">Document concerné</td><td th:text="${recu.document}">Vente FV-000001</td></tr>
+            <tr th:if="${recu.partenaire != null}"><td class="etiquette" th:text="${recu.encaissement ? 'Client' : 'Fournisseur'}">Client</td><td th:text="${recu.partenaire}">Nom</td></tr>
+            <tr><td class="etiquette" th:text="${recu.encaissement ? 'Compte crédité' : 'Compte débité'}">Compte</td><td th:text="${recu.compte}">Caisse (espèces)</td></tr>
+            <tr><td class="etiquette">Enregistré par</td><td th:text="${recu.auteur}">Auteur</td></tr>
+            <tr class="barre"><td class="etiquette">Montant réglé</td><td class="fort val" th:text="${recu.montant + ' GNF'}">0 GNF</td></tr>
+            <tr><td class="etiquette" th:text="${recu.soldeApres ? 'Reste après ce règlement (soldé)' : 'Reste à régler après ce règlement'}">Reste</td><td class="fort" th:text="${recu.reste + ' GNF'}">0 GNF</td></tr>
+        </table>
+        <p class="recu-note">Montants exprimés en francs guinéens (GNF).</p>
+        <p class="recu-mention" th:text="${recu.mention}">Merci pour votre règlement.</p>
+    </div>
+</div>
+</body>
+</html>

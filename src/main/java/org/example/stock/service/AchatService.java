@@ -175,18 +175,21 @@ public class AchatService {
     }
 
     @Transactional
-    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
-        reglerAchat(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        return reglerAchat(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
     }
 
     @Transactional
-    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
-        reglerAchat(id, montant, montantVerseAttendu, comptePaiement, null);
+    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        return reglerAchat(id, montant, montantVerseAttendu, comptePaiement, null);
     }
 
-    /** Le versement peut aussi reporter l'échéance du reste ; un achat soldé garde son échéance en historique. */
+    /**
+     * Le versement peut aussi reporter l'échéance du reste ; un achat soldé garde son échéance en historique.
+     * Retourne l'identifiant du mouvement de caisse du règlement, qui désigne son reçu.
+     */
     @Transactional
-    public void reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
                             LocalDate nouvelleEcheance) {
         if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
@@ -220,7 +223,7 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
-        caisseService.enregistrerSortieReglementAchat(montant, motif, achat, actuel, comptePaiement);
+        return caisseService.enregistrerSortieReglementAchat(montant, motif, achat, actuel, comptePaiement).getId();
     }
 
     /**

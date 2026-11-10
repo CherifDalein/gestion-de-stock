@@ -192,20 +192,20 @@ public class CaisseService {
      * {@code VENTE} (paiement saisi à la création) pour que seul le règlement ultérieur soit annulable.
      */
     @Transactional
-    public void enregistrerEntreeReglementVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, SourceMouvement.REGLEMENT_VENTE, utilisateur, vente, null, compte);
+    public MouvementCaisse enregistrerEntreeReglementVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
+        return enregistrerEntree(montant, motif, SourceMouvement.REGLEMENT_VENTE, utilisateur, vente, null, compte);
     }
 
     /** Entrée d'un règlement du solde de départ d'un client : mouvement de trésorerie rattaché au client, sans vente. */
     @Transactional
-    public void enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, SourceMouvement.SOLDE_CLIENT, utilisateur, null, client, compte);
+    public MouvementCaisse enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, CompteTresorerie compte) {
+        return enregistrerEntree(montant, motif, SourceMouvement.SOLDE_CLIENT, utilisateur, null, client, compte);
     }
 
     /** Sortie d'un règlement du solde de départ d'un fournisseur : mouvement de trésorerie rattaché au fournisseur, sans achat. */
     @Transactional
-    public void enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, SourceMouvement.SOLDE_FOURNISSEUR, utilisateur, null, fournisseur, compte);
+    public MouvementCaisse enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, CompteTresorerie compte) {
+        return enregistrerSortie(montant, motif, SourceMouvement.SOLDE_FOURNISSEUR, utilisateur, null, fournisseur, compte);
     }
 
     /** Règlements du solde de départ d'un client et leurs annulations, du plus récent au plus ancien. */
@@ -258,11 +258,11 @@ public class CaisseService {
         enregistrerEntree(montant, motif, "RETOUR_ACHAT", utilisateur, null, null, retour, compte);
     }
 
-    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compte);
+    private MouvementCaisse enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
+        return enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compte);
     }
 
-    private void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client,
+    private MouvementCaisse enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client,
                                    Retour retour, CompteTresorerie compte) {
         // Idempotent : déjà tenu quand l'appel vient d'une vente, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
@@ -274,7 +274,7 @@ public class CaisseService {
                     .orElseThrow(() -> new IllegalArgumentException("Vente introuvable"));
         }
         if (montant == null || montant.signum() == 0) {
-            return;
+            return null;
         }
         if (montant.signum() < 0) {
             throw new IllegalArgumentException("Le montant d'une entree de caisse doit etre positif.");
@@ -297,7 +297,7 @@ public class CaisseService {
         mouvement.setClient(client);
         mouvement.setRetour(retour);
 
-        mouvementRepo.save(mouvement);
+        return mouvementRepo.save(mouvement);
     }
 
     @Transactional
@@ -317,8 +317,8 @@ public class CaisseService {
 
     /** Sortie d'un règlement ultérieur d'un achat : source {@code REGLEMENT_ACHAT}, distincte du paiement saisi à la création. */
     @Transactional
-    public void enregistrerSortieReglementAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, SourceMouvement.REGLEMENT_ACHAT, utilisateur, achat, null, compte);
+    public MouvementCaisse enregistrerSortieReglementAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
+        return enregistrerSortie(montant, motif, SourceMouvement.REGLEMENT_ACHAT, utilisateur, achat, null, compte);
     }
 
     public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
@@ -336,11 +336,11 @@ public class CaisseService {
         enregistrerSortie(montant, motif, "RETOUR_VENTE", utilisateur, null, null, retour, compte);
     }
 
-    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, source, utilisateur, achat, fournisseur, null, compte);
+    private MouvementCaisse enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, CompteTresorerie compte) {
+        return enregistrerSortie(montant, motif, source, utilisateur, achat, fournisseur, null, compte);
     }
 
-    private void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur,
+    private MouvementCaisse enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur,
                                    Retour retour, CompteTresorerie compte) {
         // Idempotent : déjà tenu quand l'appel vient d'un achat, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
@@ -352,7 +352,7 @@ public class CaisseService {
                     .orElseThrow(() -> new IllegalArgumentException("Achat introuvable"));
         }
         if (montant == null || montant.signum() == 0) {
-            return;
+            return null;
         }
 
         montant = Montants.valider(montant, "Le montant de caisse");
@@ -378,7 +378,7 @@ public class CaisseService {
         mouvement.setFournisseur(fournisseur);
         mouvement.setRetour(retour);
 
-        mouvementRepo.save(mouvement);
+        return mouvementRepo.save(mouvement);
     }
 
     /**

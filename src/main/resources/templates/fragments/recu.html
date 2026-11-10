@@ -1,0 +1,19 @@
+<!-- Reçus imprimables (lot 4). Tous les textes viennent de th:text. -->
+
+<!--
+  Bandeau « Opération enregistrée » : affiché une seule fois après une vente ou un règlement (attribut flash `recuUrl`),
+  et seulement si la boutique propose l'impression du reçu. Le PDF s'ouvre dans un nouvel onglet, jamais automatiquement.
+-->
+<div th:fragment="bandeau" th:if="${recuUrl != null}" class="alert alert-success d-flex flex-wrap align-items-center justify-content-between gap-2"
+     role="status" data-recu-bandeau>
+    <span><i class="fa-solid fa-circle-check me-2" aria-hidden="true"></i><strong>Opération enregistrée</strong></span>
+    <a th:href="@{${recuUrl}}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" data-recu-imprimer>
+        <i class="fa-solid fa-print" aria-hidden="true"></i> Imprimer le reçu
+    </a>
+</div>
+
+<!-- Lien « Reçu » d'une ligne de l'historique des règlements : seulement pour un règlement de la source donnée (pas pour une annulation). -->
+<a th:fragment="lien(mouvement, source, url)" th:if="${mouvement.source == source}" th:href="@{${url}}" target="_blank" rel="noopener"
+   class="d-block small" data-recu-lien
+   th:attr="aria-label=${'Reçu du règlement du ' + #temporals.format(mouvement.dateMouvement, 'dd/MM/yyyy HH:mm')}">
+    <i class="fa-solid fa-print" aria-hidden="true"></i> Reçu</a>

@@ -1,0 +1,31 @@
+/* Styles du gabarit templates/pdf/recu-vente.html (injectés dans l'en-tête par RecuPdf : un style placé dans le corps n'est pas appliqué). */
+.recu-titre { font-size: 15pt; font-weight: bold; color: #14532d; margin: 0 0 2mm 0; }
+table.infos { margin: 0 0 3mm 0; }
+table.infos td { padding: 0.4mm 6mm 0.4mm 0; vertical-align: top; }
+table.infos td.etiquette { color: #4b5563; }
+table.recu-lignes { width: 100%; margin-top: 2mm; }
+table.recu-lignes th { background-color: #166534; color: #ffffff; font-weight: bold; text-align: left; padding: 1.6mm 1.8mm; }
+table.recu-lignes td { padding: 1.4mm 1.8mm; border-bottom: 0.2mm solid #d1d5db; vertical-align: top; }
+table.recu-lignes tr { page-break-inside: avoid; }
+table.recu-lignes .num { text-align: right; white-space: nowrap; }
+table.recu-totaux { width: 56%; margin: 4mm 0 0 44%; }
+table.recu-totaux td { padding: 1mm 1.8mm; white-space: nowrap; }
+table.recu-totaux td.mt { text-align: right; white-space: nowrap; }
+table.recu-totaux tr.fort td { font-weight: bold; font-size: 10.5pt; border-top: 0.4mm solid #166534; }
+.recu-mention { margin-top: 8mm; font-size: 9pt; color: #374151; text-align: center; }
+.recu-note { font-size: 8.5pt; color: #4b5563; margin-top: 2mm; }
+
+body.ticket .nom-boutique { font-size: 11pt; }
+.ticket-recu { width: 100%; }
+.ticket-recu .recu-titre { font-size: 10.5pt; text-align: center; color: #111827; margin: 0 0 0.8mm 0; }
+.ticket-recu .ref { text-align: center; font-weight: bold; margin: 0 0 1.5mm 0; }
+.ticket-recu table { width: 100%; }
+.ticket-recu td { padding: 0.3mm 0; vertical-align: top; font-size: 8pt; }
+.ticket-recu td.mt { text-align: right; white-space: nowrap; padding-left: 2mm; }
+.ticket-recu td.des { font-weight: bold; padding-top: 1.2mm; word-wrap: break-word; }
+.ticket-recu td.qte { color: #1f2933; }
+.ticket-recu .sep { border-top: 0.3mm dashed #374151; margin: 1.5mm 0; height: 0; }
+.ticket-recu tr.fort td { font-weight: bold; font-size: 9pt; }
+.ticket-recu .mention { text-align: center; margin-top: 2mm; }
+.ticket-recu .info td.etiquette { padding-right: 2mm; white-space: nowrap; }
+.ticket-recu .info td.val { word-wrap: break-word; }

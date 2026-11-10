@@ -460,3 +460,66 @@ puis annulation, retours en argent, en avoir et imputés, achats, retours d'acha
 anciens sans partenaire, opérations hors période (mai et juillet). Chaque total est commenté avec son calcul. Résultats de référence, période du 01/06 au 30/06/2026 :
 chiffre d'affaires net 166 000, bénéfice brut 96 000, dépenses 142 000, bénéfice net −46 000, trésorerie 1 080 000 → 1 039 000, créances 185 000, dettes 129 000,
 valeur du stock 946 000.
+
+## Reçus
+
+Reçus PDF imprimables d'une vente et d'un règlement, au format choisi par la boutique. Code : paquet `org.example.stock.recu`
+(`RecuController`, `RecuService`, `RecuPdf`), gabarits `templates/pdf/recu-vente.html` et `recu-reglement.html`, styles `resources/pdf/recu-*.css`.
+
+### Contenu
+
+- **Reçu de vente** : nom, logo (A4 et ticket ; le logo de plus de 100 Kio est omis du ticket), adresse et contacts de la boutique, numéro de facture, date, vendeur,
+  client, lignes (désignation, quantité avec unité, prix unitaire, total), total, retours et total net s'il y en a, versé, avance utilisée, surplus, reste à payer,
+  compte de paiement, mention de clôture sobre. Jamais de coût, de marge ni de prix d'achat.
+- **Reçu de règlement** (encaissement d'une vente, paiement d'un achat, règlement d'un solde de départ client ou fournisseur) : montant, compte, date, document concerné,
+  **reste après ce règlement** (recalculé à la date du règlement : un règlement ultérieur ou un retour postérieur ne le change pas), auteur. Un règlement annulé ensuite porte un
+  cadre « ANNULÉ le … » avec le motif et l'auteur de l'annulation, et le montant est barré.
+
+### Formats
+
+- **A4** : style de la facture (en-tête du socle d'export, tableau des lignes, totaux), une page.
+- **Ticket 80 mm** : page de 80 mm de large (zone imprimable 74 mm), police 8 pt au minimum, aucune colonne coupée, désignations longues passées à la ligne (un mot sans espace de plus de
+  16 caractères est coupé tous les 12 caractères). La hauteur est ajustée au contenu : le gabarit est rendu une première fois sur une page très haute, le bas du texte est mesuré
+  avec PDFBox, puis il est rendu sur une page juste assez haute (`RecuPdf`).
+
+### Réglages
+
+Page **Paramètres de la boutique** (gérant) : « Format des reçus » (A4 ou ticket 80 mm) et « Proposer l'impression du reçu après chaque opération » (oui ou non). Les champs sont dans la
+liste blanche du formulaire ; un champ inconnu ou une valeur inconnue donne 400. Un envoi sans ces champs conserve les réglages. Valeurs par défaut : A4, bouton proposé (voir la
+[migration du lot 4](migrations/lot-4.md)).
+
+### Parcours
+
+Après une vente ou un règlement, si le réglage le permet, le bandeau « Opération enregistrée » propose « Imprimer le reçu » : le PDF s'ouvre dans un nouvel onglet, jamais
+automatiquement (attribut flash `recuUrl`, fragment `fragments/recu :: bandeau`). Le reçu reste accessible plus tard, quel que soit le réglage : bouton « Reçu » dans la liste des
+ventes, lien « Reçu » dans l'historique de chaque règlement.
+
+| Adresse | Reçu | Droits |
+|---|---|---|
+| `/ventes/recu/{id}` | vente | gérant, caissier |
+| `/ventes/regler/{id}/recu/{mouvement}` | règlement d'une vente | gérant, caissier |
+| `/clients/solde/regler/{id}/recu/{mouvement}` | règlement du solde de départ d'un client | gérant, caissier |
+| `/achats/regler/{id}/recu/{mouvement}` | paiement d'un achat | gérant |
+| `/fournisseurs/solde/regler/{id}/recu/{mouvement}` | règlement du solde de départ d'un fournisseur | gérant |
+
+Chaque adresse est sous le préfixe de la page qu'elle prolonge, donc sous sa règle de `SecurityConfig` (aucune règle ajoutée) : 403 pour un rôle non autorisé, redirection vers la
+connexion sans compte, **404** pour un document ou un mouvement d'une autre boutique, d'un autre document, ou pour une annulation (qui n'est pas un règlement). Réponse en
+`Content-Disposition: inline`, `Cache-Control: no-store`.
+
+### Gabarits : le piège du style
+
+Un `<style>` placé dans le corps du gabarit n'est pas appliqué et son texte s'imprime : les styles des reçus sont dans `resources/pdf/<gabarit>.css`, injectés dans l'en-tête par
+`pdf/base.html` (variable `cssGabarit`, une seule ligne ajoutée au socle).
+
+### Vérifications
+
+```bash
+./gradlew test --no-daemon --tests '*RecuTests' --tests '*RecuParametresTests'
+RECU_DEMO_DIR=/chemin/dossier ./gradlew test --no-daemon --tests '*RecuTests'   # écrit les PDF pour la revue visuelle
+pdftoppm -png -r 110 vente-ticket.pdf vente-ticket                              # puis ouvrir les images
+```
+
+`RecuTests` crée deux boutiques avec les vrais services et vérifie : contenu et totaux de chaque type de reçu en A4 et en ticket, reste historique, mention d'annulation, absence de
+coût et de marge, largeur de 80 mm (PDFBox), aucun caractère hors de la page, police d'au moins 8 pt, texte complet extrait (désignation longue, mot sans espace), droits du gérant et du
+caissier, 404 d'une autre boutique, bandeau présent ou absent selon le réglage, boutons « Reçu » de la liste et de l'historique. `RecuParametresTests` couvre l'enregistrement des réglages,
+la liste blanche et les valeurs invalides.

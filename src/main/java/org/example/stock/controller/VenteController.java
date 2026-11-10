@@ -23,6 +23,7 @@ import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EcheanceService;
 import org.example.stock.service.FiltreVentes;
 import org.example.stock.service.DevisService;
+import org.example.stock.recu.RecuService;
 import org.example.stock.model.Devis;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
@@ -53,6 +54,7 @@ public class VenteController {
     @Autowired private EcheanceService echeances;
     @Autowired private BoutiqueService boutiques;
     @Autowired private DevisService devisService;
+    @Autowired private RecuService recus;
 
     @GetMapping
     public String listeVentes(@RequestParam(required = false) String filtre,
@@ -154,6 +156,9 @@ public class VenteController {
             redirectAttributes.addFlashAttribute("success", resultat.dejaEnregistre()
                     ? "Cette vente est déjà enregistrée. Le stock et la caisse n'ont pas été modifiés une seconde fois."
                     : "Vente enregistrée avec succès !");
+            // Bandeau « Imprimer le reçu » : seulement si la boutique le propose (réglage des reçus).
+            String recu = recus.proposer("/ventes/recu/" + resultat.documentId());
+            if (recu != null) redirectAttributes.addFlashAttribute("recuUrl", recu);
             return "redirect:/ventes";
         } catch (ResponseStatusException e) {
             throw e;
@@ -197,9 +202,11 @@ public class VenteController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
+                Long mouvementId = venteService.reglerVente(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
                         formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Versement client enregistré avec succès.");
+                String recu = recus.proposer("/ventes/regler/" + id + "/recu/" + mouvementId);
+                if (recu != null) redirectAttributes.addFlashAttribute("recuUrl", recu);
                 return "redirect:/ventes/regler/" + id;
             } catch (ReglementVenteObsoleteException | ConcurrencyFailureException e) {
                 response.setStatus(HttpStatus.CONFLICT.value());

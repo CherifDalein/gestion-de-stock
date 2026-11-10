@@ -129,9 +129,9 @@ public class SoldeDepartService {
 
     // ---- Règlement du solde de départ -----------------------------------------------------------------------
 
-    /** Un client règle (en partie) son solde de départ : entrée de trésorerie rattachée au client. */
+    /** Un client règle (en partie) son solde de départ : entrée de trésorerie rattachée au client. Retourne l'identifiant du mouvement (son reçu). */
     @Transactional
-    public void reglerClient(Long clientId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
+    public Long reglerClient(Long clientId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
@@ -143,12 +143,12 @@ public class SoldeDepartService {
             EcheanceService.exigerValide(nouvelleEcheance, null);
             client.setEcheanceSoldeInitial(nouvelleEcheance);
         }
-        caisse.enregistrerEntreeSoldeClient(montant, "Règlement du solde de départ - Client: " + client.getNom(), client, utilisateurCourant(), compte);
+        return caisse.enregistrerEntreeSoldeClient(montant, "Règlement du solde de départ - Client: " + client.getNom(), client, utilisateurCourant(), compte).getId();
     }
 
-    /** La boutique paie (en partie) son solde de départ à un fournisseur : sortie de trésorerie rattachée au fournisseur. */
+    /** La boutique paie (en partie) son solde de départ à un fournisseur : sortie de trésorerie rattachée au fournisseur. Retourne l'identifiant du mouvement (son reçu). */
     @Transactional
-    public void reglerFournisseur(Long fournisseurId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
+    public Long reglerFournisseur(Long fournisseurId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
@@ -160,7 +160,7 @@ public class SoldeDepartService {
             EcheanceService.exigerValide(nouvelleEcheance, null);
             fournisseur.setEcheanceSoldeInitial(nouvelleEcheance);
         }
-        caisse.enregistrerSortieSoldeFournisseur(montant, "Règlement du solde de départ - Fournisseur: " + fournisseur.getNom(), fournisseur, utilisateurCourant(), compte);
+        return caisse.enregistrerSortieSoldeFournisseur(montant, "Règlement du solde de départ - Fournisseur: " + fournisseur.getNom(), fournisseur, utilisateurCourant(), compte).getId();
     }
 
     private BigDecimal controlerSaisie(BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte) {
