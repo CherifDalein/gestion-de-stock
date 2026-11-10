@@ -66,6 +66,8 @@ class Lot2MigrationTests {
     @Test void laMigrationDuneAncienneBaseEtLeSqlNeufProduisentLeMemeSchema() throws Exception {
         try (var migree = base(true, false); var neuve = base(false, true)) {
             Lot2Migration.migrer(migree, true);
+            // Le SQL neuf contient aussi les colonnes du lot 4 (reçus) : la base migrée les reçoit par la migration suivante.
+            Lot4Migration.migrer(migree, true);
             var schemaMigre = Lot2MigrationScenarios.etatComplet(migree); var schemaNeuf = Lot2MigrationScenarios.etatComplet(neuve);
             assertThat(schemaMigre.get(2)).as("colonnes").isEqualTo(schemaNeuf.get(2));
             assertThat(schemaMigre.get(3)).as("contraintes uniques").isEqualTo(schemaNeuf.get(3));

@@ -388,6 +388,23 @@ tasks.register('lot2MariaDbTest', JavaExec) {
     mainClass = 'org.example.stock.migration.Lot2MariaDbTest'
 }
 
+['lot4Check': '--check', 'lot4Migrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute les réglages des reçus du lot 4 (format et bouton « Imprimer le reçu ») sans modifier stocks, montants ni mouvements'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.Lot4Migration'
+        args mode
+    }
+}
+
+tasks.register('lot4MariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration du lot 4 et la validation Hibernate dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.Lot4MariaDbTest'
+}
+
 tasks.register('coutMoyenServiceMariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie le coût moyen pondéré, les corrections d’achat et les opérations concurrentes avec les vrais services sur MariaDB temporaire'

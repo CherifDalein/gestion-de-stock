@@ -65,6 +65,8 @@ public final class Lot1MariaDbTest {
         Lot1Migration.migrer(c, true);
         // Les entités décrivent aussi le lot 2 : Hibernate en mode validate exige ses tables et colonnes sur la base migrée.
         Lot2Migration.migrer(c, true);
+        // Les entités décrivent aussi le lot 4 (reçus) : même exigence pour ses deux colonnes.
+        Lot4Migration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);
