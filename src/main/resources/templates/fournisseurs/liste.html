@@ -85,6 +85,7 @@
                 <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Ajouter un premier fournisseur</a>
             </div>
 
+            <p id="partenairesTableHint" class="small text-muted px-4 mb-2" th:unless="${#lists.isEmpty(fournisseurs)}">Faites défiler la ligne des actions horizontalement pour les voir toutes.</p>
             <div id="partenairesTableWrap" class="table-responsive partners-table-wrap" th:attr="hidden=${#lists.isEmpty(fournisseurs) ? 'hidden' : null}">
                 <table id="partenairesTable" class="table table-hover partners-table mb-0">
                     <caption class="visually-hidden">Fournisseurs, coordonnées et documents associés</caption>
