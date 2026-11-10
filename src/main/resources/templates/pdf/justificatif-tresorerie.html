@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!--
+  Justificatif de solde de trésorerie (tâche D du lot 4). Variables : j (JustificatifTresorerie), fmt, doc, format.
+  Document complet (et non un gabarit enfant de pdf/base) : sa feuille de style doit être dans le head, openhtmltopdf ignore
+  les style placés dans le corps. L'en-tête de boutique est le fragment pdf/base :: entete. XHTML strict (docs/lot-4.md).
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title th:text="${titre}">Justificatif de solde</title>
+    <meta name="author" th:content="${doc.nomBoutique}" content="Boutique" />
+    <style th:utext="${cssPage}">@page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }</style>
+    <style th:replace="~{pdf/justificatif-commun :: style}"></style>
+</head>
+<body>
+<th:block th:replace="~{pdf/base :: entete}"></th:block>
+<h1 class="js-titre">Justificatif de solde de trésorerie</h1>
+<table class="js-ref">
+    <tr>
+        <td><span class="js-etiquette">Numéro du document</span><span class="js-valeur" th:text="${j.numero}">JS-20261109-T1</span></td>
+        <td><span class="js-etiquette">Date d'édition</span><span class="js-valeur" th:text="${#temporals.format(j.edition, 'dd/MM/yyyy')}">09/11/2026</span></td>
+        <td><span class="js-etiquette">Date d'arrêté</span><span class="js-valeur" th:text="${#temporals.format(j.arrete, 'dd/MM/yyyy')}">09/11/2026</span></td>
+    </tr>
+</table>
+
+<h2 class="js-section" th:text="${'Soldes des comptes ' + (j.aujourdHui ? 'au ' + #temporals.format(j.edition, 'dd/MM/yyyy à HH:mm') : 'à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy'))}">Soldes des comptes</h2>
+<table class="js-detail">
+    <thead>
+    <tr><th>Compte</th><th class="num">Solde (GNF)</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="c : ${j.comptes}">
+        <td th:text="${c.compte.libelle}">Caisse (espèces)</td>
+        <td class="num" th:text="${fmt.montant(c.solde)}">0</td>
+    </tr>
+    <tr class="js-total">
+        <td>Total de la trésorerie</td>
+        <td class="num" th:text="${fmt.montant(j.total)}">0</td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="js-cadre">
+    <p class="js-phrase" th:text="${j.aujourdHui ? 'Trésorerie totale de la boutique à la date d’édition' : 'Trésorerie totale de la boutique à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy')}">Trésorerie totale</p>
+    <p class="js-chiffres" th:text="${fmt.montant(j.total)} + ' GNF'">1 039 000 GNF</p>
+    <p class="js-lettres" th:text="${'Soit ' + j.totalEnLettres + '.'}">Soit un million trente-neuf mille francs guinéens.</p>
+</div>
+
+<p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de un million trente-neuf mille francs guinéens.</p>
+<p class="js-mention">Solde calculé par l'application ; à rapprocher du comptage physique.</p>
+<p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Chaque solde est la somme des mouvements du journal de trésorerie de la boutique ' + (j.aujourdHui ? 'au moment de l’édition.' : 'jusqu’à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy') + ' (23 h 59 comprise).')}">Mention</p>
+
+<table class="js-signatures">
+    <tr>
+        <td class="js-gauche">
+            <div class="js-zone-titre">Pour la boutique</div>
+            <div class="js-zone-aide">Signature et cachet</div>
+            <div class="js-zone"></div>
+        </td>
+        <td class="js-droite">
+            <div class="js-zone-titre">Visa du contrôleur ou de l’associé</div>
+            <div class="js-zone-aide">Nom, date et signature (facultatif)</div>
+            <div class="js-zone"></div>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -49,6 +49,7 @@
         table.tableau tr.totaux td { font-weight: bold; background-color: #e5efe8; border-top: 0.5mm solid #166534; border-bottom: 0.5mm solid #166534; }
         table.tableau td.vide { text-align: center; color: #6b7280; padding: 6mm 0; }
     </style>
+    <style th:if="${cssGabarit != null}" th:utext="${cssGabarit}"></style>
 </head>
 <body th:classappend="${format.estPaysage() ? 'paysage' : (format.estTicket() ? 'ticket' : '')}">
 <!-- En-tête de boutique réutilisable seul : th:replace="~{pdf/base :: entete}" -->

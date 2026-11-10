@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     prochain_numero_devis BIGINT NOT NULL DEFAULT 1,
     prochain_numero_retour_vente BIGINT NOT NULL DEFAULT 1,
     prochain_numero_retour_achat BIGINT NOT NULL DEFAULT 1,
+    format_recu VARCHAR(16) NOT NULL DEFAULT 'A4',
+    proposer_impression_recu BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id)
 );
 

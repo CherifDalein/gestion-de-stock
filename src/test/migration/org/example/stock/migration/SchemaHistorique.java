@@ -18,11 +18,20 @@ public final class SchemaHistorique {
             "prochain_numero_devis BIGINT NOT NULL DEFAULT 1,", "prochain_numero_retour_vente BIGINT NOT NULL DEFAULT 1,", "prochain_numero_retour_achat BIGINT NOT NULL DEFAULT 1,",
             "montant_retours DECIMAL(17,2) NOT NULL DEFAULT 0,", "vendeur_id BIGINT NULL,", "retour_id BIGINT NULL,", "annulation_de_id BIGINT NULL,",
             "CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),");
+    private static final List<String> LIGNES_LOT4 = List.of(
+            "format_recu VARCHAR(16) NOT NULL DEFAULT 'A4',", "proposer_impression_recu BOOLEAN NOT NULL DEFAULT TRUE,");
     private SchemaHistorique() {}
+
+    /** Schéma antérieur au lot 4 : sans le format des reçus ni le réglage du bouton « Imprimer le reçu » de la boutique. */
+    public static String sansLot4(String schema) {
+        String resultat = schema;
+        for (String ligne : LIGNES_LOT4) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
+        return resultat;
+    }
 
     /** Schéma antérieur au lot 2 : sans devis, retours, vendeur des ventes, auteur des achats ni annulation des règlements. */
     public static String sansLot2(String schema) {
-        String resultat = schema.replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:devis|detail_devis|retour|detail_retour) \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", "")
+        String resultat = sansLot4(schema).replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:devis|detail_devis|retour|detail_retour) \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", "")
                 .replaceAll("(?m)^-- Lot 2 : [^\\r\\n]*\\R", "");
         for (String ligne : LIGNES_LOT2) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
         // achat possède une colonne utilisateur_id facultative propre au lot 2 ; les autres tables gardent la leur.

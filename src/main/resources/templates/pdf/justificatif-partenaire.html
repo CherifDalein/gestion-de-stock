@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<!--
+  Justificatif de solde d'un client ou d'un fournisseur (tâche D du lot 4). Variables : j (JustificatifPartenaire), fmt, doc, format.
+  Document complet (et non un gabarit enfant de pdf/base) : sa feuille de style doit être dans le head, openhtmltopdf ignore
+  les style placés dans le corps. L'en-tête de boutique est le fragment pdf/base :: entete. XHTML strict (docs/lot-4.md).
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title th:text="${titre}">Justificatif de solde</title>
+    <meta name="author" th:content="${doc.nomBoutique}" content="Boutique" />
+    <style th:utext="${cssPage}">@page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }</style>
+    <style th:replace="~{pdf/justificatif-commun :: style}"></style>
+</head>
+<body>
+<th:block th:replace="~{pdf/base :: entete}"></th:block>
+<h1 class="js-titre">Justificatif de solde</h1>
+<table class="js-ref">
+    <tr>
+        <td><span class="js-etiquette">Numéro du document</span><span class="js-valeur" th:text="${j.numero}">JS-20261109-C1</span></td>
+        <td><span class="js-etiquette">Date d'édition</span><span class="js-valeur" th:text="${#temporals.format(j.edition, 'dd/MM/yyyy')}">09/11/2026</span></td>
+        <td><span class="js-etiquette">Date d'arrêté</span><span class="js-valeur" th:text="${#temporals.format(j.arrete, 'dd/MM/yyyy')}">09/11/2026</span></td>
+    </tr>
+</table>
+
+<h2 class="js-section" th:text="${j.estClient() ? 'Client' : 'Fournisseur'}">Client</h2>
+<table class="js-identite">
+    <tr><td class="js-cle">Nom</td><td><b th:text="${j.nom}">Nom</b></td></tr>
+    <tr th:if="${j.telephone != null}"><td class="js-cle">Téléphone</td><td th:text="${j.telephone}">620 00 00 00</td></tr>
+    <tr th:if="${j.email != null}"><td class="js-cle">Email</td><td th:text="${j.email}">email</td></tr>
+    <tr th:if="${j.adresse != null}"><td class="js-cle">Adresse</td><td th:text="${j.adresse}">Adresse</td></tr>
+</table>
+
+<h2 class="js-section" th:text="${j.titreSolde} + ' au ' + ${#temporals.format(j.arrete, 'dd/MM/yyyy')}">Solde</h2>
+<div class="js-cadre">
+    <p class="js-phrase" th:text="${j.attestation}">Le client doit à la boutique la somme de</p>
+    <p class="js-chiffres" th:unless="${j.estNul()}" th:text="${fmt.montant(j.montant)} + ' GNF'">125 000 GNF</p>
+    <p class="js-lettres" th:unless="${j.estNul()}" th:text="${'Soit ' + j.montantEnLettres + '.'}">Soit cent vingt-cinq mille francs guinéens.</p>
+    <p class="js-chiffres" th:if="${j.estNul()}">0 GNF</p>
+    <p class="js-lettres" th:if="${j.estNul()}" th:text="${'Soit ' + j.montantEnLettres + '.'}">Soit zéro franc guinéen.</p>
+</div>
+
+<h2 class="js-section">Détail du solde</h2>
+<table class="js-detail">
+    <thead>
+    <tr>
+        <th>Élément</th><th>Date</th><th>Échéance</th><th class="num">Montant (GNF)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${j.resteSoldeDepart.signum() > 0}">
+        <td>Solde de départ restant à régler</td><td class="nw"></td>
+        <td class="nw" th:text="${fmt.date(j.echeanceSoldeDepart)}"></td>
+        <td class="num" th:text="${fmt.montant(j.resteSoldeDepart)}">0</td>
+    </tr>
+    <tr th:each="f : ${j.factures}">
+        <td th:text="${(j.estClient() ? 'Facture de vente ' : 'Facture d’achat ') + f.numero}">Facture</td>
+        <td class="nw" th:text="${fmt.date(f.date)}"></td>
+        <td class="nw" th:text="${fmt.date(f.echeance)}"></td>
+        <td class="num" th:text="${fmt.montant(f.reste)}">0</td>
+    </tr>
+    <tr th:if="${j.resteSoldeDepart.signum() == 0 and j.factures.isEmpty()}">
+        <td colspan="4">Aucun solde de départ ni facture non soldée.</td>
+    </tr>
+    <tr class="js-sous" th:if="${j.avance.signum() > 0 or j.resteSoldeDepart.signum() > 0 or !j.factures.isEmpty()}">
+        <td colspan="3" th:text="${j.estClient() ? 'Total dû par le client' : 'Total dû par la boutique'}">Total dû</td>
+        <td class="num" th:text="${fmt.montant(j.resteSoldeDepart.add(j.resteFactures))}">0</td>
+    </tr>
+    <tr th:if="${j.avance.signum() > 0}">
+        <td colspan="3" th:text="${j.estClient() ? 'À déduire : avance disponible du client' : 'À déduire : avance de la boutique chez le fournisseur'}">Avance disponible</td>
+        <td class="num" th:text="${'-' + fmt.montant(j.avance)}">-0</td>
+    </tr>
+    <tr class="js-total">
+        <td colspan="3" th:text="${j.estNul() ? 'Solde' : j.titreSolde}">Solde</td>
+        <td class="num" th:text="${fmt.montant(j.montant)}">0</td>
+    </tr>
+    </tbody>
+</table>
+
+<p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de cent vingt-cinq mille francs guinéens.</p>
+<p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Ce solde est celui de la fiche du ' + (j.estClient() ? 'client' : 'fournisseur') + ' à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.'}">Mention</p>
+
+<table class="js-signatures">
+    <tr>
+        <td class="js-gauche">
+            <div class="js-zone-titre">Pour la boutique</div>
+            <div class="js-zone-aide">Signature et cachet</div>
+            <div class="js-zone"></div>
+        </td>
+        <td class="js-droite">
+            <div class="js-zone-titre" th:text="${'Pour le ' + (j.estClient() ? 'client' : 'fournisseur') + ' : Bon pour accord'}">Bon pour accord</div>
+            <div class="js-zone-aide">Mention manuscrite « Bon pour accord », date et signature</div>
+            <div class="js-zone"></div>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

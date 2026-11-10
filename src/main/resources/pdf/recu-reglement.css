@@ -1,0 +1,27 @@
+/* Styles du gabarit templates/pdf/recu-reglement.html (injectés dans l'en-tête par RecuPdf : un style placé dans le corps n'est pas appliqué). */
+.recu-titre { font-size: 15pt; font-weight: bold; color: #14532d; margin: 0 0 2mm 0; }
+.recu-nature { font-size: 10.5pt; margin: 0 0 3mm 0; color: #374151; }
+table.infos { margin: 0 0 3mm 0; width: 100%; }
+table.infos td { padding: 1.1mm 0; vertical-align: top; border-bottom: 0.2mm solid #d1d5db; }
+table.infos td.etiquette { color: #4b5563; width: 38%; padding-right: 4mm; }
+table.infos td.fort { font-weight: bold; font-size: 12pt; }
+.annule { border: 0.7mm solid #b91c1c; color: #b91c1c; padding: 2.5mm 3mm; margin: 0 0 4mm 0; text-align: center; font-weight: bold; }
+.annule .gros { font-size: 13pt; }
+.annule .detail { font-weight: normal; font-size: 9pt; margin-top: 1mm; }
+.recu-note { font-size: 8.5pt; color: #4b5563; margin-top: 2mm; }
+.recu-mention { margin-top: 8mm; font-size: 9pt; color: #374151; text-align: center; }
+tr.barre td.val { text-decoration: line-through; }
+
+body.ticket .nom-boutique { font-size: 11pt; }
+.ticket-recu { width: 100%; }
+.ticket-recu .recu-titre { font-size: 10.5pt; text-align: center; color: #111827; margin: 0 0 0.8mm 0; }
+.ticket-recu .ref { text-align: center; font-weight: bold; margin: 0 0 1.5mm 0; }
+.ticket-recu table.infos td { font-size: 8pt; padding: 0.5mm 0; border-bottom: 0; }
+.ticket-recu table.infos td.etiquette { width: auto; white-space: nowrap; padding-right: 2mm; }
+.ticket-recu table.infos td.val { word-wrap: break-word; }
+.ticket-recu table.infos td.fort { font-size: 10pt; }
+.ticket-recu .sep { border-top: 0.3mm dashed #374151; margin: 1.5mm 0; height: 0; }
+.ticket-recu .annule { padding: 1.5mm 1.5mm; margin: 1.5mm 0; }
+.ticket-recu .annule .gros { font-size: 10pt; }
+.ticket-recu .annule .detail { font-size: 8pt; word-wrap: break-word; }
+.ticket-recu .mention { text-align: center; margin-top: 2mm; }

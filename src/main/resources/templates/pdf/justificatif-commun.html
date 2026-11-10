@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<!--
+  Éléments communs des justificatifs de solde (tâche D du lot 4) : feuille de style et zones de signature.
+  Fichier de fragments, utilisé par justificatif-partenaire.html et justificatif-tresorerie.html. XHTML strict (voir docs/lot-4.md).
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<body>
+<style th:fragment="style">
+    /* Base et en-tête de boutique (copie du strict nécessaire de pdf/base : ces gabarits sont des documents complets, leur CSS doit être dans le head). */
+    body { font-family: 'DejaVu Sans', sans-serif; font-size: 9pt; color: #1f2933; margin: 0; padding: 0; line-height: 1.35; }
+    p { margin: 0 0 1.5mm 0; }
+    table { border-collapse: collapse; }
+    table.entete { width: 100%; margin-bottom: 3mm; border-bottom: 0.6mm solid #15803d; }
+    table.entete td { vertical-align: top; padding: 0 0 3mm 0; }
+    td.entete-edition { text-align: right; font-size: 8pt; color: #4b5563; width: 38%; }
+    table.marque td { vertical-align: middle; padding: 0 3mm 0 0; }
+    img.logo { max-height: 17mm; max-width: 38mm; }
+    .nom-boutique { font-size: 14pt; font-weight: bold; color: #14532d; margin-bottom: 0.8mm; }
+    .coordonnees { font-size: 8pt; color: #4b5563; margin: 0; }
+    h1.js-titre { text-align: center; font-size: 17pt; margin: 2mm 0 3mm 0; letter-spacing: 0.3mm; }
+    table.js-ref { width: 100%; margin-bottom: 4mm; border: 0.25mm solid #9ca3af; }
+    table.js-ref td { padding: 1.6mm 2.4mm; width: 33%; font-size: 8.5pt; vertical-align: top; }
+    table.js-ref .js-etiquette { display: block; font-size: 7.5pt; color: #6b7280; }
+    table.js-ref .js-valeur { font-weight: bold; font-size: 9.5pt; }
+    h2.js-section { font-size: 10.5pt; color: #14532d; margin: 4mm 0 1.5mm 0; border-bottom: 0.3mm solid #15803d; padding-bottom: 0.8mm; page-break-after: avoid; }
+    table.js-identite td { padding: 0.7mm 3mm 0.7mm 0; vertical-align: top; font-size: 9pt; }
+    table.js-identite td.js-cle { width: 28mm; color: #4b5563; }
+    div.js-cadre { border: 0.5mm solid #15803d; background-color: #f1f7f3; padding: 3.5mm 4mm; margin-top: 2mm; page-break-inside: avoid; }
+    div.js-cadre p.js-phrase { font-size: 10pt; margin: 0 0 1.5mm 0; }
+    div.js-cadre p.js-chiffres { font-size: 19pt; font-weight: bold; color: #14532d; margin: 0 0 1.5mm 0; white-space: nowrap; }
+    div.js-cadre p.js-lettres { font-size: 9.5pt; font-weight: bold; margin: 0; }
+    table.js-detail { width: 100%; margin-top: 1mm; page-break-inside: auto; -fs-table-paginate: paginate; }
+    table.js-detail th { background-color: #166534; color: #ffffff; text-align: left; padding: 1.4mm 2mm; font-size: 8.5pt; }
+    table.js-detail td { padding: 1.3mm 2mm; border-bottom: 0.2mm solid #d1d5db; vertical-align: top; }
+    table.js-detail tr { page-break-inside: avoid; }
+    table.js-detail .num { text-align: right; white-space: nowrap; }
+    table.js-detail .nw { white-space: nowrap; }
+    table.js-detail tr.js-sous td { font-weight: bold; background-color: #eef4f0; }
+    table.js-detail tr.js-total td { font-weight: bold; background-color: #e5efe8; border-top: 0.5mm solid #166534; border-bottom: 0.5mm solid #166534; }
+    p.js-arrete { font-size: 10.5pt; font-weight: bold; margin: 5mm 0 1mm 0; page-break-after: avoid; }
+    p.js-mention { font-size: 8pt; color: #4b5563; margin: 1.5mm 0 0 0; }
+    table.js-signatures { width: 100%; margin-top: 5mm; page-break-inside: avoid; }
+    table.js-signatures td { width: 50%; vertical-align: top; padding: 0 2mm; }
+    table.js-signatures td.js-gauche { padding-left: 0; }
+    table.js-signatures td.js-droite { padding-right: 0; }
+    div.js-zone { border: 0.3mm solid #6b7280; height: 32mm; margin-top: 1mm; }
+    div.js-zone-titre { font-weight: bold; font-size: 9pt; }
+    div.js-zone-aide { font-size: 7.5pt; color: #6b7280; }
+</style>
+</body>
+</html>

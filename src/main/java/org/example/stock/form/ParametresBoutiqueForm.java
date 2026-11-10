@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import org.example.stock.enums.FormatRecu;
 import org.springframework.web.multipart.MultipartFile;
 
 /** Coordonnées publiques et délais de paiement de la boutique, sans identifiant ni propriétés d'accès. */
@@ -41,6 +42,13 @@ public class ParametresBoutiqueForm {
     @Max(value = 365, message = "Le délai accordé par les fournisseurs doit être compris entre 0 et 365 jours")
     private Integer delaiFournisseursJours;
 
+    /** Reçus : format du papier et bouton « Imprimer le reçu » après chaque opération ; absents d'un envoi, les réglages enregistrés sont conservés. */
+    private FormatRecu formatRecu;
+
+    private Boolean proposerImpressionRecu;
+
+    public void setFormatRecu(FormatRecu formatRecu) { this.formatRecu = formatRecu; }
+    public void setProposerImpressionRecu(Boolean proposerImpressionRecu) { this.proposerImpressionRecu = proposerImpressionRecu; }
     public void setDelaiClientsJours(Integer delaiClientsJours) { this.delaiClientsJours = delaiClientsJours; }
     public void setDelaiFournisseursJours(Integer delaiFournisseursJours) { this.delaiFournisseursJours = delaiFournisseursJours; }
 

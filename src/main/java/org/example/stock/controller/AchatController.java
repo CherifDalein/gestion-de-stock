@@ -47,6 +47,7 @@ public class AchatController {
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private EcheanceService echeances;
     @Autowired private BoutiqueService boutiques;
+    @Autowired private org.example.stock.recu.RecuService recus;
 
     @GetMapping
     public String listeVentes(@RequestParam(required = false) String filtre, Model model) {
@@ -163,9 +164,11 @@ public class AchatController {
         FormBindingAdvice.verifier(result);
         if (!result.hasErrors()) {
             try {
-                service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
+                Long mouvementId = service.reglerAchat(id, formulaire.getMontant(), formulaire.getMontantVerseAttendu(), formulaire.getComptePaiement(),
                         formulaire.getDateEcheance());
                 redirectAttributes.addFlashAttribute("success", "Versement fournisseur enregistré avec succès.");
+                String recu = recus.proposer("/achats/regler/" + id + "/recu/" + mouvementId);
+                if (recu != null) redirectAttributes.addFlashAttribute("recuUrl", recu);
                 return "redirect:/achats/regler/" + id;
             } catch (ReglementAchatObsoleteException | ConcurrencyFailureException e) {
                 response.setStatus(HttpStatus.CONFLICT.value());

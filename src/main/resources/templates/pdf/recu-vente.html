@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<!--
+  Reçu de vente (A4 ou ticket 80 mm). Reçoit `recu` (org.example.stock.recu.RecuVente) et `titre`.
+  Aucun coût ni aucune marge : seules les données de la facture sont transmises par RecuService.
+  Les styles sont dans resources/pdf/recu-vente.css. XHTML strict : voir docs/lot-4.md, « PDF : gabarits XHTML et pièges ».
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" th:replace="~{pdf/base :: page(~{::div#contenu})}">
+<body>
+<div id="contenu">
+    <!-- ===== Ticket 80 mm ===== -->
+    <div class="ticket-recu" th:if="${format.estTicket()}">
+        <p class="recu-titre">REÇU DE VENTE</p>
+        <p class="ref" th:text="${'N° ' + recu.numero}">N° FV-000001</p>
+        <table class="info">
+            <tr><td class="etiquette">Date</td><td class="val" th:text="${recu.date}">09/11/2026 14:05</td></tr>
+            <tr><td class="etiquette">Vendeur</td><td class="val" th:text="${recu.vendeur}">Vendeur</td></tr>
+            <tr><td class="etiquette">Client</td><td class="val" th:text="${recu.client}">Client</td></tr>
+        </table>
+        <div class="sep"></div>
+        <table class="lignes">
+            <th:block th:each="l : ${recu.lignes}">
+                <tr><td class="des" colspan="2" th:text="${l.designation}">Désignation</td></tr>
+                <tr><td class="qte" th:text="${l.quantite + ' × ' + l.prix}">2 × 1 000</td><td class="mt" th:text="${l.total}">2 000</td></tr>
+            </th:block>
+        </table>
+        <div class="sep"></div>
+        <table class="totaux">
+            <tr class="fort"><td>Total</td><td class="mt" th:text="${recu.total + ' GNF'}">0 GNF</td></tr>
+            <tr th:if="${recu.retours != null}"><td>Retours</td><td class="mt" th:text="${'− ' + recu.retours + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.retours != null}" class="fort"><td>Total net</td><td class="mt" th:text="${recu.totalNet + ' GNF'}">0</td></tr>
+            <tr><td>Versé</td><td class="mt" th:text="${recu.verse + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.avance != null}"><td>Avance utilisée</td><td class="mt" th:text="${recu.avance + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.surplus != null}"><td>Surplus (avance)</td><td class="mt" th:text="${recu.surplus + ' GNF'}">0</td></tr>
+            <tr class="fort"><td>Reste à payer</td><td class="mt" th:text="${recu.reste + ' GNF'}">0</td></tr>
+        </table>
+        <div class="sep"></div>
+        <table class="info" th:if="${recu.compte != null}">
+            <tr><td class="etiquette">Paiement</td><td class="val" th:text="${recu.compte}">Caisse (espèces)</td></tr>
+        </table>
+        <p th:if="${recu.retoursNumeros != null}" th:text="${'Retours : ' + recu.retoursNumeros}">Retours : RV-000001</p>
+        <p class="mention" th:text="${recu.mention}">Merci de votre visite.</p>
+    </div>
+
+    <!-- ===== A4 ===== -->
+    <div th:unless="${format.estTicket()}">
+        <h1 class="recu-titre">Reçu de vente</h1>
+        <table class="infos">
+            <tr><td class="etiquette">Numéro de facture</td><td><b th:text="${recu.numero}">FV-000001</b></td>
+                <td class="etiquette">Date</td><td th:text="${recu.date}">09/11/2026 14:05</td></tr>
+            <tr><td class="etiquette">Client</td><td th:text="${recu.client}">Client</td>
+                <td class="etiquette">Vendeur</td><td th:text="${recu.vendeur}">Vendeur</td></tr>
+        </table>
+        <table class="recu-lignes">
+            <thead>
+            <tr><th>Désignation</th><th class="num">Quantité</th><th class="num">Prix unitaire</th><th class="num">Total (GNF)</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="l : ${recu.lignes}">
+                <td th:text="${l.designation}">Désignation</td>
+                <td class="num" th:text="${l.quantite}">2</td>
+                <td class="num" th:text="${l.prix}">1 000</td>
+                <td class="num" th:text="${l.total}">2 000</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(recu.lignes)}"><td colspan="4">Aucun article sur ce document.</td></tr>
+            </tbody>
+        </table>
+        <table class="recu-totaux">
+            <tr class="fort"><td>Total de la vente</td><td class="mt" th:text="${recu.total + ' GNF'}">0 GNF</td></tr>
+            <tr th:if="${recu.retours != null}"><td>Retours</td><td class="mt" th:text="${'− ' + recu.retours + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.retours != null}" class="fort"><td>Total net</td><td class="mt" th:text="${recu.totalNet + ' GNF'}">0</td></tr>
+            <tr><td>Montant versé</td><td class="mt" th:text="${recu.verse + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.avance != null}"><td>Avance utilisée</td><td class="mt" th:text="${recu.avance + ' GNF'}">0</td></tr>
+            <tr th:if="${recu.surplus != null}"><td>Surplus versé (avance du client)</td><td class="mt" th:text="${recu.surplus + ' GNF'}">0</td></tr>
+            <tr class="fort"><td>Reste à payer</td><td class="mt" th:text="${recu.reste + ' GNF'}">0</td></tr>
+        </table>
+        <p class="recu-note" th:if="${recu.compte != null}" th:text="${'Compte de paiement : ' + recu.compte}">Compte de paiement : Caisse (espèces)</p>
+        <p class="recu-note" th:if="${recu.retoursNumeros != null}" th:text="${'Retours enregistrés sur cette facture : ' + recu.retoursNumeros}">Retours</p>
+        <p class="recu-note">Montants exprimés en francs guinéens (GNF).</p>
+        <p class="recu-mention" th:text="${recu.mention}">Merci de votre visite.</p>
+    </div>
+</div>
+</body>
+</html>

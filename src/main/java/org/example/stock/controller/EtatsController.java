@@ -53,7 +53,8 @@ public class EtatsController {
             new Carte("stock", "État du stock", "Quantité, coût moyen, valeur, seuil et état de chaque produit, avec les totaux par catégorie."),
             new Carte("depenses", "Liste des dépenses", "Les dépenses de la période par compte et par motif, avec les totaux."),
             new Carte("encaissements", "Liste des encaissements", "Tout l'argent reçu, par compte, avec sa source, son document et les annulations."),
-            new Carte("ventes-par-vendeur", "Ventes par vendeur", "Chiffre d'affaires, bénéfice brut et panier moyen de chaque compte."));
+            new Carte("ventes-par-vendeur", "Ventes par vendeur", "Chiffre d'affaires, bénéfice brut et panier moyen de chaque compte."),
+            new Carte("justificatifs", "Justificatifs de solde", "Documents PDF officiels attestant le solde d'un client, d'un fournisseur ou de la trésorerie, avec signatures."));
 
     @GetMapping({"", "/"})
     public String accueil(Model model) {

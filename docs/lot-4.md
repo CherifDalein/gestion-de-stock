@@ -460,3 +460,144 @@ puis annulation, retours en argent, en avoir et imputés, achats, retours d'acha
 anciens sans partenaire, opérations hors période (mai et juillet). Chaque total est commenté avec son calcul. Résultats de référence, période du 01/06 au 30/06/2026 :
 chiffre d'affaires net 166 000, bénéfice brut 96 000, dépenses 142 000, bénéfice net −46 000, trésorerie 1 080 000 → 1 039 000, créances 185 000, dettes 129 000,
 valeur du stock 946 000.
+
+## Justificatifs de solde
+
+Un justificatif de solde est un **PDF officiel** de la boutique (A4 portrait, en-tête de la boutique, polices embarquées) qui atteste un solde à une date, pour le
+remettre à un client, à un fournisseur ou à un contrôleur. **Réservé au gérant** : le caissier reçoit **403** (règle `/etats/**` de `SecurityConfig`, revérifiée
+par `JustificatifSoldeService`), un visiteur sans compte est renvoyé vers la connexion, un client ou un fournisseur d'une autre boutique donne **404**, un
+paramètre absent, répété ou invalide donne **400**. Tout est en lecture seule (`GET`), aucune table, aucun compteur, aucune modification de schéma.
+
+| Document | Route | Paramètre | Contenu |
+|---|---|---|---|
+| Solde d'un client | `GET /etats/justificatifs/client/pdf?id=` | `id` du client | identité, solde dû ou avance, détail, montant en chiffres et en lettres, signature et cachet, « Bon pour accord » |
+| Solde d'un fournisseur | `GET /etats/justificatifs/fournisseur/pdf?id=` | `id` du fournisseur | idem, sens de la dette inversé |
+| Solde de trésorerie | `GET /etats/justificatifs/tresorerie/pdf[?date=AAAA-MM-JJ]` | `date` d'arrêté (défaut : aujourd'hui) | Caisse (espèces), Orange Money, Banque, total, montant en lettres, signatures |
+| Page | `GET /etats/justificatifs` | | les trois types ; entrée « Justificatifs de solde » dans la page d'accueil des états |
+
+**Boutons.** Un bouton « Justificatif de solde » (gérant seulement, `sec:authorize`) figure sur la ligne de chaque client (`/clients`) et de chaque fournisseur
+(`/fournisseurs`), à côté du relevé. Le caissier ne le voit pas.
+
+### Contenu
+
+- **Tous** : en-tête de la boutique, titre, **numéro du document**, **date d'édition**, **date d'arrêté**, mention « Arrêté à la somme de … », zone de signature et de cachet.
+- **Client ou fournisseur** : identité (nom, téléphone, email, adresse quand ils existent) ; solde (« Le client doit à la boutique la somme de », « La boutique détient une
+  avance au nom du client, d'un montant de », « La boutique doit au fournisseur… », « La boutique a une avance chez le fournisseur… », ou « Solde nul ») en chiffres et en
+  lettres ; détail : **solde de départ restant à régler** (avec son échéance), **factures non soldées** (numéro, date, échéance, reste), total dû, **avance disponible**
+  (en déduction) ; zone « Bon pour accord » pour le partenaire.
+- **Trésorerie** : solde de chaque compte, total, mention « Solde calculé par l'application ; à rapprocher du comptage physique. », zone de signature de la boutique et visa facultatif d'un contrôleur.
+
+### Même solde que la fiche, le relevé, le journal et le bilan
+
+Aucun calcul n'est réécrit :
+
+- **Partenaire** : le solde est `SoldePartenaire.soldeNet()` de `SoldePartenaireService` (fiche, tableau de bord, états), le reste du solde de départ et l'avance sont ceux de la fiche. Le
+  justificatif suit la convention des relevés : positif = le client doit à la boutique (la boutique doit au fournisseur), négatif = avance ; solde = reste du solde de départ + restes des
+  factures − avance. Les factures non soldées viennent d'une requête de même condition que le reste à payer ; si leur somme ne redonne pas le solde de la fiche, le document est refusé
+  (retour à la page avec le message, jamais un document qui ne s'additionne pas).
+- **Trésorerie** : aujourd'hui, `CaisseService.getSoldeCompte` (le solde du journal) ; un jour passé, la somme des mouvements jusqu'à la fin de ce jour (`EtatsRepository.soldesAvant`, la requête
+  de « trésorerie à la fin de la période » du bilan ; un mouvement sans date compte comme antérieur).
+
+### Dates d'arrêté
+
+| Document | Dates possibles | Pourquoi |
+|---|---|---|
+| Trésorerie | **n'importe quel jour passé, ou aujourd'hui** (fin de journée, 23 h 59 comprise) ; une date future ou antérieure à 2000 donne 400 | le solde se déduit exactement des mouvements datés ; testé jour par jour contre la somme du journal et contre le bilan |
+| Client, fournisseur | **le jour de l'édition seulement**, écrit dans le document | l'application ne conserve ni les restes à payer ni les avances jour par jour |
+
+Une date passée pour un partenaire n'est **pas proposée** : le relevé permettrait de reconstituer le total d'un compte, mais pas le détail par facture (restes, avances utilisées) à cette date,
+et un chiffre non exact sur un document officiel est pire qu'une limite affichée. Le document le dit : « la date d'arrêté est donc la date d'édition ».
+
+### Numéro du document et nom du fichier
+
+`JS-AAAAMMJJ-<type><identifiant>` : `JS-20261109-C12` (client 12), `JS-20261109-F7` (fournisseur 7), `JS-20261109-T3` (trésorerie de la boutique 3). `AAAAMMJJ` est la date d'arrêté ; le numéro est
+recalculé, donc **stable** (même partenaire, même date, même numéro) et sans compteur. Il identifie le partenaire et le jour, pas le montant : deux éditions le même jour après une opération
+portent le même numéro, la date et l'heure d'édition de l'en-tête les distinguent. Le fichier s'appelle `<numéro>.pdf`.
+
+### Montant en lettres
+
+`org.example.stock.export.MontantEnLettres` (réutilisable par les reçus) : `enLettres(long)` et `francsGuineens(BigDecimal)`. Graphie traditionnelle, comme « cent vingt-cinq mille francs guinéens » :
+« vingt et un », « soixante et onze », « quatre-vingts » mais « quatre-vingt-un », « quatre-vingt-onze » ; « cent » et « quatre-vingt » prennent un « s » seulement quand ils terminent le nombre ou précèdent
+« million » et « milliard » (« deux cents », « deux cent mille », « deux cents millions ») ; « mille » invariable et jamais « un mille » ; « un million », « deux millions » ; une somme ronde en millions prend
+« de » (« deux millions de francs guinéens ») ; « zéro franc guinéen », « un franc guinéen » ; centimes éventuels (« … et cinquante centimes ») ; négatif précédé de « moins ». Limite : moins de mille milliards.
+
+### Limites
+
+- Les justificatifs des **autres partenaires** (banque, associé, personnel) viendront avec le **lot 3**.
+- Pas de signature électronique ni de PDF/A : le document est à signer et à cacheter à la main.
+- Le solde d'un partenaire est celui du moment de l'édition ; si une opération est saisie ensuite, le justificatif déjà remis ne change pas, il faut en éditer un nouveau.
+
+### Vérifications
+
+```bash
+./gradlew test --no-daemon --tests '*MontantEnLettresTests' --tests '*JustificatifsSoldeTests'
+JUSTIFICATIFS_SORTIE=/chemin/dossier ./gradlew test --no-daemon --tests '*JustificatifsSoldeTests'   # écrit les six PDF pour la revue visuelle
+pdftoppm -png -r 70 client-boubacar-dette.pdf client-boubacar-dette                                   # puis ouvrir les images
+```
+
+`MontantEnLettresTests` : les cas difficiles (0, 1, 21, 71, 80, 81, 91, 100, 200, 201, 1 000, 1 001, 1 000 000, 2 000 000, 1 250 300, 999 999 999 et d'autres) et un contrôle d'orthographe sur les 200 000 premiers nombres.
+`JustificatifsSoldeTests` (jeu de données des états, deux boutiques) : solde égal à celui de la fiche et du relevé pour trois clients et trois fournisseurs (solde de départ, avance, avoir, retour imputé, annulation de règlement) ;
+trésorerie égale au journal chaque jour du 01/05 au 15/07, au bilan et à `getSoldeCompte` ; PDF (`%PDF`, chiffres et lettres, mentions, signatures) ; caissier 403, autre boutique 404, paramètres invalides 400, lecture seule, numéro stable, boutons réservés au gérant.
+
+## Reçus
+
+Reçus PDF imprimables d'une vente et d'un règlement, au format choisi par la boutique. Code : paquet `org.example.stock.recu`
+(`RecuController`, `RecuService`, `RecuPdf`), gabarits `templates/pdf/recu-vente.html` et `recu-reglement.html`, styles `resources/pdf/recu-*.css`.
+
+### Contenu
+
+- **Reçu de vente** : nom, logo (A4 et ticket ; le logo de plus de 100 Kio est omis du ticket), adresse et contacts de la boutique, numéro de facture, date, vendeur,
+  client, lignes (désignation, quantité avec unité, prix unitaire, total), total, retours et total net s'il y en a, versé, avance utilisée, surplus, reste à payer,
+  compte de paiement, mention de clôture sobre. Jamais de coût, de marge ni de prix d'achat.
+- **Reçu de règlement** (encaissement d'une vente, paiement d'un achat, règlement d'un solde de départ client ou fournisseur) : montant, compte, date, document concerné,
+  **reste après ce règlement** (recalculé à la date du règlement : un règlement ultérieur ou un retour postérieur ne le change pas), auteur. Un règlement annulé ensuite porte un
+  cadre « ANNULÉ le … » avec le motif et l'auteur de l'annulation, et le montant est barré.
+
+### Formats
+
+- **A4** : style de la facture (en-tête du socle d'export, tableau des lignes, totaux), une page.
+- **Ticket 80 mm** : page de 80 mm de large (zone imprimable 74 mm), police 8 pt au minimum, aucune colonne coupée, désignations longues passées à la ligne (un mot sans espace de plus de
+  16 caractères est coupé tous les 12 caractères). La hauteur est ajustée au contenu : le gabarit est rendu une première fois sur une page très haute, le bas du texte est mesuré
+  avec PDFBox, puis il est rendu sur une page juste assez haute (`RecuPdf`).
+
+### Réglages
+
+Page **Paramètres de la boutique** (gérant) : « Format des reçus » (A4 ou ticket 80 mm) et « Proposer l'impression du reçu après chaque opération » (oui ou non). Les champs sont dans la
+liste blanche du formulaire ; un champ inconnu ou une valeur inconnue donne 400. Un envoi sans ces champs conserve les réglages. Valeurs par défaut : A4, bouton proposé (voir la
+[migration du lot 4](migrations/lot-4.md)).
+
+### Parcours
+
+Après une vente ou un règlement, si le réglage le permet, le bandeau « Opération enregistrée » propose « Imprimer le reçu » : le PDF s'ouvre dans un nouvel onglet, jamais
+automatiquement (attribut flash `recuUrl`, fragment `fragments/recu :: bandeau`). Le reçu reste accessible plus tard, quel que soit le réglage : bouton « Reçu » dans la liste des
+ventes, lien « Reçu » dans l'historique de chaque règlement.
+
+| Adresse | Reçu | Droits |
+|---|---|---|
+| `/ventes/recu/{id}` | vente | gérant, caissier |
+| `/ventes/regler/{id}/recu/{mouvement}` | règlement d'une vente | gérant, caissier |
+| `/clients/solde/regler/{id}/recu/{mouvement}` | règlement du solde de départ d'un client | gérant, caissier |
+| `/achats/regler/{id}/recu/{mouvement}` | paiement d'un achat | gérant |
+| `/fournisseurs/solde/regler/{id}/recu/{mouvement}` | règlement du solde de départ d'un fournisseur | gérant |
+
+Chaque adresse est sous le préfixe de la page qu'elle prolonge, donc sous sa règle de `SecurityConfig` (aucune règle ajoutée) : 403 pour un rôle non autorisé, redirection vers la
+connexion sans compte, **404** pour un document ou un mouvement d'une autre boutique, d'un autre document, ou pour une annulation (qui n'est pas un règlement). Réponse en
+`Content-Disposition: inline`, `Cache-Control: no-store`.
+
+### Gabarits : le piège du style
+
+Un `<style>` placé dans le corps du gabarit n'est pas appliqué et son texte s'imprime : les styles des reçus sont dans `resources/pdf/<gabarit>.css`, injectés dans l'en-tête par
+`pdf/base.html` (variable `cssGabarit`, une seule ligne ajoutée au socle).
+
+### Vérifications
+
+```bash
+./gradlew test --no-daemon --tests '*RecuTests' --tests '*RecuParametresTests'
+RECU_DEMO_DIR=/chemin/dossier ./gradlew test --no-daemon --tests '*RecuTests'   # écrit les PDF pour la revue visuelle
+pdftoppm -png -r 110 vente-ticket.pdf vente-ticket                              # puis ouvrir les images
+```
+
+`RecuTests` crée deux boutiques avec les vrais services et vérifie : contenu et totaux de chaque type de reçu en A4 et en ticket, reste historique, mention d'annulation, absence de
+coût et de marge, largeur de 80 mm (PDFBox), aucun caractère hors de la page, police d'au moins 8 pt, texte complet extrait (désignation longue, mot sans espace), droits du gérant et du
+caissier, 404 d'une autre boutique, bandeau présent ou absent selon le réglage, boutons « Reçu » de la liste et de l'historique. `RecuParametresTests` couvre l'enregistrement des réglages,
+la liste blanche et les valeurs invalides.

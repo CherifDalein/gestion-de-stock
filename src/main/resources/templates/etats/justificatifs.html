@@ -1,0 +1,77 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page" data-etat="justificatifs">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">États</p>
+                <h1>Justificatifs de solde</h1>
+                <p class="app-page-subtitle">Documents PDF officiels de la boutique, à remettre à un client, à un fournisseur ou à un contrôleur. Réservés au gérant.</p>
+            </div>
+            <div class="etat-actions">
+                <a th:href="@{/etats}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Tous les états</a>
+            </div>
+        </header>
+
+        <div th:if="${error}" class="alert alert-danger" role="alert" data-etat-erreur th:text="${error}"></div>
+
+        <div class="row g-3">
+            <section class="col-12 col-lg-4" aria-labelledby="jsClient" data-justificatif="client">
+                <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/client/pdf}">
+                    <div class="card-body">
+                        <h2 class="h5" id="jsClient">Solde d'un client</h2>
+                        <p class="text-muted small">Ce que le client doit à la boutique, ou l'avance que la boutique détient pour lui : solde de départ restant,
+                            factures non soldées, avance, montant en chiffres et en lettres, signatures et « Bon pour accord ».</p>
+                        <label for="jsClientId" class="form-label small mb-1">Client</label>
+                        <select id="jsClientId" name="id" class="form-select" required th:disabled="${clients.isEmpty()}">
+                            <option value="" th:text="${clients.isEmpty() ? 'Aucun client' : 'Choisir un client'}">Choisir un client</option>
+                            <option th:each="c : ${clients}" th:value="${c.id}" th:text="${c.nom}">Client</option>
+                        </select>
+                        <p class="small text-muted mt-2 mb-0">Arrêté à la date du jour (<span th:text="${#temporals.format(aujourdHui, 'dd/MM/yyyy')}">01/01/2026</span>) :
+                            l'application ne conserve pas l'historique des soldes.</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <button type="submit" class="btn btn-outline-danger" th:disabled="${clients.isEmpty()}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Justificatif PDF</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="col-12 col-lg-4" aria-labelledby="jsFournisseur" data-justificatif="fournisseur">
+                <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/fournisseur/pdf}">
+                    <div class="card-body">
+                        <h2 class="h5" id="jsFournisseur">Solde d'un fournisseur</h2>
+                        <p class="text-muted small">Ce que la boutique doit au fournisseur, ou l'avance versée chez lui : même contenu que pour un client, avec le sens de la dette inversé.</p>
+                        <label for="jsFournisseurId" class="form-label small mb-1">Fournisseur</label>
+                        <select id="jsFournisseurId" name="id" class="form-select" required th:disabled="${fournisseurs.isEmpty()}">
+                            <option value="" th:text="${fournisseurs.isEmpty() ? 'Aucun fournisseur' : 'Choisir un fournisseur'}">Choisir un fournisseur</option>
+                            <option th:each="f : ${fournisseurs}" th:value="${f.id}" th:text="${f.nom}">Fournisseur</option>
+                        </select>
+                        <p class="small text-muted mt-2 mb-0">Arrêté à la date du jour (<span th:text="${#temporals.format(aujourdHui, 'dd/MM/yyyy')}">01/01/2026</span>).</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <button type="submit" class="btn btn-outline-danger" th:disabled="${fournisseurs.isEmpty()}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Justificatif PDF</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="col-12 col-lg-4" aria-labelledby="jsTresorerie" data-justificatif="tresorerie">
+                <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/tresorerie/pdf}">
+                    <div class="card-body">
+                        <h2 class="h5" id="jsTresorerie">Solde de trésorerie</h2>
+                        <p class="text-muted small">Le solde de la caisse, d'Orange Money et de la banque, et le total, calculés comme le journal de trésorerie.
+                            À rapprocher du comptage physique.</p>
+                        <label for="jsDate" class="form-label small mb-1">Date d'arrêté (fin de journée)</label>
+                        <input id="jsDate" name="date" type="date" class="form-control" required min="2000-01-01" th:max="${aujourdHui}" th:value="${aujourdHui}">
+                        <p class="small text-muted mt-2 mb-0">N'importe quel jour passé ou aujourd'hui : le solde se déduit exactement des mouvements datés.</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-file-pdf" aria-hidden="true"></i> Justificatif PDF</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <p class="small text-muted mt-4 mb-0">Un justificatif de solde d'un client ou d'un fournisseur se télécharge aussi depuis la ligne du partenaire,
+            dans la liste des <a th:href="@{/clients}">clients</a> ou des <a th:href="@{/fournisseurs}">fournisseurs</a>. Les justificatifs des autres
+            partenaires (banque, associé, personnel) viendront avec le lot 3.</p>
+    </div>
+</div>
