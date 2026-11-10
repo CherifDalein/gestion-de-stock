@@ -468,8 +468,12 @@ body.stock-app .partners-coordinate { min-width: 125px; max-width: 190px; color:
 body.stock-app .partners-email { min-width: 160px; max-width: 215px; }
 body.stock-app .partners-address { min-width: 130px; max-width: 200px; }
 body.stock-app .partners-coordinate--missing { color: var(--app-muted); font-size: .76rem; }
-body.stock-app .partners-row-actions { justify-content: flex-end; }
-body.stock-app .partners-document-actions { justify-content: flex-end; flex-wrap: wrap; margin-top: 8px; }
+/* Actions sur une seule ligne, comme le journal des ventes : le tableau défile horizontalement. */
+body.stock-app .partners-table > tbody > tr > td:last-child { white-space: nowrap; text-align: left; }
+body.stock-app .partners-table > thead > tr > th:last-child { text-align: left !important; }
+body.stock-app .partners-row-actions,
+body.stock-app .partners-document-actions { display: inline-flex; flex-wrap: nowrap; vertical-align: middle; }
+body.stock-app .partners-document-actions { margin-left: 8px; }
 body.stock-app .partners-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 38px 24px; margin: 0 24px 24px; border-radius: 12px; border: 1px dashed #cadbd1; background: #f8fbf9; color: var(--app-muted); }
 body.stock-app .partners-empty-icon { font-size: 1.6rem; color: #759783; margin-bottom: 3px; }
 body.stock-app .partners-empty h3 { margin: 0; font-size: 1rem; font-weight: 650; color: var(--app-ink); }
@@ -525,8 +529,10 @@ body.stock-app .partner-delete-description strong { color: var(--app-ink); overf
   body.stock-app .partners-table > tbody > tr > td { display: block; min-width: 0; max-width: none; padding: 0 !important; border: 0; box-shadow: none; background: transparent; }
   body.stock-app .partners-table > tbody > tr > td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; color: var(--app-muted); font-size: .7rem; font-weight: 500; }
   body.stock-app .partners-name { font-size: .95rem; }
-  body.stock-app .partners-row-actions { justify-content: flex-start; flex-wrap: wrap; padding-top: 4px; }
-  body.stock-app .partners-document-actions { justify-content: flex-start; margin-top: 10px; }
+  /* Une seule ligne d'actions qui défile au doigt, comme le journal des ventes. */
+  body.stock-app .partners-table > tbody > tr > td:last-child { display: flex !important; gap: 8px; overflow-x: auto; padding: 4px 0 6px !important; -webkit-overflow-scrolling: touch; }
+  body.stock-app .partners-row-actions,
+  body.stock-app .partners-document-actions { display: flex; flex-wrap: nowrap; margin: 0; }
   body.stock-app .partners-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .partners-results { flex-basis: 100%; order: 3; }
   body.stock-app .partner-dialog { padding: 22px; max-height: calc(100dvh - 32px); }
