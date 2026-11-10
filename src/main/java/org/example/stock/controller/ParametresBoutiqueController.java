@@ -2,6 +2,7 @@ package org.example.stock.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.example.stock.enums.FormatRecu;
 import org.example.stock.form.ParametresBoutiqueForm;
 import org.example.stock.service.ParametresBoutiqueService;
 import org.example.stock.service.InitialisationBoutiqueService;
@@ -39,7 +40,7 @@ public class ParametresBoutiqueController {
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
         Set<String> autorises = Set.of("nom", "adresse", "telephone", "telephoneSecondaire", "email", "logo", "supprimerLogo", "_supprimerLogo",
-                "delaiClientsJours", "delaiFournisseursJours", "_csrf");
+                "delaiClientsJours", "delaiFournisseursJours", "formatRecu", "proposerImpressionRecu", "_csrf");
         if (request.getMethod().equals("POST")) {
             for (String parametre : request.getParameterMap().keySet()) {
                 if (!autorises.contains(parametre) || request.getParameterValues(parametre).length != 1
@@ -82,6 +83,7 @@ public class ParametresBoutiqueController {
     }
 
     private String afficherFormulaire(Model model) {
+        model.addAttribute("formatsRecu", FormatRecu.values());
         model.addAttribute("initialisationOuverte", initialisation.estOuverte());
         model.addAttribute("view", "boutique/parametres");
         return "dashboard";

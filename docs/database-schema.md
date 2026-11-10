@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les vingt-quatre tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les vingt-quatre tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)), puis les réglages des reçus du lot 4 (voir la [migration du lot 4](migrations/lot-4.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -48,6 +48,8 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `delai_clients_jours`, `delai_fournisseurs_jours` INT NOT NULL DEFAULT 30 : délais de paiement proposés par défaut (lot 1, pas encore utilisés)
 - `prochain_numero_vente`, `prochain_numero_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros de facture ; la migration les place après le plus grand identifiant de toute la table pour ne jamais reprendre un numéro migré (lot 1, pas encore utilisés)
 - `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros des devis et des retours, par boutique (lot 2 ; `RV-` et `RA-` pour les retours de vente et d'achat)
+- `format_recu` VARCHAR(16) NOT NULL DEFAULT 'A4' : format des reçus imprimables, `A4` ou `TICKET_80` (lot 4 ; voir la [migration du lot 4](migrations/lot-4.md))
+- `proposer_impression_recu` BOOLEAN NOT NULL DEFAULT TRUE : propose le bouton « Imprimer le reçu » après chaque vente et chaque règlement (lot 4)
 
 ### `logo_boutique`
 

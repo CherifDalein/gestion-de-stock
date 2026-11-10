@@ -69,6 +69,8 @@ public final class Lot2MariaDbTest {
     private static void verifierValidationJpa(Connection c, String serveur, String utilisateur, String motDePasse, String base) throws Exception {
         Lot1Migration.migrer(c, true);
         Lot2Migration.migrer(c, true);
+        // Les entités actuelles portent aussi les colonnes du lot 4 (reçus) : Hibernate les exige en mode validate.
+        Lot4Migration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);

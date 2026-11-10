@@ -119,6 +119,34 @@
                         <p id="boutiqueDelaiFournisseursError" class="record-field-error" th:if="${#fields.hasErrors('delaiFournisseursJours')}" th:errors="*{delaiFournisseursJours}" role="alert"></p>
                     </div>
                 </div>
+                <div class="record-panel-heading">
+                    <h3 id="boutiqueRecusTitle">Reçus</h3>
+                    <p>Un reçu peut être imprimé après chaque vente et chaque règlement (encaissement d’une vente, paiement d’un achat, règlement d’un solde de départ).</p>
+                </div>
+                <div class="record-grid" role="group" aria-labelledby="boutiqueRecusTitle">
+                    <fieldset class="record-field" aria-describedby="boutiqueFormatRecuHelp">
+                        <legend class="form-label">Format des reçus</legend>
+                        <label class="d-block" th:each="format : ${formatsRecu}">
+                            <input class="form-check-input" type="radio" th:field="*{formatRecu}" th:value="${format}" />
+                            <span th:text="${format.libelle}">A4</span>
+                        </label>
+                        <p id="boutiqueFormatRecuHelp" class="record-help">Le ticket 80 mm convient aux imprimantes de caisse ; l’A4 reprend la présentation de la facture. Le reçu d’une opération déjà enregistrée suit le format choisi ici.</p>
+                        <p class="record-field-error" th:if="${#fields.hasErrors('formatRecu')}" th:errors="*{formatRecu}" role="alert"></p>
+                    </fieldset>
+                    <fieldset class="record-field" aria-describedby="boutiqueProposerRecuHelp">
+                        <legend class="form-label">Proposer l’impression du reçu après chaque opération</legend>
+                        <label class="d-block">
+                            <input class="form-check-input" type="radio" th:field="*{proposerImpressionRecu}" value="true" />
+                            <span>Oui</span>
+                        </label>
+                        <label class="d-block">
+                            <input class="form-check-input" type="radio" th:field="*{proposerImpressionRecu}" value="false" />
+                            <span>Non</span>
+                        </label>
+                        <p id="boutiqueProposerRecuHelp" class="record-help">Le bouton « Imprimer le reçu » apparaît dans le bandeau « Opération enregistrée ». Le reçu reste toujours accessible depuis la liste des ventes et l’historique des règlements.</p>
+                        <p class="record-field-error" th:if="${#fields.hasErrors('proposerImpressionRecu')}" th:errors="*{proposerImpressionRecu}" role="alert"></p>
+                    </fieldset>
+                </div>
                 <div class="record-actions">
                     <a class="btn btn-outline-secondary" th:href="@{/}">Annuler</a>
                     <button class="btn btn-primary" type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i>Enregistrer les paramètres</button>

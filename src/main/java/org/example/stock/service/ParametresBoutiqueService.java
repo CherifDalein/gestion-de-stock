@@ -51,6 +51,8 @@ public class ParametresBoutiqueService {
         formulaire.setEmail(boutique.getEmail());
         formulaire.setDelaiClientsJours(boutique.getDelaiClientsJours());
         formulaire.setDelaiFournisseursJours(boutique.getDelaiFournisseursJours());
+        formulaire.setFormatRecu(boutique.getFormatRecu());
+        formulaire.setProposerImpressionRecu(boutique.isProposerImpressionRecu());
         return formulaire;
     }
 
@@ -87,6 +89,8 @@ public class ParametresBoutiqueService {
         boutique.setEmail(formulaire.getEmail());
         if (formulaire.getDelaiClientsJours() != null) boutique.setDelaiClientsJours(formulaire.getDelaiClientsJours());
         if (formulaire.getDelaiFournisseursJours() != null) boutique.setDelaiFournisseursJours(formulaire.getDelaiFournisseursJours());
+        if (formulaire.getFormatRecu() != null) boutique.setFormatRecu(formulaire.getFormatRecu());
+        if (formulaire.getProposerImpressionRecu() != null) boutique.setProposerImpressionRecu(formulaire.getProposerImpressionRecu());
         if (nouveauLogo != null || formulaire.isSupprimerLogo()) {
             // Lecture courante après le verrou boutique : écarter le snapshot d'un existsById antérieur.
             LogoBoutique logo = entityManager.createQuery("select l from LogoBoutique l where l.boutiqueId = :id", LogoBoutique.class)

@@ -12,6 +12,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.FormatRecu;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /** Espace propriétaire des données d'une boutique. */
 @Entity
@@ -91,6 +94,16 @@ public class Boutique {
 
     @Column(nullable = false)
     private long prochainNumeroRetourAchat = 1L;
+
+    /** Lot 4 : format des reçus imprimés (A4 par défaut, ou ticket de 80 mm), choisi par le gérant pour cette boutique. */
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false, length = 16, columnDefinition = "varchar(16) default 'A4'")
+    private FormatRecu formatRecu = FormatRecu.A4;
+
+    /** Lot 4 : propose (ou non) le bouton « Imprimer le reçu » après chaque vente et chaque règlement. */
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean proposerImpressionRecu = true;
 
     /** Dates UTC de l'essai public ; null pour les boutiques créées avant son introduction. */
     private LocalDateTime essaiDebut;

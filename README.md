@@ -49,6 +49,12 @@ après le lot 1 et une nouvelle sauvegarde. Elle crée quatre tables vides et
 reprend l'auteur des ventes et des achats existants depuis leurs mouvements de
 caisse ; stocks, montants et mouvements restent inchangés.
 
+Pour les reçus du lot 4 (format A4 ou ticket 80 mm, bouton « Imprimer le reçu »),
+appliquer la [migration du lot 4](docs/migrations/lot-4.md) après le lot 2 et une
+sauvegarde : `./gradlew lot4Check`, puis
+`LOT4_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot4Migrate`. Elle ajoute deux
+colonnes à `boutique` ; stocks, montants et mouvements restent inchangés.
+
 ## Tests
 
 ```sh
@@ -77,6 +83,7 @@ node --test src/test/js/montants.test.cjs
 - [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)
 - [Préparation du schéma du lot 1](docs/migrations/lot-1.md)
 - [Préparation du schéma du lot 2](docs/migrations/lot-2.md)
+- [Réglages des reçus du lot 4](docs/migrations/lot-4.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

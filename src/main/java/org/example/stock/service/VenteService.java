@@ -236,18 +236,21 @@ public class VenteService {
     }
 
     @Transactional
-    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
-        reglerVente(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
+        return reglerVente(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
     }
 
     @Transactional
-    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
-        reglerVente(id, montant, montantVerseAttendu, comptePaiement, null);
+    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+        return reglerVente(id, montant, montantVerseAttendu, comptePaiement, null);
     }
 
-    /** Le versement peut aussi reporter l'échéance du reste ; une vente soldée garde son échéance en historique. */
+    /**
+     * Le versement peut aussi reporter l'échéance du reste ; une vente soldée garde son échéance en historique.
+     * Retourne l'identifiant du mouvement de caisse du règlement, qui désigne son reçu.
+     */
     @Transactional
-    public void reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
                             LocalDate nouvelleEcheance) {
         if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le versement.");
         montant = Montants.positifOuNul(montant, "Le versement");
@@ -277,7 +280,7 @@ public class VenteService {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Vente #" + id + " - Client: "
                 + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
-        caisseService.enregistrerEntreeReglementVente(montant, motif, vente, actuel, comptePaiement);
+        return caisseService.enregistrerEntreeReglementVente(montant, motif, vente, actuel, comptePaiement).getId();
     }
 
     /** Change seulement l'échéance d'une vente qui a encore un reste à payer. */
