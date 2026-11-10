@@ -684,3 +684,9 @@ body.stock-app .invoices-page-navigation .btn > span { font-size: 1.3rem; line-h
   body.stock-app .invoices-pagination { padding: 16px 20px; gap: 14px; }
   body.stock-app .invoices-results { flex-basis: 100%; order: 3; }
 }
+
+/* Bouton « Envoyer » d'un reçu (partage natif) : caché tant que le script ne l'a pas validé, assez grand pour le doigt. */
+body.stock-app .btn.recu-partage[hidden] { display: none !important; }
+body.stock-app .btn.recu-partage { min-height: 44px; white-space: nowrap; }
+body.stock-app .recu-partage-message { display: block; max-width: 100%; overflow-wrap: anywhere; }
+body.stock-app .recu-partage-message[hidden] { display: none; }
