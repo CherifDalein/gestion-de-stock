@@ -54,6 +54,8 @@ appliquer la [migration du lot 4](docs/migrations/lot-4.md) après le lot 2 et u
 sauvegarde : `./gradlew lot4Check`, puis
 `LOT4_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot4Migrate`. Elle ajoute deux
 colonnes à `boutique` ; stocks, montants et mouvements restent inchangés.
+Un bouton « Envoyer » partage ensuite le reçu PDF par le menu de partage natif de l'appareil
+(WhatsApp, etc.), sans migration : voir `docs/lot-4.md`, section « Reçus ».
 
 ## Tests
 

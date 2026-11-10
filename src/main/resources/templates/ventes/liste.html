@@ -1,5 +1,6 @@
 <div th:fragment="content">
     <script th:src="@{/js/export-liste.js}" defer="defer"></script>
+    <th:block th:replace="~{fragments/recu :: script}"></th:block>
     <div class="container-fluid px-4 journal-page">
         <h1 class="mt-4">Journal des ventes</h1>
         <p class="app-page-subtitle">Retrouvez les ventes, leurs règlements et leurs justificatifs.</p>
@@ -97,6 +98,7 @@
                                        th:attr="aria-label=${'Imprimer le reçu de la vente n° ' + (v.numero ?: v.id)}">
                                         <i class="fas fa-print" aria-hidden="true"></i> Reçu
                                     </a>
+                                    <th:block th:replace="~{fragments/recu :: envoyer(${'/ventes/recu/' + v.id}, ${'Reçu ' + (v.numero ?: v.id)}, ${'de la vente n° ' + (v.numero ?: v.id)}, 'btn-outline-success btn-sm app-row-action')}"></th:block>
                                     <button type="button" class="btn btn-outline-primary btn-sm app-row-action"
                                             data-bs-toggle="modal"
                                             th:data-bs-target="'#modalVente' + ${v.id}"

@@ -338,6 +338,128 @@ class RecuTests {
                 .andExpect(content().string(containsString("/ventes/regler/" + vente.getId() + "/recu/" + reglement2)));
     }
 
+    // ---- Bouton « Envoyer » (partage natif du reçu) --------------------------------------------------------------
+
+    // Le bouton est rendu caché, avec la même adresse que « Reçu » et les data-* lus par recu-partage.js.
+    private static int occurrences(String texte, String motif) { return texte.split(java.util.regex.Pattern.quote(motif), -1).length - 1; }
+
+    /** Extrait la balise {@code <button ...>} « Envoyer » dont l'adresse de reçu est donnée. */
+    private static String boutonEnvoyer(String html, String url) {
+        var m = java.util.regex.Pattern.compile("<button[^>]*data-recu-url=\"" + java.util.regex.Pattern.quote(url) + "\"[^>]*>", java.util.regex.Pattern.DOTALL).matcher(html);
+        assertThat(m.find()).as("bouton Envoyer pour " + url).isTrue();
+        return m.group();
+    }
+
+    private String page(MockHttpServletRequestBuilder requete) throws Exception {
+        return mvc.perform(requete).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    void laListeDesVentesOffreUnBoutonEnvoyerCacheParDefautPourLaMemeAdresseQueLeRecu() throws Exception {
+        String url = "/ventes/recu/" + vente.getId();
+        for (var requete : List.<java.util.function.UnaryOperator<MockHttpServletRequestBuilder>>of(this::gerant, this::caissier)) {
+            String html = page(requete.apply(get("/ventes")));
+            String bouton = boutonEnvoyer(html, url);
+            assertThat(bouton).contains("type=\"button\"", "hidden=\"hidden\"", "data-recu-partage", "data-recu-titre=\"Reçu " + vente.getNumero() + "\"",
+                    "data-recu-boutique=\"Boutique Étoile\"", "Envoyer le reçu de la vente n° " + vente.getNumero() + " par WhatsApp ou une autre application");
+            assertThat(html).contains("href=\"" + url + "\"").contains("/js/recu-partage.js").contains("data-recu-libelle");
+            // Même adresse que le lien « Reçu » de la même ligne, une seule fois chacun.
+            assertThat(occurrences(html, "href=\"" + url + "\"")).isEqualTo(1);
+            assertThat(occurrences(html, "data-recu-url=\"" + url + "\"")).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void leBandeauOffreUnBoutonEnvoyerSeulementQuandIlEstAffiche() throws Exception {
+        String url = "/ventes/recu/" + vente.getId();
+        String html = page(gerant(get("/ventes").flashAttr("recuUrl", url)));
+        assertThat(html).contains("Imprimer le reçu");
+        // Un bouton dans le bandeau (en plus de celui de la ligne) : deux fois la même adresse.
+        assertThat(occurrences(html, "data-recu-url=\"" + url + "\"")).isEqualTo(2);
+        assertThat(html).contains("data-recu-titre=\"Reçu\"", "Envoyer le reçu de l’opération par WhatsApp");
+        // Sans bandeau, seul le bouton de la ligne reste.
+        assertThat(occurrences(page(gerant(get("/ventes"))), "data-recu-url=\"" + url + "\"")).isEqualTo(1);
+    }
+
+    @Test
+    void leReglageDeProposerLImpressionNeChangePasLeBoutonDeLaListe() throws Exception {
+        boutique(false);
+        // Le contrôleur ne pose alors pas recuUrl : pas de bandeau, donc pas de bouton de bandeau ; celui de la liste reste.
+        String html = page(gerant(get("/ventes")));
+        assertThat(html).doesNotContain("Opération enregistrée");
+        assertThat(occurrences(html, "data-recu-partage")).isEqualTo(occurrences(html, "data-recu-lien") + occurrences(html, "data-recu-vente"));
+        assertThat(html).contains("data-recu-url=\"/ventes/recu/" + vente.getId() + "\"");
+    }
+
+    @Test
+    void lHistoriqueDesReglementsDeVenteOffreUnBoutonEnvoyerParRecu() throws Exception {
+        for (var requete : List.<java.util.function.UnaryOperator<MockHttpServletRequestBuilder>>of(this::gerant, this::caissier)) {
+            String html = page(requete.apply(get("/ventes/regler/" + vente.getId())));
+            for (Long mouvement : List.of(reglement1, reglement2)) {
+                String url = "/ventes/regler/" + vente.getId() + "/recu/" + mouvement;
+                String bouton = boutonEnvoyer(html, url);
+                assertThat(bouton).contains("hidden=\"hidden\"", "data-recu-titre=\"Reçu de règlement du ", "data-recu-boutique=\"Boutique Étoile\"",
+                        "Envoyer le reçu du règlement du ", "par WhatsApp ou une autre application");
+                assertThat(html).contains("href=\"" + url + "\"");
+            }
+            assertThat(html).contains("/js/recu-partage.js");
+        }
+    }
+
+    @Test
+    void leBoutonEnvoyerDeLAchatEstReserveAuGerantCommeLeRecu() throws Exception {
+        Achat achat = authentifie(GERANT, "ADMIN", () -> {
+            Achat n = new Achat(); n.setBoutique(a); Fournisseur f = new Fournisseur(); f.setId(fournisseur.getId()); n.setFournisseur(f); n.setMontantVerse(new BigDecimal("5000"));
+            Produit p = new Produit(); p.setId(produit.getId());
+            DetailAchat l = new DetailAchat(); l.setProduit(p); l.setQuantite(2);
+            l.setPrixAchatUnitaire(new BigDecimal("10000.00")); l.setPrixVenteUnitaire(new BigDecimal("12000.00")); n.getLignes().add(l);
+            return achatService.enregistrerAchat(n);
+        });
+        Long mouvement = authentifie(GERANT, "ADMIN", () -> achatService.reglerAchat(achat.getId(), new BigDecimal("5000"), new BigDecimal("5000"), CompteTresorerie.CAISSE, null));
+        String url = "/achats/regler/" + achat.getId() + "/recu/" + mouvement;
+        assertThat(boutonEnvoyer(page(gerant(get("/achats/regler/" + achat.getId()))), url)).contains("hidden=\"hidden\"");
+        // Le caissier n'a ni la page, ni le reçu : aucun bouton, donc rien à envoyer.
+        mvc.perform(caissier(get("/achats/regler/" + achat.getId()))).andExpect(status().isForbidden()).andExpect(content().string(not(containsString("data-recu-partage"))));
+        mvc.perform(caissier(get(url))).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void leBoutonEnvoyerDesSoldesDeDepartSuitLesDroitsDeChaquePage() throws Exception {
+        Client c = clients.findById(client.getId()).orElseThrow();
+        c.setSoldeInitial(new BigDecimal("100000.00")); c.setEcheanceSoldeInitial(LocalDate.now().plusDays(30)); clients.saveAndFlush(c);
+        Fournisseur f = fournisseurs.findById(fournisseur.getId()).orElseThrow();
+        f.setSoldeInitial(new BigDecimal("-80000.00")); f.setEcheanceSoldeInitial(LocalDate.now().plusDays(30)); fournisseurs.saveAndFlush(f);
+        mvc.perform(gerant(post("/clients/solde/regler/" + client.getId()).param("montant", "30000").param("reglementAttendu", "0").param("comptePaiement", "CAISSE").with(csrf())))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(gerant(post("/fournisseurs/solde/regler/" + fournisseur.getId()).param("montant", "20000").param("reglementAttendu", "0").param("comptePaiement", "BANQUE").with(csrf())))
+                .andExpect(status().is3xxRedirection());
+        String urlC = "/clients/solde/regler/" + client.getId() + "/recu/" + mouvement("SOLDE_CLIENT");
+        String urlF = "/fournisseurs/solde/regler/" + fournisseur.getId() + "/recu/" + mouvement("SOLDE_FOURNISSEUR");
+        assertThat(boutonEnvoyer(page(gerant(get("/clients/solde/regler/" + client.getId()))), urlC)).contains("hidden=\"hidden\"");
+        assertThat(boutonEnvoyer(page(caissier(get("/clients/solde/regler/" + client.getId()))), urlC)).contains("hidden=\"hidden\"");
+        assertThat(boutonEnvoyer(page(gerant(get("/fournisseurs/solde/regler/" + fournisseur.getId()))), urlF)).contains("hidden=\"hidden\"");
+        mvc.perform(caissier(get("/fournisseurs/solde/regler/" + fournisseur.getId()))).andExpect(status().isForbidden())
+                .andExpect(content().string(not(containsString("data-recu-partage"))));
+    }
+
+    @Test
+    void lesTextesDuBoutonSontEchappesParThymeleaf() throws Exception {
+        Boutique x = boutiques.findById(a.getId()).orElseThrow(); x.setNom("Chez \"Awa\" <b>&</b>"); boutiques.saveAndFlush(x);
+        String html = page(gerant(get("/ventes")));
+        assertThat(html).contains("data-recu-boutique=\"Chez &quot;Awa&quot; &lt;b&gt;&amp;&lt;/b&gt;\"").doesNotContain("data-recu-boutique=\"Chez \"Awa\"");
+    }
+
+    @Test
+    void leNomDuFichierDuRecuEstPropreEtStable() throws Exception {
+        for (FormatRecu format : FormatRecu.values()) {
+            choisir(format);
+            String entete = mvc.perform(gerant(get("/ventes/recu/" + vente.getId()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("Content-Disposition");
+            assertThat(entete).isEqualTo("inline; filename=\"recu-vente_" + vente.getNumero() + ".pdf\"");
+            String reglement = mvc.perform(gerant(get("/ventes/regler/" + vente.getId() + "/recu/" + reglement1))).andExpect(status().isOk()).andReturn().getResponse().getHeader("Content-Disposition");
+            assertThat(reglement).matches("inline; filename=\"recu-reglement-vente_[A-Za-z0-9._-]+\\.pdf\"");
+        }
+    }
+
     // ---- Outils ------------------------------------------------------------------------------------------------
 
     private String enregistrerUneVente() throws Exception {

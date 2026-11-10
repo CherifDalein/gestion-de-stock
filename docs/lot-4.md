@@ -584,6 +584,35 @@ Chaque adresse est sous le préfixe de la page qu'elle prolonge, donc sous sa r�
 connexion sans compte, **404** pour un document ou un mouvement d'une autre boutique, d'un autre document, ou pour une annulation (qui n'est pas un règlement). Réponse en
 `Content-Disposition: inline`, `Cache-Control: no-store`.
 
+### Envoyer le reçu (WhatsApp)
+
+À côté de « Imprimer le reçu » (bandeau) et de chaque « Reçu » (liste des ventes, historiques de règlement), un bouton **Envoyer** partage le PDF par le **menu de partage natif de
+l'appareil** (WhatsApp, e-mail, Drive, etc.) avec l'API Web Share de niveau 2 (partage de fichier). Aucune route ni règle de sécurité n'est ajoutée : le bouton utilise la **même adresse**
+que le reçu, donc les mêmes droits (vente et solde client : gérant et caissier ; achat et solde fournisseur : gérant seul ; un rôle sans accès ne voit pas la page, donc pas le bouton).
+
+**Fonctionnement** (`static/js/recu-partage.js`, fragment `fragments/recu :: envoyer`)
+
+- Le bouton est rendu avec l'attribut `hidden`. Le script ne le montre que si `navigator.canShare` accepte un `File` PDF de test ; sinon (navigateur incompatible, JavaScript désactivé)
+  il reste caché et l'impression reste disponible.
+- Au clic : téléchargement du reçu (même origine, même session), contrôle de la réponse (`ok` et `Content-Type: application/pdf`), création d'un `File` nommé d'après le
+  `Content-Disposition` (`recu-vente_FV-000012.pdf`, `recu-reglement-vente_…pdf`, etc. : nom déjà nettoyé par le serveur, nettoyé de nouveau par le script), puis
+  `navigator.share({ files, title, text })` avec un texte court : « Reçu FV-000012 — Boutique Étoile ».
+- Pendant le téléchargement : bouton désactivé, `aria-busy`, libellé « Préparation… » ; un double clic ne lance qu'un téléchargement.
+- Annulation dans le menu de partage : silencieuse, le bouton revient à l'état initial.
+- Réponse qui n'est pas un PDF (session expirée : page de connexion), 403, 404, erreur réseau ou de partage : message lisible sous le bouton (zone `aria-live`), jamais d'`alert()`.
+- Les textes viennent d'attributs `data-recu-*` échappés par Thymeleaf et sont posés avec `textContent` : rien n'est inséré comme HTML.
+
+**Compatibilité** : Chrome sur Android, Safari sur iPhone, Safari sur macOS, Chrome et Edge sur Windows (partage de fichier pris en charge). Sur les autres navigateurs (Firefox, notamment),
+le bouton reste caché.
+
+**À savoir**
+
+- **HTTPS obligatoire en production** : le partage n'existe que dans un contexte sécurisé (`localhost` est accepté pour les essais).
+- **Aucune donnée n'est envoyée à un tiers par l'application** : ni lien public, ni jeton, ni API WhatsApp Business. C'est l'utilisateur qui choisit l'application et le contact dans le menu
+  de son appareil ; le fichier ne quitte l'appareil que par ce choix.
+- **Second clic possible sur Safari** : Safari refuse le partage si le geste de l'utilisateur est perdu pendant le téléchargement (`NotAllowedError`). Le reçu est alors gardé en mémoire, le bouton
+  devient « Partager maintenant » et le clic suivant ouvre le menu aussitôt, sans nouveau téléchargement.
+
 ### Gabarits : le piège du style
 
 Un `<style>` placé dans le corps du gabarit n'est pas appliqué et son texte s'imprime : les styles des reçus sont dans `resources/pdf/<gabarit>.css`, injectés dans l'en-tête par
@@ -593,6 +622,7 @@ Un `<style>` placé dans le corps du gabarit n'est pas appliqué et son texte s'
 
 ```bash
 ./gradlew test --no-daemon --tests '*RecuTests' --tests '*RecuParametresTests'
+node --test src/test/js/recu-partage.test.cjs                                   # bouton « Envoyer » (faux navigator et fetch)
 RECU_DEMO_DIR=/chemin/dossier ./gradlew test --no-daemon --tests '*RecuTests'   # écrit les PDF pour la revue visuelle
 pdftoppm -png -r 110 vente-ticket.pdf vente-ticket                              # puis ouvrir les images
 ```

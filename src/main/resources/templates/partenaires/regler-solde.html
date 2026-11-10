@@ -1,4 +1,5 @@
 <div th:fragment="content">
+    <th:block th:replace="~{fragments/recu :: script}"></th:block>
     <div class="container-fluid stock-operation" th:object="${reglementSolde}"
          th:with="estClient=${typePartenaire == 'client'}">
         <header class="operation-header">
