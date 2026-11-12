@@ -53,6 +53,25 @@
                 </form>
             </section>
 
+            <section class="col-12 col-lg-4" aria-labelledby="jsPartenaire" data-justificatif="partenaire">
+                <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/partenaire/pdf}">
+                    <div class="card-body">
+                        <h2 class="h5" id="jsPartenaire">Solde d'un autre partenaire</h2>
+                        <p class="text-muted small">Banque, associé, personnel ou autre : compte courant, emprunts et prêts en cours, montant en chiffres et en lettres,
+                            signatures et « Bon pour accord ».</p>
+                        <label for="jsPartenaireId" class="form-label small mb-1">Partenaire</label>
+                        <select id="jsPartenaireId" name="id" class="form-select" required th:disabled="${partenairesFinanciers.isEmpty()}">
+                            <option value="" th:text="${partenairesFinanciers.isEmpty() ? 'Aucun partenaire' : 'Choisir un partenaire'}">Choisir un partenaire</option>
+                            <option th:each="p : ${partenairesFinanciers}" th:value="${p.id}" th:text="${p.nom}">Partenaire</option>
+                        </select>
+                        <p class="small text-muted mt-2 mb-0">Arrêté à la date du jour (<span th:text="${#temporals.format(aujourdHui, 'dd/MM/yyyy')}">01/01/2026</span>).</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <button type="submit" class="btn btn-outline-danger" th:disabled="${partenairesFinanciers.isEmpty()}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Justificatif PDF</button>
+                    </div>
+                </form>
+            </section>
+
             <section class="col-12 col-lg-4" aria-labelledby="jsTresorerie" data-justificatif="tresorerie">
                 <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/tresorerie/pdf}">
                     <div class="card-body">
@@ -71,7 +90,7 @@
         </div>
 
         <p class="small text-muted mt-4 mb-0">Un justificatif de solde d'un client ou d'un fournisseur se télécharge aussi depuis la ligne du partenaire,
-            dans la liste des <a th:href="@{/clients}">clients</a> ou des <a th:href="@{/fournisseurs}">fournisseurs</a>. Les justificatifs des autres
-            partenaires (banque, associé, personnel) viendront avec le lot 3.</p>
+            dans la liste des <a th:href="@{/clients}">clients</a> ou des <a th:href="@{/fournisseurs}">fournisseurs</a>. Celui d'une banque, d'un associé ou d'un
+            membre du personnel se télécharge aussi depuis la fiche du <a th:href="@{/financements/partenaires}">partenaire</a>.</p>
     </div>
 </div>

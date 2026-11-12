@@ -31,7 +31,7 @@ public final class Lot3Migration {
     static final String VERROU = "stock_lot3_migration";
     static final List<String> ANCIENS = List.of("CAISSE", "ORANGE_MONEY", "BANQUE");
     static final List<String> TYPES = List.of("ESPECES", "ORANGE_MONEY", "BANQUE");
-    static final String COMPTES = "compte_tresorerie_boutique", AUTORISES = "compte_tresorerie_autorise";
+    static final String COMPTES = "compte_tresorerie_boutique", AUTORISES = "compte_tresorerie_autorise", PARTENAIRES = "partenaire_financier";
     private static final Set<Integer> BOOLEEN = Set.of(Types.BOOLEAN, Types.BIT, Types.TINYINT);
     private static final Set<Integer> TEXTE = Set.of(Types.VARCHAR);
     private static final Set<Integer> ENTIER = Set.of(Types.INTEGER);
@@ -41,7 +41,9 @@ public final class Lot3Migration {
     record Champ(String table, String nom, String ajout, String finale, Set<Integer> types, int taille, boolean obligatoire, String defaut) {
         String cle() { return table + "." + nom; }
     }
-    record Cle(String table, String colonne, String nom) {}
+    record Cle(String table, String colonne, String nom, String cible) {}
+    /** Table créée par l'étape 3b1 (financements) : colonnes attendues, unicités et clés étrangères (colonne vers table cible). */
+    record TableNeuve(String nom, String creation, Set<String> colonnes, List<List<String>> uniques, Map<String, String> cles) {}
 
     static final List<Champ> CHAMPS = List.of(
             new Champ(COMPTES, "type", "VARCHAR(32) NULL", "VARCHAR(32) NOT NULL", TEXTE, 32, true, null),
@@ -54,12 +56,52 @@ public final class Lot3Migration {
             new Champ("mouvement_caisse", "compte_id", "BIGINT NULL", "BIGINT NOT NULL", LONG, 0, true, null),
             new Champ("operation_tresorerie", "compte_source_id", "BIGINT NULL", "BIGINT NOT NULL", LONG, 0, true, null),
             new Champ("operation_tresorerie", "compte_destination_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null),
-            new Champ("retour", "compte_tresorerie_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null));
+            new Champ("retour", "compte_tresorerie_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null),
+            // Étape 3b1 : compteurs de numérotation EM-/PR- et rattachement des opérations de trésorerie à un partenaire et à un emprunt.
+            new Champ("boutique", "prochain_numero_emprunt", "BIGINT NOT NULL DEFAULT 1", "BIGINT NOT NULL DEFAULT 1", LONG, 0, true, "1"),
+            new Champ("boutique", "prochain_numero_pret", "BIGINT NOT NULL DEFAULT 1", "BIGINT NOT NULL DEFAULT 1", LONG, 0, true, "1"),
+            new Champ("operation_tresorerie", "partenaire_financier_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null),
+            new Champ("operation_tresorerie", "emprunt_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null));
     static final List<Cle> CLES = List.of(
-            new Cle("mouvement_caisse", "compte_id", "fk_mouvement_caisse_compte"),
-            new Cle("operation_tresorerie", "compte_source_id", "fk_operation_tresorerie_source"),
-            new Cle("operation_tresorerie", "compte_destination_id", "fk_operation_tresorerie_destination"),
-            new Cle("retour", "compte_tresorerie_id", "fk_retour_compte_tresorerie"));
+            new Cle("mouvement_caisse", "compte_id", "fk_mouvement_caisse_compte", COMPTES),
+            new Cle("operation_tresorerie", "compte_source_id", "fk_operation_tresorerie_source", COMPTES),
+            new Cle("operation_tresorerie", "compte_destination_id", "fk_operation_tresorerie_destination", COMPTES),
+            new Cle("retour", "compte_tresorerie_id", "fk_retour_compte_tresorerie", COMPTES),
+            new Cle("operation_tresorerie", "partenaire_financier_id", "fk_operation_tresorerie_partenaire", PARTENAIRES),
+            new Cle("operation_tresorerie", "emprunt_id", "fk_operation_tresorerie_emprunt", "emprunt"));
+    /** Dans l'ordre de création : chaque table ne référence que les précédentes. */
+    static final List<TableNeuve> TABLES_FINANCEMENTS = List.of(
+            new TableNeuve(PARTENAIRES, "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, nom VARCHAR(80) NOT NULL, nom_cle VARCHAR(80) NOT NULL,"
+                    + " type VARCHAR(16) NOT NULL, telephone VARCHAR(30) NULL, note VARCHAR(255) NULL, actif BOOLEAN NOT NULL DEFAULT TRUE, date_creation DATETIME(6) NOT NULL,"
+                    + " PRIMARY KEY (id), CONSTRAINT uk_partenaire_financier_nom UNIQUE (boutique_id, nom_cle),"
+                    + " CONSTRAINT fk_partenaire_financier_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))",
+                    Set.of("id", "boutique_id", "nom", "nom_cle", "type", "telephone", "note", "actif", "date_creation"),
+                    List.of(List.of("boutique_id", "nom_cle")), Map.of("boutique_id", "boutique")),
+            new TableNeuve("emprunt", "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, partenaire_id BIGINT NOT NULL, utilisateur_id BIGINT NOT NULL,"
+                    + " compte_id BIGINT NOT NULL, numero VARCHAR(30) NOT NULL, sens VARCHAR(16) NOT NULL, date_emprunt DATE NOT NULL, capital DECIMAL(17,2) NOT NULL,"
+                    + " taux_annuel DECIMAL(5,2) NOT NULL, nombre_echeances INT NOT NULL, periodicite VARCHAR(16) NOT NULL, date_premiere_echeance DATE NOT NULL,"
+                    + " frais_dossier DECIMAL(17,2) NOT NULL DEFAULT 0, note VARCHAR(255) NULL, jeton VARCHAR(36) NOT NULL, date_creation DATETIME(6) NOT NULL,"
+                    + " PRIMARY KEY (id), CONSTRAINT uk_emprunt_boutique_numero UNIQUE (boutique_id, numero), CONSTRAINT uk_emprunt_jeton UNIQUE (jeton),"
+                    + " CONSTRAINT fk_emprunt_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                    + " CONSTRAINT fk_emprunt_partenaire FOREIGN KEY (partenaire_id) REFERENCES partenaire_financier (id),"
+                    + " CONSTRAINT fk_emprunt_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),"
+                    + " CONSTRAINT fk_emprunt_compte FOREIGN KEY (compte_id) REFERENCES " + COMPTES + " (id))",
+                    Set.of("id", "boutique_id", "partenaire_id", "utilisateur_id", "compte_id", "numero", "sens", "date_emprunt", "capital", "taux_annuel",
+                            "nombre_echeances", "periodicite", "date_premiere_echeance", "frais_dossier", "note", "jeton", "date_creation"),
+                    List.of(List.of("boutique_id", "numero"), List.of("jeton")),
+                    Map.of("boutique_id", "boutique", "partenaire_id", PARTENAIRES, "utilisateur_id", "utilisateur", "compte_id", COMPTES)),
+            new TableNeuve("echeance_emprunt", "%s (id BIGINT NOT NULL %s, emprunt_id BIGINT NOT NULL, rang INT NOT NULL, date_echeance DATE NOT NULL,"
+                    + " capital DECIMAL(17,2) NOT NULL, interet DECIMAL(17,2) NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_echeance_emprunt_rang UNIQUE (emprunt_id, rang),"
+                    + " CONSTRAINT fk_echeance_emprunt_emprunt FOREIGN KEY (emprunt_id) REFERENCES emprunt (id))",
+                    Set.of("id", "emprunt_id", "rang", "date_echeance", "capital", "interet"),
+                    List.of(List.of("emprunt_id", "rang")), Map.of("emprunt_id", "emprunt")),
+            new TableNeuve("imputation_echeance", "%s (id BIGINT NOT NULL %s, operation_id BIGINT NOT NULL, echeance_id BIGINT NOT NULL,"
+                    + " capital DECIMAL(17,2) NOT NULL, interet DECIMAL(17,2) NOT NULL, interet_remis DECIMAL(17,2) NOT NULL DEFAULT 0, PRIMARY KEY (id),"
+                    + " CONSTRAINT fk_imputation_echeance_operation FOREIGN KEY (operation_id) REFERENCES operation_tresorerie (id),"
+                    + " CONSTRAINT fk_imputation_echeance_echeance FOREIGN KEY (echeance_id) REFERENCES echeance_emprunt (id))",
+                    Set.of("id", "operation_id", "echeance_id", "capital", "interet", "interet_remis"),
+                    List.of(), Map.of("operation_id", "operation_tresorerie", "echeance_id", "echeance_emprunt")));
     /** Anciennes colonnes à énumération, supprimées en dernier. */
     static final List<String[]> ANCIENNES_COLONNES = List.of(
             new String[]{"mouvement_caisse", "compte"}, new String[]{"operation_tresorerie", "compte_source"},
@@ -114,6 +156,7 @@ public final class Lot3Migration {
             if (!dejaFinalise) {
                 ajouterColonnes(c);
                 creerAutorises(c);
+                creerFinancements(c);
                 verifierPresents(c);
                 remplir(c);
                 verifierRemplissage(c, totaux);
@@ -161,6 +204,15 @@ public final class Lot3Migration {
                 + " CONSTRAINT fk_compte_autorise_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),"
                 + " CONSTRAINT fk_compte_autorise_compte FOREIGN KEY (compte_id) REFERENCES " + COMPTES + " (id))"
                 + (maria(c) ? " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" : ""));
+    }
+
+    /** Tables de l'étape 3b1, vides à la création ; une table déjà présente n'est ni recréée ni modifiée. */
+    static void creerFinancements(Connection c) throws SQLException {
+        for (var t : TABLES_FINANCEMENTS) {
+            if (BoutiquesMigration.tables(c).containsKey(t.nom())) continue;
+            sql(c, "CREATE TABLE " + t.nom() + " " + t.creation().formatted("", maria(c) ? "AUTO_INCREMENT" : "GENERATED BY DEFAULT AS IDENTITY").substring(1)
+                    + (maria(c) ? " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" : ""));
+        }
     }
 
     /**
@@ -213,7 +265,7 @@ public final class Lot3Migration {
         if (!uniques.contains(List.of("boutique_id", "nom_cle"))) sql(c, "ALTER TABLE " + table(c, COMPTES) + " ADD CONSTRAINT uk_compte_tresorerie_nom UNIQUE (boutique_id, nom_cle)");
         if (!uniques.contains(List.of("boutique_id", "principal_type"))) sql(c, "ALTER TABLE " + table(c, COMPTES) + " ADD CONSTRAINT uk_compte_tresorerie_principal UNIQUE (boutique_id, principal_type)");
         for (var cle : CLES) if (!cles(c, cle.table()).containsKey(cle.colonne()))
-            sql(c, "ALTER TABLE " + table(c, cle.table()) + " ADD CONSTRAINT " + cle.nom() + " FOREIGN KEY (" + cle.colonne() + ") REFERENCES " + table(c, COMPTES) + " (id)");
+            sql(c, "ALTER TABLE " + table(c, cle.table()) + " ADD CONSTRAINT " + cle.nom() + " FOREIGN KEY (" + cle.colonne() + ") REFERENCES " + table(c, cle.cible()) + " (id)");
         if (colonnes(c, COMPTES).containsKey("compte") && indexesUniques(c, COMPTES).containsValue(List.of("boutique_id", "compte")))
             sql(c, "ALTER TABLE " + table(c, COMPTES) + (maria(c) ? " DROP INDEX " : " DROP CONSTRAINT ") + "uk_compte_tresorerie_boutique");
         for (var ancienne : ANCIENNES_COLONNES) if (colonnes(c, ancienne[0]).containsKey(ancienne[1]))
@@ -227,6 +279,7 @@ public final class Lot3Migration {
             if (col == null || champ.obligatoire() && col.nullable() != DatabaseMetaData.columnNoNulls) manquants++;
         }
         if (!BoutiquesMigration.tables(c).containsKey(AUTORISES)) manquants++;
+        for (var t : TABLES_FINANCEMENTS) if (!BoutiquesMigration.tables(c).containsKey(t.nom())) manquants++;
         for (var a : ANCIENNES_COLONNES) if (colonnes(c, a[0]).containsKey(a[1])) manquants++;
         if (colonnes(c, COMPTES).containsKey("nom_cle")) {
             var uniques = indexesUniques(c, COMPTES).values();
@@ -266,7 +319,12 @@ public final class Lot3Migration {
         }
         for (var cle : CLES) if (colonnes(c, cle.table()).containsKey(cle.colonne())) {
             String cible = cles(c, cle.table()).get(cle.colonne());
-            if (cible != null && !cible.equals(COMPTES)) nonConforme(cle.table() + "." + cle.colonne() + " doit référencer " + COMPTES);
+            if (cible != null && !cible.equals(cle.cible())) nonConforme(cle.table() + "." + cle.colonne() + " doit référencer " + cle.cible());
+        }
+        for (var t : TABLES_FINANCEMENTS) if (BoutiquesMigration.tables(c).containsKey(t.nom())) {
+            if (!colonnes(c, t.nom()).keySet().equals(t.colonnes())) nonConforme("colonnes inattendues dans " + t.nom());
+            for (var unique : t.uniques()) if (!indexesUniques(c, t.nom()).containsValue(unique)) nonConforme(t.nom() + " : unicité " + unique + " absente");
+            if (!cles(c, t.nom()).equals(new TreeMap<>(t.cles()))) nonConforme(t.nom() + " : clés étrangères absentes ou vers une mauvaise table");
         }
         if (colonnes(c, COMPTES).containsKey("nom_cle")) {
             var uniques = indexesUniques(c, COMPTES).values();
@@ -349,6 +407,11 @@ public final class Lot3Migration {
         return comptesExistants(c).containsAll(avant);
     }
 
+    private static boolean nouvelleTable(String nom) {
+        for (var t : TABLES_FINANCEMENTS) if (t.nom().equals(nom)) return true;
+        return false;
+    }
+
     static Set<String> nouvelles(String table) {
         var resultat = new TreeSet<String>();
         for (var champ : CHAMPS) if (champ.table().equals(table)) resultat.add(champ.nom());
@@ -360,7 +423,7 @@ public final class Lot3Migration {
     static Map<String, List<List<Object>>> photographie(Connection c) throws SQLException {
         var resultat = new TreeMap<String, List<List<Object>>>();
         for (String nom : BoutiquesMigration.tables(c).keySet()) {
-            if (nom.equals(COMPTES) || nom.equals(AUTORISES)) continue;
+            if (nom.equals(COMPTES) || nom.equals(AUTORISES) || nouvelleTable(nom)) continue;
             var exclues = nouvelles(nom); var lignes = new ArrayList<List<Object>>();
             try (var s = c.createStatement(); var r = s.executeQuery("SELECT * FROM " + table(c, nom) + " ORDER BY " + PhotographieJdbc.ordre(c, nom))) {
                 while (r.next()) {
@@ -380,7 +443,7 @@ public final class Lot3Migration {
     static Map<String, Map<String, InscriptionEssaiMigration.Colonne>> schemasAnciens(Connection c) throws SQLException {
         var resultat = new TreeMap<String, Map<String, InscriptionEssaiMigration.Colonne>>();
         for (String nom : BoutiquesMigration.tables(c).keySet()) {
-            if (nom.equals(COMPTES) || nom.equals(AUTORISES)) continue;
+            if (nom.equals(COMPTES) || nom.equals(AUTORISES) || nouvelleTable(nom)) continue;
             var champs = new TreeMap<>(colonnes(c, nom));
             champs.keySet().removeAll(nouvelles(nom));
             resultat.put(nom, champs);

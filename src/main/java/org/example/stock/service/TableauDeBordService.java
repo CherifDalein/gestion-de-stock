@@ -4,6 +4,7 @@ import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.model.Montants;
 import org.example.stock.model.Produit;
+import org.example.stock.model.SourceMouvement;
 import org.example.stock.repository.SoldePartenaireRepository.Totaux;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.TableauDeBordRepository;
@@ -230,34 +231,36 @@ public class TableauDeBordService {
         BigDecimal[] brut = moins(parMois(requetes.beneficeBrutParMois(boutiqueId, debut, fin)),
                 parMois(requetes.beneficeDesRetoursDeVenteParMois(boutiqueId, debut, fin)));
         BigDecimal[] depenses = parMois(requetes.depensesParMois(boutiqueId, TypeOperationTresorerie.DEPENSE, debut, fin));
+        HorsExploitation[] hors = horsExploitationParMois(boutiqueId, debut, fin);
 
         BigDecimal maxPositif = Montants.ZERO;
         BigDecimal maxNegatif = Montants.ZERO;
         for (int i = 0; i < 12; i++) {
-            BigDecimal resultat = brut[i].subtract(depenses[i]);
+            BigDecimal resultat = brut[i].subtract(depenses[i]).add(hors[i].net());
             maxPositif = maxPositif.max(ventes[i]).max(resultat);
             maxNegatif = maxNegatif.max(resultat.negate());
         }
         BigDecimal echelle = maxPositif.add(maxNegatif);
 
         List<MoisActivite> mois = new ArrayList<>(12);
-        BigDecimal totalVentes = Montants.ZERO, totalBrut = Montants.ZERO, totalDepenses = Montants.ZERO;
+        BigDecimal totalVentes = Montants.ZERO, totalBrut = Montants.ZERO, totalDepenses = Montants.ZERO, totalHors = Montants.ZERO;
         for (int i = 0; i < 12; i++) {
-            BigDecimal resultat = brut[i].subtract(depenses[i]);
-            mois.add(new MoisActivite(i + 1, MOIS.get(i), MOIS_COURTS.get(i), ventes[i], brut[i], depenses[i], resultat,
+            BigDecimal resultat = brut[i].subtract(depenses[i]).add(hors[i].net());
+            mois.add(new MoisActivite(i + 1, MOIS.get(i), MOIS_COURTS.get(i), ventes[i], brut[i], depenses[i], hors[i].net(), resultat,
                     pourcentage(ventes[i], maxPositif), pourcentage(resultat.max(Montants.ZERO), maxPositif),
                     pourcentage(resultat.min(Montants.ZERO).negate(), maxNegatif)));
             totalVentes = totalVentes.add(ventes[i]);
             totalBrut = totalBrut.add(brut[i]);
             totalDepenses = totalDepenses.add(depenses[i]);
+            totalHors = totalHors.add(hors[i].net());
         }
         boolean vide = mois.stream().allMatch(m -> m.ventes().signum() == 0 && m.beneficeBrut().signum() == 0
-                && m.depenses().signum() == 0);
+                && m.depenses().signum() == 0 && m.horsExploitation().signum() == 0);
         int partPositive = echelle.signum() == 0 ? 100 : pourcentage(maxPositif, echelle);
         int partNegative = maxNegatif.signum() > 0 ? 100 - partPositive : 0;
         return new EvolutionAnnuelle(annee, annee > ANNEE_MINIMALE ? annee - 1 : null,
                 annee < aujourdHui.getYear() ? annee + 1 : null, List.copyOf(mois),
-                totalVentes, totalBrut, totalDepenses, totalBrut.subtract(totalDepenses), vide,
+                totalVentes, totalBrut, totalDepenses, totalHors, totalBrut.subtract(totalDepenses).add(totalHors), vide,
                 partPositive, partNegative);
     }
 
@@ -269,7 +272,8 @@ public class TableauDeBordService {
         long sansCout = requetes.lignesSansCout(boutiqueId, periode.debut(), periode.fin());
         BigDecimal depenses = montant(requetes.depenses(boutiqueId, TypeOperationTresorerie.DEPENSE,
                 periode.debut(), periode.fin()));
-        return new Indicateurs(chiffreAffaires, brut, depenses, brut.subtract(depenses), sansCout);
+        HorsExploitation hors = HorsExploitation.de(fluxNetsDesFinancements(boutiqueId, periode.debut(), periode.fin()));
+        return new Indicateurs(chiffreAffaires, brut, depenses, brut.subtract(depenses).add(hors.net()), sansCout, hors);
     }
 
     private static BigDecimal[] moins(BigDecimal[] valeurs, BigDecimal[] retraits) {
@@ -317,7 +321,63 @@ public class TableauDeBordService {
 
     /** Chiffre d'affaires, bénéfice brut, dépenses et bénéfice net d'une période. */
     public record Indicateurs(BigDecimal chiffreAffaires, BigDecimal beneficeBrut, BigDecimal depenses,
-                              BigDecimal beneficeNet, long lignesSansCout) {}
+                              BigDecimal beneficeNet, long lignesSansCout, HorsExploitation horsExploitation) {
+        /** Résultat d'exploitation : bénéfice brut moins les dépenses, avant les produits et charges hors activité courante. */
+        public BigDecimal resultatExploitation() { return beneficeBrut.subtract(depenses); }
+    }
+
+    /**
+     * Produits et charges hors activité courante d'une période, nets de leurs annulations et en montants positifs : produits financiers
+     * (dont intérêts de prêts reçus), charges financières (dont intérêts d'emprunt et frais de dossier), autres produits et autres charges.
+     * Les apports, retraits, emprunts et leurs remboursements de capital n'y figurent pas : ils ne sont ni un produit ni une charge.
+     */
+    public record HorsExploitation(BigDecimal produitsFinanciers, BigDecimal chargesFinancieres, BigDecimal autresProduits, BigDecimal autresCharges) {
+        public static final HorsExploitation NUL = new HorsExploitation(Montants.ZERO, Montants.ZERO, Montants.ZERO, Montants.ZERO);
+
+        public BigDecimal net() { return produitsFinanciers.subtract(chargesFinancieres).add(autresProduits).subtract(autresCharges); }
+        public boolean nul() { return produitsFinanciers.signum() == 0 && chargesFinancieres.signum() == 0 && autresProduits.signum() == 0 && autresCharges.signum() == 0; }
+
+        static HorsExploitation de(Map<String, BigDecimal> nets) {
+            BigDecimal pf = nets.getOrDefault(SourceMouvement.PRODUIT_FINANCIER, Montants.ZERO).add(nets.getOrDefault(SourceMouvement.INTERETS_PRET, Montants.ZERO));
+            BigDecimal cf = nets.getOrDefault(SourceMouvement.CHARGE_FINANCIERE, Montants.ZERO).add(nets.getOrDefault(SourceMouvement.INTERETS_EMPRUNT, Montants.ZERO))
+                    .add(nets.getOrDefault(SourceMouvement.FRAIS_DOSSIER, Montants.ZERO));
+            return new HorsExploitation(pf, cf.negate(), nets.getOrDefault(SourceMouvement.AUTRE_PRODUIT, Montants.ZERO),
+                    nets.getOrDefault(SourceMouvement.AUTRE_CHARGE, Montants.ZERO).negate());
+        }
+    }
+
+    /** Sources de mouvement des financements et des flux hors ventes et achats (étape 3b1). */
+    static final List<String> SOURCES_FINANCEMENT = List.of(
+            SourceMouvement.APPORT_CAPITAL, SourceMouvement.APPORT_COMPTE_COURANT, SourceMouvement.RETRAIT_CAPITAL, SourceMouvement.RETRAIT_COMPTE_COURANT,
+            SourceMouvement.DEBLOCAGE_EMPRUNT, SourceMouvement.DEBLOCAGE_PRET, SourceMouvement.REMBOURSEMENT_EMPRUNT, SourceMouvement.REMBOURSEMENT_PRET,
+            SourceMouvement.INTERETS_EMPRUNT, SourceMouvement.INTERETS_PRET, SourceMouvement.FRAIS_DOSSIER, SourceMouvement.PRODUIT_FINANCIER,
+            SourceMouvement.CHARGE_FINANCIERE, SourceMouvement.AUTRE_PRODUIT, SourceMouvement.AUTRE_CHARGE);
+
+    /** Flux de la période de chaque source de financement, signés (entrées positives, sorties négatives) et nets des annulations de la période. */
+    Map<String, BigDecimal> fluxNetsDesFinancements(Long boutiqueId, LocalDateTime debut, LocalDateTime fin) {
+        Map<String, BigDecimal> nets = new java.util.LinkedHashMap<>();
+        for (String source : SOURCES_FINANCEMENT) nets.put(source, Montants.ZERO);
+        for (Object[] ligne : requetes.fluxDesSources(boutiqueId, SOURCES_FINANCEMENT, debut, fin)) nets.merge((String) ligne[0], montant(ligne[1]), BigDecimal::add);
+        for (Object[] ligne : requetes.annulationsDesSources(boutiqueId, SOURCES_FINANCEMENT, debut, fin)) nets.merge((String) ligne[0], montant(ligne[1]), BigDecimal::add);
+        return nets;
+    }
+
+    /** Produits et charges hors activité courante de chaque mois d'une année (indices 0 à 11). */
+    private HorsExploitation[] horsExploitationParMois(Long boutiqueId, LocalDateTime debut, LocalDateTime fin) {
+        List<Map<String, BigDecimal>> parMois = new ArrayList<>();
+        for (int i = 0; i < 12; i++) parMois.add(new java.util.HashMap<>());
+        for (Object[] ligne : requetes.fluxDesSourcesParMois(boutiqueId, SOURCES_FINANCEMENT, debut, fin)) {
+            int mois = ((Number) ligne[0]).intValue();
+            if (mois >= 1 && mois <= 12) parMois.get(mois - 1).merge((String) ligne[1], montant(ligne[2]), BigDecimal::add);
+        }
+        for (Object[] ligne : requetes.annulationsDesSourcesParMois(boutiqueId, SOURCES_FINANCEMENT, debut, fin)) {
+            int mois = ((Number) ligne[0]).intValue();
+            if (mois >= 1 && mois <= 12) parMois.get(mois - 1).merge((String) ligne[1], montant(ligne[2]), BigDecimal::add);
+        }
+        HorsExploitation[] resultat = new HorsExploitation[12];
+        for (int i = 0; i < 12; i++) resultat[i] = HorsExploitation.de(parMois.get(i));
+        return resultat;
+    }
 
     /** Valeur au coût moyen des articles en stock, services exclus. */
     /** Seconde partie du tableau de bord ; position = créances − dettes − avances des clients + avances chez les fournisseurs. */
@@ -356,7 +416,7 @@ public class TableauDeBordService {
      * résultat positif dans la zone haute, résultat négatif dans la zone basse.
      */
     public record MoisActivite(int numero, String libelle, String libelleCourt, BigDecimal ventes,
-                               BigDecimal beneficeBrut, BigDecimal depenses, BigDecimal resultat,
+                               BigDecimal beneficeBrut, BigDecimal depenses, BigDecimal horsExploitation, BigDecimal resultat,
                                int hauteurVentes, int hauteurResultat, int hauteurPerte) {}
 
     /**
@@ -365,5 +425,5 @@ public class TableauDeBordService {
      */
     public record EvolutionAnnuelle(int annee, Integer anneePrecedente, Integer anneeSuivante, List<MoisActivite> mois,
                                     BigDecimal totalVentes, BigDecimal totalBeneficeBrut, BigDecimal totalDepenses,
-                                    BigDecimal totalResultat, boolean vide, int partPositive, int partNegative) {}
+                                    BigDecimal totalHorsExploitation, BigDecimal totalResultat, boolean vide, int partPositive, int partNegative) {}
 }

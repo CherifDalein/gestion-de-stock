@@ -61,9 +61,12 @@ public class RecuService {
     private final MouvementCaisseRepository mouvements;
     private final ContexteDocumentService contextes;
     private final RecuPdf pdf;
+    private final org.example.stock.repository.OperationTresorerieRepository operations;
 
     public RecuService(BoutiqueService boutiques, VenteRepository ventes, AchatRepository achats, ClientRepository clients,
-                       FournisseurRepository fournisseurs, MouvementCaisseRepository mouvements, ContexteDocumentService contextes, RecuPdf pdf) {
+                       FournisseurRepository fournisseurs, MouvementCaisseRepository mouvements, ContexteDocumentService contextes, RecuPdf pdf,
+                       org.example.stock.repository.OperationTresorerieRepository operations) {
+        this.operations = operations;
         this.boutiques = boutiques; this.ventes = ventes; this.achats = achats; this.clients = clients;
         this.fournisseurs = fournisseurs; this.mouvements = mouvements; this.contextes = contextes; this.pdf = pdf;
     }
@@ -168,6 +171,44 @@ public class RecuService {
         RecuReglement vue = vueReglement(m, "Règlement du solde de départ d'un fournisseur", "Solde de départ du fournisseur", fournisseur.getNom(), false,
                 m.getMontant().negate(), reste, "Paiement enregistré par la boutique.");
         return recu(vue, "recu-solde-fournisseur");
+    }
+
+    /** Reçu d'un remboursement d'emprunt ou de prêt (capital et intérêts), rattaché à l'emprunt de l'adresse. */
+    public Recu recuRemboursement(Long empruntId, Long operationId) {
+        Long boutiqueId = boutiques.idBoutiqueCourante();
+        org.example.stock.model.OperationTresorerie op = operations.findByIdAndBoutiqueId(operationId, boutiqueId)
+                .filter(o -> o.getType() == org.example.stock.enums.TypeOperationTresorerie.REMBOURSEMENT && o.getEmprunt() != null
+                        && o.getEmprunt().getId().equals(empruntId))
+                .orElseThrow(RecuService::introuvable);
+        org.example.stock.model.Emprunt emprunt = op.getEmprunt();
+        boolean pret = !emprunt.estEmprunt();
+        BigDecimal capital = BigDecimal.ZERO;
+        BigDecimal interets = BigDecimal.ZERO;
+        for (MouvementCaisse m : mouvements.findByOperationTresorerieIdOrderByIdAsc(op.getId())) {
+            if (SourceMouvement.REMBOURSEMENT_EMPRUNT.equals(m.getSource()) || SourceMouvement.REMBOURSEMENT_PRET.equals(m.getSource())) capital = capital.add(m.getMontant().abs());
+            else if (SourceMouvement.INTERETS_EMPRUNT.equals(m.getSource()) || SourceMouvement.INTERETS_PRET.equals(m.getSource())) interets = interets.add(m.getMontant().abs());
+        }
+        BigDecimal rembourse = BigDecimal.ZERO;
+        for (org.example.stock.model.OperationTresorerie o : operations.deLEmprunt(boutiqueId, empruntId)) {
+            if (o.getType() != org.example.stock.enums.TypeOperationTresorerie.REMBOURSEMENT || o.getId() > op.getId()) continue;
+            for (MouvementCaisse m : mouvements.findByOperationTresorerieIdOrderByIdAsc(o.getId()))
+                if (SourceMouvement.REMBOURSEMENT_EMPRUNT.equals(m.getSource()) || SourceMouvement.REMBOURSEMENT_PRET.equals(m.getSource())) rembourse = rembourse.add(m.getMontant().abs());
+        }
+        BigDecimal reste = emprunt.getCapital().subtract(rembourse).max(BigDecimal.ZERO);
+        MouvementCaisse annulation = null;
+        for (MouvementCaisse m : mouvements.findByOperationTresorerieIdOrderByIdAsc(op.getId()))
+            if (SourceMouvement.ANNULATION.equals(m.getSource())) { annulation = m; break; }
+        String annuleLe = annulation == null ? null : "ANNULÉ le " + (annulation.getDateMouvement() == null ? "date non renseignée" : Textes.dateHeure(annulation.getDateMouvement()));
+        String document = (pret ? "Prêt " : "Emprunt ") + emprunt.getNumero() + " (" + douces(emprunt.getPartenaire().getNom()) + ") : capital " + Textes.montant(capital) + " GNF, intérêts " + Textes.montant(interets) + " GNF";
+        RecuReglement vue = new RecuReglement(pret ? "Remboursement d'un prêt accordé" : "Remboursement d'un emprunt", "Remboursement n° " + op.getId(),
+                Textes.dateHeure(op.getDateOperation()), document, null, pret,
+                Textes.montant(capital.add(interets)), op.getCompteSource() == null ? "Non renseigné" : op.getCompteSource().getNom(),
+                Textes.montant(reste), reste.signum() == 0, nomUtilisateur(op.getUtilisateur(), "Non renseigné"), annuleLe,
+                annulation == null ? null : douces(annulation.getMotif()), annulation == null ? null : nomUtilisateur(annulation.getUtilisateur(), null),
+                pret ? "Remboursement reçu par la boutique." : "Paiement enregistré par la boutique.");
+        String numero = String.valueOf(op.getId());
+        return new Recu(rendre("pdf/recu-reglement", Map.of("titre", "Reçu de remboursement", "recu", vue)),
+                TelechargementExport.nomSur("recu-remboursement_" + numero) + ".pdf");
     }
 
     // ---- Commun ---------------------------------------------------------------------------------------------

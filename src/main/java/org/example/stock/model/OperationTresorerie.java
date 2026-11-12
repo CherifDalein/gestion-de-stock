@@ -10,7 +10,11 @@ import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/** En-tête immuable des écritures d'un transfert ou d'une dépense. */
+/**
+ * En-tête immuable des écritures d'un transfert, d'une dépense ou d'une opération de financement (apport, retrait, déblocage,
+ * remboursement, produit ou charge hors activité courante). Pour une opération de financement, {@code compteSource} est le compte
+ * concerné (crédité ou débité selon le sens), {@code partenaireFinancier} le partenaire et {@code emprunt} l'emprunt ou le prêt.
+ */
 @Entity
 @Getter @Setter
 @Table(name = "operation_tresorerie", uniqueConstraints = @UniqueConstraint(
@@ -51,4 +55,12 @@ public class OperationTresorerie {
 
     @Column(nullable = false)
     private LocalDateTime dateOperation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partenaire_financier_id", foreignKey = @ForeignKey(name = "fk_operation_tresorerie_partenaire"))
+    private PartenaireFinancier partenaireFinancier;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "emprunt_id", foreignKey = @ForeignKey(name = "fk_operation_tresorerie_emprunt"))
+    private Emprunt emprunt;
 }

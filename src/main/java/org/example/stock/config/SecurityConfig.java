@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/boutique/**", "/utilisateurs", "/utilisateurs/**", "/register", "/categories/**", "/produits/**", "/fournisseurs/**",
-                                "/achats/**", "/caisse/**", "/factures/achat/**", "/factures/fournisseur/**").hasRole("ADMIN")
+                                "/achats/**", "/caisse/**", "/financements", "/financements/**", "/factures/achat/**", "/factures/fournisseur/**").hasRole("ADMIN")
                         .requestMatchers("/etats", "/etats/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )

@@ -1,0 +1,52 @@
+<div th:fragment="content" th:with="p=${detail.vue.partenaire}, so=${detail.vue.solde}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="partFicheTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${p.type.libelle + (p.actif ? '' : ' · archivé')}">Banque</p><h1 id="partFicheTitre" th:text="${p.nom}">Nom</h1>
+                <p class="record-intro" th:if="${p.telephone != null and !#strings.isEmpty(p.telephone)}" th:text="${'Téléphone : ' + p.telephone}"></p>
+                <p class="record-intro" th:if="${p.note != null and !#strings.isEmpty(p.note)}" th:text="${p.note}"></p></div>
+            <a th:href="@{/financements/partenaires}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{financements/navigation :: alertes}"></div>
+        <section class="fin-chiffres" aria-label="Solde">
+            <article><span>Solde</span><strong th:text="${#numbers.formatDecimal(so.absolu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <small th:text="${so.laBoutiqueDoit() ? 'La boutique lui doit cette somme' : (so.ilDoit() ? 'Il doit cette somme à la boutique' : 'Soldé')}"></small></article>
+            <article><span>Compte courant</span><strong th:text="${#numbers.formatDecimal(so.compteCourant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Apports moins retraits</small></article>
+            <article><span>Emprunts et prêts</span><strong th:text="${#numbers.formatDecimal(so.empruntsNets, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Restant dû net</small></article>
+            <article><span>Capital apporté</span><strong th:text="${#numbers.formatDecimal(so.capitalApporte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Information, hors solde</small></article>
+        </section>
+        <div class="fin-actions">
+            <a th:href="@{/financements/partenaires/{id}/modifier(id=${p.id})}" class="btn btn-outline-secondary"><i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier</a>
+            <a th:if="${p.type.name() == 'ASSOCIE' and p.actif}" th:href="@{/financements/operations/nouvelle(type='APPORT_COMPTE_COURANT',partenaire=${p.id})}" class="btn btn-outline-primary">Apport</a>
+            <a th:if="${p.type.name() == 'ASSOCIE' and p.actif}" th:href="@{/financements/operations/nouvelle(type='RETRAIT_COMPTE_COURANT',partenaire=${p.id})}" class="btn btn-outline-primary">Retrait</a>
+            <a th:href="@{/financements/partenaires/{id}/releve/pdf(id=${p.id})}" class="btn btn-outline-danger"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Relevé PDF</a>
+            <a th:href="@{/financements/partenaires/{id}/releve/excel(id=${p.id})}" class="btn btn-outline-success"><i class="fa-solid fa-file-excel" aria-hidden="true"></i> Relevé Excel</a>
+            <a th:href="@{/etats/justificatifs/partenaire/pdf(id=${p.id})}" class="btn btn-outline-secondary"><i class="fa-solid fa-file-signature" aria-hidden="true"></i> Justificatif de solde</a>
+            <form th:if="${p.actif}" th:action="@{/financements/partenaires/{id}/archiver(id=${p.id})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary" th:disabled="${!detail.vue.archivable()}">Archiver</button></form>
+            <form th:unless="${p.actif}" th:action="@{/financements/partenaires/{id}/reactiver(id=${p.id})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary">Réactiver</button></form>
+        </div>
+        <p class="record-help" th:if="${p.actif and !detail.vue.archivable()}">L’archivage demande un solde nul et aucun emprunt ou prêt en cours.</p>
+        <section class="record-panel" aria-labelledby="partEmpruntsTitre" th:unless="${#lists.isEmpty(detail.emprunts)}">
+            <div class="record-panel-heading"><h2 id="partEmpruntsTitre">Emprunts et prêts</h2></div>
+            <ul class="fin-historique">
+                <li th:each="v : ${detail.emprunts}"><a th:href="@{/financements/emprunts/{id}(id=${v.emprunt.id})}" th:text="${v.emprunt.numero}">EM-000001</a>
+                    <span th:text="${v.emprunt.sens.libelle + ' · restant dû ' + #numbers.formatDecimal(v.situation.capitalRestantDu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + v.situation.statut()}"></span></li>
+            </ul>
+        </section>
+        <section class="record-panel" aria-labelledby="partHistTitre">
+            <div class="record-panel-heading"><h2 id="partHistTitre">Historique</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(detail.operations)}">Aucune opération.</p>
+            <ul class="fin-historique" th:unless="${#lists.isEmpty(detail.operations)}">
+                <li th:each="l : ${detail.operations}" th:classappend="${l.annulee ? 'fin-annule' : ''}">
+                    <strong th:text="${l.operation.type.libelle}">Apport</strong>
+                    <span th:text="${#temporals.format(l.operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(l.operation.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + l.operation.compteSource.nom + (l.operation.motif != null ? ' · ' + l.operation.motif : '')}"></span>
+                    <em th:if="${l.annulee}">Annulé</em>
+                    <a th:if="${l.annulable}" th:href="@{/financements/operations/{id}/annuler(id=${l.operation.id})}">Annuler</a>
+                </li>
+            </ul>
+        </section>
+    </section>
+</div>

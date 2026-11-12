@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     prochain_numero_devis BIGINT NOT NULL DEFAULT 1,
     prochain_numero_retour_vente BIGINT NOT NULL DEFAULT 1,
     prochain_numero_retour_achat BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_emprunt BIGINT NOT NULL DEFAULT 1,
+    prochain_numero_pret BIGINT NOT NULL DEFAULT 1,
     format_recu VARCHAR(16) NOT NULL DEFAULT 'A4',
     proposer_impression_recu BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY (id)
@@ -225,6 +227,58 @@ CREATE TABLE IF NOT EXISTS compte_tresorerie_autorise (
         FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- Lot 3b1 : financements. Un partenaire financier (banque, associé, personnel, divers) est propre à une boutique ; nom_cle est son
+-- nom en minuscules (unicité sans tenir compte de la casse). Un emprunt (EM-) ou un prêt (PR-) porte son échéancier
+-- (echeance_emprunt) ; son statut (en cours, en retard, clos) est calculé et jamais stocké.
+CREATE TABLE IF NOT EXISTS partenaire_financier (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    nom VARCHAR(80) NOT NULL,
+    nom_cle VARCHAR(80) NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    telephone VARCHAR(30) NULL,
+    note VARCHAR(255) NULL,
+    actif BOOLEAN NOT NULL DEFAULT TRUE,
+    date_creation DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_partenaire_financier_nom UNIQUE (boutique_id, nom_cle),
+    CONSTRAINT fk_partenaire_financier_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS emprunt (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    partenaire_id BIGINT NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    compte_id BIGINT NOT NULL,
+    numero VARCHAR(30) NOT NULL,
+    sens VARCHAR(16) NOT NULL,
+    date_emprunt DATE NOT NULL,
+    capital DECIMAL(17,2) NOT NULL,
+    taux_annuel DECIMAL(5,2) NOT NULL,
+    nombre_echeances INT NOT NULL,
+    periodicite VARCHAR(16) NOT NULL,
+    date_premiere_echeance DATE NOT NULL,
+    frais_dossier DECIMAL(17,2) NOT NULL DEFAULT 0,
+    note VARCHAR(255) NULL,
+    jeton VARCHAR(36) NOT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_emprunt_boutique_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT uk_emprunt_jeton UNIQUE (jeton),
+    CONSTRAINT fk_emprunt_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_emprunt_partenaire
+        FOREIGN KEY (partenaire_id) REFERENCES partenaire_financier (id),
+    CONSTRAINT fk_emprunt_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_emprunt_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id),
+    INDEX idx_emprunt_boutique_partenaire (boutique_id, partenaire_id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Fin lot 3b1
+
 CREATE TABLE IF NOT EXISTS operation_tresorerie (
     id BIGINT NOT NULL AUTO_INCREMENT,
     boutique_id BIGINT NOT NULL,
@@ -236,6 +290,8 @@ CREATE TABLE IF NOT EXISTS operation_tresorerie (
     montant DECIMAL(17,2) NOT NULL,
     motif VARCHAR(255) NOT NULL,
     date_operation DATETIME(6) NOT NULL,
+    partenaire_financier_id BIGINT NULL,
+    emprunt_id BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_operation_tresorerie_jeton UNIQUE (jeton),
     CONSTRAINT fk_operation_tresorerie_source
@@ -246,8 +302,44 @@ CREATE TABLE IF NOT EXISTS operation_tresorerie (
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_operation_tresorerie_utilisateur
         FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_operation_tresorerie_partenaire
+        FOREIGN KEY (partenaire_financier_id) REFERENCES partenaire_financier (id),
+    CONSTRAINT fk_operation_tresorerie_emprunt
+        FOREIGN KEY (emprunt_id) REFERENCES emprunt (id),
     INDEX idx_operation_tresorerie_boutique_date (boutique_id, date_operation, id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Lot 3b1 : échéancier d'un emprunt ou d'un prêt et imputation de chaque remboursement sur les échéances. Une imputation compte
+-- tant que l'opération de remboursement n'est pas annulée (contre-passation de ses mouvements). interet_remis est l'intérêt futur
+-- abandonné lors d'un remboursement anticipé du solde.
+CREATE TABLE IF NOT EXISTS echeance_emprunt (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    emprunt_id BIGINT NOT NULL,
+    rang INT NOT NULL,
+    date_echeance DATE NOT NULL,
+    capital DECIMAL(17,2) NOT NULL,
+    interet DECIMAL(17,2) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_echeance_emprunt_rang UNIQUE (emprunt_id, rang),
+    CONSTRAINT fk_echeance_emprunt_emprunt
+        FOREIGN KEY (emprunt_id) REFERENCES emprunt (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS imputation_echeance (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    operation_id BIGINT NOT NULL,
+    echeance_id BIGINT NOT NULL,
+    capital DECIMAL(17,2) NOT NULL,
+    interet DECIMAL(17,2) NOT NULL,
+    interet_remis DECIMAL(17,2) NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_imputation_echeance_operation
+        FOREIGN KEY (operation_id) REFERENCES operation_tresorerie (id),
+    CONSTRAINT fk_imputation_echeance_echeance
+        FOREIGN KEY (echeance_id) REFERENCES echeance_emprunt (id),
+    INDEX idx_imputation_echeance_echeance (echeance_id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Fin lot 3b1
 
 -- Lot 2 : devis et retours avec leurs lignes. Aucune ligne n'est créée par ce script.
 CREATE TABLE IF NOT EXISTS devis (

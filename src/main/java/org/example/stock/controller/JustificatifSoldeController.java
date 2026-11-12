@@ -40,6 +40,7 @@ import java.util.Locale;
  * <ul>
  *   <li>{@code GET /etats/justificatifs} : la page des trois types ;</li>
  *   <li>{@code GET /etats/justificatifs/client/pdf?id=} et {@code /fournisseur/pdf?id=} : arrêtés à la date du jour ;</li>
+ *   <li>{@code GET /etats/justificatifs/partenaire/pdf?id=} : un partenaire financier (banque, associé, personnel, divers) ;</li>
  *   <li>{@code GET /etats/justificatifs/tresorerie/pdf[?date=AAAA-MM-JJ]} : arrêté à n'importe quel jour passé.</li>
  * </ul>
  */
@@ -53,6 +54,7 @@ public class JustificatifSoldeController {
     @Autowired private FournisseurRepository fournisseurs;
     @Autowired private BoutiqueService boutiques;
     @Autowired private EcheanceService echeances;
+    @Autowired private org.example.stock.service.PartenairesFinanciersService financiers;
 
     /** Un partenaire de la liste déroulante de la page. */
     public record Choix(Long id, String nom) { }
@@ -66,6 +68,7 @@ public class JustificatifSoldeController {
         List<Choix> listeFournisseurs = fournisseurs.findAllByBoutiqueId(boutiqueId).stream().map((Fournisseur f) -> new Choix(f.getId(), f.getNom())).sorted(parNom).toList();
         model.addAttribute("clients", listeClients);
         model.addAttribute("fournisseurs", listeFournisseurs);
+        model.addAttribute("partenairesFinanciers", financiers.lister(true).stream().map(v -> new Choix(v.partenaire().getId(), v.partenaire().getNom())).toList());
         model.addAttribute("aujourdHui", echeances.aujourdHui());
         model.addAttribute("view", "etats/justificatifs");
         return "dashboard";
@@ -81,6 +84,19 @@ public class JustificatifSoldeController {
     public Object fournisseur(@RequestParam(name = "id", required = false) List<String> id, RedirectAttributes redirection) {
         Long fournisseurId = identifiant(id);
         return partenaire(() -> justificatifs.fournisseur(fournisseurId), redirection);
+    }
+
+    @GetMapping("/partenaire/pdf")
+    public Object partenaireFinancier(@RequestParam(name = "id", required = false) List<String> id, RedirectAttributes redirection) {
+        Long partenaireId = identifiant(id);
+        JustificatifSoldeService.JustificatifFinancier j;
+        try {
+            j = justificatifs.partenaireFinancier(partenaireId);
+        } catch (IncoherenceAvanceException e) {
+            redirection.addFlashAttribute("error", e.getMessage());
+            return "redirect:/etats/justificatifs";
+        }
+        return TelechargementExport.pdf(j.numero() + ".pdf", pdf.rendre(j, contextes.courant()));
     }
 
     @GetMapping("/tresorerie/pdf")

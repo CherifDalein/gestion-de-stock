@@ -1,0 +1,40 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="opsTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Financements</p><h1 id="opsTitre">Apports, retraits et autres flux</h1>
+                <p class="record-intro">Apports et retraits des associés, produits et charges financiers, autres produits et charges. Ils ne sont pas des dépenses de l’activité courante.</p></div>
+            <div class="fin-actions"><a th:href="@{/financements/operations/nouvelle}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle opération</a></div>
+        </header>
+        <div th:replace="~{financements/navigation :: onglets('operations')}"></div>
+        <div th:replace="~{financements/navigation :: alertes}"></div>
+        <form method="get" th:action="@{/financements/operations}" class="fin-filtres" aria-label="Filtrer les opérations">
+            <div><label for="groupe" class="form-label">Groupe</label>
+                <select id="groupe" name="groupe" class="form-select"><option value="">Toutes</option>
+                    <option value="associes" th:selected="${filtreGroupe == 'associes'}">Apports et retraits des associés</option>
+                    <option value="autres" th:selected="${filtreGroupe == 'autres'}">Produits et charges hors activité</option></select></div>
+            <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+        </form>
+        <section class="record-panel" aria-labelledby="opsListeTitre">
+            <div class="record-panel-heading"><h2 id="opsListeTitre" th:text="${#lists.size(operations) + (#lists.size(operations) == 1 ? ' opération' : ' opérations')}">0 opération</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(operations)}">Aucune opération.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(operations)}">
+                <table class="table fin-table fin-empilee">
+                    <thead><tr><th>Date</th><th>Nature</th><th>Partenaire</th><th>Compte</th><th class="text-end">Montant</th><th>Motif</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="o : ${operations}" th:classappend="${annulees.contains(o.id) ? 'fin-annule' : ''}">
+                        <td data-label="Date" th:text="${#temporals.format(o.dateOperation, 'dd/MM/yyyy HH:mm')}">01/01/2027</td>
+                        <td data-label="Nature" th:text="${o.type.libelle}">Apport</td>
+                        <td data-label="Partenaire" th:text="${o.partenaireFinancier != null ? o.partenaireFinancier.nom : '—'}">—</td>
+                        <td data-label="Compte" th:text="${o.compteSource.nom}">Caisse</td>
+                        <td data-label="Montant" class="text-end" th:text="${#numbers.formatDecimal(o.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</td>
+                        <td data-label="Motif" th:text="${o.motif}">Motif</td>
+                        <td data-label="Action"><em th:if="${annulees.contains(o.id)}">Annulé</em><a th:unless="${annulees.contains(o.id)}" th:href="@{/financements/operations/{id}/annuler(id=${o.id})}">Annuler</a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

@@ -35,6 +35,7 @@ public class EtatsController {
     @Autowired private BilanService bilan;
     @Autowired private EtatsPartenairesService partenaires;
     @Autowired private EtatsListesService listes;
+    @Autowired private org.example.stock.service.FinancementsExportService financements;
     @Autowired private ExportExcelService excel;
     @Autowired private DocumentPdfService pdf;
     @Autowired private ContexteDocumentService contextes;
@@ -54,6 +55,7 @@ public class EtatsController {
             new Carte("depenses", "Liste des dépenses", "Les dépenses de la période par compte et par motif, avec les totaux."),
             new Carte("encaissements", "Liste des encaissements", "Tout l'argent reçu, par compte, avec sa source, son document et les annulations."),
             new Carte("ventes-par-vendeur", "Ventes par vendeur", "Chiffre d'affaires, bénéfice brut et panier moyen de chaque compte."),
+            new Carte("emprunts-prets", "Emprunts et prêts", "Capital restant dû, intérêts payés, prochaine échéance et retards de chaque emprunt et prêt, avec les remboursements de la période."),
             new Carte("justificatifs", "Justificatifs de solde", "Documents PDF officiels attestant le solde d'un client, d'un fournisseur ou de la trésorerie, avec signatures."));
 
     @GetMapping({"", "/"})
@@ -96,6 +98,17 @@ public class EtatsController {
     public Object encaissementsExport(@PathVariable String format, @RequestParam(name = "du", required = false) List<String> du,
                                       @RequestParam(name = "au", required = false) List<String> au, RedirectAttributes redirection) {
         return exportPeriode("encaissements", format, du, au, listes::encaissements, redirection);
+    }
+
+    @GetMapping("/emprunts-prets")
+    public String empruntsPrets(@RequestParam(name = "du", required = false) List<String> du, @RequestParam(name = "au", required = false) List<String> au, Model model) {
+        return ecranPeriode("emprunts-prets", "Emprunts et prêts", "Situation de chaque emprunt et prêt, avec les remboursements de la période.", du, au, financements::etatEmpruntsEtPrets, model);
+    }
+
+    @GetMapping("/emprunts-prets/export/{format}")
+    public Object empruntsPretsExport(@PathVariable String format, @RequestParam(name = "du", required = false) List<String> du,
+                                      @RequestParam(name = "au", required = false) List<String> au, RedirectAttributes redirection) {
+        return exportPeriode("emprunts-prets", format, du, au, financements::etatEmpruntsEtPrets, redirection);
     }
 
     /** Export seulement : la page « Ventes par vendeur » est celle de {@link VentesParVendeurController}. */

@@ -72,6 +72,9 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
 
     boolean existsByAnnulationDeId(Long id);
 
+    /** Mouvements d'une opération de trésorerie (transfert, dépense ou financement), dans l'ordre de leur création. */
+    List<MouvementCaisse> findByOperationTresorerieIdOrderByIdAsc(Long operationId);
+
     java.util.Optional<MouvementCaisse> findByIdAndBoutiqueId(Long id, Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m")

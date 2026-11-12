@@ -1,0 +1,28 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="partFormTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Financements</p>
+                <h1 id="partFormTitre" th:text="${vue == null ? 'Nouveau partenaire' : 'Modifier ' + vue.partenaire.nom}">Nouveau partenaire</h1></div>
+            <a th:href="${vue == null ? '/financements/partenaires' : '/financements/partenaires/' + vue.partenaire.id}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <form th:action="${vue == null ? '/financements/partenaires/nouveau' : '/financements/partenaires/' + vue.partenaire.id + '/modifier'}" th:object="${partenaireFinancierForm}" method="post" class="operation-form">
+            <section class="record-panel">
+                <div th:replace="~{financements/navigation :: erreurs('partenaireFinancierForm')}"></div>
+                <div class="record-grid">
+                    <div class="record-field"><label for="nom">Nom</label><input id="nom" class="form-control" type="text" th:field="*{nom}" maxlength="80" required></div>
+                    <div class="record-field"><label for="type">Type</label>
+                        <select id="type" class="form-select" th:field="*{type}" required><option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.libelle}"></option></select>
+                        <p class="record-help" th:if="${vue != null}">Le type ne change plus dès que le partenaire a une opération ou un emprunt.</p></div>
+                    <div class="record-field"><label for="telephone">Téléphone (facultatif)</label><input id="telephone" class="form-control" type="text" th:field="*{telephone}" maxlength="30"></div>
+                    <div class="record-field"><label for="note">Note (facultatif)</label><textarea id="note" class="form-control" th:field="*{note}" rows="2" maxlength="255"></textarea></div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="${vue == null ? '/financements/partenaires' : '/financements/partenaires/' + vue.partenaire.id}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer</button>
+            </div>
+        </form>
+    </section>
+</div>

@@ -11,6 +11,10 @@ import org.example.stock.model.*;
 import org.example.stock.service.AchatService;
 import org.example.stock.service.AnnulationReglementService;
 import org.example.stock.service.CaisseService;
+import org.example.stock.service.EmpruntObsoleteException;
+import org.example.stock.service.EmpruntService;
+import org.example.stock.service.OperationsFinancieresService;
+import org.example.stock.service.PartenairesFinanciersService;
 import org.example.stock.service.ComptesTresorerieService;
 import org.example.stock.service.ReglementVenteObsoleteException;
 import org.example.stock.service.OperationCreationService;
@@ -37,6 +41,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Ordre global des verrous, avec les vrais verrous InnoDB, exclusivement dans une base temporaire : toute écriture métier
@@ -64,6 +69,7 @@ public class OrdreVerrousMariaDbTest {
     private final AnnulationReglementService annulationService;
     private final CaisseService caisseService;
     private final ComptesTresorerieService comptesService;
+    private final ConfigurableApplicationContext contexte;
     private final TransactionTemplate transaction;
     private final JdbcTemplate jdbc;
     private EntityManager em;
@@ -102,6 +108,7 @@ public class OrdreVerrousMariaDbTest {
     }
 
     private OrdreVerrousMariaDbTest(ConfigurableApplicationContext contexte) {
+        this.contexte = contexte;
         creations = contexte.getBean(OperationCreationService.class);
         retourAchatService = contexte.getBean(RetourAchatService.class);
         retourVenteService = contexte.getBean(RetourVenteService.class);
@@ -278,6 +285,25 @@ public class OrdreVerrousMariaDbTest {
         simultanesSansErreur("archivage d'un compte vide+écriture sur un autre compte du même type",
                 () -> archiver(a, videId), () -> reglerVenteSur(a, dernier("vente"), "1000", new BigDecimal("10000"), orange2));
         exiger(decimal("SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id=" + videId + " AND actif=FALSE").signum() > 0, "Le compte vide est archivé");
+        // 10. Financements (3b1) : boutique, puis emprunt, puis partenaire, puis comptes. Deux remboursements de la même échéance ne paient jamais
+        //     deux fois (le second voit l'état changé et est refusé), et un remboursement, un apport d'associé, un transfert et l'archivage
+        //     d'un partenaire se croisent sans interblocage.
+        fonds(a, "BANQUE", "50000000");
+        connecter(a);
+        long banque = comptePrincipal(a, "BANQUE");
+        for (int tour = 0; tour < TOURS; tour++) {
+            long[] dossier = nouvelEmprunt(a, tour);
+            AtomicInteger acceptes = new AtomicInteger(), refuses = new AtomicInteger();
+            simultanesSansErreur("deux remboursements de la même échéance #" + tour,
+                    () -> rembourserEmprunt(a, dossier[0], "100000", acceptes, refuses), () -> rembourserEmprunt(a, dossier[0], "100000", acceptes, refuses));
+            exiger(acceptes.get() == 1 && refuses.get() == 1, "Un seul remboursement doit être accepté (acceptés=" + acceptes + ", refusés=" + refuses + ")");
+            exiger(decimal("SELECT COALESCE(SUM(i.capital),0) FROM imputation_echeance i JOIN echeance_emprunt e ON e.id=i.echeance_id WHERE e.emprunt_id=" + dossier[0])
+                    .compareTo(new BigDecimal("100000")) == 0, "Le capital de l'échéance n'est payé qu'une fois");
+            long associe = dossier[1];
+            simultanesSansErreur("remboursement+apport d'associé+transfert+archivage #" + tour,
+                    () -> rembourserEmprunt(a, dossier[0], "50000", new AtomicInteger(), new AtomicInteger()), () -> apporter(a, associe, "1000"),
+                    () -> transferer(a, banque, comptePrincipal(a, "ESPECES"), "1000"), () -> tenterArchivage(a, associe));
+        }
         // Invariants finaux : numéros distincts par boutique, aucune avance utilisée en excès.
         for (String table : List.of("achat", "vente", "retour")) {
             exiger(decimal("SELECT COUNT(*) - COUNT(DISTINCT boutique_id, numero) FROM " + table).signum() == 0, "Numéros distincts par boutique : " + table);
@@ -382,6 +408,64 @@ public class OrdreVerrousMariaDbTest {
         try { creations.creerVente(creations.ouvrir(TypeOperationCreation.VENTE), v); }
         finally { SecurityContextHolder.clearContext(); }
     }
+
+    // ----- Financements -----
+
+    /** Crée un associé et un emprunt de 300 000 sur 3 échéances sans intérêt : [identifiant de l'emprunt, identifiant de l'associé]. */
+    private long[] nouvelEmprunt(Boutiquier t, int tour) {
+        connecter(t);
+        try {
+            var pf = new org.example.stock.form.PartenaireFinancierForm(); pf.setNom("Banque " + tour + "-" + System.nanoTime()); pf.setType(org.example.stock.enums.TypePartenaireFinancier.BANQUE);
+            var banque = contexteBean(PartenairesFinanciersService.class).creer(pf);
+            var af = new org.example.stock.form.PartenaireFinancierForm(); af.setNom("Associé " + tour + "-" + System.nanoTime()); af.setType(org.example.stock.enums.TypePartenaireFinancier.ASSOCIE);
+            var associe = contexteBean(PartenairesFinanciersService.class).creer(af);
+            var f = new org.example.stock.form.EmpruntForm();
+            f.setSens(org.example.stock.enums.SensEmprunt.EMPRUNT); f.setPartenaireId(banque.getId()); f.setCompte("BANQUE");
+            var aujourdhui = java.time.LocalDate.now();
+            f.setDateEmprunt(aujourdhui); f.setDatePremiereEcheance(aujourdhui.plusDays(30)); f.setCapital(new BigDecimal("300000")); f.setTauxAnnuel(BigDecimal.ZERO);
+            f.setNombreEcheances(3); f.setPeriodicite(org.example.stock.enums.Periodicite.MENSUELLE); f.setJetonOperation(java.util.UUID.randomUUID().toString());
+            long id = contexteBean(EmpruntService.class).creer(f).id();
+            return new long[]{id, associe.getId()};
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    /** Le formulaire est celui qu'affichait la page (prochaine échéance et reste dû identiques pour les deux envois simultanés). */
+    private void rembourserEmprunt(Boutiquier t, long empruntId, String montant, AtomicInteger acceptes, AtomicInteger refuses) {
+        connecter(t);
+        try {
+            var service = contexteBean(EmpruntService.class);
+            var situation = service.vue(empruntId).situation();
+            var f = new org.example.stock.form.RemboursementForm();
+            f.setMontant(new BigDecimal(montant)); f.setCompte("BANQUE"); f.setJetonOperation(java.util.UUID.randomUUID().toString());
+            f.setRangAttendu(situation.prochaine().rang()); f.setResteAttendu(situation.totalRestantDu());
+            service.rembourser(empruntId, f);
+            acceptes.incrementAndGet();
+        } catch (EmpruntObsoleteException obsolete) { refuses.incrementAndGet(); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void apporter(Boutiquier t, long associeId, String montant) {
+        connecter(t);
+        try {
+            var f = new org.example.stock.form.OperationFinanciereForm();
+            f.setType(org.example.stock.enums.TypeOperationTresorerie.APPORT_COMPTE_COURANT); f.setPartenaireId(associeId); f.setCompte("BANQUE");
+            f.setMontant(new BigDecimal(montant)); f.setMotif("Apport de test"); f.setJetonOperation(java.util.UUID.randomUUID().toString());
+            contexteBean(OperationsFinancieresService.class).enregistrer(f);
+        } catch (IllegalArgumentException archive) {
+            // L'archivage du même partenaire est passé avant l'apport : refus légitime, pas un interblocage.
+            if (!archive.getMessage().contains("archivé")) throw archive;
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    /** L'archivage est refusé quand le solde n'est pas nul : le refus fait partie du scénario, pas un interblocage. */
+    private void tenterArchivage(Boutiquier t, long partenaireId) {
+        connecter(t);
+        try { contexteBean(PartenairesFinanciersService.class).definirActif(partenaireId, false); }
+        catch (IllegalArgumentException refus) { /* solde non nul */ }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private <T> T contexteBean(Class<T> type) { return contexte.getBean(type); }
 
     // ----- Concurrence -----
 

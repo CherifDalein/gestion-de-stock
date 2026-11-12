@@ -6,6 +6,8 @@ import org.example.stock.model.Achat;
 import org.example.stock.model.Boutique;
 import org.example.stock.model.Client;
 import org.example.stock.model.Devis;
+import org.example.stock.model.Emprunt;
+import org.example.stock.model.PartenaireFinancier;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
@@ -25,8 +27,8 @@ import java.util.TreeSet;
  * Les verrous restent détenus jusqu'à la fin de la transaction métier.
  *
  * <p>Ordre global des verrous (voir « Ordre des verrous » dans {@code docs/lot-2.md}) : toute écriture métier commence par
- * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis), le partenaire (client, fournisseur), les
- * factures du partenaire, les produits et enfin les comptes de trésorerie.</p>
+ * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis, emprunt), le partenaire (client, fournisseur, partenaire
+ * financier), les factures du partenaire, les produits et enfin les comptes de trésorerie.</p>
  */
 @Repository
 @Transactional(propagation = Propagation.MANDATORY)
@@ -125,6 +127,26 @@ public class StockLockRepository {
         entityManager.refresh(fournisseur, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(fournisseur.getBoutique());
         return fournisseur;
+    }
+
+    /** Verrou en écriture d'un emprunt ou d'un prêt de la boutique courante (404 sinon), après celui de la boutique et avant celui du partenaire. */
+    public Emprunt verrouillerEmprunt(Long id) {
+        verifierIdentifiant("Emprunt", id, boutiques.idBoutiqueCourante());
+        Emprunt emprunt = entityManager.find(Emprunt.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (emprunt == null) throw introuvable("Emprunt");
+        entityManager.refresh(emprunt, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(emprunt.getBoutique());
+        return emprunt;
+    }
+
+    /** Verrou en écriture d'un partenaire financier de la boutique courante, après celui de l'emprunt et avant ceux des comptes. */
+    public PartenaireFinancier verrouillerPartenaireFinancier(Long id) {
+        verifierIdentifiant("PartenaireFinancier", id, boutiques.idBoutiqueCourante());
+        PartenaireFinancier partenaire = entityManager.find(PartenaireFinancier.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (partenaire == null) throw introuvable("Partenaire");
+        entityManager.refresh(partenaire, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(partenaire.getBoutique());
+        return partenaire;
     }
 
     private void verifierIdentifiant(String entite, Long id, Long boutiqueId) {

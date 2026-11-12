@@ -72,4 +72,8 @@ public class MouvementCaisse {
     @JoinColumn(name = "annulation_de_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_annulation"))
     private MouvementCaisse annulationDe;
 
+
+    /** Libellé français de la source pour le journal (les sources de financement ont un libellé clair, les autres restent telles quelles). */
+    @Transient
+    public String getSourceLibelle() { return SourceMouvement.libelle(source == null ? null : source.strip()); }
 }

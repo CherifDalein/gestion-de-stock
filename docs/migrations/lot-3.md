@@ -1,4 +1,4 @@
-# Lot 3 : comptes de trésorerie multiples
+# Lot 3 : comptes de trésorerie multiples et financements
 
 Cette migration transforme les trois comptes fixes de chaque boutique (`CAISSE`, `ORANGE_MONEY`, `BANQUE`) en comptes nommés d'une
 boutique, dont on peut ajouter d'autres (voir [Comptes de trésorerie multiples](../lot-3.md#comptes-de-trésorerie-multiples)). Elle ne
@@ -48,6 +48,28 @@ LOT3_BACKUP_DIR=/chemin/prive/stock_pro-sauvegarde ./gradlew lot3Migrate
 - **Les contrôles des lots précédents** (`lot1Check`, `lot2Check`, `lot4Check`) se lancent avant le lot 3. Après lui, ils ne
   contrôlent plus les anciennes colonnes de trésorerie (supprimées) ; ils restent utilisables pour le reste de leur schéma.
 
+## Étape 3b1 : financements
+
+La même commande (`lot3Migrate`) applique aussi le schéma des financements ; **il n'y a pas de tâche supplémentaire**. Elle est valable sur une base
+qui n'a pas encore reçu le lot 3 (comptes multiples **et** financements en une fois) comme sur une base où seule l'étape 3a a été appliquée
+(`lot3Check` annonce alors les éléments de 3b1 manquants, `lot3Migrate` les ajoute).
+
+| Élément | Ajout |
+|---|---|
+| `boutique` | `prochain_numero_emprunt` et `prochain_numero_pret`, BIGINT NOT NULL DEFAULT 1 (numéros `EM-` et `PR-`) |
+| `partenaire_financier` | nouvelle : banques, associés, personnel, divers ; unique `(boutique_id, nom_cle)` |
+| `emprunt` | nouvelle : emprunts et prêts ; uniques `(boutique_id, numero)` et `jeton` |
+| `echeance_emprunt` | nouvelle : échéancier, unique `(emprunt_id, rang)` |
+| `imputation_echeance` | nouvelle : part de chaque remboursement imputée à une échéance |
+| `operation_tresorerie` | `partenaire_financier_id` et `emprunt_id` (NULL), clés `fk_operation_tresorerie_partenaire` et `_emprunt` |
+
+Aucune donnée existante n'est modifiée : les nouvelles colonnes sont vides ou valent 1, les nouvelles tables sont vides, aucun mouvement ni
+aucun solde ne change. Les contrôles d'avant/après (totaux par boutique et par type de compte) valent donc aussi pour 3b1. Le même ordre
+sûr s'applique : colonnes, tables, contrôles, puis clés étrangères ; une relance après interruption reprend où elle s'est arrêtée, et sur une base
+entièrement migrée elle ne fait rien (idempotence). Syntaxe MariaDB 10.4 seule.
+
+Retour arrière : par la sauvegarde, comme ci-dessus. Les saisies de financement faites après la migration seraient perdues par la restauration.
+
 ## Retour arrière
 
 La migration supprime d'anciennes colonnes : le retour arrière se fait **par la sauvegarde**, pas par un script inverse.
@@ -62,7 +84,7 @@ une migration défaillante, avant la reprise de l'activité.
 ## Vérifications
 
 ```bash
-./gradlew test --no-daemon --tests '*Lot3MigrationTests'   # H2 : scénarios valides et invalides, sauvegarde, lot 4 requis, schéma migré = schéma neuf
+./gradlew test --no-daemon --tests '*Lot3MigrationTests'   # H2 : scénarios valides et invalides, base sans lot 3, base 3a seule, idempotence, sauvegarde, lot 4 requis, schéma migré = schéma neuf
 service mariadb start && ./gradlew lot3MariaDbTest         # MariaDB jetable : mêmes scénarios, verrou, Hibernate validate (migré et neuf)
 ./gradlew lot1MariaDbTest lot2MariaDbTest lot4MariaDbTest  # les lots précédents appliquent aussi le lot 3 avant Hibernate validate
 ```

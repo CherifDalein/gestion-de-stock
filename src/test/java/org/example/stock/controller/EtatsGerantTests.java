@@ -320,11 +320,11 @@ class EtatsGerantTests {
         String texte = texte(pdf.getContentAsByteArray());
         assertThat(texte).contains("Bilan de la période", "01/06/2026", "30/06/2026", "Boutique des états A", "216 000", "166 000", "96 000", "142 000", "-46 000",
                 "1 080 000", "1 039 000", "650 000", "590 000", "194 000", "255 000", "946 000", "185 000", "129 000", "46 000",
-                "au jour de l'édition", "lot 3").doesNotContain("SECRET_B", "77 700", "999 000");
+                "au jour de l'édition", "Financements et autres flux").doesNotContain("SECRET_B", "77 700", "999 000");
 
         MockHttpServletResponse excel = exporter("/etats/bilan/export/excel?du=2026-06-01&au=2026-06-30", GERANT);
         try (XSSFWorkbook classeur = new XSSFWorkbook(new ByteArrayInputStream(excel.getContentAsByteArray()))) {
-            assertThat(classeur.getNumberOfSheets()).isEqualTo(5);
+            assertThat(classeur.getNumberOfSheets()).isEqualTo(6);
             Sheet resultat = classeur.getSheet("Résultat");
             assertThat(nombre(resultat, "Chiffre d'affaires net des retours")).isEqualByComparingTo("166000");
             assertThat(nombre(resultat, "Bénéfice brut")).isEqualByComparingTo("96000");
@@ -644,11 +644,11 @@ class EtatsGerantTests {
         }
         String bilanHtml = normaliser(mvc.perform(get("/etats/bilan?du=2026-06-01&au=2026-06-30").with(user(GERANT).roles("ADMIN")))
                 .andReturn().getResponse().getContentAsString());
-        assertThat(bilanHtml).contains("Bilan de la période", "216 000", "166 000", "96 000", "142 000", "-46 000", "1 039 000", "946 000", "au jour de l'édition", "lot 3");
+        assertThat(bilanHtml).contains("Bilan de la période", "216 000", "166 000", "96 000", "142 000", "-46 000", "1 039 000", "946 000", "au jour de l'édition", "Financements et autres flux");
         // La page d'accueil des états liste les huit états.
         String accueil = mvc.perform(get("/etats").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(accueil).contains("Bilan de la période", "État des créances", "État des dettes", "État du stock", "Liste des dépenses",
-                "Liste des encaissements", "Ventes par vendeur");
+                "Liste des encaissements", "Ventes par vendeur", "Emprunts et prêts");
         // L'entrée du menu est réservée au gérant ; la page des ventes par vendeur porte ses boutons.
         assertThat(accueil).contains("href=\"/etats\"");
         String vendeurs = mvc.perform(get("/etats/ventes-par-vendeur?du=2026-06-01&au=2026-06-30").with(user(GERANT).roles("ADMIN")))

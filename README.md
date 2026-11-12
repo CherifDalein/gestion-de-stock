@@ -63,7 +63,10 @@ exemple deux comptes Orange Money ou deux banques), appliquer la
 `./gradlew lot3Check`, puis `LOT3_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot3Migrate`.
 Chaque compte existant devient le compte principal de son type (« Caisse », « Orange Money »,
 « Banque ») ; les totaux par type restent identiques. Les règles sont décrites dans
-`docs/lot-3.md`, section « Comptes de trésorerie multiples ».
+`docs/lot-3.md`, section « Comptes de trésorerie multiples ». Cette même migration ajoute les
+financements du gérant (emprunts et prêts, apports et retraits d'associé, autres partenaires,
+produits et charges hors activité) : voir `docs/lot-3.md`, section « Financements et flux hors
+ventes et achats ».
 
 ## Tests
 

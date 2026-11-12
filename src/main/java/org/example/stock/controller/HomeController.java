@@ -6,6 +6,7 @@ import org.example.stock.service.CaisseService;
 import org.example.stock.service.IncoherenceAvanceException;
 import org.example.stock.service.BoutiqueService;
 import org.example.stock.service.EssaiBoutiqueService;
+import org.example.stock.service.EmpruntService;
 import org.example.stock.service.TableauDeBordService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class HomeController {
     @Autowired BoutiqueService boutiqueService;
     @Autowired EssaiBoutiqueService essais;
     @Autowired TableauDeBordService tableauDeBord;
+    @Autowired EmpruntService emprunts;
 
     private static final DateTimeFormatter MOIS_EN_COURS = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRENCH);
 
@@ -83,6 +85,8 @@ public class HomeController {
             LOG.error("Créances et dettes incohérentes pour la boutique courante", e);
             model.addAttribute("creancesDettesIncoherentes", true);
         }
+        // Emprunts et prêts en retard : alerte du gérant seulement.
+        model.addAttribute("retardsEmprunts", emprunts.retards(5));
         TableauDeBordService.AnneeChoisie choix = TableauDeBordService.choisirAnnee(annee, aujourdHui);
         model.addAttribute("anneeCorrigee", choix.corrigee());
         model.addAttribute("evolution", tableauDeBord.evolutionMensuelle(choix.annee(), aujourdHui));

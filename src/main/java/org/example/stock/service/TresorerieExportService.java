@@ -126,7 +126,7 @@ public class TresorerieExportService {
                 var source = m.<String>get("source");
                 if (SOURCE_INITIALE.equals(filtre.source())) conditions.add(cb.equal(source, "SOLDE_INITIAL"));
                 else if (SOURCE_VIDE.equals(filtre.source())) conditions.add(cb.or(cb.isNull(source), cb.equal(cb.trim(source), "")));
-                else conditions.add(cb.equal(cb.trim(source), filtre.source()));
+                else conditions.add(cb.equal(cb.trim(source), org.example.stock.model.SourceMouvement.depuisLibelle(filtre.source())));
             }
             if (filtre.du() != null) conditions.add(cb.greaterThanOrEqualTo(m.<LocalDateTime>get("dateMouvement"), filtre.du().atStartOfDay()));
             if (filtre.au() != null) conditions.add(cb.lessThan(m.<LocalDateTime>get("dateMouvement"), filtre.au().plusDays(1).atStartOfDay()));
@@ -169,13 +169,13 @@ public class TresorerieExportService {
 
     private static String source(MouvementCaisse m) {
         if ("SOLDE_INITIAL".equals(m.getSource())) return SOURCE_INITIALE;
-        return m.getSource() != null && !m.getSource().isBlank() ? m.getSource().strip() : SOURCE_VIDE;
+        return m.getSource() != null && !m.getSource().isBlank() ? org.example.stock.model.SourceMouvement.libelle(m.getSource().strip()) : SOURCE_VIDE;
     }
 
     private static String motif(MouvementCaisse m) {
         String motif = m.getMotif() != null && !m.getMotif().isBlank() ? m.getMotif() : "Motif non renseigné";
         if (m.getOperationTresorerie() == null) return motif;
-        return motif + " · " + ("TRANSFERT".equals(m.getSource()) ? "Transfert #" : "Dépense #") + m.getOperationTresorerie().getId();
+        return motif + " · " + (m.getOperationTresorerie().getType() == null ? "Opération" : m.getOperationTresorerie().getType().getLibelle()) + " #" + m.getOperationTresorerie().getId();
     }
 
     private static String utilisateur(MouvementCaisse m) {

@@ -1,0 +1,54 @@
+<div th:fragment="content" th:with="e=${vue.emprunt}, s=${vue.situation}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="rembTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${e.numero + ' · ' + e.partenaire.nom}">EM-000001</p>
+                <h1 id="rembTitre" th:text="${e.estEmprunt() ? 'Rembourser un emprunt' : 'Encaisser un remboursement de prêt'}">Remboursement</h1>
+                <p class="record-intro">Le montant est imputé aux échéances dans l’ordre : intérêts puis capital de chaque échéance. Un paiement partiel ou sur plusieurs échéances est possible.</p></div>
+            <a th:href="@{/financements/emprunts/{id}(id=${e.id})}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div class="alert alert-info" role="status" th:if="${s.clos()}">Ce dossier est clos : il n’y a plus rien à rembourser.</div>
+        <form th:unless="${s.clos()}" th:action="@{/financements/emprunts/{id}/rembourser(id=${e.id})}" th:object="${remboursementForm}" method="post" class="operation-form tresorerie-form">
+            <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+            <input type="hidden" th:field="*{jetonOperation}">
+            <input type="hidden" th:field="*{rangAttendu}">
+            <input type="hidden" th:field="*{resteAttendu}">
+            <section class="fin-chiffres" aria-label="Situation">
+                <article><span>Capital restant dû</span><strong th:text="${#numbers.formatDecimal(s.capitalRestantDu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong></article>
+                <article><span>Prochaine échéance</span><strong th:text="${#temporals.format(s.prochaine().date(), 'dd/MM/yyyy')}">01/01/2027</strong>
+                    <small th:text="${#numbers.formatDecimal(s.prochaine().resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></article>
+                <article><span>Solde pour tout rembourser</span><strong th:text="${#numbers.formatDecimal(s.soldeAnticipe(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                    <small>Capital restant et intérêts échus</small></article>
+            </section>
+            <section class="record-panel" aria-labelledby="rembPanel">
+                <div class="record-panel-heading"><h2 id="rembPanel">Remboursement</h2></div>
+                <div th:replace="~{financements/navigation :: erreurs('remboursementForm')}"></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="montant">Montant (GNF)</label>
+                        <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required>
+                        <p class="record-help">Proposé : le reste de la prochaine échéance.</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="compte" th:text="${e.estEmprunt() ? 'Compte débité' : 'Compte crédité'}">Compte</label>
+                        <select id="compte" class="form-select" th:field="*{compte}" required><th:block th:replace="~{fragments/comptes :: options(*{compte})}"></th:block></select>
+                    </div>
+                    <div class="record-field fin-anticipe">
+                        <label class="fin-case"><input type="checkbox" name="anticipe" value="true" th:checked="*{anticipe}"> Remboursement anticipé (solde total)</label>
+                        <p class="record-help">Le montant doit alors être le solde pour tout rembourser : les intérêts des échéances à venir sont remis (ramenés à 0).</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="note">Note (facultatif)</label>
+                        <textarea id="note" class="form-control" th:field="*{note}" rows="2" maxlength="255"></textarea>
+                    </div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="@{/financements/emprunts/{id}(id=${e.id})}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le remboursement</button>
+            </div>
+        </form>
+    </section>
+</div>

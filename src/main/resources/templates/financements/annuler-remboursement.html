@@ -1,0 +1,25 @@
+<div th:fragment="content" th:with="e=${detail.vue.emprunt}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="annTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${e.numero}">EM-000001</p><h1 id="annTitre" th:text="${'Annuler le remboursement n° ' + remboursement.operation.id}">Annuler</h1>
+                <p class="record-intro" th:text="${'Capital ' + #numbers.formatDecimal(remboursement.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF, intérêts ' + #numbers.formatDecimal(remboursement.interet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF. Des mouvements inverses seront enregistrés ; rien n’est effacé.'}"></p></div>
+            <a th:href="${retourUrl}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div class="alert alert-info" th:if="${remboursement.annule}" role="status">Ce remboursement est déjà annulé.</div>
+        <form th:unless="${remboursement.annule}" th:action="@{${actionUrl}}" th:object="${annulationReglement}" method="post" class="operation-form">
+            <section class="record-panel">
+                <div th:replace="~{financements/navigation :: erreurs('annulationReglement')}"></div>
+                <div class="record-field">
+                    <label for="motif">Motif de l’annulation (3 à 255 caractères)</label>
+                    <textarea id="motif" class="form-control" th:field="*{motif}" rows="3" minlength="3" maxlength="255" required></textarea>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="${retourUrl}" class="btn btn-outline-secondary">Ne pas annuler</a>
+                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Annuler le remboursement</button>
+            </div>
+        </form>
+    </section>
+</div>

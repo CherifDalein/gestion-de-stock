@@ -145,6 +145,7 @@
                     <th scope="col" class="text-end">Ventes</th>
                     <th scope="col" class="text-end">Bénéfice brut</th>
                     <th scope="col" class="text-end">Dépenses</th>
+                    <th scope="col" class="text-end">Hors exploitation</th>
                     <th scope="col" class="text-end">Résultat</th>
                 </tr>
                 </thead>
@@ -154,6 +155,7 @@
                     <td class="text-end" th:text="${#numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:text="${#numbers.formatDecimal(m.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:text="${#numbers.formatDecimal(m.depenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.horsExploitation, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:classappend="${m.resultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                 </tr>
                 </tbody>
@@ -163,18 +165,22 @@
                     <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalVentes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalBeneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalDepenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalHorsExploitation, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                     <td class="text-end" th:classappend="${evolution.totalResultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(evolution.totalResultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
                 </tr>
                 </tfoot>
             </table>
         </div>
-        <p class="tdb-note mt-3 mb-0">Montants en GNF. Résultat = bénéfice brut − dépenses. Les achats ne sont pas des dépenses : leur coût est compté dans le bénéfice brut au moment de la vente.</p>
+        <p class="tdb-note mt-3 mb-0">Montants en GNF. Résultat = bénéfice brut − dépenses + produits et charges hors exploitation (financiers et autres, nets). Les apports, retraits et le capital des emprunts n’y figurent pas. Les achats ne sont pas des dépenses : leur coût est compté dans le bénéfice brut au moment de la vente.</p>
     </section>
 
     <!--/* Créances et dettes : réservé au gérant. Pour un caissier, « creancesDettes » n'est ni calculé ni placé dans le modèle. */-->
     <p class="alert alert-warning py-2" role="alert" th:if="${creancesDettesIncoherentes}">Les créances et les dettes ne peuvent pas être affichées : un solde de partenaire est incohérent. Vérifiez les règlements des soldes de départ ou contactez l’assistance.</p>
     <th:block th:if="${creancesDettes != null}">
         <th:block th:replace="~{fragments/tableau-de-bord :: creancesDettes(${creancesDettes})}"></th:block>
+    </th:block>
+    <th:block th:if="${retardsEmprunts != null and !retardsEmprunts.aucun()}">
+        <th:block th:replace="~{fragments/tableau-de-bord :: empruntsRetards(${retardsEmprunts})}"></th:block>
     </th:block>
 </div>
 
@@ -227,6 +233,38 @@
         <th:block th:replace="~{fragments/tableau-de-bord :: retards('fournisseurs', 'tdbFournisseursRetardTitre', 'Fournisseurs à payer en retard', 'Les plus gros montants échus d’abord.', ${cd.fournisseursEnRetard}, 'fournisseur', 'Aucun fournisseur à payer en retard', 'Achats sans fournisseur en retard')}"></th:block>
     </div>
 </th:block>
+
+<!--/* Alerte du gérant : emprunts et prêts dont une échéance est échue et non soldée. */-->
+<section class="app-panel tdb-panel" th:fragment="empruntsRetards(retards)" aria-labelledby="tdbEmpruntsRetardTitre" data-bloc="emprunts-retard">
+    <div class="app-panel-heading">
+        <div>
+            <h2 id="tdbEmpruntsRetardTitre"><i class="fa-solid fa-triangle-exclamation text-danger" aria-hidden="true"></i> Emprunts et prêts en retard</h2>
+            <p th:text="${retards.echeances + (retards.echeances > 1 ? ' échéances échues non soldées' : ' échéance échue non soldée') + ', soit ' + #numbers.formatDecimal(retards.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF.'}">1 échéance échue.</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/financements(statut='retard')}">Voir tout</a>
+    </div>
+    <div class="table-responsive tdb-table-wrap" tabindex="0" role="region" aria-labelledby="tdbEmpruntsRetardTitre">
+        <table class="table tdb-table tdb-table--retards mb-0">
+            <caption class="visually-hidden">Emprunts et prêts en retard, montants en GNF</caption>
+            <thead>
+            <tr>
+                <th scope="col">Dossier</th>
+                <th scope="col">Partenaire</th>
+                <th scope="col" class="text-end">En retard (GNF)</th>
+                <th scope="col" class="text-end">Jours</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="v : ${retards.premiers}" th:attr="data-retard-emprunt=${v.emprunt.id}">
+                <th scope="row"><a th:href="@{|/financements/emprunts/${v.emprunt.id}|}" th:text="${v.emprunt.numero}">EM-000001</a></th>
+                <td th:text="${v.emprunt.partenaire.nom}">Banque</td>
+                <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(v.situation.montantEnRetard(), 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                <td class="text-end" th:text="${v.situation.plusGrandRetardEnJours()}">0</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 
 <!--/* Liste des partenaires en retard (10 au plus) avec lien vers leur relevé cumulé. Les noms sont insérés par th:text. */-->
 <section class="app-panel tdb-panel" th:fragment="retards(cle, idTitre, titre, aide, retards, chemin, vide, libelleSans)" th:attr="aria-labelledby=${idTitre},data-retards=${cle}">
@@ -288,7 +326,7 @@
         <span class="app-metric-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
         <h3 class="app-metric-label" th:text="${'Bénéfice net ' + suffixe}">Bénéfice net</h3>
         <p class="app-metric-value" th:classappend="${indicateurs.beneficeNet < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-net-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeNet, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
-        <p class="app-metric-foot">Bénéfice brut moins dépenses</p>
+        <p class="app-metric-foot">Bénéfice brut moins dépenses, plus produits et charges hors exploitation</p>
     </article>
 </th:block>
 </body>
