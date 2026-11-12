@@ -45,19 +45,23 @@ public class RetourExportService {
         TableauExport tableau = TableauExport.titre("Liste des retours").nomFeuille("Retours")
                 .filtres(decrireFiltres(type, q))
                 .colonnes(Colonne.texteCourt("Numéro"), Colonne.texteCourt("Type"), Colonne.dateHeure("Date"), Colonne.texteCourt("Document d’origine"),
-                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.montant("Remboursé"), Colonne.montant("Avoir"));
+                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.montant("Remboursé"), Colonne.montant("Avoir"), Colonne.texte("Saisi par"));
         BigDecimal montant = Montants.ZERO, rembourse = Montants.ZERO, avoir = Montants.ZERO;
         for (Retour r : retenus) {
             BigDecimal total = Montants.ouZero(r.getMontantTotal()), rendu = Montants.ouZero(r.getMontantRembourse()), garde = Montants.ouZero(r.getMontantAvoir());
             montant = montant.add(total); rembourse = rembourse.add(rendu); avoir = avoir.add(garde);
-            tableau.ligne(r.getNumero(), typeAffiche(r), r.getDateRetour(), origine(r), partenaire(r), total, rendu, garde);
+            tableau.ligne(r.getNumero(), typeAffiche(r), r.getDateRetour(), origine(r), partenaire(r), total, rendu, garde, auteur(r));
         }
-        return tableau.totaux(retenus.size() + (retenus.size() > 1 ? " retours" : " retour"), null, null, null, null, montant, rembourse, avoir);
+        return tableau.totaux(retenus.size() + (retenus.size() > 1 ? " retours" : " retour"), null, null, null, null, montant, rembourse, avoir, null);
     }
 
     private static String decrireFiltres(TypeRetour type, String recherche) {
         String base = type == null ? "Tous les retours" : (type == TypeRetour.VENTE ? "Retours de vente" : "Retours d’achat");
         return recherche.isEmpty() ? base : base + " · Recherche : « " + recherche + " »";
+    }
+
+    private static String auteur(Retour r) {
+        return r.getUtilisateur() == null || r.getUtilisateur().getNom() == null || r.getUtilisateur().getNom().isBlank() ? "—" : r.getUtilisateur().getNom().strip();
     }
 
     private static String typeAffiche(Retour r) { return r.getType() == TypeRetour.ACHAT ? "Achat" : "Vente"; }
@@ -75,6 +79,6 @@ public class RetourExportService {
     private static String texteDeLaLigne(Retour r) {
         return String.join(" ", typeAffiche(r), r.getNumero(), Textes.dateHeure(r.getDateRetour()), origine(r), partenaire(r),
                 RechercheListe.montantRecherchable(Montants.ouZero(r.getMontantTotal())), RechercheListe.montantRecherchable(Montants.ouZero(r.getMontantRembourse())),
-                RechercheListe.montantRecherchable(Montants.ouZero(r.getMontantAvoir())));
+                RechercheListe.montantRecherchable(Montants.ouZero(r.getMontantAvoir())), auteur(r));
     }
 }

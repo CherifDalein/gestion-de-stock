@@ -39,6 +39,7 @@
                             <th scope="col">Montant</th>
                             <th scope="col">Remboursé</th>
                             <th scope="col">Avoir</th>
+                            <th scope="col">Saisi par</th>
                             <th scope="col" class="text-center">Actions</th>
                         </tr>
                         </thead>
@@ -52,6 +53,7 @@
                             <td class="fw-bold text-nowrap" th:text="${#numbers.formatDecimal(r.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantRembourse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
                             <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantAvoir, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td th:text="${r.utilisateur != null and !#strings.isEmpty(#strings.trim(r.utilisateur.nom)) ? r.utilisateur.nom : '—'}"></td>
                             <td class="text-center">
                                 <div class="journal-row-actions app-row-actions">
                                     <a th:href="@{/retours/{id}/imprimer(id=${r.id})}" class="btn btn-sm btn-outline-primary app-row-action"

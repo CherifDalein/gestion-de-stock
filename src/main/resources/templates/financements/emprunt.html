@@ -56,12 +56,12 @@
                 <p>Déblocage, frais de dossier et remboursements. Un remboursement s’annule du plus récent au plus ancien.</p></div>
             <ul class="fin-historique">
                 <li th:if="${detail.deblocage != null}"><strong th:text="${e.estEmprunt() ? 'Déblocage de l’emprunt' : 'Déblocage du prêt'}">Déblocage</strong>
-                    <span th:text="${#temporals.format(detail.deblocage.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(detail.deblocage.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + detail.deblocage.compteSource.nom}"></span></li>
+                    <span th:text="${#temporals.format(detail.deblocage.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(detail.deblocage.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + detail.deblocage.compteSource.nom + ' · Saisi par ' + (detail.deblocage.utilisateur != null ? detail.deblocage.utilisateur.nom : '—')}"></span></li>
                 <li th:if="${detail.frais != null}"><strong>Frais de dossier</strong>
                     <span th:text="${#temporals.format(detail.frais.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(detail.frais.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span></li>
                 <li th:each="r : ${detail.remboursements}" th:classappend="${r.annule ? 'fin-annule' : ''}">
                     <strong th:text="${'Remboursement n° ' + r.operation.id}">Remboursement</strong>
-                    <span th:text="${#temporals.format(r.operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · capital ' + #numbers.formatDecimal(r.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' · intérêts ' + #numbers.formatDecimal(r.interet, 1, 'WHITESPACE', 2, 'COMMA') + (r.interetRemis.signum() > 0 ? ' · intérêts remis ' + #numbers.formatDecimal(r.interetRemis, 1, 'WHITESPACE', 2, 'COMMA') : '') + ' GNF · ' + r.operation.compteSource.nom}"></span>
+                    <span th:text="${#temporals.format(r.operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · capital ' + #numbers.formatDecimal(r.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' · intérêts ' + #numbers.formatDecimal(r.interet, 1, 'WHITESPACE', 2, 'COMMA') + (r.interetRemis.signum() > 0 ? ' · intérêts remis ' + #numbers.formatDecimal(r.interetRemis, 1, 'WHITESPACE', 2, 'COMMA') : '') + ' GNF · ' + r.operation.compteSource.nom + ' · Saisi par ' + (r.operation.utilisateur != null ? r.operation.utilisateur.nom : '—')}"></span>
                     <em th:if="${r.annule}">Annulé</em>
                     <a th:unless="${r.annule}" th:href="@{/financements/emprunts/{id}/remboursements/{op}/recu(id=${e.id},op=${r.operation.id})}" target="_blank" rel="noopener">Reçu</a>
                     <a th:if="${r.annulable}" th:href="@{/financements/emprunts/{id}/remboursements/{op}/annuler(id=${e.id},op=${r.operation.id})}">Annuler</a>

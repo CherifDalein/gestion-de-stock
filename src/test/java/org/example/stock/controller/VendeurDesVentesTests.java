@@ -154,7 +154,7 @@ class VendeurDesVentesTests {
         for (var compte : List.of(new String[]{GERANT_A, "ADMIN"}, new String[]{CAISSIER_A, "CAISSIER"})) {
             String liste = mvc.perform(avec(get("/ventes"), compte[0], compte[1])).andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
-            assertThat(liste).contains("<th scope=\"col\">Vendeur</th>");
+            assertThat(liste).contains("<th scope=\"col\">Saisi par</th>");
             assertThat(cellulesVendeur(liste)).containsExactlyInAnyOrder("Bakary Caissier", "Awa Gérante", "Non renseigné", "Cellou Ancien");
             assertThat(liste).contains("data-vendeur-detail");
             assertThat(liste).doesNotContain("Zoé Autre Boutique", "Yaya Confidentiel");
@@ -199,7 +199,7 @@ class VendeurDesVentesTests {
 
         MvcResult complet = mvc.perform(avec(get("/ventes"), GERANT_A, "ADMIN")).andExpect(status().isOk()).andReturn();
         String page = complet.getResponse().getContentAsString();
-        assertThat(page).contains("id=\"filtreVendeur\"", "Tous les vendeurs", "Awa Gérante", "Alpha Adjoint", "Bakary Caissier",
+        assertThat(page).contains("id=\"filtreVendeur\"", "Tous les comptes", "Awa Gérante", "Alpha Adjoint", "Bakary Caissier",
                 "Cellou Ancien (compte désactivé)").doesNotContain("Zoé Autre Boutique", "Yaya Confidentiel");
         assertThat(numeros(page)).containsExactlyInAnyOrder("VT-CAISSIER", "VT-GERANT", "VT-ANCIENNE", "VT-ANCIEN");
         List<Utilisateur> proposes = (List<Utilisateur>) complet.getModelAndView().getModel().get("vendeursFiltre");
@@ -246,7 +246,7 @@ class VendeurDesVentesTests {
 
         MvcResult sans = mvc.perform(avec(get("/ventes"), CAISSIER_A, "CAISSIER")).andExpect(status().isOk()).andReturn();
         String page = sans.getResponse().getContentAsString();
-        assertThat(page).doesNotContain("filtreVendeur", "Tous les vendeurs", "Alpha Adjoint");
+        assertThat(page).doesNotContain("filtreVendeur", "Tous les comptes", "Alpha Adjoint");
         assertThat(sans.getModelAndView().getModel()).doesNotContainKey("vendeursFiltre");
         assertThat(numeros(page)).containsExactlyInAnyOrder("VT-CAISSIER", "VT-GERANT");
 

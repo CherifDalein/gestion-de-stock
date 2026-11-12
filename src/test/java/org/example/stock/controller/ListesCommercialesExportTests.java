@@ -231,7 +231,7 @@ class ListesCommercialesExportTests {
         try (Workbook classeur = classeur(reponse)) {
             Sheet f = classeur.getSheet("Devis");
             assertThat(f.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Tous les devis");
-            assertThat(entetes(f, "Numéro")).containsExactly("Numéro", "Date", "Client", "Auteur", "Total", "Valable jusqu’au", "État");
+            assertThat(entetes(f, "Numéro")).containsExactly("Numéro", "Date", "Client", "Saisi par", "Total", "Valable jusqu’au", "État");
             List<Row> lignes = lignes(f, "Numéro");
             assertThat(premieresCellules(lignes)).containsExactly("DV-000004", "DV-000003", "DV-000002", "DV-000001");
             Row d1 = lignes.get(3), d2 = lignes.get(2), d3 = lignes.get(1), d4 = lignes.get(0);
@@ -330,7 +330,7 @@ class ListesCommercialesExportTests {
         try (Workbook classeur = classeur(reponse)) {
             Sheet f = classeur.getSheet("Retours");
             assertThat(f.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Tous les retours");
-            assertThat(entetes(f, "Numéro")).containsExactly("Numéro", "Type", "Date", "Document d’origine", "Client / fournisseur", "Montant", "Remboursé", "Avoir");
+            assertThat(entetes(f, "Numéro")).containsExactly("Numéro", "Type", "Date", "Document d’origine", "Client / fournisseur", "Montant", "Remboursé", "Avoir", "Saisi par");
             List<Row> lignes = lignes(f, "Numéro");
             // Le plus récent d'abord : le retour d'achat du 25/10 puis le retour de vente du 06/10.
             assertThat(premieresCellules(lignes)).containsExactly("FRA-000001", "FR-000001");
@@ -339,6 +339,8 @@ class ListesCommercialesExportTests {
             assertThat(chaine(achat, 3)).isEqualTo("FA-000001");
             assertThat(chaine(achat, 4)).isEqualTo("Sory Import");
             assertThat(List.of(nombre(achat, 5), nombre(achat, 6), nombre(achat, 7))).containsExactly(300_000d, 300_000d, 0d);
+            assertThat(chaine(achat, 8)).isEqualTo("Awa Gérante");
+            assertThat(chaine(vente, 8)).isEqualTo("Awa Gérante");
             assertThat(achat.getCell(2).getLocalDateTimeCellValue()).isEqualTo(LocalDateTime.of(2026, 10, 25, 11, 0));
             assertThat(chaine(vente, 1)).isEqualTo("Vente");
             assertThat(chaine(vente, 3)).isEqualTo("FV-000001");
@@ -431,6 +433,14 @@ class ListesCommercialesExportTests {
         return ((List<Achat>) mvc.perform(requete).andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("achats")).stream().map(Achat::getNumero).toList();
     }
 
+    @Test
+    void lesListesDeDevisEtDeRetoursMontrentLaColonneSaisiPar() throws Exception {
+        String devis = mvc.perform(gerant(get("/devis"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(devis).contains("<th scope=\"col\">Saisi par</th>", "Awa Gérante");
+        String retoursPage = mvc.perform(gerant(get("/retours"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(retoursPage).contains("<th scope=\"col\">Saisi par</th>", "Awa Gérante").doesNotContain("Zoé");
+    }
+
     @SuppressWarnings("unchecked")
     private List<String> devisDeLEcran(MockHttpServletRequestBuilder requete) throws Exception {
         return ((List<Devis>) mvc.perform(requete).andExpect(status().isOk()).andReturn().getModelAndView().getModel().get("devisListe")).stream().map(Devis::getNumero).toList();
@@ -486,6 +496,7 @@ class ListesCommercialesExportTests {
         Retour r = new Retour(); r.setBoutique(boutique); r.setNumero(numero); r.setType(type); r.setVente(vente); r.setAchat(achat); r.setClient(client);
         r.setFournisseur(fournisseur); r.setDateRetour(date); r.setMontantTotal(new BigDecimal(total)); r.setMontantRembourse(new BigDecimal(rembourse));
         r.setMontantAvoir(new BigDecimal(avoir));
+        r.setUtilisateur(boutique.getId().equals(boutiqueA.getId()) ? awa : gerantB);
         return retours.saveAndFlush(r);
     }
 }

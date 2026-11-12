@@ -52,8 +52,11 @@ public class TresorerieExportService {
      * @param sens   {@code entree}, {@code sortie}, {@code neutre} ou {@code inconnu} (montant non renseigné), ou null
      * @param du     premier jour inclus, null sans borne ; avec une borne, les mouvements sans date sont exclus (comme à l'écran)
      * @param au     dernier jour inclus
+     * @param auteurId compte qui a saisi le mouvement (colonne « Saisi par »), ou null pour tous
      */
-    public record FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au) { }
+    public record FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au, Long auteurId) {
+        public FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au) { this(compteId, source, sens, du, au, null); }
+    }
 
     /** @throws ExportTropVolumineuxException si le filtre (hors recherche) donne plus de {@link LimiteExport#lignes()} mouvements */
     public TableauExport preparer(FiltreJournal filtre, String recherche) {
@@ -67,9 +70,10 @@ public class TresorerieExportService {
         List<MouvementCaisse> retenus = q.isEmpty() ? lus : lus.stream().filter(m -> RechercheListe.correspond(q, texteDeLaLigne(m, annulations.get(m.getId())))).toList();
 
         TableauExport tableau = TableauExport.titre("Journal de trésorerie").nomFeuille("Trésorerie")
-                .filtres(decrireFiltres(filtre, nomCompte, q))
+                .filtres(decrireFiltres(filtre, nomCompte, q, lus.stream().map(MouvementCaisse::getUtilisateur).filter(java.util.Objects::nonNull)
+                        .filter(u -> u.getId().equals(filtre.auteurId())).map(u -> u.getNom()).findFirst().orElse(null)))
                 .colonnes(Colonne.dateHeure("Date et heure"), Colonne.texteCourt("Compte"), Colonne.texteCourt("Sens"), Colonne.montant("Montant"),
-                        Colonne.texteCourt("Source"), Colonne.texte("Motif"), Colonne.texte("Utilisateur"), Colonne.texte("Annulation"));
+                        Colonne.texteCourt("Source"), Colonne.texte("Motif"), Colonne.texte("Saisi par"), Colonne.texte("Annulation"));
         BigDecimal entrees = Montants.ZERO, sorties = Montants.ZERO;
         for (MouvementCaisse m : retenus) {
             BigDecimal montant = m.getMontant();
@@ -113,6 +117,7 @@ public class TresorerieExportService {
             List<Predicate> conditions = new ArrayList<>();
             conditions.add(cb.equal(m.get("boutique").get("id"), boutiqueId));
             if (filtre.compteId() != null) conditions.add(cb.equal(m.get("compte").get("id"), filtre.compteId()));
+            if (filtre.auteurId() != null) conditions.add(cb.equal(m.get("utilisateur").get("id"), filtre.auteurId()));
             if (filtre.sens() != null) {
                 var montant = m.<BigDecimal>get("montant");
                 conditions.add(switch (filtre.sens()) {
@@ -151,12 +156,13 @@ public class TresorerieExportService {
         return resultat;
     }
 
-    private static String decrireFiltres(FiltreJournal f, String nomCompte, String recherche) {
+    private static String decrireFiltres(FiltreJournal f, String nomCompte, String recherche, String nomAuteur) {
         List<String> parties = new ArrayList<>();
         if (f.du() != null && f.au() != null) parties.add("Période du " + Textes.date(f.du()) + " au " + Textes.date(f.au()));
         else if (f.du() != null) parties.add("Depuis le " + Textes.date(f.du()));
         else if (f.au() != null) parties.add("Jusqu'au " + Textes.date(f.au()));
         if (nomCompte != null) parties.add("Compte : " + nomCompte);
+        if (f.auteurId() != null) parties.add("Saisi par : " + (nomAuteur != null ? nomAuteur : "compte n° " + f.auteurId()));
         if (f.source() != null) parties.add("Source : " + f.source());
         if (f.sens() != null) parties.add("Sens : " + libelleFiltreSens(f.sens()));
         if (!recherche.isEmpty()) parties.add("Recherche : « " + recherche + " »");

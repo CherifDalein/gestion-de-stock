@@ -467,6 +467,17 @@ class FinancementsTests {
     }
 
     @Test
+    void lesOperationsFinancieresPortentLeNomDeCeluiQuiLesSaisitSurEcranEtDansLExport() throws Exception {
+        Long id = emprunter("500000", "0", 2, null).id();
+        connecter(ADMIN, "ADMIN");
+        var tableau = exportService.releve(banque.getId());
+        assertThat(tableau.getColonnes().get(tableau.getColonnes().size() - 1).titre()).isEqualTo("Saisi par");
+        assertThat(tableau.getLignes()).isNotEmpty();
+        String detail = mvc.perform(get("/financements/emprunts/" + id).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(detail).contains("Saisi par ");
+    }
+
+    @Test
     void leJournalEtLesExportsAfficheDesLibellesClairs() throws Exception {
         emprunter("300000", "12", 3, "5000");
         String html = mvc.perform(get("/caisse/journal").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();

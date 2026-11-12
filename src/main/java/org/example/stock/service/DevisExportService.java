@@ -40,7 +40,7 @@ public class DevisExportService {
 
         TableauExport tableau = TableauExport.titre("Liste des devis").nomFeuille("Devis")
                 .filtres(decrireFiltres(etat, q))
-                .colonnes(Colonne.texteCourt("Numéro"), Colonne.dateHeure("Date"), Colonne.texte("Client"), Colonne.texte("Auteur"),
+                .colonnes(Colonne.texteCourt("Numéro"), Colonne.dateHeure("Date"), Colonne.texte("Client"), Colonne.texte("Saisi par"),
                         Colonne.montant("Total"), Colonne.date("Valable jusqu’au"), Colonne.texteCourt("État"));
         BigDecimal total = Montants.ZERO;
         for (Devis d : retenus) {
