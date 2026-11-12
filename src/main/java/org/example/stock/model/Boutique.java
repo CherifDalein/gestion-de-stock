@@ -95,6 +95,13 @@ public class Boutique {
     @Column(nullable = false)
     private long prochainNumeroRetourAchat = 1L;
 
+    /** Étape 3b1 : prochains numéros des emprunts (EM-) et des prêts (PR-). */
+    @Column(nullable = false)
+    private long prochainNumeroEmprunt = 1L;
+
+    @Column(nullable = false)
+    private long prochainNumeroPret = 1L;
+
     /** Lot 4 : format des reçus imprimés (A4 par défaut, ou ticket de 80 mm), choisi par le gérant pour cette boutique. */
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)

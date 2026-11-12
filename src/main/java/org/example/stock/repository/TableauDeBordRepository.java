@@ -154,4 +154,30 @@ public interface TableauDeBordRepository extends Repository<Vente, Long> {
             + "AND r.dateRetour >= :debut AND r.dateRetour < :fin GROUP BY v.vendeur.id")
     List<Object[]> beneficeDesRetoursDeVenteParVendeur(@Param("boutiqueId") Long boutiqueId,
                                                        @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /**
+     * Mouvements de trésorerie des sources de financement sur la période : [source, Σ des montants (signés)]. Avec
+     * {@link #annulationsDesSources}, ils donnent chaque source nette de ses annulations.
+     */
+    @Query("SELECT m.source, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.source IN :sources "
+            + "AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY m.source")
+    List<Object[]> fluxDesSources(@Param("boutiqueId") Long boutiqueId, @Param("sources") java.util.Collection<String> sources,
+                                  @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Annulations de la période, rattachées à la source du mouvement qu'elles annulent : [source d'origine, Σ des montants (signés)]. */
+    @Query("SELECT o.source, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m JOIN m.annulationDe o WHERE m.boutique.id = :boutiqueId "
+            + "AND m.source = 'ANNULATION' AND o.source IN :sources AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY o.source")
+    List<Object[]> annulationsDesSources(@Param("boutiqueId") Long boutiqueId, @Param("sources") java.util.Collection<String> sources,
+                                         @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    /** Comme {@link #fluxDesSources} par mois : [mois (1-12), source, Σ des montants]. */
+    @Query("SELECT EXTRACT(MONTH FROM m.dateMouvement), m.source, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId "
+            + "AND m.source IN :sources AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY EXTRACT(MONTH FROM m.dateMouvement), m.source")
+    List<Object[]> fluxDesSourcesParMois(@Param("boutiqueId") Long boutiqueId, @Param("sources") java.util.Collection<String> sources,
+                                         @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT EXTRACT(MONTH FROM m.dateMouvement), o.source, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m JOIN m.annulationDe o WHERE m.boutique.id = :boutiqueId "
+            + "AND m.source = 'ANNULATION' AND o.source IN :sources AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY EXTRACT(MONTH FROM m.dateMouvement), o.source")
+    List<Object[]> annulationsDesSourcesParMois(@Param("boutiqueId") Long boutiqueId, @Param("sources") java.util.Collection<String> sources,
+                                                @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 }

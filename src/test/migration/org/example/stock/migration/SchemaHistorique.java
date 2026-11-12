@@ -41,13 +41,25 @@ public final class SchemaHistorique {
      * et {@code retour.compte_tresorerie}, sans table des comptes autorisés aux caissiers.
      */
     public static String sansLot3(String schema) {
-        String resultat = schema.replaceAll("(?m)^-- Lot 3 : [^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        String resultat = sansFinancements(schema).replaceAll("(?m)^-- Lot 3 : [^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
         resultat = resultat.replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", Matcher.quoteReplacement(COMPTES_AVANT_LOT3))
                 .replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_autorise \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
         resultat = resultat.replace("    compte_source_id BIGINT NOT NULL,\n    compte_destination_id BIGINT NULL,\n", "    compte_source VARCHAR(32) NOT NULL,\n    compte_destination VARCHAR(32) NULL,\n")
                 .replace("    compte_tresorerie_id BIGINT NULL,\n", "    compte_tresorerie VARCHAR(16) NULL,\n")
                 .replace("    compte_id BIGINT NOT NULL,\n", "    compte VARCHAR(32) NOT NULL DEFAULT 'CAISSE',\n");
         return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_(?:operation_tresorerie_source|operation_tresorerie_destination|retour_compte_tresorerie|mouvement_caisse_compte)\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
+    }
+
+    /**
+     * Schéma de l'étape 3a seule (comptes multiples), sans les financements de l'étape 3b1 : ni les quatre tables, ni les compteurs EM-/PR-
+     * de la boutique, ni le partenaire et l'emprunt des opérations de trésorerie.
+     */
+    public static String sansFinancements(String schema) {
+        String resultat = schema.replaceAll("(?s)-- Lot 3b1 :.*?-- Fin lot 3b1\\R(?:[ \\t]*\\R)?", "");
+        for (String ligne : List.of("prochain_numero_emprunt BIGINT NOT NULL DEFAULT 1,", "prochain_numero_pret BIGINT NOT NULL DEFAULT 1,",
+                "partenaire_financier_id BIGINT NULL,", "emprunt_id BIGINT NULL,"))
+            resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
+        return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_operation_tresorerie_(?:partenaire|emprunt)\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
     }
 
     /** Schéma antérieur au lot 4 : sans le format des reçus ni le réglage du bouton « Imprimer le reçu » de la boutique. */
