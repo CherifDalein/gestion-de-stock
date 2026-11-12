@@ -22,7 +22,7 @@
             </p>
             <p class="comptes-total">
                 <span>Total de la trésorerie</span>
-                <strong th:text="${#numbers.formatDecimal(ecran.total, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong>
+                <strong th:text="${#numbers.formatDecimal(ecran.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
             </p>
         </div>
         <p class="record-note comptes-limit" role="status" th:if="${ecran.limiteAtteinte}">
@@ -37,7 +37,7 @@
                 </div>
                 <p class="comptes-total-type">
                     <span>Total du type</span>
-                    <strong th:classappend="${groupe.total < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(groupe.total, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong>
+                    <strong th:classappend="${groupe.total < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(groupe.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
                 </p>
             </div>
             <ul class="comptes-liste">
@@ -48,7 +48,7 @@
                             <span class="compte-badge" th:if="${vue.compte.principal}">Principal</span>
                             <p class="compte-numero" th:if="${vue.compte.numero != null}" th:text="${'N° ' + vue.compte.numero}">N° 622 00 00 00</p>
                         </div>
-                        <p class="compte-solde" th:classappend="${vue.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                        <p class="compte-solde" th:classappend="${vue.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
                     </div>
                     <div class="compte-actions">
                         <form th:unless="${vue.compte.principal}" th:action="@{/caisse/comptes/{id}/principal(id=${vue.compte.id})}" method="post">
@@ -101,7 +101,7 @@
                             <h3 class="compte-nom" th:text="${vue.compte.nom}">Ancien compte</h3>
                             <p class="compte-numero" th:text="${vue.compte.type.libelle}">Banque</p>
                         </div>
-                        <p class="compte-solde" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+                        <p class="compte-solde" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
                     </div>
                     <div class="compte-actions">
                         <form th:action="@{/caisse/comptes/{id}/desarchiver(id=${vue.compte.id})}" method="post">
