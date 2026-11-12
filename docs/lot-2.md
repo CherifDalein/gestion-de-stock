@@ -613,8 +613,9 @@ Toute opération d'écriture métier qui modifie l'argent, le stock, les facture
 en première instruction de sa transaction, puis, dans cet ordre et seulement ceux dont elle a besoin :
 
 1. la ligne `boutique` (elle porte aussi les compteurs de numéros `FV-`, `FA-`, `FD-`, `RV-`, `RA-`) ;
-2. le document : jeton de création, devis, vente ou achat (un seul document par transaction) ;
-3. le partenaire : fiche du client ou du fournisseur ;
+2. le document : jeton de création, devis, vente ou achat, ou, pour les financements, l'**emprunt ou prêt** (un seul document par
+   transaction) ;
+3. le partenaire : fiche du client ou du fournisseur, ou **partenaire financier** (banque, associé, personnel, divers) ;
 4. les factures du partenaire : lectures `FOR UPDATE` des ventes ou achats qui portent une avance (`SoldePartenaireService`),
    des retours et des règlements du solde de départ ;
 5. les produits, par identifiant croissant ;
@@ -645,6 +646,7 @@ peut former de cycle. Exemple observé avant la règle : une création d'achat t
 | Annulation de règlement | `AnnulationReglementService.annulerReglementVente`, `annulerReglementAchat`, `annulerReglementSoldeClient`, `annulerReglementSoldeFournisseur` |
 | Soldes de départ | `SoldeDepartService.reglerClient` et `reglerFournisseur` ; `appliquerALaModification` (modification d'une fiche client ou fournisseur avec solde de départ) |
 | Devis | création, prolongation, annulation |
+| Financements (3b1) | `EmpruntService.creer`, `modifierEcheancier`, `rembourser`, `annulerRemboursement` (boutique, emprunt, partenaire, comptes) ; `OperationsFinancieresService.enregistrer`, `annuler` ; `PartenairesFinanciersService.creer`, `modifier`, `definirActif` |
 | Trésorerie | `CaisseService.initialiser`, `depenser`, `transferer` et toute écriture de mouvement (`enregistrerEntree*`, `enregistrerSortie*`) |
 | Inventaire et produits | `InventaireService.initialiser`, `ProduitService.modifierProduit` et `supprimerProduit` ; la fin du démarrage (`InitialisationBoutiqueService.terminer`) |
 | Partenaires | `ClientService.supprimerClient`, `FournisseurService.supprimerFournisseur` |

@@ -401,7 +401,11 @@ valeur du stock, total des dépenses, total des créances/dettes, avances, retar
 - *Créances, dettes, avances* : **situation du jour de l'édition**, identique au tableau de bord (voir limites).
 - *Valeur du stock* : **valeur au jour de l'édition** (quantité × coût moyen actuel, services exclus), libellé comme tel dans le titre, le tableau
   et la note. La valeur à la fin de la période n'est **pas** affichée : le coût moyen n'est pas conservé jour par jour, la reconstituer serait inventer.
-- Les apports, emprunts et autres produits et charges ne figurent pas (note : lot 3).
+- Depuis l'étape 3b1 (financements), le bilan montre aussi les apports et retraits des associés, les emprunts reçus et prêts accordés, les
+  remboursements de capital, les intérêts et charges financières, les produits financiers et les autres produits et charges. Le **bénéfice net**
+  inclut les produits et charges financiers (intérêts d'emprunt, frais de dossier, intérêts de prêt, produits et charges divers) mais **ni le
+  capital des emprunts ni les apports et retraits** : ceux-ci modifient seulement la trésorerie (variation de trésorerie). Voir
+  [Financements](lot-3.md#financements-et-flux-hors-ventes-et-achats).
 
 **État des créances / des dettes** (date de référence ; par défaut le jour). Pour chaque client (fournisseur) : les factures dont le reste est positif
 (numéro, date, échéance, **total effectif** = total − retours, **versé**, **avance utilisée**, **reste** = max(0, total effectif − versé − avance utilisée),
@@ -523,7 +527,7 @@ portent le même numéro, la date et l'heure d'édition de l'en-tête les distin
 
 ### Limites
 
-- Les justificatifs des **autres partenaires** (banque, associé, personnel) viendront avec le **lot 3**.
+- Le justificatif d'un **autre partenaire** (banque, associé, personnel, divers) existe depuis l'étape 3b1 : numéro `JS-AAAAMMJJ-P<id>`, solde du jour, montant en lettres et signatures (voir [Financements](lot-3.md#financements-et-flux-hors-ventes-et-achats)).
 - Pas de signature électronique ni de PDF/A : le document est à signer et à cacheter à la main.
 - Le solde d'un partenaire est celui du moment de l'édition ; si une opération est saisie ensuite, le justificatif déjà remis ne change pas, il faut en éditer un nouveau.
 

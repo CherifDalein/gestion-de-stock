@@ -34,7 +34,23 @@ Comptes autorisés à un caissier (lot 3) : `id` BIGINT auto-incrémenté, `util
 
 ### `operation_tresorerie`
 
-En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique_id` et `utilisateur_id` BIGINT NOT NULL avec clés étrangères sans cascade, `jeton` VARCHAR(36) NOT NULL UNIQUE, `type` VARCHAR(32) (`TRANSFERT` ou `DEPENSE`), `compte_source_id` BIGINT NOT NULL (`fk_operation_tresorerie_source` -> `compte_tresorerie_boutique.id`), `compte_destination_id` BIGINT facultatif (`fk_operation_tresorerie_destination` ; vide uniquement pour une dépense), `montant` DECIMAL(17,2) strictement positif, `motif` VARCHAR(255) NOT NULL et `date_operation` DATETIME(6) NOT NULL. Index `(boutique_id, date_operation, id)`. Une opération de transfert produit deux mouvements de sens opposés dans une seule transaction ; elle ne change pas le solde total. Voir la [migration trésorerie](migrations/tresorerie.md).
+En-têtes des transferts, dépenses et opérations de financement : `id` BIGINT auto-incrémenté, `boutique_id` et `utilisateur_id` BIGINT NOT NULL avec clés étrangères sans cascade, `jeton` VARCHAR(36) NOT NULL UNIQUE, `type` VARCHAR(32) (`TRANSFERT`, `DEPENSE`, `APPORT_CAPITAL`, `APPORT_COMPTE_COURANT`, `RETRAIT_CAPITAL`, `RETRAIT_COMPTE_COURANT`, `PRODUIT_FINANCIER`, `CHARGE_FINANCIERE`, `AUTRE_PRODUIT`, `AUTRE_CHARGE`, `DEBLOCAGE`, `FRAIS_DOSSIER` ou `REMBOURSEMENT`), `compte_source_id` BIGINT NOT NULL (`fk_operation_tresorerie_source` -> `compte_tresorerie_boutique.id`), `compte_destination_id` BIGINT facultatif (`fk_operation_tresorerie_destination` ; vide uniquement pour une dépense), `montant` DECIMAL(17,2) strictement positif, `motif` VARCHAR(255) NOT NULL et `date_operation` DATETIME(6) NOT NULL. Index `(boutique_id, date_operation, id)`. Une opération de transfert produit deux mouvements de sens opposés dans une seule transaction ; elle ne change pas le solde total. Voir la [migration trésorerie](migrations/tresorerie.md). Depuis l'étape 3b1 : `partenaire_financier_id` BIGINT facultatif (`fk_operation_tresorerie_partenaire`) et `emprunt_id` BIGINT facultatif (`fk_operation_tresorerie_emprunt`). Une opération est « annulée » quand un mouvement de source `ANNULATION` porte la même `operation_tresorerie_id`. Un remboursement d'emprunt produit un mouvement de capital et un mouvement d'intérêts (un montant à 0 est omis) ; son `montant` est la somme des deux.
+
+### `partenaire_financier`
+
+Autres partenaires de la boutique (étape 3b1) : `id` BIGINT auto-incrémenté, `boutique_id` BIGINT NOT NULL (`fk_partenaire_financier_boutique`), `nom` VARCHAR(80) NOT NULL, `nom_cle` VARCHAR(80) NOT NULL (nom en minuscules), `type` VARCHAR(16) NOT NULL (`BANQUE`, `ASSOCIE`, `PERSONNEL` ou `DIVERS`), `telephone` VARCHAR(30), `note` VARCHAR(255), `actif` BOOLEAN NOT NULL DEFAULT TRUE (archivé quand faux), `date_creation` DATETIME(6) NOT NULL. Unique `uk_partenaire_financier_nom (boutique_id, nom_cle)`. Aucun solde stocké : il est calculé depuis les opérations et les emprunts. Voir [Financements](lot-3.md#financements-et-flux-hors-ventes-et-achats).
+
+### `emprunt`
+
+Emprunts et prêts (étape 3b1) : `id`, `boutique_id` (`fk_emprunt_boutique`), `partenaire_id` (`fk_emprunt_partenaire`), `utilisateur_id` (`fk_emprunt_utilisateur`), `compte_id` (`fk_emprunt_compte`, compte du déblocage) tous BIGINT NOT NULL ; `numero` VARCHAR(30) NOT NULL (`EM-000001` ou `PR-000001`, unique par boutique) ; `sens` VARCHAR(16) (`EMPRUNT` ou `PRET`) ; `date_emprunt` DATE ; `capital` DECIMAL(17,2) ; `taux_annuel` DECIMAL(5,2) ; `nombre_echeances` INT ; `periodicite` VARCHAR(16) (`HEBDOMADAIRE`, `MENSUELLE` ou `TRIMESTRIELLE`) ; `date_premiere_echeance` DATE ; `frais_dossier` DECIMAL(17,2) DEFAULT 0 ; `note` VARCHAR(255) ; `jeton` VARCHAR(36) NOT NULL UNIQUE ; `date_creation` DATETIME(6). Le statut (en cours, en retard, clos) n'est pas stocké : il est calculé depuis l'échéancier et les imputations.
+
+### `echeance_emprunt`
+
+Échéancier (étape 3b1) : `id`, `emprunt_id` (`fk_echeance_emprunt_emprunt`), `rang` INT, `date_echeance` DATE, `capital` et `interet` DECIMAL(17,2) prévus. Unique `(emprunt_id, rang)`. Modifiable seulement tant qu'aucune imputation active n'existe.
+
+### `imputation_echeance`
+
+Part d'un remboursement imputée à une échéance (étape 3b1) : `id`, `operation_id` (`fk_imputation_echeance_operation` -> `operation_tresorerie.id`, opération `REMBOURSEMENT`), `echeance_id` (`fk_imputation_echeance_echeance`), `capital`, `interet` et `interet_remis` (intérêt futur abandonné lors d'un remboursement anticipé) DECIMAL(17,2). Une imputation compte tant que son opération n'est pas annulée.
 
 ### `boutique`
 - `id` PK
@@ -52,6 +68,7 @@ En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique
 - `delai_clients_jours`, `delai_fournisseurs_jours` INT NOT NULL DEFAULT 30 : délais de paiement proposés par défaut (lot 1, pas encore utilisés)
 - `prochain_numero_vente`, `prochain_numero_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros de facture ; la migration les place après le plus grand identifiant de toute la table pour ne jamais reprendre un numéro migré (lot 1, pas encore utilisés)
 - `prochain_numero_devis`, `prochain_numero_retour_vente`, `prochain_numero_retour_achat` BIGINT NOT NULL DEFAULT 1 : prochains numéros des devis et des retours, par boutique (lot 2 ; `RV-` et `RA-` pour les retours de vente et d'achat)
+- `prochain_numero_emprunt`, `prochain_numero_pret` BIGINT NOT NULL DEFAULT 1 : prochains numéros des emprunts (`EM-`) et des prêts (`PR-`), par boutique (étape 3b1)
 - `format_recu` VARCHAR(16) NOT NULL DEFAULT 'A4' : format des reçus imprimables, `A4` ou `TICKET_80` (lot 4 ; voir la [migration du lot 4](migrations/lot-4.md))
 - `proposer_impression_recu` BOOLEAN NOT NULL DEFAULT TRUE : propose le bouton « Imprimer le reçu » après chaque vente et chaque règlement (lot 4)
 
@@ -219,7 +236,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `montant`
 - `type`
 - `motif`
-- `source`
+- `source` : origine du mouvement (`VENTE`, `ACHAT`, `REGLEMENT_VENTE`, `REGLEMENT_ACHAT`, `SOLDE_CLIENT`, `SOLDE_FOURNISSEUR`, `ANNULATION`, `TRANSFERT`, `SOLDE_INITIAL`...). Étape 3b1 : `APPORT_CAPITAL`, `APPORT_COMPTE_COURANT`, `RETRAIT_CAPITAL`, `RETRAIT_COMPTE_COURANT`, `DEBLOCAGE_EMPRUNT`, `DEBLOCAGE_PRET`, `REMBOURSEMENT_EMPRUNT`, `REMBOURSEMENT_PRET`, `INTERETS_EMPRUNT`, `INTERETS_PRET`, `FRAIS_DOSSIER`, `PRODUIT_FINANCIER`, `CHARGE_FINANCIERE`, `AUTRE_PRODUIT`, `AUTRE_CHARGE` ; le journal et les exports les affichent par leur libellé français
 - `utilisateur_id` FK -> `utilisateur.id`
 - `achat_id` FK optionnelle -> `achat.id`, pour les versements fournisseurs
 - `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
