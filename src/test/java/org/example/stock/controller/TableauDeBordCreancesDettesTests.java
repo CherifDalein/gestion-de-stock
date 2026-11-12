@@ -329,7 +329,7 @@ class TableauDeBordCreancesDettesTests {
 
     /** Règlement d'un solde de départ : mouvement de trésorerie rattaché au partenaire, sans facture. */
     private void reglement(Boutique boutique, Client client, Fournisseur fournisseur, String montant, String source) {
-        MouvementCaisse m = new MouvementCaisse(); m.setBoutique(boutique); m.setClient(client); m.setFournisseur(fournisseur);
+        MouvementCaisse m = new MouvementCaisse(); m.setCompte(org.example.stock.support.ComptesDeTest.de(boutique, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); m.setBoutique(boutique); m.setClient(client); m.setFournisseur(fournisseur);
         m.setDateMouvement(LocalDateTime.of(2026, 5, 20, 10, 0)); m.setMontant(new BigDecimal(montant));
         m.setType(montant.startsWith("-") ? "SORTIE" : "ENTREE"); m.setSource(source); m.setMotif("Règlement du solde de départ");
         mouvements.saveAndFlush(m);

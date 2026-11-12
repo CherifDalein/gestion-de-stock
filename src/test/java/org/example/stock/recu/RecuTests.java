@@ -4,7 +4,7 @@ import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.FormatRecu;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.SensSolde;
@@ -95,8 +95,8 @@ class RecuTests {
             DetailVente l = new DetailVente(); l.setProduit(p); l.setQuantite(3); v.getLignes().add(l);
             return venteService.effectuerVente(v);
         });
-        reglement1 = authentifie(GERANT, "ADMIN", () -> venteService.reglerVente(vente.getId(), new BigDecimal("5000"), new BigDecimal("10000"), CompteTresorerie.BANQUE, null));
-        reglement2 = authentifie(GERANT, "ADMIN", () -> venteService.reglerVente(vente.getId(), new BigDecimal("15000"), new BigDecimal("15000"), CompteTresorerie.CAISSE, null));
+        reglement1 = authentifie(GERANT, "ADMIN", () -> venteService.reglerVente(vente.getId(), new BigDecimal("5000"), new BigDecimal("10000"), TypeCompteTresorerie.BANQUE.name(), null));
+        reglement2 = authentifie(GERANT, "ADMIN", () -> venteService.reglerVente(vente.getId(), new BigDecimal("15000"), new BigDecimal("15000"), TypeCompteTresorerie.ESPECES.name(), null));
     }
 
     @AfterEach
@@ -218,7 +218,7 @@ class RecuTests {
             l.setPrixAchatUnitaire(new BigDecimal("10000.00")); l.setPrixVenteUnitaire(new BigDecimal("12000.00")); n.getLignes().add(l);
             return achatService.enregistrerAchat(n);
         });
-        Long mouvement = authentifie(GERANT, "ADMIN", () -> achatService.reglerAchat(achat.getId(), new BigDecimal("5000"), new BigDecimal("5000"), CompteTresorerie.CAISSE, null));
+        Long mouvement = authentifie(GERANT, "ADMIN", () -> achatService.reglerAchat(achat.getId(), new BigDecimal("5000"), new BigDecimal("5000"), TypeCompteTresorerie.ESPECES.name(), null));
         String url = "/achats/regler/" + achat.getId() + "/recu/" + mouvement;
         for (FormatRecu format : FormatRecu.values()) {
             choisir(format);
@@ -415,7 +415,7 @@ class RecuTests {
             l.setPrixAchatUnitaire(new BigDecimal("10000.00")); l.setPrixVenteUnitaire(new BigDecimal("12000.00")); n.getLignes().add(l);
             return achatService.enregistrerAchat(n);
         });
-        Long mouvement = authentifie(GERANT, "ADMIN", () -> achatService.reglerAchat(achat.getId(), new BigDecimal("5000"), new BigDecimal("5000"), CompteTresorerie.CAISSE, null));
+        Long mouvement = authentifie(GERANT, "ADMIN", () -> achatService.reglerAchat(achat.getId(), new BigDecimal("5000"), new BigDecimal("5000"), TypeCompteTresorerie.ESPECES.name(), null));
         String url = "/achats/regler/" + achat.getId() + "/recu/" + mouvement;
         assertThat(boutonEnvoyer(page(gerant(get("/achats/regler/" + achat.getId()))), url)).contains("hidden=\"hidden\"");
         // Le caissier n'a ni la page, ni le reçu : aucun bouton, donc rien à envoyer.

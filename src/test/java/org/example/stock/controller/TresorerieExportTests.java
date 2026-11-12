@@ -1,7 +1,8 @@
 package org.example.stock.controller;
 
+import org.example.stock.support.ComptesDeTest;
 import org.apache.poi.ss.usermodel.*;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.model.*;
@@ -52,6 +53,7 @@ class TresorerieExportTests {
     @Autowired OperationTresorerieRepository operations;
 
     Boutique boutiqueA, boutiqueB;
+    String idP(TypeCompteTresorerie type) { return String.valueOf(org.example.stock.support.ComptesDeTest.de(boutiqueA, type).getId()); }
     Utilisateur awa, bakary, gerantB;
     MouvementCaisse m1, m2, m3, m4, m5, m6, m7;
 
@@ -63,14 +65,14 @@ class TresorerieExportTests {
         gerantB = compte(GERANT_B, "Zoé Autre Boutique", Role.ADMIN, boutiqueB);
         OperationTresorerie depense = operation(boutiqueA, awa);
 
-        m1 = mouvement(boutiqueA, CompteTresorerie.CAISSE, LocalDateTime.of(2026, 10, 1, 8, 0), "5000000", "OUVERTURE", "SOLDE_INITIAL", "Ouverture caisse", awa, null, null);
-        m2 = mouvement(boutiqueA, CompteTresorerie.CAISSE, LocalDateTime.of(2026, 10, 5, 10, 0), "1500000", "ENTREE", "VENTE", "Vente FV-000001", awa, null, null);
-        m3 = mouvement(boutiqueA, CompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 6, 11, 0), "300000", "ENTREE", "REGLEMENT_VENTE", "Règlement FV-000002", bakary, null, null);
-        m4 = mouvement(boutiqueA, CompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 7, 9, 0), "-300000", "SORTIE", "ANNULATION", "Erreur de compte", awa, m3, null);
-        m5 = mouvement(boutiqueA, CompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 10, 12, 0), "-250000.50", "SORTIE", "ACHAT", "Achat FA-000003", null, null, null);
-        m6 = mouvement(boutiqueA, CompteTresorerie.CAISSE, LocalDateTime.of(2026, 10, 12, 12, 0), "-100000", "SORTIE", "DEPENSE", FORMULE, awa, null, depense);
-        m7 = mouvement(boutiqueA, CompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 14, 12, 0), null, null, null, null, awa, null, null);
-        mouvement(boutiqueB, CompteTresorerie.CAISSE, LocalDateTime.of(2026, 10, 10, 10, 0), "9999999", "ENTREE", "VENTE", "Vente secrète B", gerantB, null, null);
+        m1 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 1, 8, 0), "5000000", "OUVERTURE", "SOLDE_INITIAL", "Ouverture caisse", awa, null, null);
+        m2 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 5, 10, 0), "1500000", "ENTREE", "VENTE", "Vente FV-000001", awa, null, null);
+        m3 = mouvement(boutiqueA, TypeCompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 6, 11, 0), "300000", "ENTREE", "REGLEMENT_VENTE", "Règlement FV-000002", bakary, null, null);
+        m4 = mouvement(boutiqueA, TypeCompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 7, 9, 0), "-300000", "SORTIE", "ANNULATION", "Erreur de compte", awa, m3, null);
+        m5 = mouvement(boutiqueA, TypeCompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 10, 12, 0), "-250000.50", "SORTIE", "ACHAT", "Achat FA-000003", null, null, null);
+        m6 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 12, 12, 0), "-100000", "SORTIE", "DEPENSE", FORMULE, awa, null, depense);
+        m7 = mouvement(boutiqueA, TypeCompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 14, 12, 0), null, null, null, null, awa, null, null);
+        mouvement(boutiqueB, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 10, 10, 0), "9999999", "ENTREE", "VENTE", "Vente secrète B", gerantB, null, null);
     }
 
     @Test
@@ -92,7 +94,7 @@ class TresorerieExportTests {
             assertThat(r1.getCell(0).getLocalDateTimeCellValue()).isEqualTo(LocalDateTime.of(2026, 10, 1, 8, 0));
             assertThat(DateUtil.isCellDateFormatted(r1.getCell(0))).isTrue();
             assertThat(List.of(chaine(r1, 1), chaine(r1, 2), chaine(r1, 4), chaine(r1, 5), chaine(r1, 6)))
-                    .containsExactly("Caisse (espèces)", "Entrée", "Solde initial", "Ouverture caisse", "Awa Gérante");
+                    .containsExactly("Caisse", "Entrée", "Solde initial", "Ouverture caisse", "Awa Gérante");
             assertThat(nombre(r1, 3)).isEqualTo(5_000_000d);
             assertThat(r1.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
             assertThat(nombre(r2, 3)).isEqualTo(1_500_000d);
@@ -122,7 +124,7 @@ class TresorerieExportTests {
             String tout = texteDeLaFeuille(f);
             assertThat(tout).contains("entrées 6 800 000 GNF", "sorties 650 000,50 GNF", "variation nette 6 149 999,50 GNF");
             // Soldes de l'écran : caisse 6 400 000, Orange Money 0, banque −250 000,50, total 6 149 999,50 ; journée sans mouvement.
-            assertThat(tout).contains("Caisse (espèces) 6 400 000 GNF", "Orange Money 0 GNF", "Banque -250 000,50 GNF", "Total 6 149 999,50 GNF",
+            assertThat(tout).contains("Caisse 6 400 000 GNF", "Orange Money 0 GNF", "Banque -250 000,50 GNF", "Total 6 149 999,50 GNF",
                     "solde à l’ouverture 6 149 999,50 GNF", "entrées 0 GNF · sorties 0 GNF · variation 0 GNF");
             assertThat(tout).doesNotContain("Vente secrète B", "9999999", "Boutique Autre B");
         }
@@ -135,7 +137,7 @@ class TresorerieExportTests {
         String texte = pdf(reponse);
         assertThat(texte).contains("Boutique Étoile A", "12 rue de l'Œuvre, Conakry", "Journal de trésorerie", "Journal complet", "Vente FV-000001", "Ouverture caisse",
                 "Solde initial", "Orange Money", "Annulé le 07/10/2026 09:00", "Erreur de compte", "Système", "5 000 000", "250 000,50", "7 mouvements",
-                "6 149 999,50", "Soldes actuels de la boutique", "Caisse (espèces) 6 400 000 GNF", "par Awa Gérante", "Page 1 / 1");
+                "6 149 999,50", "Soldes actuels de la boutique", "Caisse 6 400 000 GNF", "par Awa Gérante", "Page 1 / 1");
         assertThat(texte).doesNotContain("RFC-COMPTA", "Vente secrète B", "9 999 999");
         assertThat(estPaysage(reponse.getContentAsByteArray())).isTrue();
     }
@@ -145,9 +147,9 @@ class TresorerieExportTests {
         record Cas(String[] parametres, List<MouvementCaisse> attendus, String entete) { }
         List<Cas> cas = List.of(
                 new Cas(new String[]{}, List.of(m7, m6, m5, m4, m3, m2, m1), "Journal complet"),
-                new Cas(new String[]{"compte", "CAISSE"}, List.of(m6, m2, m1), "Compte : Caisse (espèces)"),
-                new Cas(new String[]{"compte", "ORANGE_MONEY"}, List.of(m4, m3), "Compte : Orange Money"),
-                new Cas(new String[]{"compte", "BANQUE"}, List.of(m7, m5), "Compte : Banque"),
+                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.ESPECES)}, List.of(m6, m2, m1), "Compte : Caisse"),
+                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.ORANGE_MONEY)}, List.of(m4, m3), "Compte : Orange Money"),
+                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.BANQUE)}, List.of(m7, m5), "Compte : Banque"),
                 new Cas(new String[]{"sens", "entree"}, List.of(m3, m2, m1), "Sens : entrées"),
                 new Cas(new String[]{"sens", "sortie"}, List.of(m6, m5, m4), "Sens : sorties"),
                 new Cas(new String[]{"sens", "inconnu"}, List.of(m7), "Sens : montant non renseigné"),
@@ -158,11 +160,11 @@ class TresorerieExportTests {
                 new Cas(new String[]{"du", "2026-10-06", "au", "2026-10-10"}, List.of(m5, m4, m3), "Période du 06/10/2026 au 10/10/2026"),
                 new Cas(new String[]{"du", "2026-10-12"}, List.of(m7, m6), "Depuis le 12/10/2026"),
                 new Cas(new String[]{"au", "2026-10-01"}, List.of(m1), "Jusqu'au 01/10/2026"),
-                new Cas(new String[]{"compte", "CAISSE", "sens", "sortie", "du", "2026-10-01", "au", "2026-10-31"}, List.of(m6),
-                        "Période du 01/10/2026 au 31/10/2026 · Compte : Caisse (espèces) · Sens : sorties"),
+                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.ESPECES), "sens", "sortie", "du", "2026-10-01", "au", "2026-10-31"}, List.of(m6),
+                        "Période du 01/10/2026 au 31/10/2026 · Compte : Caisse · Sens : sorties"),
                 // La recherche de l'écran porte sur tout le texte de la ligne, mention d'annulation comprise.
                 new Cas(new String[]{"q", "erreur"}, List.of(m4, m3), "Recherche : « erreur »"),
-                new Cas(new String[]{"q", "AWA gerante", "compte", "ORANGE_MONEY"}, List.of(m4), "Compte : Orange Money · Recherche : « AWA gerante »"),
+                new Cas(new String[]{"q", "AWA gerante", "compte", idP(TypeCompteTresorerie.ORANGE_MONEY)}, List.of(m4), "Compte : Orange Money · Recherche : « AWA gerante »"),
                 new Cas(new String[]{"q", "250000.50"}, List.of(m5), "Recherche : « 250000.50 »"));
         for (Cas c : cas) {
             String nom = String.join("=", c.parametres());
@@ -205,7 +207,7 @@ class TresorerieExportTests {
             MvcResult resultat = mvc.perform(caissier(get(url))).andExpect(status().isForbidden()).andReturn();
             assertThat(resultat.getResponse().getContentType()).isNotIn("application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Vente FV-000001", "5000000", "Ouverture caisse");
-            mvc.perform(caissier(get(url).param("compte", "CAISSE").param("du", "2026-10-01"))).andExpect(status().isForbidden());
+            mvc.perform(caissier(get(url).param("compte", idP(TypeCompteTresorerie.ESPECES)).param("du", "2026-10-01"))).andExpect(status().isForbidden());
         }
         // Comme le journal lui-même.
         mvc.perform(caissier(get("/caisse/journal"))).andExpect(status().isForbidden());
@@ -230,7 +232,7 @@ class TresorerieExportTests {
             assertThat(lignes(f, ENTETE)).hasSize(1);
             assertThat(f.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Boutique Autre B");
             String tout = texteDeLaFeuille(f);
-            assertThat(tout).contains("Vente secrète B", "Caisse (espèces) 9 999 999 GNF").doesNotContain("Ouverture caisse", "Étoile", "Awa", "5000000", "Erreur de compte");
+            assertThat(tout).contains("Vente secrète B", "Caisse 9 999 999 GNF").doesNotContain("Ouverture caisse", "Étoile", "Awa", "5000000", "Erreur de compte");
         }
         String pdf = pdf(mvc.perform(avec(get("/caisse/export/pdf"), GERANT_B, "ADMIN")).andReturn().getResponse());
         assertThat(pdf).contains("Boutique Autre B", "Vente secrète B").doesNotContain("Ouverture caisse", "Vente FV-000001", "Étoile");
@@ -249,14 +251,14 @@ class TresorerieExportTests {
 
     @Test
     void auDelaDeLaLimiteLeJournalRevientALaPageAvecLeMessage() throws Exception {
-        for (int i = 0; i < 2; i++) mouvement(boutiqueA, CompteTresorerie.CAISSE, LocalDateTime.of(2026, 11, 1 + i, 9, 0), "1000", "ENTREE", "VENTE", "Vente " + i, awa, null, null);
+        for (int i = 0; i < 2; i++) mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 11, 1 + i, 9, 0), "1000", "ENTREE", "VENTE", "Vente " + i, awa, null, null);
         for (String format : new String[]{"excel", "pdf"}) {
             MvcResult resultat = mvc.perform(gerant(get("/caisse/export/" + format))).andExpect(status().is3xxRedirection()).andReturn();
             assertThat(resultat.getResponse().getRedirectedUrl()).isEqualTo("/caisse/journal");
             assertThat(resultat.getFlashMap().get("error").toString()).contains("dépasse 8 lignes", "Réduisez la période");
         }
         // Un filtre qui ramène sous la limite exporte normalement.
-        mvc.perform(gerant(get("/caisse/export/excel").param("compte", "BANQUE"))).andExpect(status().isOk());
+        mvc.perform(gerant(get("/caisse/export/excel").param("compte", idP(TypeCompteTresorerie.BANQUE)))).andExpect(status().isOk());
         assertThat(mvc.perform(gerant(get("/caisse/journal")).flashAttr("error", "Cet export dépasse 8 lignes.")).andReturn().getResponse().getContentAsString()).isNotNull();
     }
 
@@ -296,14 +298,14 @@ class TresorerieExportTests {
 
     private OperationTresorerie operation(Boutique boutique, Utilisateur auteur) {
         OperationTresorerie o = new OperationTresorerie(); o.setBoutique(boutique); o.setUtilisateur(auteur); o.setJeton(java.util.UUID.randomUUID().toString());
-        o.setType(TypeOperationTresorerie.DEPENSE); o.setCompteSource(CompteTresorerie.CAISSE); o.setMontant(new BigDecimal("100000")); o.setMotif("Loyer");
+        o.setType(TypeOperationTresorerie.DEPENSE); o.setCompteSource(ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES)); o.setMontant(new BigDecimal("100000")); o.setMotif("Loyer");
         o.setDateOperation(LocalDateTime.of(2026, 10, 12, 12, 0));
         return operations.saveAndFlush(o);
     }
 
-    private MouvementCaisse mouvement(Boutique boutique, CompteTresorerie compte, LocalDateTime date, String montant, String type, String source, String motif,
+    private MouvementCaisse mouvement(Boutique boutique, TypeCompteTresorerie compte, LocalDateTime date, String montant, String type, String source, String motif,
                                       Utilisateur auteur, MouvementCaisse annule, OperationTresorerie operation) {
-        MouvementCaisse m = new MouvementCaisse(); m.setBoutique(boutique); m.setCompte(compte); m.setDateMouvement(date);
+        MouvementCaisse m = new MouvementCaisse(); m.setBoutique(boutique); m.setCompte(ComptesDeTest.de(boutique, compte)); m.setDateMouvement(date);
         m.setMontant(montant == null ? null : new BigDecimal(montant)); m.setType(type); m.setSource(source); m.setMotif(motif); m.setUtilisateur(auteur);
         m.setAnnulationDe(annule); m.setOperationTresorerie(operation);
         return caisse.saveAndFlush(m);

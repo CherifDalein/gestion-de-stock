@@ -8,7 +8,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
@@ -155,55 +155,55 @@ class JustificatifsSoldeTests {
         diallo = fournisseur(boutiqueA, "Diallo Distribution", "30000", null);
 
         // --- Fonds de départ (02/05)
-        fonds(CompteTresorerie.CAISSE, "500000"); fonds(CompteTresorerie.ORANGE_MONEY, "200000"); fonds(CompteTresorerie.BANQUE, "300000");
+        fonds(TypeCompteTresorerie.ESPECES, "500000"); fonds(TypeCompteTresorerie.ORANGE_MONEY, "200000"); fonds(TypeCompteTresorerie.BANQUE, "300000");
         dater("2026-05-02");
         stocker(pA, 100); stocker(pB, 50); stocker(pC, 3);
 
         // --- Mai : avant la période
-        Vente v1 = vente(GERANT, aminata, pA, 10, "100000", CompteTresorerie.CAISSE); dater("2026-05-10");          // V1 100 000 payés en caisse
-        Achat a1 = achat(sidi, pA, 20, "5000", "40000", CompteTresorerie.BANQUE); echeanceAchat(a1, "2026-06-12"); dater("2026-05-12"); // A1 100 000, versé 40 000
-        reglerClient(boubacar, "50000", "0", CompteTresorerie.CAISSE); dater("2026-05-20");                        // reste 150 000
-        reglerFournisseur(kaba, "30000", "0", CompteTresorerie.ORANGE_MONEY); dater("2026-05-22");                 // reste 60 000
+        Vente v1 = vente(GERANT, aminata, pA, 10, "100000", TypeCompteTresorerie.ESPECES); dater("2026-05-10");          // V1 100 000 payés en caisse
+        Achat a1 = achat(sidi, pA, 20, "5000", "40000", TypeCompteTresorerie.BANQUE); echeanceAchat(a1, "2026-06-12"); dater("2026-05-12"); // A1 100 000, versé 40 000
+        reglerClient(boubacar, "50000", "0", TypeCompteTresorerie.ESPECES); dater("2026-05-20");                        // reste 150 000
+        reglerFournisseur(kaba, "30000", "0", TypeCompteTresorerie.ORANGE_MONEY); dater("2026-05-22");                 // reste 60 000
         venteAncienne(); achatAncien();                                                                             // 15 000 et 9 000 sans partenaire
 
         // --- Juin : dans la période
-        vente(CAISSIER, null, pA, 4, "40000", CompteTresorerie.CAISSE); dater("2026-06-03");                       // V2 40 000 comptant
-        vente(CAISSIER, null, pService, 2, "6000", CompteTresorerie.ORANGE_MONEY); dater("2026-06-04");            // V2b service 6 000
-        Vente v3 = vente(GERANT, aminata, pB, 5, "30000", CompteTresorerie.ORANGE_MONEY); echeanceVente(v3, "2026-06-15"); dater("2026-06-05"); // 100 000, versé 30 000
-        vente(GERANT, mariama, pA, 2, "0", CompteTresorerie.CAISSE); dater("2026-06-08");                          // V4 20 000, avance utilisée 20 000
-        Vente v5 = vente(GERANT, mariama, pA, 3, "80000", CompteTresorerie.CAISSE); dater("2026-06-09");          // V5 30 000, versé 80 000 : avance 50 000
-        Vente v6 = vente(GERANT, boubacar, pB, 1, "0", CompteTresorerie.CAISSE); echeanceVente(v6, "2026-07-20"); dater("2026-06-10"); // V6 20 000 à crédit
-        reglerVente(v3, "20000", "30000", CompteTresorerie.BANQUE); dater("2026-06-12");                           // R1
-        reglerVente(v3, "10000", "50000", CompteTresorerie.CAISSE); dater("2026-06-13");                           // R2, annulé le lendemain
+        vente(CAISSIER, null, pA, 4, "40000", TypeCompteTresorerie.ESPECES); dater("2026-06-03");                       // V2 40 000 comptant
+        vente(CAISSIER, null, pService, 2, "6000", TypeCompteTresorerie.ORANGE_MONEY); dater("2026-06-04");            // V2b service 6 000
+        Vente v3 = vente(GERANT, aminata, pB, 5, "30000", TypeCompteTresorerie.ORANGE_MONEY); echeanceVente(v3, "2026-06-15"); dater("2026-06-05"); // 100 000, versé 30 000
+        vente(GERANT, mariama, pA, 2, "0", TypeCompteTresorerie.ESPECES); dater("2026-06-08");                          // V4 20 000, avance utilisée 20 000
+        Vente v5 = vente(GERANT, mariama, pA, 3, "80000", TypeCompteTresorerie.ESPECES); dater("2026-06-09");          // V5 30 000, versé 80 000 : avance 50 000
+        Vente v6 = vente(GERANT, boubacar, pB, 1, "0", TypeCompteTresorerie.ESPECES); echeanceVente(v6, "2026-07-20"); dater("2026-06-10"); // V6 20 000 à crédit
+        reglerVente(v3, "20000", "30000", TypeCompteTresorerie.BANQUE); dater("2026-06-12");                           // R1
+        reglerVente(v3, "10000", "50000", TypeCompteTresorerie.ESPECES); dater("2026-06-13");                           // R2, annulé le lendemain
         MouvementCaisse r2 = dernierMouvement("REGLEMENT_VENTE");
         authentifie(GERANT, "ADMIN", () -> { annulation.annulerReglementVente(v3.getId(), r2.getId(), "Erreur de saisie"); return null; }); dater("2026-06-14");
-        retourVente(v1, 2, ModeRemboursement.ARGENT, CompteTresorerie.CAISSE); dater("2026-06-15");                // RV1 20 000 rendus en caisse
+        retourVente(v1, 2, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES); dater("2026-06-15");                // RV1 20 000 rendus en caisse
         retourVente(v5, 1, ModeRemboursement.AVOIR, null); dater("2026-06-16");                                    // RV2 10 000 en avoir
         retourVente(v3, 1, null, null); dater("2026-06-16");                                                      // RV3 20 000 imputés sur le reste
-        Achat a2 = achat(sidi, pB, 10, "8000", "30000", CompteTresorerie.ORANGE_MONEY); echeanceAchat(a2, "2026-07-17"); dater("2026-06-17"); // A2 80 000, versé 30 000
-        Achat a3 = achat(diallo, pA, 4, "5000", "35000", CompteTresorerie.BANQUE); dater("2026-06-18");            // A3 20 000, versé 35 000 : avance 15 000
-        retourAchat(a3, 2, ModeRemboursement.ARGENT, CompteTresorerie.BANQUE); dater("2026-06-20");                // RA1 10 000 remboursés en banque
+        Achat a2 = achat(sidi, pB, 10, "8000", "30000", TypeCompteTresorerie.ORANGE_MONEY); echeanceAchat(a2, "2026-07-17"); dater("2026-06-17"); // A2 80 000, versé 30 000
+        Achat a3 = achat(diallo, pA, 4, "5000", "35000", TypeCompteTresorerie.BANQUE); dater("2026-06-18");            // A3 20 000, versé 35 000 : avance 15 000
+        retourAchat(a3, 2, ModeRemboursement.ARGENT, TypeCompteTresorerie.BANQUE); dater("2026-06-20");                // RA1 10 000 remboursés en banque
         retourAchat(a3, 1, ModeRemboursement.AVOIR, null); dater("2026-06-20");                                    // RA2 5 000 en avoir
         retourAchat(a1, 4, null, null); dater("2026-06-21");                                                      // RA3 20 000 imputés sur la dette de Sidi
-        depenser(CompteTresorerie.CAISSE, "50000", "Loyer de juin"); depenser(CompteTresorerie.ORANGE_MONEY, "12000", "Transport");
-        depenser(CompteTresorerie.BANQUE, "80000", "Salaires"); dater("2026-06-22");
-        transfert(CompteTresorerie.CAISSE, CompteTresorerie.BANQUE, "100000"); dater("2026-06-24");
-        reglerClient(boubacar, "30000", "50000", CompteTresorerie.ORANGE_MONEY); reglerFournisseur(kaba, "20000", "30000", CompteTresorerie.BANQUE); dater("2026-06-26");
-        reglerAchat(a2, "10000", "30000", CompteTresorerie.CAISSE); dater("2026-06-27");
+        depenser(TypeCompteTresorerie.ESPECES, "50000", "Loyer de juin"); depenser(TypeCompteTresorerie.ORANGE_MONEY, "12000", "Transport");
+        depenser(TypeCompteTresorerie.BANQUE, "80000", "Salaires"); dater("2026-06-22");
+        transfert(TypeCompteTresorerie.ESPECES, TypeCompteTresorerie.BANQUE, "100000"); dater("2026-06-24");
+        reglerClient(boubacar, "30000", "50000", TypeCompteTresorerie.ORANGE_MONEY); reglerFournisseur(kaba, "20000", "30000", TypeCompteTresorerie.BANQUE); dater("2026-06-26");
+        reglerAchat(a2, "10000", "30000", TypeCompteTresorerie.ESPECES); dater("2026-06-27");
 
         // --- Juillet : après la période
-        vente(GERANT, null, pA, 1, "10000", CompteTresorerie.CAISSE); dater("2026-07-02");
-        depenser(CompteTresorerie.ORANGE_MONEY, "5000", "Électricité de juillet"); dater("2026-07-05");
+        vente(GERANT, null, pA, 1, "10000", TypeCompteTresorerie.ESPECES); dater("2026-07-02");
+        depenser(TypeCompteTresorerie.ORANGE_MONEY, "5000", "Électricité de juillet"); dater("2026-07-05");
 
         // --- Boutique B : ne doit jamais apparaître dans les états de A
         Categorie catB = categorie(boutiqueB, "Catégorie secrète B");
         Fournisseur fb = fournisseurSimple(boutiqueB, "FOURNISSEUR_SECRET_B");
         Produit pb = produit(boutiqueB, catB, fb, "REF-B-SECRET", "PRODUIT_SECRET_B", NatureProduit.STOCK, 100, "5000", "10000");
         Client clientB = client(boutiqueB, "CLIENT_SECRET_B", "999000", "2026-01-01");
-        authentifie(GERANT_B, "ADMIN", () -> { caisse.initialiser(ouverture(CompteTresorerie.CAISSE, "900000")); return null; });
+        authentifie(GERANT_B, "ADMIN", () -> { caisse.initialiser(ouverture(TypeCompteTresorerie.ESPECES, "900000")); return null; });
         stocker(pb, 100);
-        authentifie(GERANT_B, "ADMIN", () -> venteService.effectuerVente(nouvelleVente(boutiqueB, clientB, pb, 10, "100000", CompteTresorerie.CAISSE)));
-        authentifie(GERANT_B, "ADMIN", () -> { caisse.depenser(formDepense(CompteTresorerie.CAISSE, "77700", "Dépense secrète B")); return null; });
+        authentifie(GERANT_B, "ADMIN", () -> venteService.effectuerVente(nouvelleVente(boutiqueB, clientB, pb, 10, "100000", TypeCompteTresorerie.ESPECES)));
+        authentifie(GERANT_B, "ADMIN", () -> { caisse.depenser(formDepense(TypeCompteTresorerie.ESPECES, "77700", "Dépense secrète B")); return null; });
         dater("2026-06-11");
     }
 
@@ -360,8 +360,8 @@ class JustificatifsSoldeTests {
         authentifier(GERANT);
         // Au 30/06/2026 (calculs à la main du bilan) : caisse 590 000, Orange Money 194 000, banque 255 000, total 1 039 000.
         var juin = justificatifs.tresorerie(AU);
-        assertThat(juin.comptes().stream().map(c -> c.compte().name() + "=" + c.solde().toPlainString().replaceAll("\\.00$", "")).toList())
-                .containsExactly("CAISSE=590000", "ORANGE_MONEY=194000", "BANQUE=255000");
+        assertThat(juin.comptes().stream().map(c -> c.compte().getNom() + "=" + c.solde().toPlainString().replaceAll("\\.00$", "")).toList())
+                .containsExactly("Caisse=590000", "Orange Money=194000", "Banque=255000");
         assertThat(juin.total()).isEqualByComparingTo("1039000");
         assertThat(juin.aujourdHui()).isFalse();
         assertThat(juin.numero()).isEqualTo("JS-20260630-T" + boutiqueA.getId());
@@ -372,7 +372,7 @@ class JustificatifsSoldeTests {
             var j = justificatifs.tresorerie(jour);
             LocalDate fin = jour;
             for (var c : j.comptes()) {
-                BigDecimal journal = caisseRepo.findAll().stream().filter(m -> m.getBoutique().getId().equals(boutiqueA.getId()) && m.getCompte() == c.compte())
+                BigDecimal journal = caisseRepo.findAll().stream().filter(m -> m.getBoutique().getId().equals(boutiqueA.getId()) && m.getCompte().getId().equals(c.compte().getId()))
                         .filter(m -> m.getDateMouvement() == null || m.getDateMouvement().toLocalDate().compareTo(fin) <= 0)
                         .map(MouvementCaisse::getMontant).reduce(BigDecimal.ZERO, BigDecimal::add);
                 assertThat(c.solde()).as(c.compte() + " au " + jour).isEqualByComparingTo(journal);
@@ -393,9 +393,9 @@ class JustificatifsSoldeTests {
         var j = justificatifs.tresorerie(null);
         assertThat(j.aujourdHui()).isTrue();
         assertThat(j.arrete()).isEqualTo(JOUR);
-        assertThat(j.comptes().get(0).solde()).isEqualByComparingTo(caisse.getSoldeCompte(CompteTresorerie.CAISSE)).isEqualByComparingTo("600000");
-        assertThat(j.comptes().get(1).solde()).isEqualByComparingTo(caisse.getSoldeCompte(CompteTresorerie.ORANGE_MONEY)).isEqualByComparingTo("189000");
-        assertThat(j.comptes().get(2).solde()).isEqualByComparingTo(caisse.getSoldeCompte(CompteTresorerie.BANQUE)).isEqualByComparingTo("255000");
+        assertThat(j.comptes().get(0).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.ESPECES)).isEqualByComparingTo("600000");
+        assertThat(j.comptes().get(1).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.ORANGE_MONEY)).isEqualByComparingTo("189000");
+        assertThat(j.comptes().get(2).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.BANQUE)).isEqualByComparingTo("255000");
         assertThat(j.total()).isEqualByComparingTo("1044000");
         assertThat(justificatifs.tresorerie(JOUR).total()).isEqualByComparingTo(j.total());
         // Le jour de l'édition par la période du bilan (du premier jour au jour même).
@@ -415,7 +415,7 @@ class JustificatifsSoldeTests {
         assertThat(reponse.getHeader("Content-Disposition")).contains("JS-20260630-T" + boutiqueA.getId() + ".pdf");
         String texte = texteLineaire(pdf);
         assertThat(texte).contains("Boutique des justificatifs A", "Justificatif de solde de trésorerie", "JS-20260630-T" + boutiqueA.getId(), "Date d'arrêté", "30/06/2026",
-                "Caisse (espèces)", "590 000", "Orange Money", "194 000", "Banque", "255 000", "Total de la trésorerie", "1 039 000 GNF",
+                "Caisse", "590 000", "Orange Money", "194 000", "Banque", "255 000", "Total de la trésorerie", "1 039 000 GNF",
                 "un million trente-neuf mille francs guinéens", "Arrêté à la somme de un million trente-neuf mille francs guinéens.",
                 "Solde calculé par l'application ; à rapprocher du comptage physique.", "Signature et cachet")
                 .doesNotContain("922 300", "SECRET_B");
@@ -642,33 +642,33 @@ class JustificatifsSoldeTests {
         return fournisseurs.saveAndFlush(f);
     }
 
-    private OuvertureCaisseForm ouverture(CompteTresorerie compte, String montant) {
-        OuvertureCaisseForm f = new OuvertureCaisseForm(); f.setComptePaiement(compte); f.setMontant(new BigDecimal(montant)); return f;
+    private OuvertureCaisseForm ouverture(TypeCompteTresorerie compte, String montant) {
+        OuvertureCaisseForm f = new OuvertureCaisseForm(); f.setComptePaiement(compte == null ? null : compte.name()); f.setMontant(new BigDecimal(montant)); return f;
     }
 
-    private void fonds(CompteTresorerie compte, String montant) {
+    private void fonds(TypeCompteTresorerie compte, String montant) {
         authentifie(GERANT, "ADMIN", () -> { caisse.initialiser(ouverture(compte, montant)); return null; });
     }
 
-    private Vente nouvelleVente(Boutique b, Client acheteur, Produit article, int quantite, String verse, CompteTresorerie compte) {
+    private Vente nouvelleVente(Boutique b, Client acheteur, Produit article, int quantite, String verse, TypeCompteTresorerie compte) {
         Vente vente = new Vente(); vente.setBoutique(b);
         if (acheteur != null) { Client reference = new Client(); reference.setId(acheteur.getId()); vente.setClient(reference); }
-        vente.setMontantVerse(new BigDecimal(verse)); vente.setComptePaiement(compte);
+        vente.setMontantVerse(new BigDecimal(verse)); vente.setComptePaiement(compte.name());
         Produit reference = new Produit(); reference.setId(article.getId());
         DetailVente ligne = new DetailVente(); ligne.setProduit(reference); ligne.setQuantite(quantite); vente.getLignes().add(ligne);
         return vente;
     }
 
-    private Vente vente(String vendeur, Client acheteur, Produit article, int quantite, String verse, CompteTresorerie compte) {
+    private Vente vente(String vendeur, Client acheteur, Produit article, int quantite, String verse, TypeCompteTresorerie compte) {
         String role = CAISSIER.equals(vendeur) ? "CAISSIER" : "ADMIN";
         return authentifie(vendeur, role, () -> venteService.effectuerVente(nouvelleVente(boutiqueA, acheteur, article, quantite, verse, compte)));
     }
 
-    private Achat achat(Fournisseur vendeur, Produit article, int quantite, String prix, String verse, CompteTresorerie compte) {
+    private Achat achat(Fournisseur vendeur, Produit article, int quantite, String prix, String verse, TypeCompteTresorerie compte) {
         return authentifie(GERANT, "ADMIN", () -> {
             Achat achat = new Achat(); achat.setBoutique(boutiqueA);
             Fournisseur ref = new Fournisseur(); ref.setId(vendeur.getId()); achat.setFournisseur(ref);
-            achat.setMontantVerse(new BigDecimal(verse)); achat.setComptePaiement(compte);
+            achat.setMontantVerse(new BigDecimal(verse)); achat.setComptePaiement(compte.name());
             Produit r = new Produit(); r.setId(article.getId());
             DetailAchat ligne = new DetailAchat(); ligne.setProduit(r); ligne.setQuantite(quantite);
             ligne.setPrixAchatUnitaire(new BigDecimal(prix)); ligne.setPrixVenteUnitaire(article.getPrixVente()); achat.getLignes().add(ligne);
@@ -676,51 +676,51 @@ class JustificatifsSoldeTests {
         });
     }
 
-    private void reglerVente(Vente v, String montant, String verseAttendu, CompteTresorerie compte) {
-        authentifie(GERANT, "ADMIN", () -> { venteService.reglerVente(v.getId(), new BigDecimal(montant), new BigDecimal(verseAttendu), compte); return null; });
+    private void reglerVente(Vente v, String montant, String verseAttendu, TypeCompteTresorerie compte) {
+        authentifie(GERANT, "ADMIN", () -> { venteService.reglerVente(v.getId(), new BigDecimal(montant), new BigDecimal(verseAttendu), compte.name()); return null; });
     }
 
-    private void reglerAchat(Achat a, String montant, String verseAttendu, CompteTresorerie compte) {
-        authentifie(GERANT, "ADMIN", () -> { achatService.reglerAchat(a.getId(), new BigDecimal(montant), new BigDecimal(verseAttendu), compte); return null; });
+    private void reglerAchat(Achat a, String montant, String verseAttendu, TypeCompteTresorerie compte) {
+        authentifie(GERANT, "ADMIN", () -> { achatService.reglerAchat(a.getId(), new BigDecimal(montant), new BigDecimal(verseAttendu), compte.name()); return null; });
     }
 
-    private void reglerClient(Client c, String montant, String dejaRegle, CompteTresorerie compte) {
-        authentifie(GERANT, "ADMIN", () -> { soldeDepart.reglerClient(c.getId(), new BigDecimal(montant), new BigDecimal(dejaRegle), compte, null); return null; });
+    private void reglerClient(Client c, String montant, String dejaRegle, TypeCompteTresorerie compte) {
+        authentifie(GERANT, "ADMIN", () -> { soldeDepart.reglerClient(c.getId(), new BigDecimal(montant), new BigDecimal(dejaRegle), compte.name(), null); return null; });
     }
 
-    private void reglerFournisseur(Fournisseur f, String montant, String dejaRegle, CompteTresorerie compte) {
-        authentifie(GERANT, "ADMIN", () -> { soldeDepart.reglerFournisseur(f.getId(), new BigDecimal(montant), new BigDecimal(dejaRegle), compte, null); return null; });
+    private void reglerFournisseur(Fournisseur f, String montant, String dejaRegle, TypeCompteTresorerie compte) {
+        authentifie(GERANT, "ADMIN", () -> { soldeDepart.reglerFournisseur(f.getId(), new BigDecimal(montant), new BigDecimal(dejaRegle), compte.name(), null); return null; });
     }
 
-    private void retourVente(Vente v, int quantite, ModeRemboursement mode, CompteTresorerie compte) {
+    private void retourVente(Vente v, int quantite, ModeRemboursement mode, TypeCompteTresorerie compte) {
         authentifie(GERANT, "ADMIN", () -> {
             RetourVenteForm f = new RetourVenteForm();
             RetourVenteForm.Ligne l = new RetourVenteForm.Ligne(); l.setDetailVenteId(v.getLignes().get(0).getId()); l.setQuantite(quantite);
-            f.setLignes(new ArrayList<>(List.of(l))); f.setModeRemboursement(mode); f.setComptePaiement(compte); f.setRetoursConnus(retours.countByVenteId(v.getId()));
+            f.setLignes(new ArrayList<>(List.of(l))); f.setModeRemboursement(mode); f.setComptePaiement(compte == null ? null : compte.name()); f.setRetoursConnus(retours.countByVenteId(v.getId()));
             return retourVenteService.enregistrer(v.getId(), f);
         });
     }
 
-    private void retourAchat(Achat a, int quantite, ModeRemboursement mode, CompteTresorerie compte) {
+    private void retourAchat(Achat a, int quantite, ModeRemboursement mode, TypeCompteTresorerie compte) {
         authentifie(GERANT, "ADMIN", () -> {
             RetourAchatForm f = new RetourAchatForm();
             RetourAchatForm.Ligne l = new RetourAchatForm.Ligne(); l.setDetailAchatId(a.getLignes().get(0).getId()); l.setQuantite(quantite);
-            f.setLignes(new ArrayList<>(List.of(l))); f.setModeRemboursement(mode); f.setComptePaiement(compte); f.setRetoursConnus(retours.countByAchatId(a.getId()));
+            f.setLignes(new ArrayList<>(List.of(l))); f.setModeRemboursement(mode); f.setComptePaiement(compte == null ? null : compte.name()); f.setRetoursConnus(retours.countByAchatId(a.getId()));
             return retourAchatService.enregistrer(a.getId(), f);
         });
     }
 
-    private void depenser(CompteTresorerie compte, String montant, String motif) {
+    private void depenser(TypeCompteTresorerie compte, String montant, String motif) {
         authentifie(GERANT, "ADMIN", () -> { caisse.depenser(formDepense(compte, montant, motif)); return null; });
     }
 
-    private DepenseTresorerieForm formDepense(CompteTresorerie compte, String montant, String motif) {
-        DepenseTresorerieForm f = new DepenseTresorerieForm(); f.setCompteSource(compte); f.setMontant(new BigDecimal(montant));
+    private DepenseTresorerieForm formDepense(TypeCompteTresorerie compte, String montant, String motif) {
+        DepenseTresorerieForm f = new DepenseTresorerieForm(); f.setCompteSource(compte.name()); f.setMontant(new BigDecimal(montant));
         f.setMotif(motif); f.setJetonOperation(UUID.randomUUID().toString()); return f;
     }
 
-    private void transfert(CompteTresorerie source, CompteTresorerie destination, String montant) {
-        TransfertTresorerieForm f = new TransfertTresorerieForm(); f.setCompteSource(source); f.setCompteDestination(destination);
+    private void transfert(TypeCompteTresorerie source, TypeCompteTresorerie destination, String montant) {
+        TransfertTresorerieForm f = new TransfertTresorerieForm(); f.setCompteSource(source.name()); f.setCompteDestination(destination.name());
         f.setMontant(new BigDecimal(montant)); f.setMotif("Transfert de fonds"); f.setJetonOperation(UUID.randomUUID().toString());
         authentifie(GERANT, "ADMIN", () -> { caisse.transferer(f); return null; });
     }

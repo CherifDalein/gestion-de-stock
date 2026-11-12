@@ -285,7 +285,7 @@ class BoutiquesHttpIsolationTests {
         vente.getLignes().add(ligne); return ventes.saveAndFlush(vente);
     }
     private void mouvement(Boutique boutique, Utilisateur utilisateur, String motif, LocalDateTime date, String montant, Achat achat, Vente vente) {
-        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setBoutique(boutique); mouvement.setUtilisateur(utilisateur);
+        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setCompte(org.example.stock.support.ComptesDeTest.de(boutique, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); mouvement.setBoutique(boutique); mouvement.setUtilisateur(utilisateur);
         mouvement.setMotif(motif); mouvement.setDateMouvement(date); mouvement.setMontant(new BigDecimal(montant));
         mouvement.setType(mouvement.getMontant().signum() < 0 ? "SORTIE" : "ENTREE");
         mouvement.setSource(achat != null ? "ACHAT" : vente != null ? "VENTE" : "AJUSTEMENT");

@@ -83,7 +83,7 @@ class AccesUtilisateurServiceTests {
         DetailVente ligne = new DetailVente(); ligne.setVente(vente); ligne.setProduit(produit);
         ligne.setQuantite(1); ligne.setPrixUnitaire(new BigDecimal("2.20")); vente.getLignes().add(ligne);
         vente = ventes.saveAndFlush(vente);
-        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setBoutique(boutiqueA); mouvement.setVente(vente);
+        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setCompte(org.example.stock.support.ComptesDeTest.de(boutiqueA, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); mouvement.setBoutique(boutiqueA); mouvement.setVente(vente);
         mouvement.setUtilisateur(caissierA); mouvement.setDateMouvement(LocalDateTime.now());
         mouvement.setMontant(new BigDecimal("2.20")); mouvement.setType("ENTREE"); mouvement.setSource("VENTE");
         caisse.saveAndFlush(mouvement);

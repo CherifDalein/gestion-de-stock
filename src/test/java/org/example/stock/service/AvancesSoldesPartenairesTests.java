@@ -1,7 +1,8 @@
 package org.example.stock.service;
 
 import jakarta.persistence.EntityManager;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
+import org.example.stock.support.ComptesDeTest;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.enums.TypeOperationCreation;
@@ -203,7 +204,7 @@ class AvancesSoldesPartenairesTests {
         assertThat(mouvements).hasSize(1);
         MouvementCaisse mouvement = mouvements.getFirst();
         assertThat(mouvement.getMontant()).isEqualByComparingTo("20000");
-        assertThat(mouvement.getCompte()).isEqualTo(CompteTresorerie.BANQUE);
+        assertThat(mouvement.getCompte().getType()).isEqualTo(TypeCompteTresorerie.BANQUE);
         assertThat(mouvement.getSource()).isEqualTo("SOLDE_CLIENT");
         assertThat(mouvement.getClient().getId()).isEqualTo(debiteur.getId());
         assertThat(mouvement.getVente()).isNull();
@@ -302,11 +303,11 @@ class AvancesSoldesPartenairesTests {
         var mouvements = caisse.findAll();
         assertThat(mouvements).hasSize(1);
         assertThat(mouvements.getFirst().getMontant()).isEqualByComparingTo("-30000");
-        assertThat(mouvements.getFirst().getCompte()).isEqualTo(CompteTresorerie.ORANGE_MONEY);
+        assertThat(mouvements.getFirst().getCompte().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
         assertThat(mouvements.getFirst().getSource()).isEqualTo("SOLDE_FOURNISSEUR");
         assertThat(mouvements.getFirst().getFournisseur().getId()).isEqualTo(creancier.getId());
         assertThat(soldes().soldeFournisseur(creancier.getId()).resteSoldeDepart()).isEqualByComparingTo("70000");
-        assertThat(caisse.calculerSoldeCompte(boutique.getId(), CompteTresorerie.ORANGE_MONEY)).isEqualByComparingTo("-30000");
+        assertThat(caisse.calculerSoldeCompte(boutique.getId(), ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY).getId())).isEqualByComparingTo("-30000");
         mvc.perform(reglementSolde("/fournisseurs/solde/regler/" + creancier.getId(), "70000.01", "30000", "CAISSE").with(csrf()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk());
         assertThat(caisse.count()).isEqualTo(1);

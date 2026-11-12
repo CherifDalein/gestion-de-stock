@@ -1,6 +1,6 @@
 package org.example.stock.security;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.Role;
 import org.example.stock.form.OuvertureCaisseForm;
 import org.example.stock.model.Boutique;
@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.example.stock.enums.CompteTresorerie.*;
+import static org.example.stock.enums.TypeCompteTresorerie.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -49,8 +49,8 @@ class TresorerieSecurityTests {
         gerant = compte(b, Role.ADMIN); caissier = compte(b, Role.CAISSIER);
         connecter();
         try {
-            for (var compte : CompteTresorerie.values()) {
-                var f = new OuvertureCaisseForm(); f.setComptePaiement(compte); f.setMontant(new BigDecimal("1000"));
+            for (var compte : TypeCompteTresorerie.values()) {
+                var f = new OuvertureCaisseForm(); f.setComptePaiement(compte.name()); f.setMontant(new BigDecimal("1000"));
                 caisse.initialiser(f);
             }
         } finally { SecurityContextHolder.clearContext(); }
@@ -59,7 +59,7 @@ class TresorerieSecurityTests {
     @Test void lesFormulairesEtLeJournalAffichentLesTroisComptesAvecCsrf() throws Exception {
         for (var chemin : List.of("/caisse/transfert", "/caisse/depense", "/caisse/journal")) {
             mvc.perform(commeGerant(get(chemin))).andExpect(status().isOk())
-                    .andExpect(content().string(containsString("Caisse (espèces)")))
+                    .andExpect(content().string(containsString("Caisse")))
                     .andExpect(content().string(containsString("Orange Money")))
                     .andExpect(content().string(containsString("Banque")))
                     .andExpect(model().attributeExists("soldesParCompte"));
@@ -76,8 +76,8 @@ class TresorerieSecurityTests {
         mvc.perform(commeGerant(transfert(jeton)).with(csrf())).andExpect(redirectedUrl("/caisse/journal"));
         connecter();
         try {
-            assertThat(caisse.getSoldeCompte(CAISSE)).isEqualByComparingTo("900");
-            assertThat(caisse.getSoldeCompte(ORANGE_MONEY)).isEqualByComparingTo("1100");
+            assertThat(caisse.getSoldesParType().get(ESPECES)).isEqualByComparingTo("900");
+            assertThat(caisse.getSoldesParType().get(ORANGE_MONEY)).isEqualByComparingTo("1100");
             assertThat(caisse.getSoldeActuel()).isEqualByComparingTo("3000"); assertThat(caisse.listerTous()).hasSize(5);
         } finally { SecurityContextHolder.clearContext(); }
         mvc.perform(commeGerant(transfert(jeton).param("motif", "Contenu modifié")).with(csrf())).andExpect(status().isBadRequest());
@@ -94,8 +94,8 @@ class TresorerieSecurityTests {
         mvc.perform(commeGerant(depense(jeton, "150")).with(csrf())).andExpect(redirectedUrl("/caisse/journal"));
         connecter();
         try {
-            assertThat(caisse.getSoldeCompte(BANQUE)).isEqualByComparingTo("850");
-            assertThat(caisse.getSoldeCompte(CAISSE)).isEqualByComparingTo("1000"); assertThat(caisse.listerTous()).hasSize(4);
+            assertThat(caisse.getSoldesParType().get(BANQUE)).isEqualByComparingTo("850");
+            assertThat(caisse.getSoldesParType().get(ESPECES)).isEqualByComparingTo("1000"); assertThat(caisse.listerTous()).hasSize(4);
         } finally { SecurityContextHolder.clearContext(); }
     }
 
