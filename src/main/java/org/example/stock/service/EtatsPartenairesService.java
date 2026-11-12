@@ -7,6 +7,7 @@ import org.example.stock.export.LimiteExport;
 import org.example.stock.export.TableauExport;
 import org.example.stock.export.Textes;
 import org.example.stock.model.*;
+import org.example.stock.repository.AjustementSoldeDepartRepository;
 import org.example.stock.repository.ClientRepository;
 import org.example.stock.repository.EtatsRepository;
 import org.example.stock.repository.FournisseurRepository;
@@ -50,10 +51,12 @@ public class EtatsPartenairesService {
     private final BoutiqueService boutiques;
     private final EcheanceService echeances;
     private final LimiteExport limite;
+    private final AjustementSoldeDepartRepository ajustements;
 
     public EtatsPartenairesService(EtatsRepository etats, SoldePartenaireService soldes, ClientRepository clients,
                                    FournisseurRepository fournisseurs, BoutiqueService boutiques, EcheanceService echeances,
-                                   LimiteExport limite) {
+                                   LimiteExport limite, AjustementSoldeDepartRepository ajustements) {
+        this.ajustements = ajustements;
         this.etats = etats; this.soldes = soldes; this.clients = clients; this.fournisseurs = fournisseurs;
         this.boutiques = boutiques; this.echeances = echeances; this.limite = limite;
     }
@@ -250,7 +253,7 @@ public class EtatsPartenairesService {
     /** Ligne du livre : effet signé sur ce que le partenaire doit à la boutique (client) ou ce que la boutique doit (fournisseur). */
     private record Evenement(LocalDateTime date, int ordre, long id, String document, String libelle, CompteTresorerieBoutique compte, BigDecimal effet) { }
 
-    private static final int FACTURE = 0, VERSEMENT = 1, RETOUR = 2, REMBOURSEMENT = 3, AVOIR = 4, REGLEMENT = 5, ANNULATION = 6;
+    private static final int FACTURE = 0, VERSEMENT = 1, RETOUR = 2, REMBOURSEMENT = 3, AVOIR = 4, REGLEMENT = 5, ANNULATION = 6, AJUSTEMENT = 7;
 
     /**
      * Relevé d'un client (créances) ou d'un fournisseur (dettes) : toutes les opérations de la période avec le solde progressif.
@@ -275,6 +278,11 @@ public class EtatsPartenairesService {
         limite.verifier(mouvements.size());
         List<Retour> retours = client ? etats.retoursDuClient(boutiqueId, partenaireId, max) : etats.retoursDuFournisseur(boutiqueId, partenaireId, max);
         limite.verifier(retours.size());
+        // Ajustements du solde de départ : le relevé part du solde de départ d'origine, puis montre chaque ajustement à sa date.
+        List<AjustementSoldeDepart> corrections = client ? ajustements.findByBoutiqueIdAndClientIdOrderByDateAjustementAscIdAsc(boutiqueId, partenaireId)
+                : ajustements.findByBoutiqueIdAndFournisseurIdOrderByDateAjustementAscIdAsc(boutiqueId, partenaireId);
+        BigDecimal variations = corrections.stream().map(AjustementSoldeDepart::getVariation).reduce(Montants.ZERO, BigDecimal::add);
+        soldeDepart = soldeDepart.subtract(client ? variations : variations.negate());
 
         // Règlements ultérieurs nets d'annulation par facture, et compte du paiement saisi à la création.
         Map<Long, BigDecimal> reglementsNets = new HashMap<>();
@@ -344,6 +352,12 @@ public class EtatsPartenairesService {
                         "Avoir de " + Textes.montant(r.getMontantAvoir()) + " conservé en avance (sans mouvement d'argent)", null, Montants.ZERO));
             }
         }
+        for (AjustementSoldeDepart a : corrections) {
+            evenements.add(new Evenement(a.getDateAjustement(), AJUSTEMENT, a.getId(), "", "Ajustement du solde de départ : "
+                    + Textes.montant(a.getAncienSolde().abs()) + " (" + sensSolde(a.getAncienSolde(), client) + ") devient "
+                    + Textes.montant(a.getNouveauSolde().abs()) + " (" + sensSolde(a.getNouveauSolde(), client) + ") - " + a.getMotif()
+                    + " (par " + a.getUtilisateur().getNom() + ")", null, client ? a.getVariation() : a.getVariation().negate()));
+        }
         limite.verifier(evenements.size());
         evenements.sort(Comparator.comparing(Evenement::date, Comparator.nullsFirst(Comparator.naturalOrder()))
                 .thenComparingInt(Evenement::ordre).thenComparingLong(Evenement::id));
@@ -383,6 +397,11 @@ public class EtatsPartenairesService {
         BigDecimal soldeTous = soldeDepart.add(anterieur).add(sumEffets(dansLaPeriode)).add(apres);
         t.note(client ? "Solde positif : le client doit cette somme à la boutique ; négatif : le client a une avance."
                 : "Solde positif : la boutique doit cette somme au fournisseur ; négatif : la boutique a une avance chez lui.");
+        if (!corrections.isEmpty()) {
+            t.note("Le solde de départ d'origine (" + Textes.montant(soldeDepart.abs()) + " GNF) a été corrigé par " + corrections.size()
+                    + (corrections.size() > 1 ? " ajustements" : " ajustement") + " : chacun figure à sa date. Un ajustement ne crée aucun mouvement de trésorerie "
+                    + "et ne modifie aucun règlement passé.");
+        }
         t.note("Un retour réduit la dette sur la facture ; la part déjà payée est remboursée (ligne « Remboursement ») ou gardée en avoir (ligne « Avoir », sans mouvement d'argent, "
                 + "le solde négatif reste en avance). Une annulation remet le règlement d'origine. L'avance utilisée à la création d'une facture ne s'écrit pas : "
                 + "elle est déjà comprise dans le solde.");
@@ -397,6 +416,12 @@ public class EtatsPartenairesService {
         }
         return new Etat(client ? "releve-client" : "releve-fournisseur", titre, periode.texte(), List.of(), List.of(t), FormatPapier.A4_PAYSAGE,
                 (client ? "releve-client-" : "releve-fournisseur-") + partenaireId, periode.du(), periode.au());
+    }
+
+    /** Libellé court du sens d'un solde signé (convention de la fiche : positif, le partenaire doit à la boutique). */
+    static String sensSolde(BigDecimal signe, boolean client) {
+        if (signe.signum() == 0) return "aucun solde";
+        return signe.signum() > 0 ? (client ? "il me doit" : "avance chez lui") : (client ? "avance du client" : "je lui dois");
     }
 
     /** Solde de départ, opérations antérieures et opérations de la période, pour les contrôles des tests. */

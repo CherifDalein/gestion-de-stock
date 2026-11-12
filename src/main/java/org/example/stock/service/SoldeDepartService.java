@@ -6,6 +6,7 @@ import org.example.stock.model.Emails;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Montants;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.repository.AjustementSoldeDepartRepository;
 import org.example.stock.repository.SoldePartenaireRepository.Partenaire;
 import org.example.stock.repository.StockLockRepository;
 import org.example.stock.repository.UtilisateurRepository;
@@ -38,10 +39,12 @@ public class SoldeDepartService {
     private final InitialisationBoutiqueService initialisation;
     private final UtilisateurRepository utilisateurs;
     private final ComptesTresorerieService comptes;
+    private final AjustementSoldeDepartRepository ajustements;
 
     public SoldeDepartService(StockLockRepository verrous, SoldePartenaireService soldes, BoutiqueService boutiques,
                               CaisseService caisse, InitialisationBoutiqueService initialisation, UtilisateurRepository utilisateurs,
-                              ComptesTresorerieService comptes) {
+                              ComptesTresorerieService comptes, AjustementSoldeDepartRepository ajustements) {
+        this.ajustements = ajustements;
         this.verrous = verrous;
         this.soldes = soldes;
         this.boutiques = boutiques;
@@ -114,7 +117,9 @@ public class SoldeDepartService {
             BigDecimal actuel = Montants.ouZero(soldeActuel);
             boolean change = signe.compareTo(actuel) != 0 || !Objects.equals(echeance, echeanceActuelle);
             // Bloqué après usage : un règlement du solde ou une avance consommée par une facture (quelle qu'en soit l'origine) le figent.
-            if (change && (soldes.reglementsVerrouilles(type, id).brut().signum() > 0 || soldes.avanceUtiliseeVerrouillee(type, id))) {
+            if (change && (soldes.reglementsVerrouilles(type, id).brut().signum() > 0 || soldes.avanceUtiliseeVerrouillee(type, id)
+                    || (type == Partenaire.CLIENT ? ajustements.existsByBoutiqueIdAndClientId(boutiques.idBoutiqueCourante(), id)
+                    : ajustements.existsByBoutiqueIdAndFournisseurId(boutiques.idBoutiqueCourante(), id)))) {
                 throw new IllegalArgumentException("Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. "
                         + "Une correction se fera par un ajustement de solde.");
             }
@@ -176,11 +181,8 @@ public class SoldeDepartService {
     }
 
     private static BigDecimal reste(BigDecimal du, BigDecimal regle) {
-        BigDecimal reste = du.subtract(regle);
-        if (reste.signum() < 0) {
-            throw new IncoherenceAvanceException("Les règlements du solde de départ dépassent le solde : vérifiez la fiche et son historique.");
-        }
-        return reste;
+        // Après un ajustement sous le montant déjà réglé, le trop-réglé est une avance : il ne reste rien à régler.
+        return du.subtract(regle).max(BigDecimal.ZERO);
     }
 
     private static void controlerMontant(BigDecimal montant, BigDecimal reglementAttendu, BigDecimal regle, BigDecimal reste) {

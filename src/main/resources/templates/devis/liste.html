@@ -41,6 +41,7 @@
                             <th scope="col">Client</th>
                             <th scope="col">Total</th>
                             <th scope="col">État</th>
+                            <th scope="col">Saisi par</th>
                             <th scope="col" class="text-center">Actions</th>
                         </tr>
                         </thead>
@@ -55,6 +56,7 @@
                                 <span class="badge" th:text="${etat.libelle}"
                                       th:classappend="${etat.code == 'en-cours' ? 'bg-primary' : (etat.code == 'expire' ? 'bg-warning text-dark' : (etat.code == 'transforme' ? 'bg-success' : 'bg-secondary'))}"></span>
                             </td>
+                            <td data-label="Saisi par" th:text="${d.utilisateur != null and !#strings.isEmpty(#strings.trim(d.utilisateur.nom)) ? d.utilisateur.nom : '—'}">—</td>
                             <td class="text-center">
                                 <div class="journal-row-actions app-row-actions">
                                     <a th:href="@{/devis/{id}(id=${d.id})}" class="btn btn-sm btn-outline-primary app-row-action"

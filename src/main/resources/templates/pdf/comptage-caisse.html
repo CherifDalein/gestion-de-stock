@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<!--
+  Procès-verbal d'un comptage de caisse (étape 3b2). Variables : c (ComptageCaisse), numero, fmt, doc, format.
+  Document complet : sa feuille de style est dans le head (openhtmltopdf ignore les style du corps). XHTML strict (docs/lot-4.md).
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title th:text="${titre}">Comptage de caisse</title>
+    <meta name="author" th:content="${doc.nomBoutique}" content="Boutique" />
+    <style th:utext="${cssPage}">@page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }</style>
+    <style th:replace="~{pdf/justificatif-commun :: style}"></style>
+</head>
+<body>
+<th:block th:replace="~{pdf/base :: entete}"></th:block>
+<h1 class="js-titre">Comptage de caisse</h1>
+<table class="js-ref">
+    <tr>
+        <td><span class="js-etiquette">Numéro du document</span><span class="js-valeur" th:text="${numero}">CC-12</span></td>
+        <td><span class="js-etiquette">Date du comptage</span><span class="js-valeur" th:text="${#temporals.format(c.dateComptage, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</span></td>
+        <td><span class="js-etiquette">Statut</span><span class="js-valeur" th:text="${c.statut.libelle}">Conforme</span></td>
+    </tr>
+</table>
+
+<h2 class="js-section">Compte compté</h2>
+<table class="js-identite">
+    <tr><td class="js-cle">Compte</td><td><b th:text="${c.compte.nom}">Caisse</b></td></tr>
+    <tr><td class="js-cle">Compté par</td><td th:text="${c.utilisateur.nom}">Caissier</td></tr>
+    <tr th:if="${c.commentaire != null}"><td class="js-cle">Commentaire</td><td th:text="${c.commentaire}">Commentaire</td></tr>
+</table>
+
+<h2 class="js-section">Résultat</h2>
+<table class="js-detail">
+    <thead><tr><th>Élément</th><th class="num">Montant (GNF)</th></tr></thead>
+    <tbody>
+    <tr><td>Solde théorique à l'heure du comptage</td><td class="num" th:text="${fmt.montant(c.soldeTheorique)}">0</td></tr>
+    <tr><td>Montant compté</td><td class="num" th:text="${fmt.montant(c.montantCompte)}">0</td></tr>
+    <tr class="js-total">
+        <td th:text="${'Écart : ' + c.natureEcart}">Écart</td>
+        <td class="num" th:text="${fmt.ecart(c.ecart)}">0</td>
+    </tr>
+    </tbody>
+</table>
+
+<th:block th:if="${!c.billetage.isEmpty()}">
+<h2 class="js-section">Billetage</h2>
+<table class="js-detail">
+    <thead><tr><th>Coupure (GNF)</th><th class="num">Nombre</th><th class="num">Total (GNF)</th></tr></thead>
+    <tbody>
+    <tr th:each="l : ${c.billetage}">
+        <td th:text="${fmt.montant(l.coupure)}">20 000</td>
+        <td class="num" th:text="${l.quantite}">1</td>
+        <td class="num" th:text="${fmt.montant(l.total)}">20 000</td>
+    </tr>
+    <tr class="js-total"><td colspan="2">Total du billetage</td><td class="num" th:text="${fmt.montant(c.montantCompte)}">0</td></tr>
+    </tbody>
+</table>
+</th:block>
+
+<th:block th:if="${c.decideur != null}">
+<h2 class="js-section">Décision du gérant</h2>
+<table class="js-identite">
+    <tr><td class="js-cle">Décision</td><td><b th:text="${c.statut.libelle}">Validé</b></td></tr>
+    <tr><td class="js-cle">Par</td><td th:text="${c.decideur.nom}">Gérant</td></tr>
+    <tr><td class="js-cle">Date</td><td th:text="${#temporals.format(c.dateDecision, 'dd/MM/yyyy HH:mm')}">09/11/2026</td></tr>
+    <tr><td class="js-cle">Motif</td><td th:text="${c.motifDecision}">Motif</td></tr>
+</table>
+</th:block>
+<th:block th:if="${c.annulePar != null}">
+<h2 class="js-section">Annulation</h2>
+<table class="js-identite">
+    <tr><td class="js-cle">Par</td><td th:text="${c.annulePar.nom}">Gérant</td></tr>
+    <tr><td class="js-cle">Date</td><td th:text="${#temporals.format(c.dateAnnulation, 'dd/MM/yyyy HH:mm')}">09/11/2026</td></tr>
+    <tr><td class="js-cle">Motif</td><td th:text="${c.motifAnnulation}">Motif</td></tr>
+</table>
+</th:block>
+
+<p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Le solde théorique est celui du compte au moment du comptage, calculé sur ses mouvements enregistrés ; un mouvement saisi ensuite ne modifie pas l’écart de ce comptage.'}">Mention</p>
+
+<table class="js-signatures">
+    <tr>
+        <td class="js-gauche">
+            <div class="js-zone-titre">Le caissier</div>
+            <div class="js-zone-aide" th:text="${c.utilisateur.nom}">Nom, date et signature</div>
+            <div class="js-zone"></div>
+        </td>
+        <td class="js-droite">
+            <div class="js-zone-titre">Le gérant</div>
+            <div class="js-zone-aide">Nom, date et signature</div>
+            <div class="js-zone"></div>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

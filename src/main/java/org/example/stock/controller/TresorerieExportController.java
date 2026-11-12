@@ -36,8 +36,9 @@ public class TresorerieExportController {
     public Object excel(@RequestParam(name = "compte", required = false) List<String> compte, @RequestParam(name = "source", required = false) List<String> source,
                         @RequestParam(name = "sens", required = false) List<String> sens, @RequestParam(name = "du", required = false) List<String> du,
                         @RequestParam(name = "au", required = false) List<String> au, @RequestParam(name = "q", required = false) List<String> q,
+                        @RequestParam(name = "auteur", required = false) List<String> auteur,
                         RedirectAttributes redirection) {
-        FiltreJournal filtre = filtre(compte, source, sens, du, au);
+        FiltreJournal filtre = filtre(compte, source, sens, du, au, auteur);
         String recherche = ParametresListe.recherche(q);
         return livraison.excel("tresorerie", filtre.du(), filtre.au(), "/caisse/journal", Map.of(), redirection, () -> export.preparer(filtre, recherche));
     }
@@ -46,17 +47,19 @@ public class TresorerieExportController {
     public Object pdf(@RequestParam(name = "compte", required = false) List<String> compte, @RequestParam(name = "source", required = false) List<String> source,
                       @RequestParam(name = "sens", required = false) List<String> sens, @RequestParam(name = "du", required = false) List<String> du,
                       @RequestParam(name = "au", required = false) List<String> au, @RequestParam(name = "q", required = false) List<String> q,
+                        @RequestParam(name = "auteur", required = false) List<String> auteur,
                       RedirectAttributes redirection) {
-        FiltreJournal filtre = filtre(compte, source, sens, du, au);
+        FiltreJournal filtre = filtre(compte, source, sens, du, au, auteur);
         String recherche = ParametresListe.recherche(q);
         return livraison.pdf("tresorerie", filtre.du(), filtre.au(), "/caisse/journal", Map.of(), redirection, () -> export.preparer(filtre, recherche));
     }
 
-    private static FiltreJournal filtre(List<String> compte, List<String> source, List<String> sens, List<String> du, List<String> au) {
+    private static FiltreJournal filtre(List<String> compte, List<String> source, List<String> sens, List<String> du, List<String> au,
+                                        List<String> auteur) {
         Long compteId = ParametresListe.identifiant("compte", compte);
         LocalDate debut = ParametresListe.date(du), fin = ParametresListe.date(au);
         ParametresListe.periodeCoherente(debut, fin);
         return new FiltreJournal(compteId, ParametresListe.unique("source", source),
-                ParametresListe.choix("sens", sens, TresorerieExportService.SENS), debut, fin);
+                ParametresListe.choix("sens", sens, TresorerieExportService.SENS), debut, fin, ParametresListe.identifiant("auteur", auteur));
     }
 }

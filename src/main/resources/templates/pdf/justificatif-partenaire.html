@@ -77,6 +77,24 @@
     </tbody>
 </table>
 
+<th:block th:if="${!j.ajustements.isEmpty()}">
+<h2 class="js-section">Ajustements du solde de départ</h2>
+<table class="js-detail">
+    <thead>
+    <tr><th>Date</th><th>Saisi par</th><th>Ancien solde</th><th>Nouveau solde</th><th>Motif</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="a : ${j.ajustements}">
+        <td class="nw" th:text="${fmt.date(a.date.toLocalDate())}"></td>
+        <td th:text="${a.auteur}"></td>
+        <td class="num" th:text="${fmt.montant(a.ancien) + ' (' + a.sensAncien + ')'}">0</td>
+        <td class="num" th:text="${fmt.montant(a.nouveau) + ' (' + a.sensNouveau + ')'}">0</td>
+        <td th:text="${a.motif}"></td>
+    </tr>
+    </tbody>
+</table>
+</th:block>
+
 <p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de cent vingt-cinq mille francs guinéens.</p>
 <p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Ce solde est celui de la fiche du ' + (j.estClient() ? 'client' : 'fournisseur') + ' à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.'}">Mention</p>
 

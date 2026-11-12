@@ -68,11 +68,12 @@ public class FinancementsExportService {
         TableauExport t = TableauExport.titre("Relevé de " + d.vue().partenaire().getNom()).nomFeuille("Relevé")
                 .filtres(d.vue().partenaire().getType().getLibelle() + " · solde au " + Textes.date(echeances.aujourdHui()) + " : " + libelleSolde(s)
                         + (s.nul() ? "" : " " + Textes.montant(s.absolu()) + " GNF"))
-                .colonnes(Colonne.dateHeure("Date"), Colonne.texte("Opération"), Colonne.texte("Compte"), Colonne.texte("Motif"), Colonne.montant("Montant"), Colonne.texteCourt("État"));
+                .colonnes(Colonne.dateHeure("Date"), Colonne.texte("Opération"), Colonne.texte("Compte"), Colonne.texte("Motif"), Colonne.montant("Montant"), Colonne.texteCourt("État"), Colonne.texte("Saisi par"));
         for (var l : d.operations()) {
             OperationTresorerie o = l.operation();
             t.ligne(o.getDateOperation(), o.getType().getLibelle() + (o.getEmprunt() != null ? " " + o.getEmprunt().getNumero() : ""),
-                    o.getCompteSource().getNom(), o.getMotif(), o.getMontant(), l.annulee() ? "Annulée" : "");
+                    o.getCompteSource().getNom(), o.getMotif(), o.getMontant(), l.annulee() ? "Annulée" : "",
+                    o.getUtilisateur() == null || o.getUtilisateur().getNom() == null || o.getUtilisateur().getNom().isBlank() ? "—" : o.getUtilisateur().getNom().strip());
         }
         return t.note("Les montants sont ceux des opérations ; une opération annulée reste visible, sans effet sur le solde.");
     }

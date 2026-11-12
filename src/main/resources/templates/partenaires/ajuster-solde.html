@@ -1,0 +1,96 @@
+<div th:fragment="content">
+    <div class="container-fluid stock-operation" th:object="${ajustementSolde}"
+         th:with="estClient=${typePartenaire == 'client'}">
+        <header class="operation-header">
+            <div>
+                <p class="app-page-kicker" th:text="${(estClient ? 'Clients' : 'Fournisseurs') + ' · Solde de départ'}"></p>
+                <h1>Ajuster le solde de départ de <span th:text="${partenaireNom}"></span></h1>
+                <p class="app-page-subtitle">Le solde de départ d'un partenaire déjà utilisé ne se modifie plus sur sa fiche : une correction passe par un ajustement daté, signé et motivé.</p>
+            </div>
+            <div class="app-actions">
+                <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour à la fiche
+                </a>
+            </div>
+        </header>
+
+        <div th:if="${success}" class="alert alert-success" th:text="${success}" role="status"></div>
+
+        <div class="operation-form">
+        <div class="operation-layout">
+            <div class="operation-workspace">
+                <section class="operation-panel" aria-labelledby="historiqueHeading">
+                    <div class="operation-panel-header">
+                        <div>
+                            <h2 id="historiqueHeading">Historique des ajustements</h2>
+                            <p>Date, auteur, ancien et nouveau solde, motif. Un ajustement n'est ni modifié ni supprimé.</p>
+                        </div>
+                        <i class="fa-solid fa-clock-rotate-left operation-panel-icon" aria-hidden="true"></i>
+                    </div>
+                    <div th:if="${#lists.isEmpty(historique)}" class="operation-empty">
+                        <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+                        <p>Aucun ajustement pour le moment.</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(historique)}">
+                        <th:block th:replace="~{fragments/ajustements-solde :: tableau(${historique}, ${estClient})}"></th:block>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="operation-summary operation-panel" aria-labelledby="ajustementHeading">
+                <div class="operation-panel-header">
+                    <div>
+                        <h2 id="ajustementHeading">Nouvel ajustement</h2>
+                        <p>Aucun mouvement de trésorerie n'est créé.</p>
+                    </div>
+                    <i class="fa-solid fa-scale-balanced operation-panel-icon" aria-hidden="true"></i>
+                </div>
+                <dl class="operation-summary-lines">
+                    <div>
+                        <dt>Solde de départ actuel</dt>
+                        <dd th:text="${solde.soldeDepart.signum() == 0 ? 'Aucun' : #numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (solde.soldeDepart.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Déjà réglé</dt>
+                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepartRegle, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
+                    <div>
+                        <dt>Reste à régler</dt>
+                        <dd th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                    </div>
+                </dl>
+                <form th:action="@{${actionUrl}}" method="post" id="formAjustementSolde">
+                    <div th:if="${#fields.hasErrors('*')}" class="alert alert-danger" role="alert">
+                        <ul class="mb-0"><li th:each="err : ${#fields.errors('*')}" th:text="${err}"></li></ul>
+                    </div>
+                    <input type="hidden" th:field="*{jeton}" />
+                    <div class="operation-field mb-3">
+                        <label for="montantAjustement" class="form-label fw-semibold">Nouveau montant (GNF)</label>
+                        <input id="montantAjustement" type="number" th:field="*{montant}" min="0" step="0.01" inputmode="decimal"
+                               class="form-control form-control-lg" th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'" required />
+                    </div>
+                    <div class="operation-field mb-3">
+                        <label for="sensAjustement" class="form-label fw-semibold">Sens</label>
+                        <select id="sensAjustement" class="form-select" th:field="*{sens}" required>
+                            <option value="">Choisir</option>
+                            <option value="IL_ME_DOIT" th:text="${estClient ? 'Il me doit' : 'Il me doit (avance chez lui)'}">Il me doit</option>
+                            <option value="JE_LUI_DOIS" th:text="${estClient ? 'Je lui dois (avance du client)' : 'Je lui dois'}">Je lui dois</option>
+                            <option value="AVANCE" th:text="${estClient ? 'Avance (le client a versé en avance)' : 'Avance (versée en avance au fournisseur)'}">Avance</option>
+                        </select>
+                    </div>
+                    <div class="operation-field mb-3">
+                        <label for="motifAjustement" class="form-label fw-semibold">Motif (obligatoire)</label>
+                        <textarea id="motifAjustement" th:field="*{motif}" rows="3" maxlength="255" minlength="3" required
+                                  class="form-control" th:classappend="${#fields.hasErrors('motif')} ? 'is-invalid'"></textarea>
+                    </div>
+                    <p class="operation-note">Les règlements déjà enregistrés ne changent pas. Si le nouveau montant dû passe sous ce qui a été réglé, l'excédent devient une avance.</p>
+                </form>
+            </aside>
+        </div>
+            <div class="operation-actions">
+                <a th:href="@{${retourUrl}}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" form="formAjustementSolde" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer l'ajustement</button>
+            </div>
+        </div>
+    </div>
+</div>

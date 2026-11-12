@@ -52,8 +52,11 @@ public class TresorerieExportService {
      * @param sens   {@code entree}, {@code sortie}, {@code neutre} ou {@code inconnu} (montant non renseigné), ou null
      * @param du     premier jour inclus, null sans borne ; avec une borne, les mouvements sans date sont exclus (comme à l'écran)
      * @param au     dernier jour inclus
+     * @param auteurId compte qui a saisi le mouvement (colonne « Saisi par »), ou null pour tous
      */
-    public record FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au) { }
+    public record FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au, Long auteurId) {
+        public FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au) { this(compteId, source, sens, du, au, null); }
+    }
 
     /** @throws ExportTropVolumineuxException si le filtre (hors recherche) donne plus de {@link LimiteExport#lignes()} mouvements */
     public TableauExport preparer(FiltreJournal filtre, String recherche) {
@@ -67,9 +70,10 @@ public class TresorerieExportService {
         List<MouvementCaisse> retenus = q.isEmpty() ? lus : lus.stream().filter(m -> RechercheListe.correspond(q, texteDeLaLigne(m, annulations.get(m.getId())))).toList();
 
         TableauExport tableau = TableauExport.titre("Journal de trésorerie").nomFeuille("Trésorerie")
-                .filtres(decrireFiltres(filtre, nomCompte, q))
+                .filtres(decrireFiltres(filtre, nomCompte, q, lus.stream().map(MouvementCaisse::getUtilisateur).filter(java.util.Objects::nonNull)
+                        .filter(u -> u.getId().equals(filtre.auteurId())).map(u -> u.getNom()).findFirst().orElse(null)))
                 .colonnes(Colonne.dateHeure("Date et heure"), Colonne.texteCourt("Compte"), Colonne.texteCourt("Sens"), Colonne.montant("Montant"),
-                        Colonne.texteCourt("Source"), Colonne.texte("Motif"), Colonne.texte("Utilisateur"), Colonne.texte("Annulation"));
+                        Colonne.texteCourt("Source"), Colonne.texte("Motif"), Colonne.texte("Saisi par"), Colonne.texte("Annulation"));
         BigDecimal entrees = Montants.ZERO, sorties = Montants.ZERO;
         for (MouvementCaisse m : retenus) {
             BigDecimal montant = m.getMontant();
@@ -113,6 +117,7 @@ public class TresorerieExportService {
             List<Predicate> conditions = new ArrayList<>();
             conditions.add(cb.equal(m.get("boutique").get("id"), boutiqueId));
             if (filtre.compteId() != null) conditions.add(cb.equal(m.get("compte").get("id"), filtre.compteId()));
+            if (filtre.auteurId() != null) conditions.add(cb.equal(m.get("utilisateur").get("id"), filtre.auteurId()));
             if (filtre.sens() != null) {
                 var montant = m.<BigDecimal>get("montant");
                 conditions.add(switch (filtre.sens()) {
@@ -126,7 +131,17 @@ public class TresorerieExportService {
                 var source = m.<String>get("source");
                 if (SOURCE_INITIALE.equals(filtre.source())) conditions.add(cb.equal(source, "SOLDE_INITIAL"));
                 else if (SOURCE_VIDE.equals(filtre.source())) conditions.add(cb.or(cb.isNull(source), cb.equal(cb.trim(source), "")));
-                else conditions.add(cb.equal(cb.trim(source), org.example.stock.model.SourceMouvement.depuisLibelle(filtre.source())));
+                else if (org.example.stock.model.SourceMouvement.ECART_CAISSE.equals(filtre.source())) {
+                    // Écart de caisse (étape 3b2) : l'ajustement d'un comptage validé, pas son annulation (qui garde la source « ANNULATION »).
+                    conditions.add(cb.and(cb.isNotNull(m.get("comptageCaisse")), cb.notEqual(cb.trim(source), org.example.stock.model.SourceMouvement.ANNULATION)));
+                } else {
+                    String brute = org.example.stock.model.SourceMouvement.depuisLibelle(filtre.source());
+                    conditions.add(cb.equal(cb.trim(source), brute));
+                    // « Autre produit » et « Autre charge » n'incluent pas les écarts de caisse, qui ont leur propre libellé.
+                    if (org.example.stock.model.SourceMouvement.AUTRE_PRODUIT.equals(brute) || org.example.stock.model.SourceMouvement.AUTRE_CHARGE.equals(brute)) {
+                        conditions.add(cb.isNull(m.get("comptageCaisse")));
+                    }
+                }
             }
             if (filtre.du() != null) conditions.add(cb.greaterThanOrEqualTo(m.<LocalDateTime>get("dateMouvement"), filtre.du().atStartOfDay()));
             if (filtre.au() != null) conditions.add(cb.lessThan(m.<LocalDateTime>get("dateMouvement"), filtre.au().plusDays(1).atStartOfDay()));
@@ -141,12 +156,13 @@ public class TresorerieExportService {
         return resultat;
     }
 
-    private static String decrireFiltres(FiltreJournal f, String nomCompte, String recherche) {
+    private static String decrireFiltres(FiltreJournal f, String nomCompte, String recherche, String nomAuteur) {
         List<String> parties = new ArrayList<>();
         if (f.du() != null && f.au() != null) parties.add("Période du " + Textes.date(f.du()) + " au " + Textes.date(f.au()));
         else if (f.du() != null) parties.add("Depuis le " + Textes.date(f.du()));
         else if (f.au() != null) parties.add("Jusqu'au " + Textes.date(f.au()));
         if (nomCompte != null) parties.add("Compte : " + nomCompte);
+        if (f.auteurId() != null) parties.add("Saisi par : " + (nomAuteur != null ? nomAuteur : "compte n° " + f.auteurId()));
         if (f.source() != null) parties.add("Source : " + f.source());
         if (f.sens() != null) parties.add("Sens : " + libelleFiltreSens(f.sens()));
         if (!recherche.isEmpty()) parties.add("Recherche : « " + recherche + " »");
@@ -169,6 +185,7 @@ public class TresorerieExportService {
 
     private static String source(MouvementCaisse m) {
         if ("SOLDE_INITIAL".equals(m.getSource())) return SOURCE_INITIALE;
+        if (m.getComptageCaisse() != null && !"ANNULATION".equals(m.getSource())) return org.example.stock.model.SourceMouvement.ECART_CAISSE;
         return m.getSource() != null && !m.getSource().isBlank() ? org.example.stock.model.SourceMouvement.libelle(m.getSource().strip()) : SOURCE_VIDE;
     }
 

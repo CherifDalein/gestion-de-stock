@@ -36,6 +36,8 @@ public class CaisseController {
     private CaisseService caisseService;
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private org.example.stock.service.ComptesTresorerieService comptesService;
+    @Autowired private org.example.stock.repository.UtilisateurRepository utilisateurs;
+    @Autowired private org.example.stock.service.BoutiqueService boutiques;
 
     @InitBinder({"ouvertureCaisse", "transfertTresorerie", "depenseTresorerie"})
     public void limiterOuverture(WebDataBinder binder,HttpServletRequest request) {
@@ -90,6 +92,7 @@ public class CaisseController {
         model.addAttribute("soldesParCompte", caisseService.getSoldesParCompte());
         model.addAttribute("soldesParType", caisseService.getSoldesParType());
         model.addAttribute("comptesJournal", comptesService.listerTous());
+        model.addAttribute("auteursJournal", utilisateurs.findAllByBoutiqueIdOrderByNomAscIdAsc(boutiques.idBoutiqueCourante()));
         model.addAttribute("initialAutorise", !caisseService.getComptesInitialisables().isEmpty());
         model.addAttribute("view", "caisse/journal");
         return "dashboard";

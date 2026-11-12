@@ -32,9 +32,9 @@
         <form method="get" th:action="@{/ventes}" class="mb-4 d-flex flex-wrap gap-2 align-items-end" aria-label="Filtrer les ventes par vendeur et par période">
             <input type="hidden" name="filtre" value="echues" th:if="${filtreEchues}" />
             <div th:if="${vendeursFiltre != null}">
-                <label for="filtreVendeur" class="form-label small mb-1">Vendeur</label>
+                <label for="filtreVendeur" class="form-label small mb-1">Saisi par</label>
                 <select id="filtreVendeur" name="vendeur" class="form-select">
-                    <option value="" th:selected="${vendeurChoisi == null}">Tous les vendeurs</option>
+                    <option value="" th:selected="${vendeurChoisi == null}">Tous les comptes</option>
                     <option th:each="u : ${vendeursFiltre}" th:value="${u.id}" th:selected="${vendeurChoisi != null and vendeurChoisi == u.id}"
                             th:text="${(#strings.isEmpty(#strings.trim(u.nom)) ? 'Compte sans nom' : u.nom) + (u.actif ? '' : ' (compte désactivé)')}"></option>
                 </select>
@@ -64,7 +64,7 @@
                             <th scope="col">Date</th>
                             <th scope="col">Échéance</th>
                             <th scope="col">Client</th>
-                            <th scope="col">Vendeur</th>
+                            <th scope="col">Saisi par</th>
                             <th scope="col">Total</th>
                             <th scope="col">Versé</th>
                             <th scope="col">Reste</th>

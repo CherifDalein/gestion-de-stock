@@ -21,7 +21,7 @@
             <p class="record-help" th:if="${#lists.isEmpty(operations)}">Aucune opération.</p>
             <div class="table-responsive" th:unless="${#lists.isEmpty(operations)}">
                 <table class="table fin-table fin-empilee">
-                    <thead><tr><th>Date</th><th>Nature</th><th>Partenaire</th><th>Compte</th><th class="text-end">Montant</th><th>Motif</th><th></th></tr></thead>
+                    <thead><tr><th>Date</th><th>Nature</th><th>Partenaire</th><th>Compte</th><th class="text-end">Montant</th><th>Motif</th><th>Saisi par</th><th></th></tr></thead>
                     <tbody>
                     <tr th:each="o : ${operations}" th:classappend="${annulees.contains(o.id) ? 'fin-annule' : ''}">
                         <td data-label="Date" th:text="${#temporals.format(o.dateOperation, 'dd/MM/yyyy HH:mm')}">01/01/2027</td>
@@ -30,6 +30,7 @@
                         <td data-label="Compte" th:text="${o.compteSource.nom}">Caisse</td>
                         <td data-label="Montant" class="text-end" th:text="${#numbers.formatDecimal(o.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</td>
                         <td data-label="Motif" th:text="${o.motif}">Motif</td>
+                        <td data-label="Saisi par" th:text="${o.utilisateur != null and !#strings.isEmpty(#strings.trim(o.utilisateur.nom)) ? o.utilisateur.nom : '—'}">—</td>
                         <td data-label="Action"><em th:if="${annulees.contains(o.id)}">Annulé</em><a th:unless="${annulees.contains(o.id)}" th:href="@{/financements/operations/{id}/annuler(id=${o.id})}">Annuler</a></td>
                     </tr>
                     </tbody>

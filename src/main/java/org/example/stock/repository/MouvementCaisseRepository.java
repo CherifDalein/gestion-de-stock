@@ -21,6 +21,10 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
     @Query("SELECT COUNT(m) > 0 FROM MouvementCaisse m WHERE m.compte.id = :compteId AND (m.source IS NULL OR m.source <> 'SOLDE_INITIAL')")
     boolean existeMouvementAutreQueSoldeDepart(@Param("compteId") Long compteId);
 
+    /** Mouvements d'un comptage : l'ajustement de l'écart (source AUTRE_PRODUIT ou AUTRE_CHARGE) et, après annulation, sa contre-passation. */
+    @Query("SELECT m FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.comptageCaisse.id = :comptageId ORDER BY m.id")
+    List<MouvementCaisse> mouvementsDuComptage(@Param("boutiqueId") Long boutiqueId, @Param("comptageId") Long comptageId);
+
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId")
     BigDecimal calculerSoldeCompte(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId);
 

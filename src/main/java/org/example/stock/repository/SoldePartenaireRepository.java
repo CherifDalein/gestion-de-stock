@@ -201,14 +201,14 @@ public class SoldePartenaireRepository {
      * les soldes de départ du bon sens, moins leurs règlements.
      */
     public Totaux restesSoldesDepart(Partenaire type, Long boutiqueId, LocalDate aujourdHui) {
-        String du = type == Partenaire.CLIENT ? "GREATEST(solde_initial, 0)" : "GREATEST(-solde_initial, 0)";
-        Object[] soldes = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + du + "),0), COALESCE(SUM(CASE WHEN echeance_solde_initial < :jour THEN " + du
-                        + " ELSE 0 END),0) FROM " + type.table + " WHERE boutique_id = :boutique")
-                .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).getSingleResult();
-        Object[] regles = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + NET_REGLEMENT_M + "),0), COALESCE(SUM(CASE WHEN p.echeance_solde_initial < :jour THEN " + NET_REGLEMENT_M + " ELSE 0 END),0)"
-                        + " FROM mouvement_caisse m JOIN " + type.table + " p ON p.id = m." + type.colonne + " WHERE m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')")
+        String du = type == Partenaire.CLIENT ? "GREATEST(p.solde_initial, 0)" : "GREATEST(-p.solde_initial, 0)";
+        // Reste par partenaire, jamais négatif : un solde ajusté sous ce qui a été réglé laisse un trop-réglé (une avance), pas un reste négatif.
+        String reste = "GREATEST(" + du + " - COALESCE((SELECT SUM(" + NET_REGLEMENT_M + ") FROM mouvement_caisse m WHERE m." + type.colonne
+                + " = p.id AND m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')),0), 0)";
+        Object[] ligne = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + reste + "),0), COALESCE(SUM(CASE WHEN p.echeance_solde_initial < :jour THEN " + reste
+                        + " ELSE 0 END),0) FROM " + type.table + " p WHERE p.boutique_id = :boutique")
                 .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).setParameter("source", type.source).getSingleResult();
-        return new Totaux(montant(soldes[0]).subtract(montant(regles[0])), montant(soldes[1]).subtract(montant(regles[1])));
+        return new Totaux(montant(ligne[0]), montant(ligne[1]));
     }
 
     /**

@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/clients")
 public class ClientController {
+    @Autowired private org.example.stock.service.AjustementSoldeDepartService ajustementsSolde;
     @Autowired
     private ClientService clientService;
 
@@ -65,6 +66,7 @@ public class ClientController {
         client.preparerSaisieSoldeDepart();
         model.addAttribute("client", client);
         model.addAttribute("soldeDepartSituation", soldes.soldeClient(id));
+        model.addAttribute("ajustementsSolde", ajustementsSolde.historiqueClientPourFiche(id));
         model.addAttribute("view", "clients/modifier");
         return "dashboard";
     }
@@ -80,6 +82,7 @@ public class ClientController {
             result.reject("solde.invalide", e.getMessage());
             client.setId(id);
             model.addAttribute("soldeDepartSituation", soldes.soldeClient(id));
+        model.addAttribute("ajustementsSolde", ajustementsSolde.historiqueClientPourFiche(id));
             model.addAttribute("view", "clients/modifier");
             return "dashboard";
         }

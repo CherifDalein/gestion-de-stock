@@ -1,0 +1,36 @@
+/* Contrôles (étape 3b2) : comptage de caisse, billetage, ajustements et inventaire des créances et dettes. */
+.ctl-page .ctl-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem 1rem; margin: 0 0 1rem; }
+.ctl-page .ctl-ligne { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .35rem 0; border-bottom: 1px solid var(--bs-border-color, #dee2e6); }
+.ctl-page .ctl-ligne:last-child { border-bottom: 0; }
+.ctl-page .ctl-ligne strong { text-align: right; overflow-wrap: anywhere; }
+.ctl-montant { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ctl-excedent { color: #0f5132; }
+.ctl-manque { color: #842029; }
+.ctl-neutre { color: inherit; }
+.ctl-statut { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.ctl-statut--conforme, .ctl-statut--valide { background: #d1e7dd; color: #0f5132; }
+.ctl-statut--en_attente { background: #fff3cd; color: #664d03; }
+.ctl-statut--refuse { background: #f8d7da; color: #842029; }
+.ctl-statut--annule { background: #e2e3e5; color: #41464b; }
+.ctl-ecart-direct { font-weight: 700; margin: .5rem 0 1rem; }
+.ctl-ecart-direct[data-etat="excedent"] { color: #0f5132; }
+.ctl-ecart-direct[data-etat="manque"] { color: #842029; }
+.ctl-ecart-direct[data-etat="conforme"] { color: #0f5132; }
+.ctl-billetage { display: grid; gap: .4rem; margin: 0 0 .75rem; }
+.ctl-billetage-ligne { display: grid; grid-template-columns: minmax(5.5rem, 1fr) minmax(5rem, 7rem) minmax(5rem, 1fr); gap: .5rem; align-items: center; }
+.ctl-billetage-ligne label { margin: 0; font-weight: 600; }
+.ctl-billetage-ligne output { text-align: right; font-variant-numeric: tabular-nums; }
+.ctl-billetage-total { display: flex; justify-content: space-between; gap: 1rem; font-weight: 700; padding-top: .5rem; border-top: 2px solid var(--bs-border-color, #dee2e6); }
+.ctl-decision { display: grid; gap: .5rem; }
+.ctl-decision-boutons { display: flex; flex-wrap: wrap; gap: .5rem; }
+.ctl-carte { border: 1px solid var(--bs-border-color, #dee2e6); border-radius: .5rem; padding: .85rem 1rem; margin: 0 0 .85rem; background: var(--bs-body-bg, #fff); }
+.ctl-carte header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; align-items: baseline; margin: 0 0 .5rem; }
+.ctl-carte h3 { font-size: 1.05rem; margin: 0; }
+.ctl-badge-attente { display: inline-block; min-width: 1.4rem; padding: 0 .4rem; margin-left: .35rem; border-radius: 999px; background: #dc3545; color: #fff; font-size: .75rem; font-weight: 700; text-align: center; line-height: 1.4rem; }
+.ctl-alerte-attente { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+@media (max-width: 575.98px) {
+    .ctl-montant { white-space: normal; }
+    .ctl-page .ctl-decision-boutons .btn { flex: 1 1 100%; }
+    .ctl-billetage-ligne { grid-template-columns: minmax(4.5rem, 1fr) minmax(4rem, 6rem) minmax(4rem, 1fr); }
+    .ctl-page .record-actions .btn { flex: 1 1 100%; }
+}

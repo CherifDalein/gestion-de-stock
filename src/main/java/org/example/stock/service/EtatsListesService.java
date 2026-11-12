@@ -136,7 +136,7 @@ public class EtatsListesService {
         }
 
         TableauExport t = TableauExport.titre("Liste des dépenses").nomFeuille("Dépenses").filtres(periode.texte())
-                .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Catégorie / motif"), Colonne.texte("Utilisateur"),
+                .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Catégorie / motif"), Colonne.texte("Saisi par"),
                         Colonne.montant("Montant"), Colonne.texte("Statut"));
         BigDecimal total = Montants.ZERO;
         Map<Long, BigDecimal> parCompte = new HashMap<>();
@@ -200,7 +200,7 @@ public class EtatsListesService {
 
         TableauExport t = TableauExport.titre("Liste des encaissements").nomFeuille("Encaissements").filtres(periode.texte())
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Source"), Colonne.texteCourt("Document"),
-                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Utilisateur"), Colonne.texte("Statut"));
+                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Saisi par"), Colonne.texte("Statut"));
         Map<Long, BigDecimal> parCompte = new HashMap<>();
         BigDecimal total = Montants.ZERO;
         for (MouvementCaisse m : entrees) {
@@ -217,7 +217,7 @@ public class EtatsListesService {
 
         TableauExport annulations = TableauExport.titre("Annulations d'encaissements").nomFeuille("Annulations").filtres(periode.texte())
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Source"), Colonne.texteCourt("Document"),
-                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Utilisateur"), Colonne.texte("Motif"));
+                        Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Saisi par"), Colonne.texte("Motif"));
         Map<Long, BigDecimal> annuleParCompte = new HashMap<>();
         BigDecimal totalAnnulations = Montants.ZERO;
         for (MouvementCaisse a : annulationsDEncaissements) {

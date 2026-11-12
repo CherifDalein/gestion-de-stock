@@ -85,7 +85,7 @@ class TresorerieExportTests {
             assertThat(f.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Boutique Étoile A");
             assertThat(f.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Journal de trésorerie");
             assertThat(f.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Journal complet");
-            assertThat(entetes(f, ENTETE)).containsExactly("Date et heure", "Compte", "Sens", "Montant", "Source", "Motif", "Utilisateur", "Annulation");
+            assertThat(entetes(f, ENTETE)).containsExactly("Date et heure", "Compte", "Sens", "Montant", "Source", "Motif", "Saisi par", "Annulation");
             List<Row> lignes = lignes(f, ENTETE);
             assertThat(lignes).hasSize(7);
             // Les plus récents d'abord, comme l'historique de l'écran : m7 (14/10) … m1 (01/10).
@@ -266,7 +266,32 @@ class TresorerieExportTests {
     void lePageDuJournalPorteLesBoutonsEtLeursChampsDeFiltre() throws Exception {
         String page = mvc.perform(gerant(get("/caisse/journal"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(page).contains("data-export-liste=\"excel\"", "data-export-liste=\"pdf\"", "href=\"/caisse/export/excel\"", "href=\"/caisse/export/pdf\"", "js/export-liste.js",
-                "data-export-champs=\"q=#caisseSearch;compte=#caisseCompte;source=#caisseSource@libelle;sens=#caisseDirection;du=#caisseDateFrom;au=#caisseDateTo\"");
+                "data-export-champs=\"q=#caisseSearch;compte=#caisseCompte;source=#caisseSource@libelle;sens=#caisseDirection;du=#caisseDateFrom;au=#caisseDateTo;auteur=#caisseAuteur\"");
+    }
+
+    @Test
+    void leFiltreSaisiParRestreintLeJournalEtLExportAUnCompteDeLaBoutique() throws Exception {
+        MockHttpServletResponse reponse = mvc.perform(gerant(get("/caisse/export/excel").param("auteur", String.valueOf(bakary.getId()))))
+                .andExpect(status().isOk()).andReturn().getResponse();
+        try (Workbook classeur = classeur(reponse)) {
+            Sheet f = classeur.getSheet("Trésorerie");
+            assertThat(f.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Saisi par : Bakary Caissier");
+            List<Row> lignes = lignes(f, ENTETE);
+            assertThat(lignes).hasSize(1);
+            assertThat(lignes.get(0).getCell(5).getStringCellValue()).isEqualTo("Règlement FV-000002");
+            assertThat(lignes.get(0).getCell(6).getStringCellValue()).isEqualTo("Bakary Caissier");
+        }
+        // Le compte d'une autre boutique ne donne aucune ligne ; un paramètre répété est refusé.
+        MockHttpServletResponse autre = mvc.perform(gerant(get("/caisse/export/excel").param("auteur", String.valueOf(gerantB.getId())))).andReturn().getResponse();
+        try (Workbook classeur = classeur(autre)) { assertThat(lignes(classeur.getSheet("Trésorerie"), ENTETE)).isEmpty(); }
+        mvc.perform(gerant(get("/caisse/export/excel").param("auteur", "1").param("auteur", "2"))).andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void lEcranDuJournalProposeLeFiltreSaisiParEtMarqueChaqueLigne() throws Exception {
+        String page = mvc.perform(gerant(get("/caisse/journal"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("<th scope=\"col\">Saisi par</th>", "id=\"caisseAuteur\"", "Awa Gérante", "Bakary Caissier", "data-auteur=\"" + bakary.getId() + "\"")
+                .doesNotContain("Zoé Autre Boutique");
     }
 
     /** Génère les PDF et Excel de démonstration si EXPORT_DEMO_DIR est défini (inspection visuelle, voir docs/lot-4.md). */

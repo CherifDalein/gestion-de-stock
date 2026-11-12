@@ -1,0 +1,53 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="inventaireTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="inventaireTitre">Nouvel inventaire</h1>
+                <p class="record-intro">Pour chaque partenaire contacté, saisissez le solde qu'il confirme et son sens. Laissez vide les partenaires que vous n'inventoriez pas. Le solde de l'application est celui d'aujourd'hui.</p></div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('creances')}"></div>
+        <form method="get" th:action="@{/controles/creances/nouveau}" class="fin-filtres" aria-label="Chercher un partenaire">
+            <div><label for="rechercheInventaire" class="form-label">Chercher un partenaire</label><input id="rechercheInventaire" type="search" name="q" class="form-control" maxlength="100" th:value="${recherche}" /></div>
+            <button type="submit" class="btn btn-outline-secondary">Chercher</button>
+        </form>
+        <form method="post" th:action="@{/controles/creances}" th:object="${inventaireForm}" id="formInventaire" novalidate>
+            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+            <input type="hidden" th:field="*{jeton}" />
+            <section class="record-panel" aria-labelledby="inventaireEnteteTitre">
+                <div class="record-panel-heading"><h2 id="inventaireEnteteTitre">Inventaire</h2></div>
+                <div class="ctl-grille">
+                    <div class="record-field"><label for="dateInventaire">Date de l'inventaire</label><input id="dateInventaire" type="date" class="form-control" th:field="*{dateInventaire}" required /></div>
+                    <div class="record-field"><label for="noteInventaire">Note <span class="record-optional">(facultative)</span></label><input id="noteInventaire" type="text" class="form-control" maxlength="255" th:field="*{note}" /></div>
+                </div>
+            </section>
+            <section class="record-panel" aria-labelledby="inventaireLignesTitre">
+                <div class="record-panel-heading"><h2 id="inventaireLignesTitre" th:text="${#lists.size(candidats.liste) + (#lists.size(candidats.liste) == 1 ? ' partenaire' : ' partenaires')}">0 partenaire</h2>
+                    <p th:if="${candidats.masques > 0}" th:text="${candidats.masques + ' autres partenaires ne sont pas affichés : utilisez la recherche pour les trouver.'}"></p></div>
+                <p class="record-help" th:if="${#lists.isEmpty(candidats.liste)}">Aucun partenaire à inventorier.</p>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(candidats.liste)}">
+                    <table class="table fin-table fin-empilee">
+                        <thead><tr><th>Partenaire</th><th class="text-end">Solde de l'application</th><th>Solde confirmé (GNF)</th><th>Sens</th><th>Raison d'un écart</th></tr></thead>
+                        <tbody>
+                        <tr th:each="c, i : ${candidats.liste}">
+                            <td data-label="Partenaire"><strong th:text="${c.nom}">Aminata</strong><br><small th:text="${c.type.libelle}">Client</small>
+                                <input type="hidden" th:name="${'cles[' + i.index + ']'}" th:value="${c.cle()}" /></td>
+                            <td data-label="Solde appli" class="text-end ctl-montant" th:text="${c.solde.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(c.solde.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (c.solde.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
+                            <td data-label="Confirmé"><input type="number" min="0" step="0.01" inputmode="decimal" class="form-control" th:name="${'montants[' + i.index + ']'}" th:attr="aria-label=${'Solde confirmé par ' + c.nom}" /></td>
+                            <td data-label="Sens"><select class="form-select" th:name="${'sens[' + i.index + ']'}" th:attr="aria-label=${'Sens du solde confirmé par ' + c.nom}">
+                                <option value="IL_ME_DOIT" th:selected="${c.solde.signum() >= 0}">Il me doit</option>
+                                <option value="JE_LUI_DOIS" th:selected="${c.solde.signum() < 0}">Je lui dois</option></select></td>
+                            <td data-label="Raison"><input type="text" maxlength="255" class="form-control" th:name="${'raisons[' + i.index + ']'}" th:attr="aria-label=${'Raison pour ' + c.nom}" /></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <div class="record-actions">
+                <a th:href="@{/controles/creances}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer l'inventaire</button>
+            </div>
+        </form>
+    </section>
+</div>

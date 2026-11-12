@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/fournisseurs")
 public class FournisseurController {
+    @Autowired private org.example.stock.service.AjustementSoldeDepartService ajustementsSolde;
     @Autowired
     private FournisseurService fournisseurService;
 
@@ -73,6 +74,7 @@ public class FournisseurController {
         fournisseur.preparerSaisieSoldeDepart();
         model.addAttribute("fournisseur", fournisseur);
         model.addAttribute("soldeDepartSituation", soldes.soldeFournisseur(id));
+        model.addAttribute("ajustementsSolde", ajustementsSolde.historiqueFournisseurPourFiche(id));
         model.addAttribute("view", "fournisseurs/modifier");
         return "dashboard";
     }
@@ -88,6 +90,7 @@ public class FournisseurController {
             result.reject("solde.invalide", e.getMessage());
             fournisseur.setId(id);
             model.addAttribute("soldeDepartSituation", soldes.soldeFournisseur(id));
+        model.addAttribute("ajustementsSolde", ajustementsSolde.historiqueFournisseurPourFiche(id));
             model.addAttribute("view", "fournisseurs/modifier");
             return "dashboard";
         }

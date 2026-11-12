@@ -48,7 +48,7 @@ public class VenteExportService {
         Benefices benefices = gerant ? Benefices.de(marges, retenues) : null;
 
         List<Colonne> colonnes = new ArrayList<>(List.of(Colonne.texteCourt("Numéro"), Colonne.dateHeure("Date"), Colonne.texte("Client"),
-                Colonne.texte("Vendeur"), Colonne.montant("Total"), Colonne.montant("Retours"), Colonne.montant("Versé"),
+                Colonne.texte("Saisi par"), Colonne.montant("Total"), Colonne.montant("Retours"), Colonne.montant("Versé"),
                 Colonne.montant("Avance utilisée"), Colonne.montant("Reste"), Colonne.texteCourt("Statut"), Colonne.date("Échéance")));
         if (gerant) colonnes.add(Colonne.montant("Bénéfice brut"));
 

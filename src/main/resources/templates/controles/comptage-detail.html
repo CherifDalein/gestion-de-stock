@@ -1,0 +1,99 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="detailTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="detailTitre" th:text="${'Comptage CC-' + comptage.id}">Comptage CC-1</h1>
+                <p class="record-intro"><span th:replace="~{controles/navigation :: statut(${comptage.statut})}"></span></p></div>
+            <div class="fin-actions">
+                <a th:href="@{/controles/comptages/{id}/pdf(id=${comptage.id})}" class="btn btn-outline-danger" th:if="${voirTheorique}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Procès-verbal PDF</a>
+                <a th:href="@{/controles/comptages}" class="btn btn-outline-secondary">Retour à la liste</a>
+            </div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('comptages')}"></div>
+        <div th:replace="~{controles/navigation :: alertes}"></div>
+
+        <section class="record-panel" aria-labelledby="resultatTitre">
+            <div class="record-panel-heading"><h2 id="resultatTitre">Résultat du comptage</h2></div>
+            <div class="ctl-ligne"><span>Compte</span><strong th:text="${comptage.compte.nom}">Caisse</strong></div>
+            <div class="ctl-ligne"><span>Date</span><strong th:text="${#temporals.format(comptage.dateComptage, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</strong></div>
+            <div class="ctl-ligne"><span>Saisi par</span><strong th:text="${comptage.utilisateur.nom}">Awa</strong></div>
+            <div class="ctl-ligne" th:if="${voirTheorique}"><span>Solde théorique à cette heure</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(comptage.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
+            <div class="ctl-ligne"><span>Montant compté</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(comptage.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
+            <div class="ctl-ligne" th:if="${voirTheorique}"><span th:text="${'Écart (' + comptage.natureEcart + ')'}">Écart</span><strong><span th:replace="~{controles/navigation :: ecart(${comptage.ecart})}"></span></strong></div>
+            <p class="mt-2 mb-0" th:if="${comptage.commentaire != null}"><em th:text="${comptage.commentaire}">Commentaire</em></p>
+            <p class="record-help mt-2 mb-0" th:if="${voirTheorique}">L'écart est calculé au moment du comptage : un mouvement saisi ensuite ne le modifie pas.</p>
+        </section>
+
+        <section class="record-panel" aria-labelledby="detailBilletageTitre" th:unless="${#lists.isEmpty(comptage.billetage)}">
+            <div class="record-panel-heading"><h2 id="detailBilletageTitre">Billetage</h2></div>
+            <div class="table-responsive">
+                <table class="table fin-table mb-0">
+                    <thead><tr><th>Coupure</th><th class="text-end">Nombre</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${comptage.billetage}">
+                        <td class="ctl-montant" th:text="${#numbers.formatDecimal(l.coupure, 1, 'WHITESPACE', 0, 'COMMA') + ' GNF'}">20 000 GNF</td>
+                        <td class="text-end" th:text="${l.quantite}">1</td>
+                        <td class="text-end ctl-montant" th:text="${#numbers.formatDecimal(l.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">20 000 GNF</td>
+                    </tr>
+                    <tr><th scope="row" colspan="2">Total du billetage</th><th class="text-end ctl-montant" th:text="${#numbers.formatDecimal(comptage.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</th></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="record-panel" aria-labelledby="decisionTitre" th:if="${comptage.decideur != null}">
+            <div class="record-panel-heading"><h2 id="decisionTitre">Décision du gérant</h2></div>
+            <div class="ctl-ligne"><span>Décision</span><strong th:text="${comptage.statut.libelle}">Validé</strong></div>
+            <div class="ctl-ligne"><span>Par</span><strong th:text="${comptage.decideur.nom}">Gérant</strong></div>
+            <div class="ctl-ligne"><span>Date</span><strong th:text="${#temporals.format(comptage.dateDecision, 'dd/MM/yyyy HH:mm')}">09/11/2026</strong></div>
+            <div class="ctl-ligne"><span>Motif</span><strong th:text="${comptage.motifDecision}">Motif</strong></div>
+        </section>
+        <section class="record-panel" aria-labelledby="annulationTitre" th:if="${comptage.annulePar != null}">
+            <div class="record-panel-heading"><h2 id="annulationTitre">Annulation</h2></div>
+            <div class="ctl-ligne"><span>Par</span><strong th:text="${comptage.annulePar.nom}">Gérant</strong></div>
+            <div class="ctl-ligne"><span>Date</span><strong th:text="${#temporals.format(comptage.dateAnnulation, 'dd/MM/yyyy HH:mm')}">09/11/2026</strong></div>
+            <div class="ctl-ligne"><span>Motif</span><strong th:text="${comptage.motifAnnulation}">Motif</strong></div>
+        </section>
+
+        <section class="record-panel" aria-labelledby="mouvementsTitre" th:unless="${#lists.isEmpty(mouvements)}" sec:authorize="hasRole('ADMIN')">
+            <div class="record-panel-heading"><h2 id="mouvementsTitre">Mouvements de trésorerie</h2></div>
+            <div class="table-responsive">
+                <table class="table fin-table fin-empilee mb-0">
+                    <thead><tr><th>Date</th><th>Nature</th><th class="text-end">Montant</th><th>Motif</th></tr></thead>
+                    <tbody>
+                    <tr th:each="m : ${mouvements}">
+                        <td data-label="Date" class="text-nowrap" th:text="${#temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm')}">09/11/2026</td>
+                        <td data-label="Nature" th:text="${m.sourceLibelle}">Écart de caisse</td>
+                        <td data-label="Montant" class="text-end"><span th:replace="~{controles/navigation :: ecart(${m.montant})}"></span></td>
+                        <td data-label="Motif" th:text="${m.motif}">Motif</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="record-panel" aria-labelledby="actionsTitre" sec:authorize="hasRole('ADMIN')"
+                 th:if="${comptage.statut.name() == 'EN_ATTENTE' or comptage.statut.name() == 'VALIDE'}">
+            <div class="record-panel-heading"><h2 id="actionsTitre" th:text="${comptage.statut.name() == 'EN_ATTENTE' ? 'Décider de l’écart' : 'Annuler ce comptage validé'}">Décision</h2>
+                <p th:if="${comptage.statut.name() == 'VALIDE'}">L'annulation passe le mouvement inverse sur le même compte. Elle est refusée si elle laissait le compte sans la somme nécessaire.</p></div>
+            <p class="alert alert-warning mt-2 mb-0" role="alert"
+               th:if="${comptage.statut.name() == 'EN_ATTENTE' and comptage.ecart.signum() < 0 and soldesActuels != null and soldesActuels.get(comptage.compte.id) != null and soldesActuels.get(comptage.compte.id).add(comptage.ecart).signum() < 0}"
+               th:text="${'Attention : le solde actuel du compte est de ' + #numbers.formatDecimal(soldesActuels.get(comptage.compte.id), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF ; valider ce manque le rendrait négatif (' + #numbers.formatDecimal(soldesActuels.get(comptage.compte.id).add(comptage.ecart), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF).'}"></p>
+            <form method="post" th:action="@{/controles/comptages/{id}/valider(id=${comptage.id})}" class="ctl-decision" th:if="${comptage.statut.name() == 'EN_ATTENTE'}">
+                <label for="motifDecision" class="form-label fw-semibold mb-0">Motif (obligatoire)</label>
+                <input id="motifDecision" type="text" name="motif" class="form-control" minlength="3" maxlength="255" required autocomplete="off" />
+                <div class="ctl-decision-boutons">
+                    <button type="submit" class="btn btn-success"><i class="fa-solid fa-check" aria-hidden="true"></i> Valider l'écart</button>
+                    <button type="submit" class="btn btn-outline-danger" th:formaction="@{/controles/comptages/{id}/refuser(id=${comptage.id})}"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Refuser</button>
+                </div>
+            </form>
+            <form method="post" th:action="@{/controles/comptages/{id}/annuler(id=${comptage.id})}" class="ctl-decision" th:if="${comptage.statut.name() == 'VALIDE'}">
+                <label for="motifAnnulation" class="form-label fw-semibold mb-0">Motif de l'annulation (obligatoire)</label>
+                <input id="motifAnnulation" type="text" name="motif" class="form-control" minlength="3" maxlength="255" required autocomplete="off" />
+                <div class="ctl-decision-boutons"><button type="submit" class="btn btn-outline-danger"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Annuler le comptage</button></div>
+            </form>
+        </section>
+    </section>
+</div>

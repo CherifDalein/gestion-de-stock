@@ -34,6 +34,13 @@ public final class SourceMouvement {
     public static final String AUTRE_PRODUIT = "AUTRE_PRODUIT";
     public static final String AUTRE_CHARGE = "AUTRE_CHARGE";
 
+    /**
+     * Étape 3b2 : libellé affiché pour l'ajustement d'un écart de caisse validé. Il n'est jamais stocké : le mouvement garde la source
+     * {@link #AUTRE_PRODUIT} (excédent) ou {@link #AUTRE_CHARGE} (manque), donc la classification du bilan de l'étape 3b1, et se reconnaît
+     * à son comptage ({@code mouvement_caisse.comptage_caisse_id}).
+     */
+    public static final String ECART_CAISSE = "Écart de caisse";
+
     private static final java.util.Map<String, String> LIBELLES = java.util.Map.ofEntries(
             java.util.Map.entry(APPORT_CAPITAL, "Apport en capital"),
             java.util.Map.entry(APPORT_COMPTE_COURANT, "Apport en compte courant"),

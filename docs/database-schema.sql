@@ -341,6 +341,116 @@ CREATE TABLE IF NOT EXISTS imputation_echeance (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- Fin lot 3b1
 
+-- Lot 3b2 : contrôles. Un comptage de caisse fige le solde théorique d'un compte et l'écart (compté - théorique) ; l'écart ne devient un
+-- mouvement qu'à la validation du gérant (mouvement_caisse.comptage_caisse_id). Un ajustement de solde de départ corrige un client ou un
+-- fournisseur déjà utilisé (soldes signés comme solde_initial). Un inventaire des créances et dettes est une trace : aucun solde n'est modifié.
+CREATE TABLE IF NOT EXISTS comptage_caisse (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    compte_id BIGINT NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_comptage DATETIME(6) NOT NULL,
+    montant_compte DECIMAL(17,2) NOT NULL,
+    solde_theorique DECIMAL(17,2) NOT NULL,
+    ecart DECIMAL(17,2) NOT NULL,
+    commentaire VARCHAR(255) NULL,
+    statut VARCHAR(16) NOT NULL,
+    decideur_id BIGINT NULL,
+    date_decision DATETIME(6) NULL,
+    motif_decision VARCHAR(255) NULL,
+    annule_par_id BIGINT NULL,
+    date_annulation DATETIME(6) NULL,
+    motif_annulation VARCHAR(255) NULL,
+    jeton VARCHAR(36) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_comptage_caisse_jeton UNIQUE (jeton),
+    CONSTRAINT fk_comptage_caisse_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_comptage_caisse_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id),
+    CONSTRAINT fk_comptage_caisse_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_comptage_caisse_decideur
+        FOREIGN KEY (decideur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_comptage_caisse_annule_par
+        FOREIGN KEY (annule_par_id) REFERENCES utilisateur (id),
+    INDEX idx_comptage_caisse_boutique_statut (boutique_id, statut)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS comptage_billetage (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    comptage_id BIGINT NOT NULL,
+    coupure INT NOT NULL,
+    quantite INT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_comptage_billetage UNIQUE (comptage_id, coupure),
+    CONSTRAINT fk_comptage_billetage_comptage
+        FOREIGN KEY (comptage_id) REFERENCES comptage_caisse (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ajustement_solde_depart (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    client_id BIGINT NULL,
+    fournisseur_id BIGINT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_ajustement DATETIME(6) NOT NULL,
+    ancien_solde DECIMAL(17,2) NOT NULL,
+    nouveau_solde DECIMAL(17,2) NOT NULL,
+    motif VARCHAR(255) NOT NULL,
+    jeton VARCHAR(36) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_ajustement_solde_depart_jeton UNIQUE (jeton),
+    CONSTRAINT fk_ajustement_solde_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_ajustement_solde_client
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_ajustement_solde_fournisseur
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),
+    CONSTRAINT fk_ajustement_solde_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS inventaire_creances (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_inventaire DATE NOT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    note VARCHAR(255) NULL,
+    jeton VARCHAR(36) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_inventaire_creances_jeton UNIQUE (jeton),
+    CONSTRAINT fk_inventaire_creances_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_inventaire_creances_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ligne_inventaire_creances (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    inventaire_id BIGINT NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    client_id BIGINT NULL,
+    fournisseur_id BIGINT NULL,
+    partenaire_financier_id BIGINT NULL,
+    nom VARCHAR(255) NOT NULL,
+    solde_appli DECIMAL(17,2) NOT NULL,
+    solde_confirme DECIMAL(17,2) NOT NULL,
+    ecart DECIMAL(17,2) NOT NULL,
+    raison VARCHAR(255) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_ligne_inventaire_inventaire
+        FOREIGN KEY (inventaire_id) REFERENCES inventaire_creances (id),
+    CONSTRAINT fk_ligne_inventaire_client
+        FOREIGN KEY (client_id) REFERENCES client (id),
+    CONSTRAINT fk_ligne_inventaire_fournisseur
+        FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),
+    CONSTRAINT fk_ligne_inventaire_partenaire
+        FOREIGN KEY (partenaire_financier_id) REFERENCES partenaire_financier (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Fin lot 3b2
+
 -- Lot 2 : devis et retours avec leurs lignes. Aucune ligne n'est créée par ce script.
 CREATE TABLE IF NOT EXISTS devis (
     id BIGINT NOT NULL AUTO_INCREMENT,
@@ -452,10 +562,13 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     fournisseur_id BIGINT NULL,
     retour_id BIGINT NULL,
     annulation_de_id BIGINT NULL,
+    comptage_caisse_id BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),
     CONSTRAINT fk_mouvement_caisse_compte
         FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id),
+    CONSTRAINT fk_mouvement_caisse_comptage
+        FOREIGN KEY (comptage_caisse_id) REFERENCES comptage_caisse (id),
     CONSTRAINT fk_mouvement_caisse_retour
         FOREIGN KEY (retour_id) REFERENCES retour (id),
     CONSTRAINT fk_mouvement_caisse_annulation

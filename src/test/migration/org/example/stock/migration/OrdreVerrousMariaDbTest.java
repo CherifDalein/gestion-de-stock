@@ -11,6 +11,8 @@ import org.example.stock.model.*;
 import org.example.stock.service.AchatService;
 import org.example.stock.service.AnnulationReglementService;
 import org.example.stock.service.CaisseService;
+import org.example.stock.service.ComptageCaisseService;
+import org.example.stock.service.ComptageDejaTraiteException;
 import org.example.stock.service.EmpruntObsoleteException;
 import org.example.stock.service.EmpruntService;
 import org.example.stock.service.OperationsFinancieresService;
@@ -68,6 +70,7 @@ public class OrdreVerrousMariaDbTest {
     private final SoldeDepartService soldeDepartService;
     private final AnnulationReglementService annulationService;
     private final CaisseService caisseService;
+    private final ComptageCaisseService comptageService;
     private final ComptesTresorerieService comptesService;
     private final ConfigurableApplicationContext contexte;
     private final TransactionTemplate transaction;
@@ -117,6 +120,7 @@ public class OrdreVerrousMariaDbTest {
         soldeDepartService = contexte.getBean(SoldeDepartService.class);
         annulationService = contexte.getBean(AnnulationReglementService.class);
         caisseService = contexte.getBean(CaisseService.class);
+        comptageService = contexte.getBean(ComptageCaisseService.class);
         comptesService = contexte.getBean(ComptesTresorerieService.class);
         transaction = new TransactionTemplate(contexte.getBean(PlatformTransactionManager.class));
         transaction.setTimeout(30);
@@ -303,6 +307,22 @@ public class OrdreVerrousMariaDbTest {
             simultanesSansErreur("remboursement+apport d'associé+transfert+archivage #" + tour,
                     () -> rembourserEmprunt(a, dossier[0], "50000", new AtomicInteger(), new AtomicInteger()), () -> apporter(a, associe, "1000"),
                     () -> transferer(a, banque, comptePrincipal(a, "ESPECES"), "1000"), () -> tenterArchivage(a, associe));
+        }
+        // 11. Comptage de caisse (3b2) : boutique, puis comptage, puis comptes. Deux validations simultanées du même comptage n'en laissent passer
+        //     qu'une (l'autre reçoit « déjà traité », donc 409) et ne postent qu'un seul mouvement d'écart, même croisées avec un transfert.
+        fonds(a, "ESPECES", "5000000");
+        long especes = comptePrincipal(a, "ESPECES");
+        for (int tour = 0; tour < TOURS; tour++) {
+            BigDecimal avant = decimal("SELECT COALESCE(SUM(montant),0) FROM mouvement_caisse WHERE compte_id=" + especes);
+            long comptage = nouveauComptageEnAttente(a, especes, avant.subtract(new BigDecimal("1000")));
+            AtomicInteger acceptes = new AtomicInteger(), refuses = new AtomicInteger();
+            simultanesSansErreur("deux validations du même comptage #" + tour,
+                    () -> validerComptage(a, comptage, acceptes, refuses), () -> validerComptage(a, comptage, acceptes, refuses),
+                    () -> transferer(a, especes, comptePrincipal(a, "BANQUE"), "1000"));
+            exiger(acceptes.get() == 1 && refuses.get() == 1, "Une seule validation doit passer (acceptées=" + acceptes + ", refusées=" + refuses + ")");
+            exiger(decimal("SELECT COUNT(*) FROM mouvement_caisse WHERE comptage_caisse_id=" + comptage).intValue() == 1, "Un seul mouvement d'écart par comptage");
+            exiger(decimal("SELECT COALESCE(SUM(montant),0) FROM mouvement_caisse WHERE comptage_caisse_id=" + comptage).compareTo(new BigDecimal("-1000")) == 0, "Le manque n'est posté qu'une fois");
+            exiger("VALIDE".equals(jdbc.queryForObject("SELECT statut FROM comptage_caisse WHERE id=" + comptage, String.class)), "Le comptage est validé");
         }
         // Invariants finaux : numéros distincts par boutique, aucune avance utilisée en excès.
         for (String table : List.of("achat", "vente", "retour")) {
@@ -508,6 +528,22 @@ public class OrdreVerrousMariaDbTest {
     private void archiver(Boutiquier t, long compteId) {
         connecter(t);
         try { comptesService.archiver(compteId); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private long nouveauComptageEnAttente(Boutiquier t, long compteId, BigDecimal compte) {
+        connecter(t);
+        try {
+            var c = comptageService.saisir(String.valueOf(compteId), compte, null, "Comptage concurrent", java.util.UUID.randomUUID().toString());
+            exiger(c.getStatut() == org.example.stock.enums.StatutComptage.EN_ATTENTE, "Le comptage avec écart attend la validation");
+            return c.getId();
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void validerComptage(Boutiquier t, long comptageId, AtomicInteger acceptes, AtomicInteger refuses) {
+        connecter(t);
+        try { comptageService.valider(comptageId, "Validation concurrente"); acceptes.incrementAndGet(); }
+        catch (ComptageDejaTraiteException e) { refuses.incrementAndGet(); }
         finally { SecurityContextHolder.clearContext(); }
     }
 

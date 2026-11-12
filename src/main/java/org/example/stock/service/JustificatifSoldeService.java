@@ -47,6 +47,9 @@ import java.util.Map;
 @Service
 @Transactional(readOnly = true)
 public class JustificatifSoldeService {
+    /** Un ajustement du solde de départ, avec les montants en valeur absolue et leur sens du point de vue de la boutique. */
+    public record Ajustement(LocalDateTime date, String auteur, BigDecimal ancien, String sensAncien, BigDecimal nouveau, String sensNouveau, String motif) { }
+
     /** Une facture non soldée du détail. */
     public record Facture(String numero, LocalDate date, LocalDate echeance, BigDecimal reste) { }
 
@@ -57,7 +60,8 @@ public class JustificatifSoldeService {
      */
     public record JustificatifPartenaire(Cote cote, Long partenaireId, String numero, LocalDate arrete, LocalDateTime edition, String nom,
                                          String telephone, String email, String adresse, BigDecimal resteSoldeDepart, LocalDate echeanceSoldeDepart,
-                                         List<Facture> factures, BigDecimal resteFactures, BigDecimal avance, BigDecimal solde) {
+                                         List<Facture> factures, BigDecimal resteFactures, BigDecimal avance, BigDecimal solde,
+                                         List<Ajustement> ajustements) {
         public boolean estClient() { return cote == Cote.CLIENT; }
 
         public BigDecimal montant() { return solde.abs(); }
@@ -143,11 +147,14 @@ public class JustificatifSoldeService {
     private final BoutiqueService boutiques;
     private final EcheanceService echeances;
     private final LimiteExport limite;
+    private final org.example.stock.repository.AjustementSoldeDepartRepository ajustements;
 
     public JustificatifSoldeService(SoldePartenaireService soldes, JustificatifSoldeRepository factures, ClientRepository clients,
                                     FournisseurRepository fournisseurs, EtatsRepository etats, CaisseService caisse, BoutiqueService boutiques,
                                     EcheanceService echeances, LimiteExport limite, CompteTresorerieBoutiqueRepository comptesRepo,
-                                    PartenairesFinanciersService financiers, EmpruntService emprunts) {
+                                    PartenairesFinanciersService financiers, EmpruntService emprunts,
+                                    org.example.stock.repository.AjustementSoldeDepartRepository ajustements) {
+        this.ajustements = ajustements;
         this.comptesRepo = comptesRepo; this.financiers = financiers; this.emprunts = emprunts;
         this.soldes = soldes; this.factures = factures; this.clients = clients; this.fournisseurs = fournisseurs;
         this.etats = etats; this.caisse = caisse; this.boutiques = boutiques; this.echeances = echeances; this.limite = limite;
@@ -203,7 +210,19 @@ public class JustificatifSoldeService {
         }
         String numero = numero(arrete, cote == Cote.CLIENT ? 'C' : 'F', id);
         return new JustificatifPartenaire(cote, id, numero, arrete, echeances.maintenant(), nom, blanc(telephone), blanc(email), blanc(adresse),
-                s.resteSoldeDepart(), s.resteSoldeDepart().signum() > 0 ? s.echeanceSoldeDepart() : null, List.copyOf(detail), somme, s.avanceDisponible(), solde);
+                s.resteSoldeDepart(), s.resteSoldeDepart().signum() > 0 ? s.echeanceSoldeDepart() : null, List.copyOf(detail), somme, s.avanceDisponible(), solde,
+                historique(cote, id));
+    }
+
+    /** Ajustements du solde de départ, du plus ancien au plus récent : ils figurent sur le justificatif. */
+    private List<Ajustement> historique(Cote cote, Long id) {
+        Long boutiqueId = boutiques.idBoutiqueCourante();
+        boolean client = cote == Cote.CLIENT;
+        var lus = client ? ajustements.findByBoutiqueIdAndClientIdOrderByDateAjustementAscIdAsc(boutiqueId, id)
+                : ajustements.findByBoutiqueIdAndFournisseurIdOrderByDateAjustementAscIdAsc(boutiqueId, id);
+        return lus.stream().map(a -> new Ajustement(a.getDateAjustement(), a.getUtilisateur().getNom(), a.getAncienSolde().abs(),
+                EtatsPartenairesService.sensSolde(a.getAncienSolde(), client), a.getNouveauSolde().abs(),
+                EtatsPartenairesService.sensSolde(a.getNouveauSolde(), client), a.getMotif())).toList();
     }
 
     private static String blanc(String t) { return t == null || t.isBlank() ? null : Textes.pourXml(t.strip()); }

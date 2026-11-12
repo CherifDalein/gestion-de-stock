@@ -104,7 +104,7 @@ class VenteExportTests {
             assertThat(f.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Boutique Étoile A");
             assertThat(f.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Journal des ventes");
             assertThat(f.getRow(2).getCell(0).getStringCellValue()).isEqualTo("Toutes les ventes");
-            assertThat(texteDesEntetes(f)).containsExactly("Numéro", "Date", "Client", "Vendeur", "Total", "Retours", "Versé", "Avance utilisée",
+            assertThat(texteDesEntetes(f)).containsExactly("Numéro", "Date", "Client", "Saisi par", "Total", "Retours", "Versé", "Avance utilisée",
                     "Reste", "Statut", "Échéance", "Bénéfice brut");
             List<Row> lignes = lignesDeDonnees(f);
             // Plus récentes d'abord, comme à l'écran.
@@ -228,7 +228,7 @@ class VenteExportTests {
     void leCaissierNeRecoitNiCoutNiBeneficeNiDansLExcelNiDansLePdf() throws Exception {
         try (Workbook classeur = classeur(mvc.perform(caissier(get("/ventes/export/excel"))).andExpect(status().isOk()).andReturn().getResponse())) {
             Sheet f = classeur.getSheetAt(0);
-            assertThat(texteDesEntetes(f)).containsExactly("Numéro", "Date", "Client", "Vendeur", "Total", "Retours", "Versé", "Avance utilisée",
+            assertThat(texteDesEntetes(f)).containsExactly("Numéro", "Date", "Client", "Saisi par", "Total", "Retours", "Versé", "Avance utilisée",
                     "Reste", "Statut", "Échéance");
             List<Row> lignes = lignesDeDonnees(f);
             assertThat(lignes).hasSize(3);

@@ -1,0 +1,54 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="comptagesTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="comptagesTitre">Comptages de caisse</h1>
+                <p class="record-intro" sec:authorize="hasRole('ADMIN')">Tous les comptages de la boutique. Les écarts attendent votre décision.</p>
+                <p class="record-intro" sec:authorize="!hasRole('ADMIN')">Vos comptages et leur statut. Un écart attend la décision du gérant.</p></div>
+            <div class="fin-actions">
+                <a th:href="@{/controles/comptages/nouveau}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Compter la caisse</a>
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <a th:href="@{/controles/comptages/export/excel(statut=${filtre.statut != null ? filtre.statut.name() : null},du=${filtre.du},au=${filtre.au})}" class="btn btn-outline-success" aria-label="Exporter la liste au format Excel"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+                    <a th:href="@{/controles/comptages/export/pdf(statut=${filtre.statut != null ? filtre.statut.name() : null},du=${filtre.du},au=${filtre.au})}" class="btn btn-outline-danger" aria-label="Exporter la liste au format PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                </th:block>
+            </div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('comptages')}"></div>
+        <div th:replace="~{controles/navigation :: alertes}"></div>
+        <div class="alert alert-warning ctl-alerte-attente" role="status" sec:authorize="hasRole('ADMIN')" th:if="${nombreEnAttente > 0}">
+            <span><strong th:text="${nombreEnAttente + (nombreEnAttente == 1 ? ' comptage attend' : ' comptages attendent')}">2 comptages attendent</strong> votre décision.</span>
+            <a th:href="@{/controles/comptages/en-attente}" class="btn btn-sm btn-warning">Voir les comptages à valider</a>
+        </div>
+        <form method="get" th:action="@{/controles/comptages}" class="fin-filtres" aria-label="Filtrer les comptages">
+            <div><label for="filtreStatut" class="form-label">Statut</label>
+                <select id="filtreStatut" name="statut" class="form-select"><option value="">Tous</option>
+                    <option th:each="s : ${statuts}" th:value="${s.name()}" th:text="${s.libelle}" th:selected="${filtre.statut == s}">Conforme</option></select></div>
+            <div><label for="filtreDu" class="form-label">Du</label><input id="filtreDu" type="date" name="du" class="form-control" th:value="${filtre.du}" /></div>
+            <div><label for="filtreAu" class="form-label">Au</label><input id="filtreAu" type="date" name="au" class="form-control" th:value="${filtre.au}" /></div>
+            <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+        </form>
+        <section class="record-panel" aria-labelledby="comptagesListeTitre">
+            <div class="record-panel-heading"><h2 id="comptagesListeTitre" th:text="${#lists.size(comptages) + (#lists.size(comptages) == 1 ? ' comptage' : ' comptages')}">0 comptage</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(comptages)}">Aucun comptage à afficher.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(comptages)}">
+                <table class="table fin-table fin-empilee">
+                    <thead><tr><th>Numéro</th><th>Date</th><th>Compte</th><th class="text-end" th:if="${voirTheorique}">Théorique</th><th class="text-end">Compté</th><th class="text-end" th:if="${voirTheorique}">Écart</th><th>Statut</th><th>Saisi par</th></tr></thead>
+                    <tbody>
+                    <tr th:each="c : ${comptages}">
+                        <td data-label="Numéro"><a th:href="@{/controles/comptages/{id}(id=${c.id})}" th:text="${'CC-' + c.id}">CC-1</a></td>
+                        <td data-label="Date" class="text-nowrap" th:text="${#temporals.format(c.dateComptage, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</td>
+                        <td data-label="Compte" th:text="${c.compte.nom}">Caisse</td>
+                        <td data-label="Théorique" th:if="${voirTheorique}" class="text-end ctl-montant" th:text="${#numbers.formatDecimal(c.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</td>
+                        <td data-label="Compté" class="text-end ctl-montant" th:text="${#numbers.formatDecimal(c.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</td>
+                        <td data-label="Écart" class="text-end" th:if="${voirTheorique}"><span th:replace="~{controles/navigation :: ecart(${c.ecart})}"></span></td>
+                        <td data-label="Statut"><span th:replace="~{controles/navigation :: statut(${c.statut})}"></span></td>
+                        <td data-label="Saisi par" th:text="${c.utilisateur.nom}">Awa</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

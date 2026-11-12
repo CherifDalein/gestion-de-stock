@@ -10,10 +10,11 @@ import java.util.*;
 final class Lot3MigrationScenarios {
     static final List<String> VALIDES = List.of("ancien", "vide", "schema_neuf", "comptes_manquants", "boutique_sans_compte", "colonnes_partielles",
             "reprise_colonnes", "reprise_remplissage", "reprise_cle_absente", "reprise_unicite_absente", "relance", "nouvelle_boutique",
-            "trois_a_seule", "financements_partiels", "relance_financements");
+            "trois_a_seule", "financements_partiels", "relance_financements", "trois_b1_seule", "controles_partiels", "relance_controles");
     static final List<String> INVALIDES = List.of("mouvement_compte_inconnu", "operation_source_inconnue", "operation_destination_inconnue", "retour_compte_inconnu",
             "compte_type_inconnu", "principal_incoherent", "nom_facultatif", "type_longueur", "mouvement_autre_boutique", "operation_autre_boutique",
-            "autorisation_autre_boutique", "cle_mauvaise_cible", "autorises_colonne_en_trop");
+            "autorisation_autre_boutique", "cle_mauvaise_cible", "autorises_colonne_en_trop", "comptage_colonne_en_trop", "comptage_autre_boutique",
+            "comptage_statut_inconnu", "ajustement_sans_partenaire", "ligne_inventaire_cle_mauvaise_cible", "mouvement_comptage_autre_boutique");
     private Lot3MigrationScenarios() {}
 
     static void schema(Connection c, boolean vide) throws Exception {
@@ -91,6 +92,21 @@ final class Lot3MigrationScenarios {
             case "financements_partiels" -> { retirerFinancements(c, false); }
             // Après la migration, le gérant a saisi un partenaire, un emprunt, son échéancier et un remboursement : une relance n'y touche pas.
             case "relance_financements" -> saisirFinancements(c);
+            // Base 3a + 3b1 : les contrôles de l'étape 3b2 sont retirés, la migration les ajoute sans toucher aux financements.
+            case "trois_b1_seule" -> { saisirFinancements(c); retirerControles(c, true); }
+            // Interruption pendant 3b2 : les comptages existent, pas les ajustements ni les inventaires ni le lien des mouvements.
+            case "controles_partiels" -> retirerControles(c, false);
+            // Après la migration, le gérant a compté la caisse, ajusté un solde et fait un inventaire : une relance n'y touche pas.
+            case "relance_controles" -> saisirControles(c);
+            case "comptage_colonne_en_trop" -> sql(c, "ALTER TABLE comptage_caisse ADD COLUMN note VARCHAR(10) NULL");
+            case "comptage_autre_boutique" -> { saisirControles(c); sql(c, "UPDATE comptage_caisse SET boutique_id=2 WHERE id=700"); }
+            case "comptage_statut_inconnu" -> { saisirControles(c); sql(c, "UPDATE comptage_caisse SET statut='AUTRE' WHERE id=700"); }
+            case "ajustement_sans_partenaire" -> { saisirControles(c); sql(c, "UPDATE ajustement_solde_depart SET client_id=NULL WHERE id=710"); }
+            case "mouvement_comptage_autre_boutique" -> { saisirControles(c); sql(c, "UPDATE mouvement_caisse SET boutique_id=2 WHERE id=730"); }
+            case "ligne_inventaire_cle_mauvaise_cible" -> {
+                sql(c, "ALTER TABLE ligne_inventaire_creances " + supprimerCle(c) + "fk_ligne_inventaire_client");
+                sql(c, "ALTER TABLE ligne_inventaire_creances ADD CONSTRAINT fk_ligne_inventaire_client FOREIGN KEY(client_id) REFERENCES boutique(id)");
+            }
             case "autorises_colonne_en_trop" -> sql(c, "ALTER TABLE compte_tresorerie_autorise ADD COLUMN note VARCHAR(10) NULL");
             default -> throw new IllegalStateException("Scénario lot 3 inconnu.");
         }
@@ -100,6 +116,7 @@ final class Lot3MigrationScenarios {
 
     /** Retire les éléments de 3b1 d'une base migrée ; {@code tout} retire aussi les partenaires et les colonnes de la boutique. */
     private static void retirerFinancements(Connection c, boolean tout) throws SQLException {
+        retirerControles(c, true);
         sql(c, "DROP TABLE imputation_echeance");
         sql(c, "DROP TABLE echeance_emprunt");
         sql(c, "ALTER TABLE operation_tresorerie " + supprimerCle(c) + "fk_operation_tresorerie_emprunt");
@@ -111,6 +128,39 @@ final class Lot3MigrationScenarios {
         sql(c, "DROP TABLE partenaire_financier");
         sql(c, "ALTER TABLE boutique DROP COLUMN prochain_numero_emprunt");
         sql(c, "ALTER TABLE boutique DROP COLUMN prochain_numero_pret");
+    }
+
+    /**
+     * Retire les éléments de 3b2 d'une base migrée : le lien des mouvements vers leur comptage, puis les tables. Avec {@code tout} faux, les
+     * comptages et leur billetage sont conservés (interruption après leur création).
+     */
+    private static void retirerControles(Connection c, boolean tout) throws SQLException {
+        sql(c, "DROP TABLE ligne_inventaire_creances");
+        sql(c, "DROP TABLE inventaire_creances");
+        sql(c, "DROP TABLE ajustement_solde_depart");
+        sql(c, "ALTER TABLE mouvement_caisse " + supprimerCle(c) + "fk_mouvement_caisse_comptage");
+        sql(c, "ALTER TABLE mouvement_caisse DROP COLUMN comptage_caisse_id");
+        if (!tout) return;
+        sql(c, "DROP TABLE comptage_billetage");
+        sql(c, "DROP TABLE comptage_caisse");
+    }
+
+    /** Saisies de 3b2 faites après la migration : un comptage validé (avec billetage et son mouvement), un ajustement, un inventaire. */
+    private static void saisirControles(Connection c) throws SQLException {
+        String compte = "(SELECT MIN(id) FROM compte_tresorerie_boutique WHERE boutique_id=1 AND type='ESPECES')";
+        sql(c, "INSERT INTO comptage_caisse(id,boutique_id,compte_id,utilisateur_id,date_comptage,montant_compte,solde_theorique,ecart,commentaire,statut,decideur_id,date_decision,motif_decision,jeton) VALUES"
+                + "(700,1," + compte + ",1,'2026-11-01 08:00:00.000000',50000.00,60000.00,-10000.00,'Fin de journée','VALIDE',1,'2026-11-01 09:00:00.000000','Erreur de rendu','c0000000-0000-0000-0000-000000000700'),"
+                + "(701,1," + compte + ",1,'2026-11-02 08:00:00.000000',60000.00,60000.00,0.00,NULL,'CONFORME',NULL,NULL,NULL,'c0000000-0000-0000-0000-000000000701')");
+        sql(c, "INSERT INTO comptage_billetage(id,comptage_id,coupure,quantite) VALUES(720,700,10000,4),(721,700,5000,2)");
+        sql(c, "INSERT INTO mouvement_caisse(id,boutique_id,date_mouvement,montant,type,motif,source,utilisateur_id,compte_id,comptage_caisse_id) VALUES"
+                + "(730,1,'2026-11-01 09:00:00.000000',-10000.00,'SORTIE','Écart de caisse : erreur de rendu','AUTRE_CHARGE',1," + compte + ",700)");
+        sql(c, "INSERT INTO client(id,boutique_id,nom,solde_initial) VALUES(740,1,'Client ajusté',-20000.00)");
+        sql(c, "INSERT INTO ajustement_solde_depart(id,boutique_id,client_id,fournisseur_id,utilisateur_id,date_ajustement,ancien_solde,nouveau_solde,motif,jeton) VALUES"
+                + "(710,1,740,NULL,1,'2026-11-03 08:00:00.000000',50000.00,-20000.00,'Erreur de saisie','c0000000-0000-0000-0000-000000000710')");
+        sql(c, "INSERT INTO inventaire_creances(id,boutique_id,utilisateur_id,date_inventaire,date_creation,note,jeton) VALUES"
+                + "(750,1,1,'2026-11-04','2026-11-04 08:00:00.000000','Fin de mois','c0000000-0000-0000-0000-000000000750')");
+        sql(c, "INSERT INTO ligne_inventaire_creances(id,inventaire_id,type,client_id,nom,solde_appli,solde_confirme,ecart,raison) VALUES"
+                + "(760,750,'CLIENT',740,'Client ajusté',-20000.00,-15000.00,5000.00,'Versement non noté')");
     }
 
     private static void saisirFinancements(Connection c) throws SQLException {
@@ -183,6 +233,28 @@ final class Lot3MigrationScenarios {
             exiger(BoutiquesMigration.tables(c).containsKey(table), "Table de financement absente : " + table);
         exiger(InscriptionEssaiMigration.colonnes(c, "operation_tresorerie").keySet().containsAll(Set.of("partenaire_financier_id", "emprunt_id"))
                 && InscriptionEssaiMigration.colonnes(c, "boutique").keySet().containsAll(Set.of("prochain_numero_emprunt", "prochain_numero_pret")), "Colonnes de financement absentes");
+        for (String table : List.of("comptage_caisse", "comptage_billetage", "ajustement_solde_depart", "inventaire_creances", "ligne_inventaire_creances"))
+            exiger(BoutiquesMigration.tables(c).containsKey(table), "Table de contrôle absente : " + table);
+        exiger(InscriptionEssaiMigration.colonnes(c, "mouvement_caisse").containsKey("comptage_caisse_id"), "Colonne comptage_caisse_id absente");
+        if (scenario.equals("relance_controles")) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_caisse") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_billetage") == 2
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_caisse WHERE id=700 AND statut='VALIDE' AND ecart=-10000.00 AND motif_decision='Erreur de rendu'") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE id=730 AND comptage_caisse_id=700 AND source='AUTRE_CHARGE'") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ajustement_solde_depart WHERE id=710 AND client_id=740 AND nouveau_solde=-20000.00") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM inventaire_creances") == 1 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_inventaire_creances WHERE ecart=5000.00") == 1,
+                    "Une relance a modifié des saisies de contrôle");
+        } else {
+            // Sans saisie : les tables de contrôle sont vides et aucun mouvement n'est rattaché à un comptage.
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_caisse") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ajustement_solde_depart") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM inventaire_creances") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_inventaire_creances") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_billetage") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE comptage_caisse_id IS NOT NULL") == 0, "Les éléments de contrôle ajoutés doivent être vides");
+        }
+        if (scenario.equals("trois_b1_seule")) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM emprunt WHERE id=20 AND numero='EM-000001'") == 1 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM imputation_echeance") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM partenaire_financier") == 2, "Les financements d'une base 3a + 3b1 ont été modifiés");
+            return;
+        }
         if (scenario.equals("relance_financements")) {
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM partenaire_financier") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM emprunt WHERE id=20 AND numero='EM-000001'") == 1
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM echeance_emprunt") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM imputation_echeance") == 1

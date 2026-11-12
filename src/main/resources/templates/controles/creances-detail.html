@@ -1,0 +1,42 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="inventaireDetailTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="inventaireDetailTitre" th:text="${'Inventaire IC-' + inventaire.id}">Inventaire IC-1</h1>
+                <p class="record-intro" th:text="${'Inventaire au ' + #temporals.format(inventaire.dateInventaire, 'dd/MM/yyyy') + ', saisi par ' + inventaire.utilisateur.nom}">Inventaire</p></div>
+            <div class="fin-actions">
+                <a th:href="@{/controles/creances/{id}/export/excel(id=${inventaire.id})}" class="btn btn-outline-success" aria-label="Exporter l'inventaire au format Excel"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+                <a th:href="@{/controles/creances/{id}/export/pdf(id=${inventaire.id})}" class="btn btn-outline-danger" aria-label="Exporter l'inventaire au format PDF"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                <a th:href="@{/controles/creances}" class="btn btn-outline-secondary">Retour à la liste</a>
+            </div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('creances')}"></div>
+        <div th:replace="~{controles/navigation :: alertes}"></div>
+        <p class="alert alert-info" role="note">Le solde de l'application est celui du <strong th:text="${#temporals.format(inventaire.dateCreation, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</strong>, moment de l'enregistrement : l'application ne conserve pas l'historique des soldes. L'inventaire n'a modifié aucun solde.</p>
+        <p th:if="${inventaire.note != null}"><em th:text="${inventaire.note}">Note</em></p>
+        <section class="record-panel" aria-labelledby="inventaireLignesDetailTitre">
+            <div class="record-panel-heading"><h2 id="inventaireLignesDetailTitre" th:text="${#lists.size(inventaire.lignes) + (#lists.size(inventaire.lignes) == 1 ? ' partenaire' : ' partenaires')}">0 partenaire</h2></div>
+            <div class="table-responsive">
+                <table class="table fin-table fin-empilee mb-0">
+                    <thead><tr><th>Partenaire</th><th class="text-end">Solde de l'application</th><th class="text-end">Solde confirmé</th><th class="text-end">Écart</th><th>Raison</th><th><span class="visually-hidden">Action</span></th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${inventaire.lignes}" th:classappend="${l.aEcart() ? 'fin-ligne-retard' : ''}">
+                        <td data-label="Partenaire"><strong th:text="${l.nom}">Aminata</strong><br><small th:text="${l.type.libelle}">Client</small></td>
+                        <td data-label="Solde appli" class="text-end ctl-montant" th:text="${l.soldeAppli.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(l.soldeAppli.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (l.soldeAppli.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
+                        <td data-label="Confirmé" class="text-end ctl-montant" th:text="${l.soldeConfirme.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(l.soldeConfirme.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (l.soldeConfirme.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
+                        <td data-label="Écart" class="text-end"><span th:replace="~{controles/navigation :: ecart(${l.ecart})}"></span></td>
+                        <td data-label="Raison" th:text="${l.raison != null ? l.raison : '—'}">—</td>
+                        <td data-label="Action" class="text-end">
+                            <a th:if="${l.aEcart() and l.type.name() == 'CLIENT' and l.client != null}" class="btn btn-sm btn-outline-primary" th:href="@{/clients/solde/ajuster/{id}(id=${l.client.id})}">Ajuster le solde</a>
+                            <a th:if="${l.aEcart() and l.type.name() == 'FOURNISSEUR' and l.fournisseur != null}" class="btn btn-sm btn-outline-primary" th:href="@{/fournisseurs/solde/ajuster/{id}(id=${l.fournisseur.id})}">Ajuster le solde</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="record-help mt-3 mb-0">« Ajuster le solde » ouvre le formulaire d'ajustement du solde de départ : rien n'est corrigé automatiquement. Un écart venant d'une facture ou d'un règlement se corrige sur ce document.</p>
+        </section>
+    </section>
+</div>
