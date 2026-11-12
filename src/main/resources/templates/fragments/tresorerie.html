@@ -1,10 +1,12 @@
+<!-- Soldes des comptes : une carte par compte (nom du compte, type en légende), groupées par type ; les sous-totaux de type
+     n'apparaissent que si le type compte plusieurs comptes. soldesParCompte : liste de CaisseService.SoldeCompte. -->
 <section th:fragment="soldes" class="tresorerie-accounts" aria-label="Soldes des comptes de la boutique">
-    <article class="tresorerie-account" th:each="compte : ${comptesTresorerie}">
+    <article class="tresorerie-account" th:each="s : ${soldesParCompte}">
         <div class="tresorerie-account-heading">
-            <h2 th:text="${compte.libelle}"></h2>
-            <span class="tresorerie-account-icon"><i class="fa-solid" th:classappend="${compte.name() == 'CAISSE' ? 'fa-money-bill-wave' : (compte.name() == 'ORANGE_MONEY' ? 'fa-mobile-screen-button' : 'fa-building-columns')}" aria-hidden="true"></i></span>
+            <h2 th:text="${s.compte.nom + (s.compte.actif ? '' : ' (archivé)')}"></h2>
+            <span class="tresorerie-account-icon"><i class="fa-solid" th:classappend="${s.compte.type.name() == 'ESPECES' ? 'fa-money-bill-wave' : (s.compte.type.name() == 'ORANGE_MONEY' ? 'fa-mobile-screen-button' : 'fa-building-columns')}" aria-hidden="true"></i></span>
         </div>
-        <p class="tresorerie-account-value" th:classappend="${soldesParCompte.get(compte) < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(soldesParCompte.get(compte), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
-        <p class="tresorerie-account-caption">Solde actuel du compte</p>
+        <p class="tresorerie-account-value" th:classappend="${s.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(s.solde, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+        <p class="tresorerie-account-caption" th:text="${'Solde actuel · ' + s.compte.type.libelle}">Solde actuel du compte</p>
     </article>
 </section>

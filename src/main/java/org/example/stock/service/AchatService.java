@@ -6,7 +6,6 @@ import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Montants;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.repository.AchatRepository;
 import org.example.stock.repository.FournisseurRepository;
 import org.example.stock.repository.RetourRepository;
@@ -44,10 +43,12 @@ public class AchatService {
     @Autowired private SoldePartenaireService soldes;
     @Autowired private EntityManager entityManager;
     @Autowired private RetourRepository retourRepository;
+    @Autowired private ComptesTresorerieService comptes;
 
     @Transactional
     public Achat enregistrerAchat(Achat achat) {
-        if (achat.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le paiement.");
+        if (achat.getComptePaiement() == null || achat.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte utilisé pour le paiement.");
+        Long compteId = comptes.resoudreId(achat.getComptePaiement());
         if (achat.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         // Ordre global des verrous : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »), puis le fournisseur et ses
         // factures, puis les produits.
@@ -96,7 +97,7 @@ public class AchatService {
         Achat achatEnregistre = achatRepository.save(achat);
 
         String motif = "Achat #" + achatEnregistre.getId() + " - Fournisseur: " + achatEnregistre.getFournisseur().getNom();
-        caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel, achat.getComptePaiement());
+        caisseService.enregistrerSortieAchat(achatEnregistre.getMontantVerse(), motif, achatEnregistre, actuel, compteId);
 
         return achatEnregistre;
     }
@@ -176,11 +177,11 @@ public class AchatService {
 
     @Transactional
     public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
-        return reglerAchat(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+        return reglerAchat(id, montant, montantVerseAttendu, "ESPECES");
     }
 
     @Transactional
-    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, String comptePaiement) {
         return reglerAchat(id, montant, montantVerseAttendu, comptePaiement, null);
     }
 
@@ -189,9 +190,10 @@ public class AchatService {
      * Retourne l'identifiant du mouvement de caisse du règlement, qui désigne son reçu.
      */
     @Transactional
-    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+    public Long reglerAchat(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, String comptePaiement,
                             LocalDate nouvelleEcheance) {
-        if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte utilisé pour le versement.");
+        if (comptePaiement == null || comptePaiement.isBlank()) throw new IllegalArgumentException("Choisissez le compte utilisé pour le versement.");
+        Long compteId = comptes.resoudreId(comptePaiement);
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) {
             throw new IllegalArgumentException("Le versement doit être positif et comporter au maximum 2 décimales.");
@@ -223,7 +225,7 @@ public class AchatService {
         Utilisateur actuel = utilisateurRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Achat #" + id + " - Fournisseur: " + achat.getFournisseur().getNom();
-        return caisseService.enregistrerSortieReglementAchat(montant, motif, achat, actuel, comptePaiement).getId();
+        return caisseService.enregistrerSortieReglementAchat(montant, motif, achat, actuel, compteId).getId();
     }
 
     /**

@@ -2,7 +2,6 @@ package org.example.stock.form;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.ModeRemboursement;
 
 import java.util.ArrayList;
@@ -21,7 +20,7 @@ public class RetourVenteForm {
     /** Choix demandé seulement quand il reste un excédent à rembourser. */
     private ModeRemboursement modeRemboursement;
     /** Compte de trésorerie qui rend l'argent (mode {@code ARGENT}). */
-    private CompteTresorerie comptePaiement;
+    private String comptePaiement;
     private Long retoursConnus;
 
     @Getter

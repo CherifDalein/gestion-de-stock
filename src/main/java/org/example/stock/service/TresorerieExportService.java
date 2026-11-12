@@ -2,7 +2,7 @@ package org.example.stock.service;
 
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.export.*;
 import org.example.stock.model.Montants;
 import org.example.stock.model.MouvementCaisse;
@@ -47,17 +47,18 @@ public class TresorerieExportService {
     /**
      * Filtres du journal.
      *
-     * @param compte compte de trésorerie, ou null pour les trois
+     * @param compteId identifiant du compte de trésorerie, ou null pour tous les comptes
      * @param source source telle que l'écran l'affiche (« Solde initial », « VENTE », « Non renseignée »…), ou null pour toutes
      * @param sens   {@code entree}, {@code sortie}, {@code neutre} ou {@code inconnu} (montant non renseigné), ou null
      * @param du     premier jour inclus, null sans borne ; avec une borne, les mouvements sans date sont exclus (comme à l'écran)
      * @param au     dernier jour inclus
      */
-    public record FiltreJournal(CompteTresorerie compte, String source, String sens, LocalDate du, LocalDate au) { }
+    public record FiltreJournal(Long compteId, String source, String sens, LocalDate du, LocalDate au) { }
 
     /** @throws ExportTropVolumineuxException si le filtre (hors recherche) donne plus de {@link LimiteExport#lignes()} mouvements */
     public TableauExport preparer(FiltreJournal filtre, String recherche) {
         DroitsExport.exigerGerant();
+        String nomCompte = filtre.compteId() == null ? null : caisse.nomDuCompte(filtre.compteId());
         List<MouvementCaisse> lus = mouvements.findAll(specification(filtre), PageRequest.of(0, limite.lignes() + 1,
                 Sort.by(Sort.Order.desc("dateMouvement"), Sort.Order.desc("id")))).getContent();
         limite.verifier(lus.size());
@@ -66,7 +67,7 @@ public class TresorerieExportService {
         List<MouvementCaisse> retenus = q.isEmpty() ? lus : lus.stream().filter(m -> RechercheListe.correspond(q, texteDeLaLigne(m, annulations.get(m.getId())))).toList();
 
         TableauExport tableau = TableauExport.titre("Journal de trésorerie").nomFeuille("Trésorerie")
-                .filtres(decrireFiltres(filtre, q))
+                .filtres(decrireFiltres(filtre, nomCompte, q))
                 .colonnes(Colonne.dateHeure("Date et heure"), Colonne.texteCourt("Compte"), Colonne.texteCourt("Sens"), Colonne.montant("Montant"),
                         Colonne.texteCourt("Source"), Colonne.texte("Motif"), Colonne.texte("Utilisateur"), Colonne.texte("Annulation"));
         BigDecimal entrees = Montants.ZERO, sorties = Montants.ZERO;
@@ -74,7 +75,7 @@ public class TresorerieExportService {
             BigDecimal montant = m.getMontant();
             if (montant != null && montant.signum() > 0) entrees = entrees.add(montant);
             if (montant != null && montant.signum() < 0) sorties = sorties.add(montant.negate());
-            tableau.ligne(m.getDateMouvement(), m.getCompte().getLibelle(), sens(m), montant, source(m), motif(m), utilisateur(m), mentionAnnulation(m, annulations.get(m.getId())));
+            tableau.ligne(m.getDateMouvement(), m.getCompte().getNom(), sens(m), montant, source(m), motif(m), utilisateur(m), mentionAnnulation(m, annulations.get(m.getId())));
         }
         tableau.totaux(retenus.size() + (retenus.size() > 1 ? " mouvements" : " mouvement"), null, null, entrees.subtract(sorties), null, null, null, null);
         tableau.note("Dans la sélection : entrées " + Textes.montant(entrees) + " GNF · sorties " + Textes.montant(sorties) + " GNF · variation nette "
@@ -86,9 +87,16 @@ public class TresorerieExportService {
     /** Les soldes et indicateurs du jour que {@code /caisse/journal} affiche en tête, indépendants des filtres comme à l'écran. */
     private void ajouterSoldesDeLEcran(TableauExport tableau) {
         LocalDate jour = LocalDate.now();
-        Map<CompteTresorerie, BigDecimal> parCompte = caisse.getSoldesParCompte();
+        List<CaisseService.SoldeCompte> parCompte = caisse.getSoldesParCompte();
         List<String> comptes = new ArrayList<>();
-        for (CompteTresorerie c : CompteTresorerie.values()) comptes.add(c.getLibelle() + " " + Textes.montant(parCompte.get(c)) + " GNF");
+        for (CaisseService.SoldeCompte c : parCompte) comptes.add(c.compte().getNom() + " " + Textes.montant(c.solde()) + " GNF");
+        // Un type qui compte plusieurs comptes porte aussi son sous-total.
+        Map<TypeCompteTresorerie, BigDecimal> parType = caisse.getSoldesParType();
+        for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
+            if (parCompte.stream().filter(c -> c.compte().getType() == type).count() > 1) {
+                comptes.add("Total " + type.getLibelle() + " " + Textes.montant(parType.get(type)) + " GNF");
+            }
+        }
         tableau.note("Soldes actuels de la boutique, indépendants des filtres : " + String.join(" · ", comptes) + " · Total " + Textes.montant(caisse.getSoldeActuel()) + " GNF.");
         tableau.note("Journée du " + Textes.date(jour) + " : solde à l’ouverture " + Textes.montant(caisse.getSoldeOuverture(jour)) + " GNF · entrées "
                 + Textes.montant(caisse.getEntreesDuJour(jour)) + " GNF · sorties " + Textes.montant(caisse.getSortiesDuJour(jour)) + " GNF · variation "
@@ -104,7 +112,7 @@ public class TresorerieExportService {
             }
             List<Predicate> conditions = new ArrayList<>();
             conditions.add(cb.equal(m.get("boutique").get("id"), boutiqueId));
-            if (filtre.compte() != null) conditions.add(cb.equal(m.get("compte"), filtre.compte()));
+            if (filtre.compteId() != null) conditions.add(cb.equal(m.get("compte").get("id"), filtre.compteId()));
             if (filtre.sens() != null) {
                 var montant = m.<BigDecimal>get("montant");
                 conditions.add(switch (filtre.sens()) {
@@ -133,12 +141,12 @@ public class TresorerieExportService {
         return resultat;
     }
 
-    private static String decrireFiltres(FiltreJournal f, String recherche) {
+    private static String decrireFiltres(FiltreJournal f, String nomCompte, String recherche) {
         List<String> parties = new ArrayList<>();
         if (f.du() != null && f.au() != null) parties.add("Période du " + Textes.date(f.du()) + " au " + Textes.date(f.au()));
         else if (f.du() != null) parties.add("Depuis le " + Textes.date(f.du()));
         else if (f.au() != null) parties.add("Jusqu'au " + Textes.date(f.au()));
-        if (f.compte() != null) parties.add("Compte : " + f.compte().getLibelle());
+        if (nomCompte != null) parties.add("Compte : " + nomCompte);
         if (f.source() != null) parties.add("Source : " + f.source());
         if (f.sens() != null) parties.add("Sens : " + libelleFiltreSens(f.sens()));
         if (!recherche.isEmpty()) parties.add("Recherche : « " + recherche + " »");
@@ -191,7 +199,7 @@ public class TresorerieExportService {
     private static String texteDeLaLigne(MouvementCaisse m, MouvementCaisse annulation) {
         BigDecimal montant = m.getMontant();
         return String.join(" ", m.getDateMouvement() != null ? Textes.dateHeure(m.getDateMouvement()) + " " + m.getDateMouvement() : "Date non renseignée",
-                motif(m), Objects.toString(mentionAnnulation(m, annulation), ""), utilisateur(m), m.getCompte().getLibelle(), source(m), sens(m),
+                motif(m), Objects.toString(mentionAnnulation(m, annulation), ""), utilisateur(m), m.getCompte().getNom(), source(m), sens(m),
                 montant == null ? "Non renseigné" : RechercheListe.montantRecherchable(montant.abs()), Objects.toString(m.getType(), ""));
     }
 }

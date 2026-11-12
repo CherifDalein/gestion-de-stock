@@ -18,7 +18,7 @@
                     <div class="record-field">
                         <label for="compteSource">Compte utilisé pour le paiement</label>
                         <select id="compteSource" class="form-select" th:field="*{compteSource}" required th:attr="aria-invalid=${#fields.hasErrors('compteSource')}">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{compteSource})}"></th:block>
                         </select>
                     </div>
                     <div class="record-field">

@@ -29,10 +29,16 @@
     <tr><th>Compte</th><th class="num">Solde (GNF)</th></tr>
     </thead>
     <tbody>
-    <tr th:each="c : ${j.comptes}">
-        <td th:text="${c.compte.libelle}">Caisse (espèces)</td>
-        <td class="num" th:text="${fmt.montant(c.solde)}">0</td>
-    </tr>
+    <th:block th:each="t : ${j.types}">
+        <tr th:each="c : ${t.comptes}">
+            <td th:text="${c.compte.nom + (c.compte.actif ? '' : ' (archivé)')}">Caisse</td>
+            <td class="num" th:text="${fmt.montant(c.solde)}">0</td>
+        </tr>
+        <tr th:if="${t.comptes.size() > 1}" class="js-sous-total">
+            <td th:text="${'Total ' + t.type.libelle}">Total Orange Money</td>
+            <td class="num" th:text="${fmt.montant(t.solde)}">0</td>
+        </tr>
+    </th:block>
     <tr class="js-total">
         <td>Total de la trésorerie</td>
         <td class="num" th:text="${fmt.montant(j.total)}">0</td>

@@ -1,6 +1,6 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
+
 import org.example.stock.export.Colonne;
 import org.example.stock.export.FormatPapier;
 import org.example.stock.export.LimiteExport;
@@ -248,7 +248,7 @@ public class EtatsPartenairesService {
     // ==== Relevé d'un partenaire ===============================================================================
 
     /** Ligne du livre : effet signé sur ce que le partenaire doit à la boutique (client) ou ce que la boutique doit (fournisseur). */
-    private record Evenement(LocalDateTime date, int ordre, long id, String document, String libelle, CompteTresorerie compte, BigDecimal effet) { }
+    private record Evenement(LocalDateTime date, int ordre, long id, String document, String libelle, CompteTresorerieBoutique compte, BigDecimal effet) { }
 
     private static final int FACTURE = 0, VERSEMENT = 1, RETOUR = 2, REMBOURSEMENT = 3, AVOIR = 4, REGLEMENT = 5, ANNULATION = 6;
 
@@ -278,7 +278,7 @@ public class EtatsPartenairesService {
 
         // Règlements ultérieurs nets d'annulation par facture, et compte du paiement saisi à la création.
         Map<Long, BigDecimal> reglementsNets = new HashMap<>();
-        Map<Long, CompteTresorerie> compteCreation = new HashMap<>();
+        Map<Long, CompteTresorerieBoutique> compteCreation = new HashMap<>();
         for (MouvementCaisse m : mouvements) {
             Long documentId = documentId(m, client);
             BigDecimal valeur = m.getMontant() == null ? Montants.ZERO : m.getMontant().abs();
@@ -376,7 +376,7 @@ public class EtatsPartenairesService {
             BigDecimal plus = e.effet().signum() > 0 ? e.effet() : null, moins = e.effet().signum() < 0 ? e.effet().negate() : null;
             if (plus != null) augmente = augmente.add(plus);
             if (moins != null) diminue = diminue.add(moins);
-            t.ligne(e.date(), e.document(), e.libelle(), e.compte() == null ? "" : e.compte().getLibelle(), plus, moins, courant);
+            t.ligne(e.date(), e.document(), e.libelle(), e.compte() == null ? "" : e.compte().getNom(), plus, moins, courant);
         }
         t.totaux("Solde au " + Textes.date(periode.au()), null, null, null, augmente, diminue, courant);
 

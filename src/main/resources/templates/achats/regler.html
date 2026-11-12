@@ -80,7 +80,7 @@
                                     <th:block th:replace="~{fragments/annulation-reglement :: mention(${r}, ${annulations.get(r.id)})}"></th:block>
                                     <th:block th:replace="~{fragments/recu :: lien(${r}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/recu/' + r.id})}"></th:block></td>
                                 <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
-                                <td class="text-nowrap" th:text="${r.compte.libelle}"></td>
+                                <td class="text-nowrap" th:text="${r.compte.nom}"></td>
                                 <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
                                 <td class="text-end" sec:authorize="hasRole('ADMIN')">
                                     <th:block th:replace="~{fragments/annulation-reglement :: bouton(${r}, ${annulations.get(r.id)}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/annuler/' + r.id})}"></th:block></td>
@@ -133,7 +133,7 @@
                     <div class="operation-field mb-3">
                         <label for="comptePaiement" class="form-label">Compte utilisé pour le paiement</label>
                         <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{comptePaiement})}"></th:block>
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help">Le nouveau versement est retiré du compte choisi.</p>
                     </div>

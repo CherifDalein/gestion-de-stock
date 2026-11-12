@@ -131,8 +131,7 @@
                         <div id="retourCompteBloc" class="operation-field mt-3" hidden>
                             <label for="comptePaiement" class="form-label">Compte qui rend l’argent</label>
                             <select id="comptePaiement" name="comptePaiement" class="form-select" disabled>
-                                <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"
-                                        th:selected="${retourVenteForm.comptePaiement != null and retourVenteForm.comptePaiement == compte}"></option>
+                                <th:block th:replace="~{fragments/comptes :: options(${retourVenteForm.comptePaiement})}"></th:block>
                             </select>
                             <p class="operation-field-help">Une sortie de ce montant est inscrite dans la trésorerie.</p>
                         </div>

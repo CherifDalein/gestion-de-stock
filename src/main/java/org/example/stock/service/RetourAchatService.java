@@ -2,7 +2,7 @@ package org.example.stock.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.model.CompteTresorerieBoutique;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.TypeRetour;
 import org.example.stock.form.RetourAchatForm;
@@ -64,11 +64,12 @@ public class RetourAchatService {
     private final BoutiqueService boutiques;
     private final UtilisateurRepository utilisateurs;
     private final EntityManager em;
+    private final ComptesTresorerieService comptes;
 
     public RetourAchatService(RetourRepository retours, AchatRepository achats, StockLockRepository verrous,
                               NumerotationFactureService numerotation, InitialisationBoutiqueService initialisation,
                               CoutMoyenService coutMoyen, CaisseService caisse, BoutiqueService boutiques,
-                              UtilisateurRepository utilisateurs, EntityManager em) {
+                              UtilisateurRepository utilisateurs, EntityManager em, ComptesTresorerieService comptes) {
         this.retours = retours;
         this.achats = achats;
         this.verrous = verrous;
@@ -79,6 +80,7 @@ public class RetourAchatService {
         this.boutiques = boutiques;
         this.utilisateurs = utilisateurs;
         this.em = em;
+        this.comptes = comptes;
     }
 
     /**
@@ -221,7 +223,7 @@ public class RetourAchatService {
         BigDecimal excedent = montant.subtract(imputee);
 
         ModeRemboursement mode = null;
-        CompteTresorerie compte = null;
+        CompteTresorerieBoutique compte = null;
         if (excedent.signum() > 0) {
             mode = form.getModeRemboursement();
             if (mode == null) {
@@ -231,8 +233,8 @@ public class RetourAchatService {
                 throw new IllegalArgumentException("Un achat sans fournisseur ne peut être remboursé qu'en argent : un avoir demande un fournisseur chez qui le garder.");
             }
             if (mode == ModeRemboursement.ARGENT) {
-                compte = form.getComptePaiement();
-                if (compte == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit l'argent (caisse, Orange Money ou banque).");
+                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui reçoit l'argent (caisse, Orange Money ou banque).");
+                compte = comptes.resoudreUtilisable(form.getComptePaiement());
             }
         }
 
@@ -265,7 +267,7 @@ public class RetourAchatService {
         if (mode == ModeRemboursement.ARGENT) {
             String motif = "Remboursement fournisseur retour " + numero + " - achat " + (achat.getNumero() != null ? achat.getNumero() : "#" + achat.getId())
                     + " - Fournisseur: " + (fournisseur != null ? fournisseur.getNom() : "Non renseigné");
-            caisse.enregistrerEntreeRetourAchat(excedent, motif, enregistre, acteur, compte);
+            caisse.enregistrerEntreeRetourAchat(excedent, motif, enregistre, acteur, compte.getId());
         }
         return enregistre;
     }

@@ -133,7 +133,7 @@
                     <div class="operation-field">
                         <label for="comptePaiement" class="form-label">Compte utilisé pour le paiement</label>
                         <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{comptePaiement})}"></th:block>
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help">Seule la somme payée maintenant est retirée de ce compte.</p>
                     </div>

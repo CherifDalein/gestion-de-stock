@@ -3,7 +3,6 @@ package org.example.stock.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -35,11 +34,14 @@ public class OperationTresorerie {
     @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.VARCHAR) @Column(nullable = false, length = 32)
     private TypeOperationTresorerie type;
 
-    @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.VARCHAR) @Column(nullable = false, length = 32)
-    private CompteTresorerie compteSource;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "compte_source_id", nullable = false, foreignKey = @ForeignKey(name = "fk_operation_tresorerie_source"))
+    private CompteTresorerieBoutique compteSource;
 
-    @Enumerated(EnumType.STRING) @JdbcTypeCode(SqlTypes.VARCHAR) @Column(length = 32)
-    private CompteTresorerie compteDestination;
+    /** Vide pour une dépense. */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "compte_destination_id", foreignKey = @ForeignKey(name = "fk_operation_tresorerie_destination"))
+    private CompteTresorerieBoutique compteDestination;
 
     @Column(nullable = false, precision = 17, scale = 2)
     private BigDecimal montant;

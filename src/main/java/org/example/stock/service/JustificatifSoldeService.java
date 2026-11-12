@@ -1,6 +1,8 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
+import org.example.stock.model.CompteTresorerieBoutique;
+import org.example.stock.repository.CompteTresorerieBoutiqueRepository;
 import org.example.stock.export.LimiteExport;
 import org.example.stock.export.MontantEnLettres;
 import org.example.stock.export.Textes;
@@ -86,15 +88,30 @@ public class JustificatifSoldeService {
     }
 
     /** Solde d'un compte de trésorerie à la date d'arrêté. */
-    public record SoldeCompte(CompteTresorerie compte, BigDecimal solde) { }
+    public record SoldeCompte(CompteTresorerieBoutique compte, BigDecimal solde) { }
+
+    /** Sous-total d'un type de compte (par exemple tous les comptes Orange Money). */
+    public record SoldeType(TypeCompteTresorerie type, List<SoldeCompte> comptes, BigDecimal solde) { }
 
     public record JustificatifTresorerie(String numero, LocalDate arrete, boolean aujourdHui, LocalDateTime edition, List<SoldeCompte> comptes, BigDecimal total) {
+        /** Les comptes regroupés par type, avec le sous-total de chaque type (les types sans compte sont omis). */
+        public List<SoldeType> types() {
+            List<SoldeType> types = new ArrayList<>();
+            for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
+                List<SoldeCompte> deCeType = comptes.stream().filter(c -> c.compte().getType() == type).toList();
+                if (deCeType.isEmpty()) continue;
+                types.add(new SoldeType(type, deCeType, deCeType.stream().map(SoldeCompte::solde).reduce(Montants.ZERO, BigDecimal::add)));
+            }
+            return types;
+        }
+
         public String totalEnLettres() { return MontantEnLettres.francsGuineens(total); }
 
         public String arreteEnPhrase() { return "Arrêté à la somme de " + totalEnLettres() + "."; }
     }
 
     private final SoldePartenaireService soldes;
+    private final CompteTresorerieBoutiqueRepository comptesRepo;
     private final JustificatifSoldeRepository factures;
     private final ClientRepository clients;
     private final FournisseurRepository fournisseurs;
@@ -106,7 +123,8 @@ public class JustificatifSoldeService {
 
     public JustificatifSoldeService(SoldePartenaireService soldes, JustificatifSoldeRepository factures, ClientRepository clients,
                                     FournisseurRepository fournisseurs, EtatsRepository etats, CaisseService caisse, BoutiqueService boutiques,
-                                    EcheanceService echeances, LimiteExport limite) {
+                                    EcheanceService echeances, LimiteExport limite, CompteTresorerieBoutiqueRepository comptesRepo) {
+        this.comptesRepo = comptesRepo;
         this.soldes = soldes; this.factures = factures; this.clients = clients; this.fournisseurs = fournisseurs;
         this.etats = etats; this.caisse = caisse; this.boutiques = boutiques; this.echeances = echeances; this.limite = limite;
     }
@@ -182,17 +200,21 @@ public class JustificatifSoldeService {
         if (arrete.isAfter(jour)) throw new IllegalArgumentException("La date d'arrêté ne peut pas être dans le futur.");
         if (arrete.getYear() < PeriodeEtat.ANNEE_MINIMALE) throw new IllegalArgumentException("La date d'arrêté est invalide.");
         Long boutiqueId = boutiques.idBoutiqueCourante();
-        Map<CompteTresorerie, BigDecimal> parCompte = new EnumMap<>(CompteTresorerie.class);
+        Map<Long, BigDecimal> parCompte = new java.util.HashMap<>();
         boolean aujourdHui = arrete.equals(jour);
         if (!aujourdHui) {
             for (Object[] ligne : etats.soldesAvant(boutiqueId, arrete.plusDays(1).atStartOfDay())) {
-                parCompte.put((CompteTresorerie) ligne[0], ligne[1] == null ? Montants.ZERO : (BigDecimal) ligne[1]);
+                parCompte.put((Long) ligne[0], ligne[1] == null ? Montants.ZERO : (BigDecimal) ligne[1]);
             }
         }
+        // Soldes d'aujourd'hui : mêmes sommes que le journal. Un compte archivé n'apparaît que s'il porte encore un solde.
+        Map<Long, BigDecimal> actuels = new java.util.HashMap<>();
+        if (aujourdHui) for (var ligne : caisse.getSoldesParCompte()) actuels.put(ligne.compte().getId(), ligne.solde());
         List<SoldeCompte> comptes = new ArrayList<>();
         BigDecimal total = Montants.ZERO;
-        for (CompteTresorerie compte : CompteTresorerie.values()) {
-            BigDecimal solde = aujourdHui ? caisse.getSoldeCompte(compte) : parCompte.getOrDefault(compte, Montants.ZERO);
+        for (CompteTresorerieBoutique compte : comptesRepo.lister(boutiqueId)) {
+            BigDecimal solde = aujourdHui ? actuels.getOrDefault(compte.getId(), Montants.ZERO) : parCompte.getOrDefault(compte.getId(), Montants.ZERO);
+            if (!compte.isActif() && solde.signum() == 0) continue;
             comptes.add(new SoldeCompte(compte, solde));
             total = total.add(solde);
         }

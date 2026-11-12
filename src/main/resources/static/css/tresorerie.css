@@ -21,3 +21,52 @@ body.stock-app .tresorerie-form .operation-actions > a { display: inline-flex; a
   body.stock-app .tresorerie-account-value { font-size: 12pt; }
   body.stock-app .tresorerie-account-icon { display: none; }
 }
+
+/* Page « Comptes de trésorerie » (lot 3) : liste groupée par type, une carte par compte, adaptée à 360 px. */
+body.stock-app .comptes-page { display: grid; gap: 22px; }
+body.stock-app .comptes-summary { display: flex; flex-wrap: wrap; align-items: stretch; gap: 14px; }
+body.stock-app .comptes-counter, body.stock-app .comptes-total { margin: 0; padding: 14px 18px; border: 1px solid var(--app-border, #dae5de); border-radius: 12px; background: #fff; display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+body.stock-app .comptes-counter strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; color: var(--app-ink, #183a2a); line-height: 1.2; }
+body.stock-app .comptes-counter span, body.stock-app .comptes-total span, body.stock-app .comptes-total-type span { color: var(--app-muted, #687b70); font-size: .76rem; }
+body.stock-app .comptes-counter--full { border-color: #e2b24d; background: #fffaf0; }
+body.stock-app .comptes-total { flex: 1 1 220px; }
+body.stock-app .comptes-total strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+body.stock-app .comptes-groupe-entete { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px 18px; margin-bottom: 4px; }
+body.stock-app .comptes-groupe-entete .record-panel-heading { margin-bottom: 14px; }
+body.stock-app .comptes-total-type { margin: 0; text-align: right; display: flex; flex-direction: column; }
+body.stock-app .comptes-total-type strong { font-variant-numeric: tabular-nums; font-size: 1.1rem; color: var(--app-ink, #183a2a); }
+body.stock-app .comptes-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+body.stock-app .compte-carte { min-width: 0; padding: 16px 18px; border: 1px solid var(--app-border, #dae5de); border-radius: 12px; background: #fbfdfc; display: grid; gap: 12px; }
+body.stock-app .compte-carte--archive { background: #f6f7f6; }
+body.stock-app .compte-resume { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+body.stock-app .compte-identite { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+body.stock-app .compte-nom { margin: 0; font-size: 1rem; font-weight: 700; color: var(--app-ink, #183a2a); overflow-wrap: anywhere; }
+body.stock-app .compte-badge { padding: 2px 9px; border-radius: 999px; background: var(--app-tint, #e8f3ed); color: var(--app-green-dark, #126448); font-size: .72rem; font-weight: 700; }
+body.stock-app .compte-numero { flex-basis: 100%; margin: 0; color: var(--app-muted, #687b70); font-size: .8rem; overflow-wrap: anywhere; }
+body.stock-app .compte-solde { margin: 0; font-size: 1.15rem; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--app-ink, #183a2a); overflow-wrap: anywhere; }
+body.stock-app .compte-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.stock-app .compte-actions form { margin: 0; }
+body.stock-app .compte-actions .btn { min-height: 40px; }
+body.stock-app .compte-indice { color: var(--app-muted, #687b70); font-size: .76rem; }
+body.stock-app .compte-detail { border-top: 1px dashed var(--app-border, #dae5de); padding-top: 10px; }
+body.stock-app .compte-detail > summary { cursor: pointer; min-height: 32px; font-size: .82rem; font-weight: 650; color: var(--app-green-dark, #126448); }
+body.stock-app .compte-formulaire { display: grid; gap: 12px; margin-top: 12px; max-width: 520px; }
+body.stock-app .comptes-champs { border: 0; padding: 0; margin: 0; min-width: 0; }
+body.stock-app .comptes-champs:disabled { opacity: .55; }
+body.stock-app .caissier-droits { padding: 16px 0; border-top: 1px solid var(--app-border, #dae5de); }
+body.stock-app .caissier-droits:first-of-type { border-top: 0; padding-top: 0; }
+body.stock-app .caissier-droits fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+body.stock-app .caissier-droits legend { float: none; width: auto; margin: 0 0 10px; padding: 0; font-size: .95rem; font-weight: 700; color: var(--app-ink, #183a2a); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+body.stock-app .caissier-droits legend small { color: var(--app-muted, #687b70); font-size: .76rem; font-weight: 500; }
+body.stock-app .caissier-cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+body.stock-app .caissier-case { display: flex; align-items: flex-start; gap: 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--app-border, #dae5de); border-radius: 10px; background: #fbfdfc; cursor: pointer; }
+body.stock-app .caissier-case:has(input:checked) { border-color: #2f8a63; background: #f1f8f4; }
+body.stock-app .caissier-case input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: #1f7a55; }
+body.stock-app .caissier-case strong { display: block; font-size: .86rem; overflow-wrap: anywhere; }
+body.stock-app .caissier-case small { display: block; color: var(--app-muted, #687b70); font-size: .74rem; }
+body.stock-app .caissier-droits .record-actions { margin-top: 12px; justify-content: flex-start; }
+@media (max-width: 575.98px) {
+  body.stock-app .comptes-total-type { text-align: left; }
+  body.stock-app .comptes-page .record-panel { padding: 18px; }
+  body.stock-app .caissier-cases { grid-template-columns: minmax(0, 1fr); }
+}

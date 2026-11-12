@@ -1,0 +1,17 @@
+<!--
+  Listes de comptes de trésorerie (lot 3, comptes multiples). « options » propose les comptes actifs que l'utilisateur
+  connecté est autorisé à utiliser, groupés par type ; le compte présélectionné est celui dont l'identifiant est saisi, ou
+  le principal du type saisi (valeur par défaut des formulaires). « optionsDe » fait de même pour une liste donnée.
+  Le serveur contrôle de toute façon le compte reçu : cette liste n'est qu'une aide à la saisie.
+-->
+<th:block th:fragment="options(valeur)" th:with="groupes=${@comptesTresorerieService.grouper(@comptesTresorerieService.utilisables())}">
+    <optgroup th:each="g : ${groupes}" th:label="${g.key.libelle}">
+        <option th:each="c : ${g.value}" th:value="${c.id}" th:text="${c.nom}" th:selected="${@comptesTresorerieService.estSelectionne(c, valeur)}"></option>
+    </optgroup>
+</th:block>
+
+<th:block th:fragment="optionsDe(comptes, valeur)" th:with="groupes=${@comptesTresorerieService.grouper(comptes)}">
+    <optgroup th:each="g : ${groupes}" th:label="${g.key.libelle}">
+        <option th:each="c : ${g.value}" th:value="${c.id}" th:text="${c.nom + (c.actif ? '' : ' (archivé)')}" th:selected="${@comptesTresorerieService.estSelectionne(c, valeur)}"></option>
+    </optgroup>
+</th:block>

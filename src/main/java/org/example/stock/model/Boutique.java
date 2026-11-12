@@ -11,7 +11,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.FormatRecu;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -22,13 +22,13 @@ import org.hibernate.type.SqlTypes;
 @Getter
 @Setter
 public class Boutique {
-    /** Provisionnés avec la boutique, jamais créés à la volée pendant un encaissement. */
+    /** Les trois comptes de base (principaux) sont provisionnés avec la boutique, jamais créés à la volée pendant un encaissement. */
     @OneToMany(mappedBy = "boutique", cascade = CascadeType.ALL)
     private List<CompteTresorerieBoutique> comptesTresorerie = new ArrayList<>();
 
     public Boutique() {
-        for (CompteTresorerie compte : CompteTresorerie.values()) {
-            comptesTresorerie.add(new CompteTresorerieBoutique(this, compte));
+        for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
+            comptesTresorerie.add(new CompteTresorerieBoutique(this, type, type.getNomParDefaut(), true, type.ordinal()));
         }
     }
 

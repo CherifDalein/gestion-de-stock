@@ -3,14 +3,15 @@ package org.example.stock.form;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 
 import java.math.BigDecimal;
 
 @Getter @Setter
 public class OperationTresorerieForm {
-    @NotNull(message = "Choisissez le compte à débiter")
-    private CompteTresorerie compteSource = CompteTresorerie.CAISSE;
+    /** Identifiant du compte à débiter (ou nom d'un type : son compte principal) ; contrôlé côté serveur. */
+    @NotBlank(message = "Choisissez le compte à débiter")
+    @Size(max = 20, message = "Choisissez le compte à débiter")
+    private String compteSource = "ESPECES";
 
     @NotNull(message = "Le montant est obligatoire")
     @DecimalMin(value = "0", inclusive = false, message = "Le montant doit être supérieur à zéro")

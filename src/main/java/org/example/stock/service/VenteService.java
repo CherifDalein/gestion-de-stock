@@ -7,7 +7,6 @@ import org.example.stock.model.Produit;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Montants;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.repository.ProduitRepository;
 import org.example.stock.repository.StockLockRepository;
@@ -49,6 +48,7 @@ public class VenteService {
     @Autowired private EcheanceService echeances;
     @Autowired private SoldePartenaireService soldes;
     @Autowired private DevisService devisService;
+    @Autowired private ComptesTresorerieService comptes;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -62,7 +62,9 @@ public class VenteService {
      */
     @Transactional
     public Vente effectuerVente(Vente vente, Long devisId) {
-        if (vente.getComptePaiement() == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le paiement.");
+        if (vente.getComptePaiement() == null || vente.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui reçoit le paiement.");
+        // Compte de la boutique, actif et autorisé au vendeur : contrôlé même à crédit ; sinon 400 et rien n'est enregistré.
+        Long compteId = comptes.resoudreId(vente.getComptePaiement());
         if (vente.getId() != null) throw new IllegalArgumentException("Une création ne peut pas contenir d'identifiant");
         if (vente.getLignes() == null || vente.getLignes().isEmpty()) {
             throw new RuntimeException("Impossible d'enregistrer une vente vide.");
@@ -146,7 +148,7 @@ public class VenteService {
         String motif = "Vente #" + venteEnregistree.getId() + " - Client: " +
                 (venteEnregistree.getClient() != null ? venteEnregistree.getClient().getNom() : "Passant");
 
-        caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel, vente.getComptePaiement());
+        caisseService.enregistrerEntreeVente(venteEnregistree.getMontantVerse(), motif, venteEnregistree, actuel, compteId);
 
         return venteEnregistree;
     }
@@ -237,11 +239,11 @@ public class VenteService {
 
     @Transactional
     public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu) {
-        return reglerVente(id, montant, montantVerseAttendu, CompteTresorerie.CAISSE);
+        return reglerVente(id, montant, montantVerseAttendu, "ESPECES");
     }
 
     @Transactional
-    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement) {
+    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, String comptePaiement) {
         return reglerVente(id, montant, montantVerseAttendu, comptePaiement, null);
     }
 
@@ -250,9 +252,10 @@ public class VenteService {
      * Retourne l'identifiant du mouvement de caisse du règlement, qui désigne son reçu.
      */
     @Transactional
-    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, CompteTresorerie comptePaiement,
+    public Long reglerVente(Long id, BigDecimal montant, BigDecimal montantVerseAttendu, String comptePaiement,
                             LocalDate nouvelleEcheance) {
-        if (comptePaiement == null) throw new IllegalArgumentException("Choisissez le compte qui reçoit le versement.");
+        if (comptePaiement == null || comptePaiement.isBlank()) throw new IllegalArgumentException("Choisissez le compte qui reçoit le versement.");
+        Long compteId = comptes.resoudreId(comptePaiement);
         montant = Montants.positifOuNul(montant, "Le versement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
         montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
@@ -280,7 +283,7 @@ public class VenteService {
                 .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour enregistrer le versement."));
         String motif = "Règlement Vente #" + id + " - Client: "
                 + (vente.getClient() != null ? vente.getClient().getNom() : "Passant");
-        return caisseService.enregistrerEntreeReglementVente(montant, motif, vente, actuel, comptePaiement).getId();
+        return caisseService.enregistrerEntreeReglementVente(montant, motif, vente, actuel, compteId).getId();
     }
 
     /** Change seulement l'échéance d'une vente qui a encore un reste à payer. */

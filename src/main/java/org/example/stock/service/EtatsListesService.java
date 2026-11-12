@@ -1,6 +1,6 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.export.Colonne;
@@ -9,6 +9,7 @@ import org.example.stock.export.LimiteExport;
 import org.example.stock.export.TableauExport;
 import org.example.stock.export.Textes;
 import org.example.stock.model.*;
+import org.example.stock.repository.CompteTresorerieBoutiqueRepository;
 import org.example.stock.repository.EtatsRepository;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.example.stock.repository.TableauDeBordRepository;
@@ -40,11 +41,21 @@ public class EtatsListesService {
     private final BoutiqueService boutiques;
     private final EcheanceService echeances;
     private final LimiteExport limite;
+    private final CompteTresorerieBoutiqueRepository comptesRepo;
 
     public EtatsListesService(EtatsRepository etats, TableauDeBordService tableau, TableauDeBordRepository requetes,
-                              MouvementCaisseRepository mouvements, BoutiqueService boutiques, EcheanceService echeances, LimiteExport limite) {
+                              MouvementCaisseRepository mouvements, BoutiqueService boutiques, EcheanceService echeances, LimiteExport limite,
+                              CompteTresorerieBoutiqueRepository comptesRepo) {
         this.etats = etats; this.tableau = tableau; this.requetes = requetes; this.mouvements = mouvements;
-        this.boutiques = boutiques; this.echeances = echeances; this.limite = limite;
+        this.boutiques = boutiques; this.echeances = echeances; this.limite = limite; this.comptesRepo = comptesRepo;
+    }
+
+    /**
+     * Comptes à lister dans un tableau « par compte » : les comptes actifs, plus les comptes archivés qui ont une valeur ;
+     * dans l'ordre type, ordre d'affichage. Un type qui compte plusieurs comptes est suivi d'un sous-total.
+     */
+    private List<CompteTresorerieBoutique> comptesAListerPar(Long boutiqueId, java.util.Set<Long> avecValeur) {
+        return comptesRepo.lister(boutiqueId).stream().filter(c -> c.isActif() || avecValeur.contains(c.getId())).toList();
     }
 
     // ==== État du stock ========================================================================================
@@ -128,16 +139,16 @@ public class EtatsListesService {
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Catégorie / motif"), Colonne.texte("Utilisateur"),
                         Colonne.montant("Montant"), Colonne.texte("Statut"));
         BigDecimal total = Montants.ZERO;
-        Map<CompteTresorerie, BigDecimal> parCompte = new EnumMap<>(CompteTresorerie.class);
-        Map<CompteTresorerie, Integer> nombres = new EnumMap<>(CompteTresorerie.class);
+        Map<Long, BigDecimal> parCompte = new HashMap<>();
+        Map<Long, Integer> nombres = new HashMap<>();
         for (OperationTresorerie o : operations) {
             MouvementCaisse annulation = annulations.get(o.getId());
-            t.ligne(o.getDateOperation(), o.getCompteSource().getLibelle(), o.getMotif(), nomUtilisateur(o.getUtilisateur()), o.getMontant(),
+            t.ligne(o.getDateOperation(), o.getCompteSource().getNom(), o.getMotif(), nomUtilisateur(o.getUtilisateur()), o.getMontant(),
                     annulation == null ? "" : "Annulée le " + Textes.date(annulation.getDateMouvement().toLocalDate())
                             + (annulation.getMotif() == null || annulation.getMotif().isBlank() ? "" : " (" + annulation.getMotif().strip() + ")"));
             total = total.add(o.getMontant());
-            parCompte.merge(o.getCompteSource(), o.getMontant(), BigDecimal::add);
-            nombres.merge(o.getCompteSource(), 1, Integer::sum);
+            parCompte.merge(o.getCompteSource().getId(), o.getMontant(), BigDecimal::add);
+            nombres.merge(o.getCompteSource().getId(), 1, Integer::sum);
         }
         // Rapprochement avec les dépenses du tableau de bord.
         BigDecimal tableauDeBord = Montants.ouZero(requetes.depenses(boutiqueId, TypeOperationTresorerie.DEPENSE, periode.debut(), periode.fin()));
@@ -151,8 +162,16 @@ public class EtatsListesService {
 
         TableauExport comptes = TableauExport.titre("Total par compte").nomFeuille("Par compte").filtres(periode.texte())
                 .colonnes(Colonne.texte("Compte"), Colonne.entier("Dépenses"), Colonne.montant("Montant"));
-        for (CompteTresorerie compte : CompteTresorerie.values()) {
-            comptes.ligne(compte.getLibelle(), nombres.getOrDefault(compte, 0), parCompte.getOrDefault(compte, Montants.ZERO));
+        List<CompteTresorerieBoutique> aLister = comptesAListerPar(boutiqueId, nombres.keySet());
+        for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
+            List<CompteTresorerieBoutique> deCeType = aLister.stream().filter(c -> c.getType() == type).toList();
+            int nombreType = 0; BigDecimal montantType = Montants.ZERO;
+            for (CompteTresorerieBoutique compte : deCeType) {
+                int n = nombres.getOrDefault(compte.getId(), 0); BigDecimal m = parCompte.getOrDefault(compte.getId(), Montants.ZERO);
+                comptes.ligne(compte.getNom() + (compte.isActif() ? "" : " (archivé)"), n, m);
+                nombreType += n; montantType = montantType.add(m);
+            }
+            if (deCeType.size() > 1) comptes.sousTotal("Total " + type.getLibelle(), nombreType, montantType);
         }
         comptes.totaux("Total", operations.size(), total);
         return new Etat("depenses", "Liste des dépenses", periode.texte(), List.of(), List.of(t, comptes), FormatPapier.A4_PAYSAGE,
@@ -182,15 +201,15 @@ public class EtatsListesService {
         TableauExport t = TableauExport.titre("Liste des encaissements").nomFeuille("Encaissements").filtres(periode.texte())
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Source"), Colonne.texteCourt("Document"),
                         Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Utilisateur"), Colonne.texte("Statut"));
-        Map<CompteTresorerie, BigDecimal> parCompte = new EnumMap<>(CompteTresorerie.class);
+        Map<Long, BigDecimal> parCompte = new HashMap<>();
         BigDecimal total = Montants.ZERO;
         for (MouvementCaisse m : entrees) {
             MouvementCaisse annulation = annulees.get(m.getId());
-            t.ligne(m.getDateMouvement(), m.getCompte().getLibelle(), source(m), document(m), tiers(m), m.getMontant(), nomUtilisateur(m.getUtilisateur()),
+            t.ligne(m.getDateMouvement(), m.getCompte().getNom(), source(m), document(m), tiers(m), m.getMontant(), nomUtilisateur(m.getUtilisateur()),
                     annulation == null ? "" : "Annulé le " + Textes.date(annulation.getDateMouvement().toLocalDate())
                             + (annulation.getMotif() == null || annulation.getMotif().isBlank() ? "" : " (" + annulation.getMotif().strip() + ")"));
             total = total.add(m.getMontant());
-            parCompte.merge(m.getCompte(), m.getMontant(), BigDecimal::add);
+            parCompte.merge(m.getCompte().getId(), m.getMontant(), BigDecimal::add);
         }
         t.totaux("Total des encaissements (" + entrees.size() + (entrees.size() > 1 ? " lignes)" : " ligne)"), null, null, null, null, total, null, null);
         t.note("Un encaissement annulé reste listé et comptabilisé : son annulation figure dans le tableau « Annulations d'encaissements » (en négatif) "
@@ -199,14 +218,14 @@ public class EtatsListesService {
         TableauExport annulations = TableauExport.titre("Annulations d'encaissements").nomFeuille("Annulations").filtres(periode.texte())
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texteCourt("Compte"), Colonne.texte("Source"), Colonne.texteCourt("Document"),
                         Colonne.texte("Client / fournisseur"), Colonne.montant("Montant"), Colonne.texte("Utilisateur"), Colonne.texte("Motif"));
-        Map<CompteTresorerie, BigDecimal> annuleParCompte = new EnumMap<>(CompteTresorerie.class);
+        Map<Long, BigDecimal> annuleParCompte = new HashMap<>();
         BigDecimal totalAnnulations = Montants.ZERO;
         for (MouvementCaisse a : annulationsDEncaissements) {
             MouvementCaisse origine = a.getAnnulationDe();
-            annulations.ligne(a.getDateMouvement(), a.getCompte().getLibelle(), "Annulation : " + source(origine) + " du " + Textes.date(origine.getDateMouvement().toLocalDate()),
+            annulations.ligne(a.getDateMouvement(), a.getCompte().getNom(), "Annulation : " + source(origine) + " du " + Textes.date(origine.getDateMouvement().toLocalDate()),
                     document(origine), tiers(origine), a.getMontant(), nomUtilisateur(a.getUtilisateur()), a.getMotif() == null ? "" : a.getMotif());
             totalAnnulations = totalAnnulations.add(a.getMontant());
-            annuleParCompte.merge(a.getCompte(), a.getMontant(), BigDecimal::add);
+            annuleParCompte.merge(a.getCompte().getId(), a.getMontant(), BigDecimal::add);
         }
         annulations.totaux("Total des annulations (" + annulationsDEncaissements.size() + ")", null, null, null, null, totalAnnulations, null, null);
         List<Object[]> autres = etats.annulationsDePaiements(boutiqueId, periode.debut(), periode.fin());
@@ -220,9 +239,17 @@ public class EtatsListesService {
 
         TableauExport comptes = TableauExport.titre("Totaux par compte").nomFeuille("Par compte").filtres(periode.texte())
                 .colonnes(Colonne.texte("Compte"), Colonne.montant("Encaissements"), Colonne.montant("Annulations"), Colonne.montant("Net"));
-        for (CompteTresorerie compte : CompteTresorerie.values()) {
-            BigDecimal e = parCompte.getOrDefault(compte, Montants.ZERO), a = annuleParCompte.getOrDefault(compte, Montants.ZERO);
-            comptes.ligne(compte.getLibelle(), e, a, e.add(a));
+        java.util.Set<Long> avecValeur = new java.util.HashSet<>(parCompte.keySet()); avecValeur.addAll(annuleParCompte.keySet());
+        List<CompteTresorerieBoutique> aLister = comptesAListerPar(boutiqueId, avecValeur);
+        for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
+            List<CompteTresorerieBoutique> deCeType = aLister.stream().filter(c -> c.getType() == type).toList();
+            BigDecimal eType = Montants.ZERO, aType = Montants.ZERO;
+            for (CompteTresorerieBoutique compte : deCeType) {
+                BigDecimal e = parCompte.getOrDefault(compte.getId(), Montants.ZERO), a = annuleParCompte.getOrDefault(compte.getId(), Montants.ZERO);
+                comptes.ligne(compte.getNom() + (compte.isActif() ? "" : " (archivé)"), e, a, e.add(a));
+                eType = eType.add(e); aType = aType.add(a);
+            }
+            if (deCeType.size() > 1) comptes.sousTotal("Total " + type.getLibelle(), eType, aType, eType.add(aType));
         }
         comptes.totaux("Total général", total, totalAnnulations, total.add(totalAnnulations));
         return new Etat("encaissements", "Liste des encaissements", periode.texte(), List.of(), List.of(t, annulations, comptes),

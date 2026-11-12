@@ -97,7 +97,7 @@ public class RecuService {
         // Compte du paiement saisi à la création (les règlements ultérieurs ont leur propre reçu).
         Set<String> comptes = new LinkedHashSet<>();
         for (MouvementCaisse m : mouvements.findByVenteIdAndBoutiqueIdOrderByDateMouvementDescIdDesc(vente.getId(), boutiques.idBoutiqueCourante()))
-            if (SourceMouvement.VENTE.equals(m.getSource()) && m.getCompte() != null) comptes.add(m.getCompte().getLibelle());
+            if (SourceMouvement.VENTE.equals(m.getSource()) && m.getCompte() != null) comptes.add(m.getCompte().getNom());
         String compte = comptes.isEmpty() ? null : String.join(", ", comptes);
         return new RecuVente(numeroVente(vente), Textes.dateHeure(vente.getDateVente()), nomUtilisateur(vente.getVendeur(), "Non renseigné"),
                 vente.getClient() == null ? "Client de passage" : douces(vente.getClient().getNom()), lignes, Textes.montant(Montants.ouZero(vente.getMontantTotal())),
@@ -177,7 +177,7 @@ public class RecuService {
         MouvementCaisse annulation = mouvements.findAnnulationsDe(boutiques.idBoutiqueCourante(), List.of(m.getId())).stream().findFirst().orElse(null);
         String annuleLe = annulation == null ? null : "ANNULÉ le " + (annulation.getDateMouvement() == null ? "date non renseignée" : Textes.dateHeure(annulation.getDateMouvement()));
         return new RecuReglement(nature, "Règlement n° " + m.getId(), Textes.dateHeure(m.getDateMouvement()), document, douces(partenaire), encaissement,
-                Textes.montant(montant), m.getCompte() == null ? "Non renseigné" : m.getCompte().getLibelle(), Textes.montant(reste), reste.signum() == 0,
+                Textes.montant(montant), m.getCompte() == null ? "Non renseigné" : m.getCompte().getNom(), Textes.montant(reste), reste.signum() == 0,
                 nomUtilisateur(m.getUtilisateur(), "Non renseigné"), annuleLe, annulation == null ? null : douces(annulation.getMotif()),
                 annulation == null ? null : nomUtilisateur(annulation.getUtilisateur(), null), mention);
     }

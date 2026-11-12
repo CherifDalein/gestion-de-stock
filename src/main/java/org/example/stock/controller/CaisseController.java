@@ -35,6 +35,7 @@ public class CaisseController {
     @Autowired
     private CaisseService caisseService;
     @Autowired private InitialisationBoutiqueService initialisation;
+    @Autowired private org.example.stock.service.ComptesTresorerieService comptesService;
 
     @InitBinder({"ouvertureCaisse", "transfertTresorerie", "depenseTresorerie"})
     public void limiterOuverture(WebDataBinder binder,HttpServletRequest request) {
@@ -54,7 +55,7 @@ public class CaisseController {
         var comptesInitialisables = caisseService.getComptesInitialisables();
         if(!model.containsAttribute("ouvertureCaisse")) {
             var formulaire = new OuvertureCaisseForm();
-            if (!comptesInitialisables.isEmpty()) formulaire.setComptePaiement(comptesInitialisables.getFirst());
+            if (!comptesInitialisables.isEmpty()) formulaire.setComptePaiement(String.valueOf(comptesInitialisables.getFirst().getId()));
             model.addAttribute("ouvertureCaisse", formulaire);
         }
         model.addAttribute("comptesInitialisables", comptesInitialisables);
@@ -67,7 +68,7 @@ public class CaisseController {
     public String ouvrir(@Valid @ModelAttribute("ouvertureCaisse") OuvertureCaisseForm form,BindingResult erreurs,Model model,RedirectAttributes redirect) {
         FormBindingAdvice.verifier(erreurs);
         if(!erreurs.hasErrors()) {
-            try {caisseService.initialiser(form);redirect.addFlashAttribute("success","Solde initial enregistré sur le compte " + form.getComptePaiement().getLibelle() + ".");return "redirect:/caisse/journal";}
+            try {var compte = caisseService.initialiser(form);redirect.addFlashAttribute("success","Solde initial enregistré sur le compte " + compte.getNom() + ".");return "redirect:/caisse/journal";}
             catch(IllegalArgumentException e){model.addAttribute("error",e.getMessage());}
         }
         return ouverture(model);
@@ -87,6 +88,8 @@ public class CaisseController {
         model.addAttribute("bilanJour", caisseService.getNetDuJour(aujourdHui));
         model.addAttribute("soldeCloture", caisseService.getSoldeCloture(aujourdHui));
         model.addAttribute("soldesParCompte", caisseService.getSoldesParCompte());
+        model.addAttribute("soldesParType", caisseService.getSoldesParType());
+        model.addAttribute("comptesJournal", comptesService.listerTous());
         model.addAttribute("initialAutorise", !caisseService.getComptesInitialisables().isEmpty());
         model.addAttribute("view", "caisse/journal");
         return "dashboard";
