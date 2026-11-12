@@ -76,7 +76,7 @@
 
         <section class="record-panel" aria-labelledby="actionsTitre" sec:authorize="hasRole('ADMIN')"
                  th:if="${comptage.statut.name() == 'EN_ATTENTE' or comptage.statut.name() == 'VALIDE'}">
-            <div class="record-panel-heading"><h2 id="actionsTitre" th:text="${comptage.statut.name() == 'EN_ATTENTE' ? 'Décider de l\'écart' : 'Annuler ce comptage validé'}">Décision</h2>
+            <div class="record-panel-heading"><h2 id="actionsTitre" th:text="${comptage.statut.name() == 'EN_ATTENTE' ? 'Décider de l’écart' : 'Annuler ce comptage validé'}">Décision</h2>
                 <p th:if="${comptage.statut.name() == 'VALIDE'}">L'annulation passe le mouvement inverse sur le même compte. Elle est refusée si elle laissait le compte sans la somme nécessaire.</p></div>
             <form method="post" th:action="@{/controles/comptages/{id}/valider(id=${comptage.id})}" class="ctl-decision" th:if="${comptage.statut.name() == 'EN_ATTENTE'}">
                 <label for="motifDecision" class="form-label fw-semibold mb-0">Motif (obligatoire)</label>

@@ -1,14 +1,14 @@
 <!-- Section « solde de départ » des fiches client et fournisseur, à placer dans un formulaire th:object.
      Réservée au gérant : le caissier ne la voit pas et le serveur refuse ses envois (403). -->
 <section th:fragment="section(situation, libelleDoit, libelleDois)" class="record-panel" aria-labelledby="soldeDepartTitre" sec:authorize="hasRole('ADMIN')"
-         th:with="fige=${situation != null and !situation.soldeDepartModifiable()}, modif=${situation != null and situation.soldeDepartModifiable()}"
+         th:with="ajuste=${ajustementsSolde != null and !#lists.isEmpty(ajustementsSolde)}, fige=${situation != null and (ajuste or !situation.soldeDepartModifiable())}, modif=${situation != null and !ajuste and situation.soldeDepartModifiable()}"
          th:attr="data-ancien-solde=${modif} ? ${situation.soldeDepart.toPlainString()} : null" id="soldeDepartSection">
     <div class="record-panel-heading">
         <h2 id="soldeDepartTitre">Solde de départ</h2>
         <p>Ce qui restait dû avant l'utilisation de l'application. Ce n'est pas de l'argent en caisse : aucun mouvement de trésorerie n'est créé. Laissez à zéro s'il n'y a rien à reprendre.</p>
     </div>
     <th:block th:if="${fige}">
-        <p class="text-muted" role="status" id="soldeDepartFige">Ce solde de départ a déjà servi (règlement ou avance utilisée) : il ne peut plus être modifié. Une correction se fera par un ajustement de solde.</p>
+        <p class="text-muted" role="status" id="soldeDepartFige">Ce solde de départ a déjà servi (règlement, avance utilisée ou ajustement) : il ne peut plus être modifié ici. Une correction se fait par un ajustement de solde.</p>
         <dl class="row mb-0" id="soldeDepartLectureSeule">
             <dt class="col-sm-3">Montant</dt>
             <dd class="col-sm-9" th:text="${#numbers.formatDecimal(situation.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>

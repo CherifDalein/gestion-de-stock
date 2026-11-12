@@ -12,7 +12,7 @@
 .ctl-statut--en_attente { background: #fff3cd; color: #664d03; }
 .ctl-statut--refuse { background: #f8d7da; color: #842029; }
 .ctl-statut--annule { background: #e2e3e5; color: #41464b; }
-.ctl-ecart-direct { font-weight: 700; margin: .25rem 0 0; }
+.ctl-ecart-direct { font-weight: 700; margin: .5rem 0 1rem; }
 .ctl-ecart-direct[data-etat="excedent"] { color: #0f5132; }
 .ctl-ecart-direct[data-etat="manque"] { color: #842029; }
 .ctl-ecart-direct[data-etat="conforme"] { color: #0f5132; }
@@ -29,6 +29,7 @@
 .ctl-badge-attente { display: inline-block; min-width: 1.4rem; padding: 0 .4rem; margin-left: .35rem; border-radius: 999px; background: #dc3545; color: #fff; font-size: .75rem; font-weight: 700; text-align: center; line-height: 1.4rem; }
 .ctl-alerte-attente { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 @media (max-width: 575.98px) {
+    .ctl-montant { white-space: normal; }
     .ctl-page .ctl-decision-boutons .btn { flex: 1 1 100%; }
     .ctl-billetage-ligne { grid-template-columns: minmax(4.5rem, 1fr) minmax(4rem, 6rem) minmax(4rem, 1fr); }
     .ctl-page .record-actions .btn { flex: 1 1 100%; }

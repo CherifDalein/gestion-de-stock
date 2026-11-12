@@ -333,6 +333,14 @@ class ComptageCaisseTests {
 
     // ---- Outils ---------------------------------------------------------------------------------------------
 
+    @Test
+    void laFicheDUnComptageEnAttenteSAfficheAvecLaDecisionDuGerant() throws Exception {
+        ComptageCaisse c = compter(CAISSIER, String.valueOf(caisse.getId()), "90000", "j-fiche");
+        String page = mvc.perform(get("/controles/comptages/" + c.getId()).with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(page).contains("En attente de validation", "Décider de l’écart", "Refuser");
+    }
+
     private ComptageCaisse compter(String email, String compte, String montant, String jeton) throws Exception {
         poster(email, "/controles/comptages", "compte", compte, "montantCompte", montant, "jeton", jeton).andExpect(status().is3xxRedirection());
         return comptages.findByBoutiqueIdAndJeton(boutique.getId(), jeton).orElseThrow();

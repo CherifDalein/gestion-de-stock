@@ -122,7 +122,7 @@ class AjustementSoldeDepartTests {
 
         String page = mvc.perform(get("/clients/modifier/" + client.getId()).with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("Ajustements du solde de départ", "Premier motif", "Second motif", "/clients/solde/ajuster/" + client.getId());
+        assertThat(page).contains("id=\"soldeDepartFige\"", "Ajustements du solde de départ", "Premier motif", "Second motif", "/clients/solde/ajuster/" + client.getId());
         String caissier = mvc.perform(get("/clients/modifier/" + client.getId()).with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(caissier).doesNotContain("Premier motif", "Ajuster le solde de départ");
