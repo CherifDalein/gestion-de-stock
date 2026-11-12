@@ -126,7 +126,17 @@ public class TresorerieExportService {
                 var source = m.<String>get("source");
                 if (SOURCE_INITIALE.equals(filtre.source())) conditions.add(cb.equal(source, "SOLDE_INITIAL"));
                 else if (SOURCE_VIDE.equals(filtre.source())) conditions.add(cb.or(cb.isNull(source), cb.equal(cb.trim(source), "")));
-                else conditions.add(cb.equal(cb.trim(source), org.example.stock.model.SourceMouvement.depuisLibelle(filtre.source())));
+                else if (org.example.stock.model.SourceMouvement.ECART_CAISSE.equals(filtre.source())) {
+                    // Écart de caisse (étape 3b2) : l'ajustement d'un comptage validé, pas son annulation (qui garde la source « ANNULATION »).
+                    conditions.add(cb.and(cb.isNotNull(m.get("comptageCaisse")), cb.notEqual(cb.trim(source), org.example.stock.model.SourceMouvement.ANNULATION)));
+                } else {
+                    String brute = org.example.stock.model.SourceMouvement.depuisLibelle(filtre.source());
+                    conditions.add(cb.equal(cb.trim(source), brute));
+                    // « Autre produit » et « Autre charge » n'incluent pas les écarts de caisse, qui ont leur propre libellé.
+                    if (org.example.stock.model.SourceMouvement.AUTRE_PRODUIT.equals(brute) || org.example.stock.model.SourceMouvement.AUTRE_CHARGE.equals(brute)) {
+                        conditions.add(cb.isNull(m.get("comptageCaisse")));
+                    }
+                }
             }
             if (filtre.du() != null) conditions.add(cb.greaterThanOrEqualTo(m.<LocalDateTime>get("dateMouvement"), filtre.du().atStartOfDay()));
             if (filtre.au() != null) conditions.add(cb.lessThan(m.<LocalDateTime>get("dateMouvement"), filtre.au().plusDays(1).atStartOfDay()));
@@ -169,6 +179,7 @@ public class TresorerieExportService {
 
     private static String source(MouvementCaisse m) {
         if ("SOLDE_INITIAL".equals(m.getSource())) return SOURCE_INITIALE;
+        if (m.getComptageCaisse() != null && !"ANNULATION".equals(m.getSource())) return org.example.stock.model.SourceMouvement.ECART_CAISSE;
         return m.getSource() != null && !m.getSource().isBlank() ? org.example.stock.model.SourceMouvement.libelle(m.getSource().strip()) : SOURCE_VIDE;
     }
 

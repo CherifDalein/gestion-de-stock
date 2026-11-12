@@ -1,0 +1,59 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="comptageTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="comptageTitre">Compter la caisse</h1>
+                <p class="record-intro">Comptez l'argent d'un compte et comparez-le au solde calculé par l'application. Un écart attend la décision du gérant : rien n'est modifié avant.</p></div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('comptages')}"></div>
+        <form th:action="@{/controles/comptages}" th:object="${comptageForm}" method="post" id="formComptage" novalidate>
+            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+            <input type="hidden" th:field="*{jeton}" />
+            <section class="record-panel" aria-labelledby="comptageCompteTitre">
+                <div class="record-panel-heading"><h2 id="comptageCompteTitre">Compte à compter</h2></div>
+                <div class="record-field">
+                    <label for="comptageCompte">Compte</label>
+                    <select id="comptageCompte" class="form-select" th:field="*{compte}" required>
+                        <option th:each="c : ${comptesAComter}" th:value="${c.compte.id}" th:text="${c.compte.nom}"
+                                th:attr="data-solde=${c.solde.toPlainString()},data-type=${c.compte.type.name()}">Caisse</option>
+                    </select>
+                </div>
+                <div class="ctl-ligne"><span>Solde théorique (calculé par l'application)</span><strong id="comptageTheorique" class="ctl-montant">—</strong></div>
+            </section>
+
+            <section class="record-panel" id="comptageBilletage" aria-labelledby="billetageTitre">
+                <div class="record-panel-heading"><h2 id="billetageTitre">Billetage (espèces)</h2>
+                    <p>Indiquez le nombre de billets et de pièces de chaque valeur : le total devient le montant compté.</p></div>
+                <div class="ctl-billetage">
+                    <div class="ctl-billetage-ligne" th:each="coupure, i : ${coupures}">
+                        <label th:for="${'quantite' + i.index}" th:text="${#numbers.formatDecimal(coupure, 1, 'WHITESPACE', 0, 'COMMA') + ' GNF'}">20 000 GNF</label>
+                        <input th:id="${'quantite' + i.index}" type="number" min="0" max="1000000" step="1" inputmode="numeric" class="form-control"
+                               th:name="${'quantites[' + i.index + ']'}" th:value="*{quantites[__${i.index}__]}" th:attr="data-coupure=${coupure}" placeholder="0" />
+                        <output th:id="${'comptageLigne' + i.index}" class="ctl-montant" th:attr="aria-label=${'Total pour ' + coupure}">0</output>
+                    </div>
+                </div>
+                <div class="ctl-billetage-total"><span>Total du billetage</span><span id="comptageTotalBilletage" class="ctl-montant">0 GNF</span></div>
+            </section>
+
+            <section class="record-panel" aria-labelledby="montantTitre">
+                <div class="record-panel-heading"><h2 id="montantTitre">Montant compté</h2></div>
+                <div class="record-field">
+                    <label for="comptageMontant">Montant compté (GNF)</label>
+                    <input id="comptageMontant" class="form-control form-control-lg" type="number" min="0" step="0.01" inputmode="decimal" th:field="*{montantCompte}" aria-describedby="comptageEcart" />
+                </div>
+                <p id="comptageEcart" class="ctl-ecart-direct" aria-live="polite">Saisissez le montant compté pour voir l'écart</p>
+                <div class="record-field">
+                    <label for="comptageCommentaire">Commentaire <span class="record-optional">(facultatif)</span></label>
+                    <textarea id="comptageCommentaire" class="form-control" rows="2" maxlength="255" th:field="*{commentaire}"></textarea>
+                </div>
+            </section>
+            <div class="record-actions">
+                <a th:href="@{/controles/comptages}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le comptage</button>
+            </div>
+        </form>
+        <script th:src="@{/js/comptage.js}"></script>
+    </section>
+</div>

@@ -1,0 +1,14 @@
+<!-- Bandeau commun des pages de contrôle : onglets et alertes. -->
+<div th:fragment="onglets(actif)" class="fin-onglets" role="navigation" aria-label="Contrôles">
+    <a th:href="@{/controles/comptages}" th:classappend="${actif == 'comptages' ? 'actif' : ''}" th:attr="aria-current=${actif == 'comptages' ? 'page' : null}">Comptages de caisse</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/controles/comptages/en-attente}" th:classappend="${actif == 'attente' ? 'actif' : ''}" th:attr="aria-current=${actif == 'attente' ? 'page' : null}">À valider<span class="ctl-badge-attente" th:if="${nombreEnAttente != null and nombreEnAttente > 0}" th:text="${nombreEnAttente}">2</span></a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/controles/creances}" th:classappend="${actif == 'creances' ? 'actif' : ''}" th:attr="aria-current=${actif == 'creances' ? 'page' : null}">Inventaire des créances et dettes</a>
+</div>
+<div th:fragment="alertes">
+    <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+</div>
+<!-- Écart signé : « + 5 000 GNF » (excédent), « − 5 000 GNF » (manque) ou « 0 GNF ». -->
+<span th:fragment="ecart(valeur)" class="ctl-montant" th:classappend="${valeur.signum() > 0 ? 'ctl-excedent' : (valeur.signum() < 0 ? 'ctl-manque' : 'ctl-neutre')}"
+      th:text="${(valeur.signum() > 0 ? '+ ' : (valeur.signum() < 0 ? '− ' : '')) + #numbers.formatDecimal(valeur.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">+ 5 000,00 GNF</span>
+<span th:fragment="statut(statut)" class="ctl-statut" th:classappend="${'ctl-statut--' + #strings.toLowerCase(statut.name())}" th:text="${statut.libelle}">Conforme</span>

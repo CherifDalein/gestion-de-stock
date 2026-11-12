@@ -4,6 +4,7 @@ import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Client;
+import org.example.stock.model.ComptageCaisse;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Retour;
 import org.example.stock.model.Vente;
@@ -476,7 +477,42 @@ public class CaisseService {
         annulation.setAnnulationDe(origine);
         // Une opération de financement (apport, remboursement...) se reconnaît annulée à ses mouvements d'annulation.
         annulation.setOperationTresorerie(origine.getOperationTresorerie());
+        // L'annulation d'un écart de caisse reste rattachée à son comptage (étape 3b2).
+        annulation.setComptageCaisse(origine.getComptageCaisse());
         return mouvementRepo.saveAndFlush(annulation);
+    }
+
+    /**
+     * Poste l'ajustement d'un écart de caisse validé : une entrée (excédent, source {@code AUTRE_PRODUIT}) ou une sortie (manque, source
+     * {@code AUTRE_CHARGE}) sur le compte compté, du montant exact de l'écart, daté de la validation et rattaché au comptage. Le bilan le
+     * classe donc avec les autres produits ou autres charges (étape 3b1). Aucun contrôle de solde pour une sortie : le manque a déjà eu lieu,
+     * le mouvement ne fait que le constater (limite documentée). À appeler dans la transaction de la validation, après les verrous de la
+     * boutique et du comptage ; le compte est verrouillé ici, en dernier.
+     */
+    @Transactional
+    public MouvementCaisse enregistrerEcartCaisse(ComptageCaisse comptage, String motif, Utilisateur gerant) {
+        verrous.verrouillerBoutiqueCourante();
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        if (comptage == null || comptage.getId() == null || comptage.getBoutique() == null || !Objects.equals(comptage.getBoutique().getId(), boutiqueId)) {
+            throw new IllegalArgumentException("Comptage introuvable");
+        }
+        BigDecimal ecart = Montants.valider(comptage.getEcart(), "L'écart de caisse");
+        if (ecart.signum() == 0) throw new IllegalArgumentException("Un comptage sans écart ne passe aucun mouvement.");
+        gerant = utilisateurDeLaBoutique(gerant);
+        initialisation.verrouillerEtClorePourActivite();
+        CompteTresorerieBoutique compte = comptesService.verrouiller(boutiqueId, gerant, false, false, List.of(comptage.getCompte().getId()))
+                .get(comptage.getCompte().getId());
+        MouvementCaisse mouvement = new MouvementCaisse();
+        mouvement.setBoutique(boutiqueService.boutiqueCourante());
+        mouvement.setCompte(compte);
+        mouvement.setMontant(ecart);
+        mouvement.setType(ecart.signum() > 0 ? "ENTREE" : "SORTIE");
+        mouvement.setSource(ecart.signum() > 0 ? SourceMouvement.AUTRE_PRODUIT : SourceMouvement.AUTRE_CHARGE);
+        mouvement.setMotif(motif);
+        mouvement.setDateMouvement(LocalDateTime.now());
+        mouvement.setUtilisateur(gerant);
+        mouvement.setComptageCaisse(comptage);
+        return mouvementRepo.saveAndFlush(mouvement);
     }
 
     /** Retourne true pour la répétition exacte d'un formulaire déjà traité. */

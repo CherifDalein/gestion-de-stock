@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Boutique;
 import org.example.stock.model.Client;
+import org.example.stock.model.ComptageCaisse;
 import org.example.stock.model.Devis;
 import org.example.stock.model.Emprunt;
 import org.example.stock.model.PartenaireFinancier;
@@ -127,6 +128,19 @@ public class StockLockRepository {
         entityManager.refresh(fournisseur, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(fournisseur.getBoutique());
         return fournisseur;
+    }
+
+    /**
+     * Verrou en écriture d'un comptage de caisse de la boutique courante (404 sinon), après celui de la boutique et avant celui du compte :
+     * deux validations simultanées du même comptage s'y sérialisent, la seconde relit le statut et est refusée.
+     */
+    public ComptageCaisse verrouillerComptage(Long id) {
+        verifierIdentifiant("ComptageCaisse", id, boutiques.idBoutiqueCourante());
+        ComptageCaisse comptage = entityManager.find(ComptageCaisse.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (comptage == null) throw introuvable("Comptage");
+        entityManager.refresh(comptage, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(comptage.getBoutique());
+        return comptage;
     }
 
     /** Verrou en écriture d'un emprunt ou d'un prêt de la boutique courante (404 sinon), après celui de la boutique et avant celui du partenaire. */

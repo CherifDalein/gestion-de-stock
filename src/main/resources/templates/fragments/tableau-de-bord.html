@@ -182,6 +182,12 @@
     <th:block th:if="${retardsEmprunts != null and !retardsEmprunts.aucun()}">
         <th:block th:replace="~{fragments/tableau-de-bord :: empruntsRetards(${retardsEmprunts})}"></th:block>
     </th:block>
+    <!--/* Comptages de caisse en attente de décision : réservé au gérant (étape 3b2). */-->
+    <p class="alert alert-warning py-2 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status" id="comptagesEnAttenteAlerte"
+       th:if="${comptagesEnAttente != null and comptagesEnAttente > 0}">
+        <span><strong th:text="${comptagesEnAttente + (comptagesEnAttente == 1 ? ' comptage de caisse attend' : ' comptages de caisse attendent')}">2 comptages de caisse attendent</strong> votre décision.</span>
+        <a class="btn btn-sm btn-warning" th:href="@{/controles/comptages/en-attente}">Voir les écarts à valider</a>
+    </p>
 </div>
 
 <!--/* Créances clients, dettes fournisseurs, avances, position nette et listes de retards ; réservé au gérant. */-->

@@ -27,6 +27,9 @@ public class GlobalControllerAdvice {
     @Autowired
     private EssaiBoutiqueService essais;
 
+    @Autowired
+    private org.example.stock.repository.ComptageCaisseRepository comptages;
+
     @ModelAttribute
     public void addAttributes(Model model, Authentication authentication, HttpServletRequest request) {
         String chemin = request.getServletPath();
@@ -60,6 +63,11 @@ public class GlobalControllerAdvice {
             }
             model.addAttribute("utilisateur", utilisateur);
             model.addAttribute("boutique", utilisateur.getBoutique());
+            // Badge du gérant : comptages de caisse qui attendent sa décision (étape 3b2).
+            if (utilisateur.getRole() == Role.ADMIN && !plateforme) {
+                model.addAttribute("comptagesEnAttente", comptages.countByBoutiqueIdAndStatut(utilisateur.getBoutique().getId(),
+                        org.example.stock.enums.StatutComptage.EN_ATTENTE));
+            }
             model.addAttribute("logoBoutiquePresent", logos.existsById(utilisateur.getBoutique().getId()));
             if (utilisateur.getBoutique().getEssaiFin() != null && !utilisateur.getBoutique().isAccesOffert()) {
                 model.addAttribute("essaiEnCours", essais.joursRestants(utilisateur.getBoutique()) > 0);
