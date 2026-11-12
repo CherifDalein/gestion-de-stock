@@ -8,7 +8,7 @@
             <div>
                 <p class="app-page-kicker">Trésorerie</p>
                 <h1>Journal de trésorerie</h1>
-                <p class="app-page-subtitle">Suivez la caisse, Orange Money et la banque de votre boutique.</p>
+                <p class="app-page-subtitle">Suivez les comptes de votre boutique : caisse, Orange Money et banques.</p>
             </div>
             <div class="caisse-header-actions">
                 <a th:href="@{/caisse/export/excel}" data-export-champs="q=#caisseSearch;compte=#caisseCompte;source=#caisseSource@libelle;sens=#caisseDirection;du=#caisseDateFrom;au=#caisseDateTo"
@@ -21,6 +21,7 @@
                 </a>
                 <a class="btn btn-primary" th:href="@{/caisse/transfert}"><i class="fas fa-right-left" aria-hidden="true"></i> Transférer</a>
                 <a class="btn btn-outline-primary" th:href="@{/caisse/depense}"><i class="fas fa-arrow-up" aria-hidden="true"></i> Dépense</a>
+                <a class="btn btn-outline-primary" th:href="@{/caisse/comptes}"><i class="fas fa-building-columns" aria-hidden="true"></i> Comptes</a>
                 <a th:if="${initialAutorise}" class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Solde initial</a>
                 <span class="caisse-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i><span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></span>
                 <button id="caissePrint" class="btn btn-outline-primary" type="button" hidden aria-describedby="caissePrintHelp"><i class="fas fa-print" aria-hidden="true"></i> Imprimer le journal</button>
@@ -79,7 +80,7 @@
                         <td class="caisse-row-motif"><span th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></span><small class="caisse-operation-reference" th:if="${m.operationTresorerie != null}" th:text="${(m.source == 'TRANSFERT' ? 'Transfert #' : 'Dépense #') + m.operationTresorerie.id}"></small>
                             <th:block th:replace="~{fragments/annulation-reglement :: mention(${m}, ${annulations.get(m.id)})}"></th:block></td>
                         <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
-                        <td class="caisse-row-account" th:text="${m.compte.libelle}"></td>
+                        <td class="caisse-row-account" th:text="${m.compte.nom}"></td>
                         <td><span class="caisse-source" th:text="${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée')}"></span></td>
                         <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
                         <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>
@@ -99,7 +100,7 @@
                     <label for="caisseSearch" class="form-label">Rechercher un mouvement</label>
                     <div class="caisse-search-input"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input id="caisseSearch" class="form-control" type="search" placeholder="Motif, auteur, compte, source ou date…" autocomplete="off" aria-controls="caisseTable"></div>
                 </div>
-                <div><label for="caisseCompte" class="form-label">Compte</label><select id="caisseCompte" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option></select></div>
+                <div><label for="caisseCompte" class="form-label">Compte</label><select id="caisseCompte" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><th:block th:replace="~{fragments/comptes :: optionsDe(${comptesJournal}, '')}"></th:block></select></div>
                 <div><label for="caisseSource" class="form-label">Source</label><select id="caisseSource" class="form-select" aria-controls="caisseTable"><option value="">Toutes les sources</option></select></div>
                 <div><label for="caisseDirection" class="form-label">Sens</label><select id="caisseDirection" class="form-select" aria-controls="caisseTable"><option value="">Tous les mouvements</option><option value="entree">Entrées</option><option value="sortie">Sorties</option><option value="neutre">Sans variation</option><option value="inconnu">Montant non renseigné</option></select></div>
                 <div><label for="caisseDateFrom" class="form-label">Du</label><input id="caisseDateFrom" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
@@ -125,12 +126,12 @@
                     <tbody>
                     <tr th:each="m : ${mouvements}" data-caisse-row
                         th:with="sens=${m.montant == null ? 'inconnu' : (m.montant > 0 ? 'entree' : (m.montant < 0 ? 'sortie' : 'neutre'))}"
-                        th:attr="data-id=${m.id},data-date=${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'yyyy-MM-dd') + 'T' + #temporals.format(m.dateMouvement, 'HH:mm:ss.SSSSSSSSS') : ''},data-amount=${m.montant != null ? m.montant.toPlainString() : ''},data-source=${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? #strings.trim(m.source) : '')},data-direction=${sens},data-type=${m.type ?: ''},data-compte=${m.compte}">
+                        th:attr="data-id=${m.id},data-date=${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'yyyy-MM-dd') + 'T' + #temporals.format(m.dateMouvement, 'HH:mm:ss.SSSSSSSSS') : ''},data-amount=${m.montant != null ? m.montant.toPlainString() : ''},data-source=${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? #strings.trim(m.source) : '')},data-direction=${sens},data-type=${m.type ?: ''},data-compte=${m.compte.id}">
                         <td class="caisse-row-date" th:text="${m.dateMouvement != null ? #temporals.format(m.dateMouvement, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
                         <td class="caisse-row-motif"><span th:text="${m.motif != null and !#strings.isEmpty(#strings.trim(m.motif)) ? m.motif : 'Motif non renseigné'}"></span><small class="caisse-operation-reference" th:if="${m.operationTresorerie != null}" th:text="${(m.source == 'TRANSFERT' ? 'Transfert #' : 'Dépense #') + m.operationTresorerie.id}"></small>
                             <th:block th:replace="~{fragments/annulation-reglement :: mention(${m}, ${annulations.get(m.id)})}"></th:block></td>
                         <td class="caisse-row-author" th:text="${m.utilisateur != null and m.utilisateur.nom != null and !#strings.isEmpty(#strings.trim(m.utilisateur.nom)) ? m.utilisateur.nom : 'Système'}"></td>
-                        <td class="caisse-row-account" th:text="${m.compte.libelle}"></td>
+                        <td class="caisse-row-account" th:text="${m.compte.nom}"></td>
                         <td><span class="caisse-source" th:text="${m.source == 'SOLDE_INITIAL' ? 'Solde initial' : (m.source != null and !#strings.isEmpty(#strings.trim(m.source)) ? m.source : 'Non renseignée')}"></span></td>
                         <td><span class="caisse-direction" th:classappend="${'caisse-direction--' + sens}" th:text="${sens == 'entree' ? 'Entrée' : (sens == 'sortie' ? 'Sortie' : (sens == 'neutre' ? 'Sans variation' : 'Non renseigné'))}"></span><small class="caisse-correction" th:if="${m.type == 'CORRECTION_ENTREE'}">Correction</small></td>
                         <td class="caisse-row-amount text-end" th:classappend="${sens == 'entree' ? 'caisse-positive' : (sens == 'sortie' ? 'caisse-negative' : '')}" th:text="${m.montant != null ? (m.montant > 0 ? '+ ' : (m.montant < 0 ? '− ' : '')) + #numbers.formatDecimal(m.montant.abs(), 1, 'WHITESPACE', 2, 'POINT') + ' GNF' : 'Non renseigné'}"></td>

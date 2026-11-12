@@ -106,7 +106,7 @@ class MontantsIntegrationTests {
     void lesAgregatsDeCaisseRestentExactsEtAcceptentUneCaisseVide() throws Exception {
         assertThat(caisseService.getSoldeActuel()).isZero();
         assertThat(caisseService.getSoldeCloture(LocalDate.now())).isZero();
-        MouvementCaisse ancien = new MouvementCaisse(); ancien.setBoutique(boutique); ancien.setMontant(new BigDecimal("0.07"));
+        MouvementCaisse ancien = new MouvementCaisse(); ancien.setCompte(org.example.stock.support.ComptesDeTest.de(boutique, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); ancien.setBoutique(boutique); ancien.setMontant(new BigDecimal("0.07"));
         ancien.setDateMouvement(LocalDate.now().minusDays(1).atStartOfDay()); ancien.setType("ENTREE");
         ancien.setUtilisateur(utilisateur); mouvements.saveAndFlush(ancien);
         caisseService.enregistrerEntree(new BigDecimal("0.10"), "Test", "VENTE", utilisateur);

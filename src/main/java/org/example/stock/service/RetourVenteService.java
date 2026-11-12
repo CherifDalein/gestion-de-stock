@@ -2,7 +2,7 @@ package org.example.stock.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.model.CompteTresorerieBoutique;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.TypeRetour;
 import org.example.stock.form.RetourVenteForm;
@@ -62,11 +62,12 @@ public class RetourVenteService {
     private final BoutiqueService boutiques;
     private final UtilisateurRepository utilisateurs;
     private final EntityManager em;
+    private final ComptesTresorerieService comptes;
 
     public RetourVenteService(RetourRepository retours, VenteRepository ventes, StockLockRepository verrous,
                               NumerotationFactureService numerotation, InitialisationBoutiqueService initialisation,
                               CoutMoyenService coutMoyen, CaisseService caisse, BoutiqueService boutiques,
-                              UtilisateurRepository utilisateurs, EntityManager em) {
+                              UtilisateurRepository utilisateurs, EntityManager em, ComptesTresorerieService comptes) {
         this.retours = retours;
         this.ventes = ventes;
         this.verrous = verrous;
@@ -77,6 +78,7 @@ public class RetourVenteService {
         this.boutiques = boutiques;
         this.utilisateurs = utilisateurs;
         this.em = em;
+        this.comptes = comptes;
     }
 
     /** Une ligne de la vente telle que le formulaire la montre. */
@@ -202,7 +204,7 @@ public class RetourVenteService {
         BigDecimal excedent = montant.subtract(imputee);
 
         ModeRemboursement mode = null;
-        CompteTresorerie compte = null;
+        CompteTresorerieBoutique compte = null;
         if (excedent.signum() > 0) {
             mode = form.getModeRemboursement();
             if (mode == null) {
@@ -212,8 +214,8 @@ public class RetourVenteService {
                 throw new IllegalArgumentException("Une vente sans client ne peut être remboursée qu'en argent : un avoir demande un client pour le garder.");
             }
             if (mode == ModeRemboursement.ARGENT) {
-                compte = form.getComptePaiement();
-                if (compte == null) throw new IllegalArgumentException("Choisissez le compte qui rend l'argent (caisse, Orange Money ou banque).");
+                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui rend l'argent (caisse, Orange Money ou banque).");
+                compte = comptes.resoudreUtilisable(form.getComptePaiement());
             }
         }
 
@@ -245,7 +247,7 @@ public class RetourVenteService {
         if (mode == ModeRemboursement.ARGENT) {
             String motif = "Remboursement retour " + numero + " - vente " + (vente.getNumero() != null ? vente.getNumero() : "#" + vente.getId())
                     + " - Client: " + (client != null ? client.getNom() : "Passant");
-            caisse.enregistrerSortieRetourVente(excedent, motif, enregistre, acteur, compte);
+            caisse.enregistrerSortieRetourVente(excedent, motif, enregistre, acteur, compte.getId());
         }
         return enregistre;
     }

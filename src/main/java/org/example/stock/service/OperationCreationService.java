@@ -3,7 +3,6 @@ package org.example.stock.service;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.enums.TypeOperationCreation;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.OperationCreationRepository;
 import org.example.stock.repository.StockLockRepository;
@@ -210,11 +209,11 @@ public class OperationCreationService {
                         identifiant(out, ligne.getQuantite() == null ? null : ligne.getQuantite().longValue());
                     }
                 }
-                // Le compte espèces conserve l'empreinte historique ; un autre compte change le contenu du formulaire.
-                CompteTresorerie compte = achat != null ? achat.getComptePaiement() : vente.getComptePaiement();
-                if (compte != CompteTresorerie.CAISSE) {
+                // Le compte espèces par défaut conserve l'empreinte historique ; un autre choix change le contenu du formulaire.
+                String compte = achat != null ? achat.getComptePaiement() : vente.getComptePaiement();
+                if (compte != null && !compte.equals("ESPECES") && !compte.equals("CAISSE")) {
                     out.writeUTF("COMPTE_PAIEMENT");
-                    out.writeUTF(compte == null ? "" : compte.name());
+                    out.writeUTF(compte);
                 }
                 // Champs facultatifs ajoutés ensuite : absents, ils conservent l'empreinte des formulaires antérieurs.
                 String numero = NumerotationFactureService.normaliser(achat != null ? achat.getNumero() : vente.getNumero());

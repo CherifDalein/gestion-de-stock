@@ -4,6 +4,10 @@ Chaque boutique suit séparément ses espèces, son compte Orange Money et son
 compte bancaire. Les trois soldes et leur total sont visibles dans le menu
 **Trésorerie**. Les données et les soldes restent propres à chaque boutique.
 
+> Depuis le lot 3, une boutique peut avoir plusieurs comptes de chaque type (jusqu'à 12) : « Caisse (espèces) », « Orange Money » et
+> « Banque » sont des *types* de compte, et les trois comptes ci-dessus sont ses comptes principaux. Voir
+> [Comptes de trésorerie multiples](lot-3.md#comptes-de-trésorerie-multiples).
+
 ## Ventes, achats et règlements
 
 Lors de l'enregistrement d'une vente, choisir le compte qui reçoit la somme

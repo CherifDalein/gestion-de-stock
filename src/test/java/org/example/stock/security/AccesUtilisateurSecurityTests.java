@@ -69,7 +69,7 @@ class AccesUtilisateurSecurityTests {
         gerant = compte("gerant-acces@example.test", boutiqueA, Role.ADMIN, false);
         caissier = compte("caissier-acces@example.test", boutiqueA, Role.CAISSIER, false);
         gerantB = compte("gerant-acces-b@example.test", boutiqueB, Role.ADMIN, false);
-        mouvement = new MouvementCaisse(); mouvement.setBoutique(boutiqueA); mouvement.setUtilisateur(caissier);
+        mouvement = new MouvementCaisse(); mouvement.setCompte(org.example.stock.support.ComptesDeTest.de(boutiqueA, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); mouvement.setBoutique(boutiqueA); mouvement.setUtilisateur(caissier);
         mouvement.setDateMouvement(LocalDateTime.now()); mouvement.setMontant(new BigDecimal("1200"));
         mouvement.setType("ENTREE"); mouvement.setSource("TEST"); mouvement.setMotif("Historique du collaborateur");
         mouvement = mouvements.saveAndFlush(mouvement);

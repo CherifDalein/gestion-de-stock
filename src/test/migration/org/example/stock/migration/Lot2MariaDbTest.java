@@ -1,6 +1,6 @@
 package org.example.stock.migration;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.StatutDevis;
 import org.example.stock.enums.TypeRetour;
 import org.example.stock.model.*;
@@ -71,6 +71,8 @@ public final class Lot2MariaDbTest {
         Lot2Migration.migrer(c, true);
         // Les entités actuelles portent aussi les colonnes du lot 4 (reçus) : Hibernate les exige en mode validate.
         Lot4Migration.migrer(c, true);
+        // Idem pour les comptes de trésorerie multiples du lot 3.
+        Lot3Migration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);
@@ -101,13 +103,13 @@ public final class Lot2MariaDbTest {
             d.getLignes().add(ligneDevis); em.persist(d);
             var r = new Retour(); r.setBoutique(b); r.setNumero("RV-000001"); r.setType(TypeRetour.VENTE); r.setVente(v); r.setClient(k); r.setUtilisateur(u);
             r.setDateRetour(LocalDateTime.of(2026, 1, 3, 10, 0)); r.setMontantTotal(new BigDecimal("10.00")); r.setMontantRembourse(new BigDecimal("6.00"));
-            r.setCompteTresorerie(CompteTresorerie.ORANGE_MONEY); r.setMontantAvoir(new BigDecimal("4.00")); r.setMotif("Défectueux");
+            r.setCompteTresorerie(compte(b, TypeCompteTresorerie.ORANGE_MONEY)); r.setMontantAvoir(new BigDecimal("4.00")); r.setMotif("Défectueux");
             var ligneRetour = new DetailRetour(); ligneRetour.setRetour(r); ligneRetour.setProduit(p); ligneRetour.setDetailVente(ligneVente); ligneRetour.setQuantite(1);
             ligneRetour.setPrixUnitaire(new BigDecimal("10.00")); r.getLignes().add(ligneRetour); em.persist(r);
-            var rembourse = new MouvementCaisse(); rembourse.setBoutique(b); rembourse.setUtilisateur(u); rembourse.setRetour(r); rembourse.setCompte(CompteTresorerie.ORANGE_MONEY);
+            var rembourse = new MouvementCaisse(); rembourse.setBoutique(b); rembourse.setUtilisateur(u); rembourse.setRetour(r); rembourse.setCompte(compte(b, TypeCompteTresorerie.ORANGE_MONEY));
             rembourse.setDateMouvement(LocalDateTime.of(2026, 1, 3, 10, 1)); rembourse.setMontant(new BigDecimal("-6.00")); rembourse.setType("DECAISSEMENT"); rembourse.setSource("RETOUR");
             em.persist(rembourse);
-            var annulation = new MouvementCaisse(); annulation.setBoutique(b); annulation.setUtilisateur(u); annulation.setAnnulationDe(rembourse); annulation.setCompte(CompteTresorerie.ORANGE_MONEY);
+            var annulation = new MouvementCaisse(); annulation.setBoutique(b); annulation.setUtilisateur(u); annulation.setAnnulationDe(rembourse); annulation.setCompte(compte(b, TypeCompteTresorerie.ORANGE_MONEY));
             annulation.setDateMouvement(LocalDateTime.of(2026, 1, 4, 10, 1)); annulation.setMontant(new BigDecimal("6.00")); annulation.setType("ENCAISSEMENT"); annulation.setSource("ANNULATION");
             em.persist(annulation);
             em.getTransaction().commit();
@@ -119,7 +121,7 @@ public final class Lot2MariaDbTest {
             Lot2MigrationScenarios.exiger(relu.getStatut() == StatutDevis.EN_COURS && relu.getVersion() == 0L && relu.getLignes().size() == 1 && relu.getVente() == null
                     && relu.getMontantTotal().compareTo(new BigDecimal("20.00")) == 0 && relu.getDateValidite().equals(LocalDate.of(2026, 2, 1)), "Devis non relu par JPA");
             var retour = em.find(Retour.class, retourId);
-            Lot2MigrationScenarios.exiger(retour.getType() == TypeRetour.VENTE && retour.getCompteTresorerie() == CompteTresorerie.ORANGE_MONEY && retour.getLignes().size() == 1
+            Lot2MigrationScenarios.exiger(retour.getType() == TypeRetour.VENTE && retour.getCompteTresorerie().getType() == TypeCompteTresorerie.ORANGE_MONEY && retour.getLignes().size() == 1
                     && retour.getMontantAvoir().compareTo(new BigDecimal("4.00")) == 0 && retour.getLignes().getFirst().getCoutUnitaire() == null, "Retour non relu par JPA");
             Lot2MigrationScenarios.exiger(em.find(Vente.class, venteId).getVendeur() != null && em.find(Achat.class, achatId).getUtilisateur() != null, "Vendeur ou auteur non relu");
             Lot2MigrationScenarios.exiger(em.find(MouvementCaisse.class, annulationId).getAnnulationDe().getId().equals(remboursementId)
@@ -139,8 +141,7 @@ public final class Lot2MariaDbTest {
         } catch (SQLException e) { doublonDevis = e.getSQLState().startsWith("23"); }
         boolean doublonAnnulation = false;
         try {
-            Lot2MigrationScenarios.sql(c, "INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,source,annulation_de_id) VALUES(" + boutiqueId
-                    + ",'2026-01-05 10:00:00.000000',6.00,'ENCAISSEMENT','ANNULATION'," + remboursementId + ")");
+            Lot2MigrationScenarios.sql(c, "INSERT INTO mouvement_caisse(boutique_id,compte_id,date_mouvement,montant,type,source,annulation_de_id) SELECT boutique_id,compte_id,'2026-01-05 10:00:00.000000',6.00,'ENCAISSEMENT','ANNULATION',id FROM mouvement_caisse WHERE id=" + remboursementId);
         } catch (SQLException e) { doublonAnnulation = e.getSQLState().startsWith("23"); }
         Lot2MigrationScenarios.exiger(doublonDevis && doublonAnnulation, "Les contraintes uniques du devis ou de l'annulation n'ont pas refusé le doublon");
         // Les créations par le code actuel ne sont pas réécrites par une relance.
@@ -148,6 +149,10 @@ public final class Lot2MariaDbTest {
         Lot2Migration.migrer(c, true);
         Lot2MigrationScenarios.exiger(avant.equals(Lot2MigrationScenarios.etatComplet(c)), "La relance a modifié les créations JPA");
         System.out.println("Hibernate validate accepte le schéma migré ; devis, retour, vendeur, remboursement et annulation relus.");
+    }
+
+    private static CompteTresorerieBoutique compte(Boutique boutique, TypeCompteTresorerie type) {
+        return boutique.getComptesTresorerie().stream().filter(x -> x.getType() == type).findFirst().orElseThrow();
     }
 
     private static void verifierLot1Requis(Connection c) throws SQLException {

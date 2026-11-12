@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.support.ComptesDeTest;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.SensSolde;
@@ -83,7 +84,7 @@ class AnnulationReglementTests {
     @Test
     void annulerUnEncaissementRetablitLaCreanceEtLaTresorerie() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.BANQUE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.BANQUE);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         assertThat(ventes.findById(vente.getId()).orElseThrow().getResteAPayer()).isEqualByComparingTo("50000");
         assertThat(caisse.calculerSoldeTotal(boutique.getId())).isEqualByComparingTo("50000");
@@ -97,7 +98,7 @@ class AnnulationReglementTests {
         assertThat(soldes().soldeClient(client.getId()).resteFactures()).isEqualByComparingTo("80000");
         MouvementCaisse inverse = unique("ANNULATION");
         assertThat(inverse.getMontant()).isEqualByComparingTo("-30000");
-        assertThat(inverse.getCompte()).isEqualTo(CompteTresorerie.BANQUE);
+        assertThat(inverse.getCompte().getType()).isEqualTo(TypeCompteTresorerie.BANQUE);
         assertThat(inverse.getMotif()).contains("Erreur de saisie");
         assertThat(inverse.getAnnulationDe().getId()).isEqualTo(reglement.getId());
         assertThat(inverse.getUtilisateur()).isNotNull();
@@ -107,7 +108,7 @@ class AnnulationReglementTests {
     @Test
     void uneEcheanceAbsenteEstProposeeQuandLeResteRevientPositif() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "80000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "80000", "20000", TypeCompteTresorerie.ESPECES);
         Vente soldee = ventes.findById(vente.getId()).orElseThrow();
         soldee.setDateEcheance(null); ventes.saveAndFlush(soldee);
         MouvementCaisse reglement = unique(SourceVenteReglement());
@@ -124,7 +125,7 @@ class AnnulationReglementTests {
         Vente vente = vente(10, "20000");
         LocalDate echeance = LocalDate.now().plusDays(45);
         Vente v = ventes.findById(vente.getId()).orElseThrow(); v.setDateEcheance(echeance); ventes.saveAndFlush(v);
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         annuler("/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId(), ADMIN, "Erreur").andExpect(status().is3xxRedirection());
         assertThat(ventes.findById(vente.getId()).orElseThrow().getDateEcheance()).isEqualTo(echeance);
@@ -135,7 +136,7 @@ class AnnulationReglementTests {
     @Test
     void annulerUnPaiementFournisseurRetablitLaDetteEtLaTresorerie() throws Exception {
         Achat achat = achat(10, "20000");
-        authentifie(ADMIN, "ADMIN", () -> { achatService.reglerAchat(achat.getId(), new BigDecimal("30000"), new BigDecimal("20000"), CompteTresorerie.ORANGE_MONEY, null); return null; });
+        authentifie(ADMIN, "ADMIN", () -> { achatService.reglerAchat(achat.getId(), new BigDecimal("30000"), new BigDecimal("20000"), TypeCompteTresorerie.ORANGE_MONEY.name(), null); return null; });
         MouvementCaisse reglement = unique("REGLEMENT_ACHAT");
         BigDecimal avant = caisse.calculerSoldeTotal(boutique.getId());
         assertThat(avant).isEqualByComparingTo("-50000");
@@ -147,7 +148,7 @@ class AnnulationReglementTests {
         assertThat(apres.getMontantVerse()).isEqualByComparingTo("20000");
         MouvementCaisse inverse = unique("ANNULATION");
         assertThat(inverse.getMontant()).isEqualByComparingTo("30000");
-        assertThat(inverse.getCompte()).isEqualTo(CompteTresorerie.ORANGE_MONEY);
+        assertThat(inverse.getCompte().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
         assertThat(caisse.calculerSoldeTotal(boutique.getId())).isEqualByComparingTo("-20000");
     }
 
@@ -200,7 +201,7 @@ class AnnulationReglementTests {
     @Test
     void uneDepenseNEstPasAnnulable() throws Exception {
         Vente vente = vente(10, "20000");
-        MouvementCaisse depense = new MouvementCaisse(); depense.setBoutique(boutique); depense.setCompte(CompteTresorerie.CAISSE);
+        MouvementCaisse depense = new MouvementCaisse(); depense.setBoutique(boutique); depense.setCompte(ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES));
         depense.setDateMouvement(LocalDateTime.now()); depense.setMontant(new BigDecimal("-1000")); depense.setType("SORTIE");
         depense.setMotif("Dépense"); depense.setSource("DEPENSE"); depense = caisse.saveAndFlush(depense);
         long avant = caisse.count();
@@ -211,7 +212,7 @@ class AnnulationReglementTests {
     @Test
     void unReglementDejaAnnuleNePeutPasEtreAnnuleDeNouveau() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         String url = "/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId();
         annuler(url, ADMIN, "Première").andExpect(status().is3xxRedirection());
@@ -222,7 +223,7 @@ class AnnulationReglementTests {
     @Test
     void unMouvementDAnnulationNEstPasAnnulable() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         annuler("/ventes/regler/" + vente.getId() + "/annuler/" + unique(SourceVenteReglement()).getId(), ADMIN, "Première").andExpect(status().is3xxRedirection());
         MouvementCaisse inverse = unique("ANNULATION");
         long avant = caisse.count();
@@ -233,13 +234,13 @@ class AnnulationReglementTests {
     @Test
     void unRetourPosterieurAuReglementBloqueLAnnulation() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         long connus = retours.countByVenteId(vente.getId());
         mvc.perform(post("/ventes/" + vente.getId() + "/retour").with(csrf()).with(user(ADMIN).roles("ADMIN"))
                         .param("lignes[0].detailVenteId", String.valueOf(vente.getLignes().get(0).getId())).param("lignes[0].quantite", "1")
                         .param("retoursConnus", String.valueOf(connus)).param("modeRemboursement", ModeRemboursement.ARGENT.name())
-                        .param("comptePaiement", CompteTresorerie.CAISSE.name()))
+                        .param("comptePaiement", TypeCompteTresorerie.ESPECES.name()))
                 .andExpect(status().is3xxRedirection());
         assertThat(retours.countByVenteId(vente.getId())).isEqualTo(connus + 1);
         long avant = caisse.count();
@@ -251,7 +252,7 @@ class AnnulationReglementTests {
     @Test
     void unMotifAbsentOuTropCourtEstRefuse() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         long avant = caisse.count();
         String url = "/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId();
@@ -264,7 +265,7 @@ class AnnulationReglementTests {
     @Test
     void leCaissierReçoitUn403() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         long avant = caisse.count();
         String url = "/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId();
@@ -276,7 +277,7 @@ class AnnulationReglementTests {
     @Test
     void unGerantNeVoitPasLesReglementsDUneAutreBoutique() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         long avant = caisse.count();
         String url = "/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId();
@@ -288,7 +289,7 @@ class AnnulationReglementTests {
     @Test
     void unChampInconnuEstRefuseEn400() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         long avant = caisse.count();
         mvc.perform(post("/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN"))
@@ -299,7 +300,7 @@ class AnnulationReglementTests {
     @Test
     void sansJetonCsrfLAnnulationEstRefusee() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         mvc.perform(post("/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId()).with(user(ADMIN).roles("ADMIN")).param("motif", "Motif valable"))
                 .andExpect(status().isForbidden());
@@ -310,7 +311,7 @@ class AnnulationReglementTests {
     @Test
     void deuxEnvoisSimultanesNeProduisentQuUneSeuleAnnulation() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         MouvementCaisse reglement = unique(SourceVenteReglement());
         String url = "/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId();
         CyclicBarrier barriere = new CyclicBarrier(2);
@@ -332,7 +333,7 @@ class AnnulationReglementTests {
     @Test
     void leJournalMentionLAnnulationEtLesTotauxRestentJustes() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         annuler("/ventes/regler/" + vente.getId() + "/annuler/" + unique(SourceVenteReglement()).getId(), ADMIN, "Erreur de montant").andExpect(status().is3xxRedirection());
 
         String page = mvc.perform(get("/caisse/journal").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk())
@@ -344,7 +345,7 @@ class AnnulationReglementTests {
     @Test
     void laPageDeReglementAfficheLeBoutonAuGerantSeulement() throws Exception {
         Vente vente = vente(10, "20000");
-        regler(vente, "30000", "20000", CompteTresorerie.CAISSE);
+        regler(vente, "30000", "20000", TypeCompteTresorerie.ESPECES);
         mvc.perform(get("/ventes/regler/" + vente.getId()).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("/annuler/")));
         mvc.perform(get("/ventes/regler/" + vente.getId()).with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isOk())
@@ -366,8 +367,8 @@ class AnnulationReglementTests {
         return trouves.getFirst();
     }
 
-    private void regler(Vente vente, String montant, String dejaVerse, CompteTresorerie compte) {
-        authentifie(ADMIN, "ADMIN", () -> { venteService.reglerVente(vente.getId(), new BigDecimal(montant), new BigDecimal(dejaVerse), compte, null); return null; });
+    private void regler(Vente vente, String montant, String dejaVerse, TypeCompteTresorerie compte) {
+        authentifie(ADMIN, "ADMIN", () -> { venteService.reglerVente(vente.getId(), new BigDecimal(montant), new BigDecimal(dejaVerse), compte.name(), null); return null; });
     }
 
     private MockHttpServletRequestBuilder reglementSolde(String url, String montant, String dejaRegle, String compte) {

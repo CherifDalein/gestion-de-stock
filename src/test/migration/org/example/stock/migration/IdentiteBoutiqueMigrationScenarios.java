@@ -88,8 +88,15 @@ final class IdentiteBoutiqueMigrationScenarios {
         }
     }
 
-    static void schemaNeuf(Connection c) throws Exception {
-        String script = Files.readString(Path.of("docs/database-schema.sql")).replaceAll("(?m)^--[^\\r\\n]*", "");
+    /** Schéma neuf des lots antérieurs au lot 3 : le script actuel sans les comptes de trésorerie multiples. */
+    static void schemaNeuf(Connection c) throws Exception { schemaNeuf(c, false); }
+
+    /** Schéma neuf actuel, comptes de trésorerie multiples du lot 3 compris. */
+    static void schemaNeufLot3(Connection c) throws Exception { schemaNeuf(c, true); }
+
+    private static void schemaNeuf(Connection c, boolean avecLot3) throws Exception {
+        String brut = Files.readString(Path.of("docs/database-schema.sql"));
+        String script = (avecLot3 ? brut : SchemaHistorique.sansLot3(brut)).replaceAll("(?m)^--[^\\r\\n]*", "");
         if (!maria(c)) script = script.replace(" ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", "");
         for (String instruction : script.split(";")) {
             instruction = instruction.strip();

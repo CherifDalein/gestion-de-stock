@@ -1,0 +1,176 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
+    <section class="record-page comptes-page" aria-labelledby="comptesTitre"
+>
+        <header class="record-header">
+            <div>
+                <p class="record-kicker">Trésorerie</p>
+                <h1 id="comptesTitre">Comptes de trésorerie</h1>
+                <p class="record-intro">Une boutique peut avoir plusieurs comptes de chaque type, par exemple « Orange Money Labé » et « Orange Money Conakry ». Le solde d’un compte est la somme de ses mouvements.</p>
+            </div>
+            <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au journal</a>
+        </header>
+
+        <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
+
+        <div class="comptes-summary" role="group" aria-label="Situation des comptes">
+            <p class="comptes-counter" th:classappend="${ecran.limiteAtteinte ? 'comptes-counter--full' : ''}">
+                <strong id="comptesCompteur" th:text="${ecran.actifs + '/' + ecran.limite}">5/12</strong>
+                <span>comptes actifs</span>
+            </p>
+            <p class="comptes-total">
+                <span>Total de la trésorerie</span>
+                <strong th:text="${#numbers.formatDecimal(ecran.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+            </p>
+        </div>
+        <p class="record-note comptes-limit" role="status" th:if="${ecran.limiteAtteinte}">
+            La limite de <span th:text="${ecran.limite}">12</span> comptes actifs est atteinte, comptes de base compris. Archivez un compte inutilisé (solde nul, hors compte principal) pour en ajouter un autre.
+        </p>
+
+        <section class="record-panel comptes-groupe" th:each="groupe : ${ecran.groupes}" th:attr="aria-labelledby='groupe-' + ${groupe.type.name()}">
+            <div class="comptes-groupe-entete">
+                <div class="record-panel-heading">
+                    <h2 th:id="'groupe-' + ${groupe.type.name()}" th:text="${groupe.type.libelle}">Banque</h2>
+                    <p th:text="${groupe.comptes.size() + (groupe.comptes.size() == 1 ? ' compte' : ' comptes')}">1 compte</p>
+                </div>
+                <p class="comptes-total-type">
+                    <span>Total du type</span>
+                    <strong th:classappend="${groupe.total < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(groupe.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                </p>
+            </div>
+            <ul class="comptes-liste">
+                <li class="compte-carte" th:each="vue : ${groupe.comptes}" th:attr="data-compte-id=${vue.compte.id}">
+                    <div class="compte-resume">
+                        <div class="compte-identite">
+                            <h3 class="compte-nom" th:text="${vue.compte.nom}">Orange Money Labé</h3>
+                            <span class="compte-badge" th:if="${vue.compte.principal}">Principal</span>
+                            <p class="compte-numero" th:if="${vue.compte.numero != null}" th:text="${'N° ' + vue.compte.numero}">N° 622 00 00 00</p>
+                        </div>
+                        <p class="compte-solde" th:classappend="${vue.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
+                    </div>
+                    <div class="compte-actions">
+                        <form th:unless="${vue.compte.principal}" th:action="@{/caisse/comptes/{id}/principal(id=${vue.compte.id})}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" th:attr="aria-label='Choisir ' + ${vue.compte.nom} + ' comme compte principal des ' + ${groupe.type.libelle}"><i class="fa-solid fa-star" aria-hidden="true"></i> Rendre principal</button>
+                        </form>
+                        <form th:if="${vue.archivable}" th:action="@{/caisse/comptes/{id}/archiver(id=${vue.compte.id})}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" th:attr="aria-label='Archiver le compte ' + ${vue.compte.nom}"><i class="fa-solid fa-box-archive" aria-hidden="true"></i> Archiver</button>
+                        </form>
+                        <span class="compte-indice" th:if="${!vue.archivable and vue.compte.principal}">Principal : non archivable</span>
+                        <span class="compte-indice" th:if="${!vue.archivable and !vue.compte.principal}">Solde non nul : non archivable</span>
+                    </div>
+                    <details class="compte-detail">
+                        <summary>Modifier le nom ou le numéro</summary>
+                        <form th:action="@{/caisse/comptes/{id}/modifier(id=${vue.compte.id})}" method="post" class="compte-formulaire">
+                            <div class="record-field">
+                                <label th:for="'nom-' + ${vue.compte.id}">Nom du compte</label>
+                                <input th:id="'nom-' + ${vue.compte.id}" class="form-control" type="text" name="nom" th:value="${vue.compte.nom}" maxlength="60" required>
+                            </div>
+                            <div class="record-field">
+                                <label th:for="'numero-' + ${vue.compte.id}">Numéro <span class="record-optional">(facultatif)</span></label>
+                                <input th:id="'numero-' + ${vue.compte.id}" class="form-control" type="text" name="numero" th:value="${vue.compte.numero}" maxlength="40" autocomplete="off">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                        </form>
+                    </details>
+                    <details class="compte-detail" th:if="${vue.soldeDepartModifiable}">
+                        <summary>Définir le solde de départ</summary>
+                        <form th:action="@{/caisse/comptes/{id}/solde-depart(id=${vue.compte.id})}" method="post" class="compte-formulaire">
+                            <div class="record-field">
+                                <label th:for="'depart-' + ${vue.compte.id}">Argent déjà présent sur ce compte (GNF)</label>
+                                <input th:id="'depart-' + ${vue.compte.id}" class="form-control" type="number" name="montant" min="0" step="0.01" inputmode="decimal" required>
+                                <p class="record-help">Enregistré à la date du jour. Il sera figé dès le premier mouvement du compte.</p>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+                        </form>
+                    </details>
+                </li>
+            </ul>
+        </section>
+
+        <section class="record-panel comptes-groupe" aria-labelledby="comptesArchivesTitre" th:if="${!ecran.archives.isEmpty()}">
+            <div class="record-panel-heading">
+                <h2 id="comptesArchivesTitre">Comptes archivés</h2>
+                <p>Ils ne sont plus proposés dans les formulaires ; leur historique reste dans le journal et les états.</p>
+            </div>
+            <ul class="comptes-liste">
+                <li class="compte-carte compte-carte--archive" th:each="vue : ${ecran.archives}" th:attr="data-compte-id=${vue.compte.id}">
+                    <div class="compte-resume">
+                        <div class="compte-identite">
+                            <h3 class="compte-nom" th:text="${vue.compte.nom}">Ancien compte</h3>
+                            <p class="compte-numero" th:text="${vue.compte.type.libelle}">Banque</p>
+                        </div>
+                        <p class="compte-solde" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
+                    </div>
+                    <div class="compte-actions">
+                        <form th:action="@{/caisse/comptes/{id}/desarchiver(id=${vue.compte.id})}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" th:attr="aria-label='Réactiver le compte ' + ${vue.compte.nom}"><i class="fa-solid fa-box-open" aria-hidden="true"></i> Réactiver</button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <section class="record-panel" aria-labelledby="compteAjoutTitre">
+            <div class="record-panel-heading">
+                <h2 id="compteAjoutTitre">Ajouter un compte</h2>
+                <p th:text="${ecran.limiteAtteinte ? 'La limite de ' + ecran.limite + ' comptes actifs est atteinte : archivez un compte pour en ajouter un autre.' : 'Il vous reste ' + (ecran.limite - ecran.actifs) + (ecran.limite - ecran.actifs == 1 ? ' place' : ' places') + ' sur ' + ecran.limite + '.'}">Il vous reste 7 places sur 12.</p>
+            </div>
+            <form th:action="@{/caisse/comptes}" th:object="${compteTresorerie}" method="post" class="tresorerie-form" id="compteAjout">
+                <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+                <fieldset class="comptes-champs" th:disabled="${ecran.limiteAtteinte}">
+                    <div class="record-grid">
+                        <div class="record-field">
+                            <label for="type">Type de compte</label>
+                            <select id="type" class="form-select" th:field="*{type}" required>
+                                <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.libelle}"></option>
+                            </select>
+                        </div>
+                        <div class="record-field">
+                            <label for="nom">Nom du compte</label>
+                            <input id="nom" class="form-control" type="text" th:field="*{nom}" maxlength="60" required placeholder="Exemple : Orange Money Conakry" th:attr="aria-invalid=${#fields.hasErrors('nom')}">
+                        </div>
+                        <div class="record-field">
+                            <label for="numero">Numéro <span class="record-optional">(facultatif)</span></label>
+                            <input id="numero" class="form-control" type="text" th:field="*{numero}" maxlength="40" autocomplete="off" placeholder="Numéro de compte ou de téléphone">
+                        </div>
+                        <div class="record-field">
+                            <label for="soldeDepart">Solde de départ (GNF)</label>
+                            <input id="soldeDepart" class="form-control" type="number" th:field="*{soldeDepart}" min="0" step="0.01" inputmode="decimal" placeholder="0" aria-describedby="soldeDepartAide" th:attr="aria-invalid=${#fields.hasErrors('soldeDepart')}">
+                            <p id="soldeDepartAide" class="record-help">Argent déjà présent sur ce compte, enregistré à la date du jour. Il sera figé dès le premier mouvement.</p>
+                        </div>
+                    </div>
+                    <div class="record-actions">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter le compte</button>
+                    </div>
+                </fieldset>
+            </form>
+        </section>
+
+        <section class="record-panel" aria-labelledby="autorisationsTitre">
+            <div class="record-panel-heading">
+                <h2 id="autorisationsTitre">Comptes autorisés par caissier</h2>
+                <p>Un caissier n’utilise que les comptes cochés. Sans aucune case cochée, il utilise les comptes principaux de chaque type. Le gérant a accès à tous les comptes actifs.</p>
+            </div>
+            <p class="record-note" th:if="${ecran.caissiers.isEmpty()}">Aucun caissier actif dans cette boutique.</p>
+            <form class="caissier-droits" th:each="c : ${ecran.caissiers}" th:action="@{/caisse/comptes/autorisations/{id}(id=${c.utilisateur.id})}" method="post">
+                <fieldset>
+                    <legend>
+                        <span th:text="${c.utilisateur.nom}">Awa</span>
+                        <small th:text="${c.explicite ? 'Comptes choisis' : 'Comptes principaux (par défaut)'}">Comptes principaux (par défaut)</small>
+                    </legend>
+                    <div class="caissier-cases">
+                        <label class="caissier-case" th:each="compte : ${ecran.actifsListe}">
+                            <input type="checkbox" name="comptes" th:value="${compte.id}" th:checked="${c.autorises.contains(compte.id)}">
+                            <span><strong th:text="${compte.nom}">Caisse</strong><small th:text="${compte.type.libelle}">Caisse (espèces)</small></span>
+                        </label>
+                    </div>
+                </fieldset>
+                <div class="record-actions">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Enregistrer pour <span th:text="${c.utilisateur.nom}">Awa</span></button>
+                </div>
+            </form>
+        </section>
+    </section>
+</div>

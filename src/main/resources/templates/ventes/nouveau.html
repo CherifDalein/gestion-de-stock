@@ -132,7 +132,7 @@
                     <div class="operation-field">
                         <label for="comptePaiement" class="form-label">Mode de paiement</label>
                         <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required aria-describedby="comptePaiementAide">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{comptePaiement})}"></th:block>
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help">La somme reçue est ajoutée à ce compte. À crédit, aucun encaissement n’est enregistré.</p>
                     </div>

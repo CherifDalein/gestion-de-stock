@@ -223,7 +223,7 @@ class InitialisationBoutiqueServiceTests {
 
     @ParameterizedTest @NullSource @ValueSource(strings = {"VENTE", "ACHAT", "SOLDE_INITIAL"})
     void uneAncienneCaisseOperationnelleNeRouvrePasLeDemarrage(String source) {
-        var mouvement = new MouvementCaisse(); mouvement.setBoutique(boutique); mouvement.setSource(source); mouvement.setType("ENTREE"); mouvement.setMontant(BigDecimal.ZERO);
+        var mouvement = new MouvementCaisse(); mouvement.setCompte(org.example.stock.support.ComptesDeTest.de(boutique, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); mouvement.setBoutique(boutique); mouvement.setSource(source); mouvement.setType("ENTREE"); mouvement.setMontant(BigDecimal.ZERO);
         mouvementsCaisse.saveAndFlush(mouvement);
         assertThat(demarrage.estOuverte()).isFalse(); initialisationsBloquees();
     }

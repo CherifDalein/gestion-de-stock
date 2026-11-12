@@ -2,11 +2,12 @@ package org.example.stock.form;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import org.springframework.format.annotation.DateTimeFormat;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,8 +15,10 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class ReglementAchatForm {
-    @NotNull(message = "Choisissez le compte utilisé pour le versement")
-    private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
+    /** Identifiant du compte (ou nom d'un type : son compte principal) ; contrôlé côté serveur. */
+    @NotBlank(message = "Choisissez le compte utilisé pour le versement")
+    @Size(max = 20, message = "Choisissez le compte utilisé pour le versement")
+    private String comptePaiement = "ESPECES";
 
     @NotNull(message = "Le montant du versement est obligatoire")
     @DecimalMin(value = "0", inclusive = false, message = "Le versement doit être supérieur à zéro")

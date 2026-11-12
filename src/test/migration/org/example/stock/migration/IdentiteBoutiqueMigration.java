@@ -48,8 +48,8 @@ public final class IdentiteBoutiqueMigration {
                 if (BoutiquesMigration.compter(c, "SELECT GET_LOCK('" + VERROU + "',0)") != 1) throw new IllegalStateException("Une migration identité boutique est déjà en cours.");
                 verrou = true;
             }
-            verifierPreconditions(c);
-            TresorerieMigration.migrer(c, false);
+            // Les contrôles de la trésorerie portent sur les anciennes colonnes à énumération, remplacées par le lot 3.
+            if (!Lot3Migration.appliquee(c)) { verifierPreconditions(c); TresorerieMigration.migrer(c, false); }
             c.setReadOnly(!appliquer);
             verifierPresents(c);
             if (!appliquer) {

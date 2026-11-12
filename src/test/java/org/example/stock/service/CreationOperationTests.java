@@ -4,7 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationCreation;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -495,16 +495,16 @@ class CreationOperationTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"ACHAT,CAISSE", "ACHAT,ORANGE_MONEY", "ACHAT,BANQUE", "VENTE,CAISSE", "VENTE,ORANGE_MONEY", "VENTE,BANQUE"})
-    void leCompteChoisiEstArchiveEtUnRejeuNePeutPasLeChanger(TypeOperationCreation type, CompteTresorerie compte) throws Exception {
+    @CsvSource({"ACHAT,ESPECES", "ACHAT,ORANGE_MONEY", "ACHAT,BANQUE", "VENTE,ESPECES", "VENTE,ORANGE_MONEY", "VENTE,BANQUE"})
+    void leCompteChoisiEstArchiveEtUnRejeuNePeutPasLeChanger(TypeOperationCreation type, TypeCompteTresorerie compte) throws Exception {
         String jeton = ouvrir(type);
         mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", compte.name())
                 .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
-        assertThat(caisse.findAll()).singleElement().extracting(MouvementCaisse::getCompte).isEqualTo(compte);
+        assertThat(caisse.findAll()).singleElement().extracting(m -> m.getCompte().getType()).isEqualTo(compte);
         var montant = caisse.calculerSoldeTotal();
         mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", compte.name())
                 .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
-        CompteTresorerie autre = compte == CompteTresorerie.CAISSE ? CompteTresorerie.BANQUE : CompteTresorerie.CAISSE;
+        TypeCompteTresorerie autre = compte == TypeCompteTresorerie.ESPECES ? TypeCompteTresorerie.BANQUE : TypeCompteTresorerie.ESPECES;
         mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", autre.name())
                 .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isConflict());
         assertThat(caisse.count()).isOne();
@@ -521,7 +521,7 @@ class CreationOperationTests {
         mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", "CAISSE")
                 .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isFound());
         assertThat(operations.findById(jeton).orElseThrow().getEmpreinte()).isEqualTo(empreinte);
-        assertThat(caisse.findAll()).singleElement().extracting(MouvementCaisse::getCompte).isEqualTo(CompteTresorerie.CAISSE);
+        assertThat(caisse.findAll()).singleElement().extracting(m -> m.getCompte().getType()).isEqualTo(TypeCompteTresorerie.ESPECES);
         verifierEffets(type, 1, 3);
     }
 
@@ -537,7 +537,7 @@ class CreationOperationTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"ACHAT,inconnu", "VENTE,inconnu", "ACHAT,1", "VENTE,1"})
+    @CsvSource({"ACHAT,inconnu", "VENTE,inconnu", "ACHAT,999999", "VENTE,999999"})
     void unCompteInconnuEstRefuseAvantTouteEcriture(TypeOperationCreation type, String compte) throws Exception {
         mvc.perform(formulaire(type, ouvrir(type), 3).param("comptePaiement", compte)
                 .with(user(EMAIL).roles("ADMIN")).with(csrf())).andExpect(status().isBadRequest());

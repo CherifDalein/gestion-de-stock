@@ -57,6 +57,14 @@ colonnes à `boutique` ; stocks, montants et mouvements restent inchangés.
 Un bouton « Envoyer » partage ensuite le reçu PDF par le menu de partage natif de l'appareil
 (WhatsApp, etc.), sans migration : voir `docs/lot-4.md`, section « Reçus ».
 
+Pour les comptes de trésorerie multiples du lot 3 (jusqu'à 12 comptes par boutique, par
+exemple deux comptes Orange Money ou deux banques), appliquer la
+[migration du lot 3](docs/migrations/lot-3.md) après le lot 4 et une sauvegarde :
+`./gradlew lot3Check`, puis `LOT3_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot3Migrate`.
+Chaque compte existant devient le compte principal de son type (« Caisse », « Orange Money »,
+« Banque ») ; les totaux par type restent identiques. Les règles sont décrites dans
+`docs/lot-3.md`, section « Comptes de trésorerie multiples ».
+
 ## Tests
 
 ```sh

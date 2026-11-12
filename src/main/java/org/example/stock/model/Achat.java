@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -50,9 +49,12 @@ public class Achat {
     @Column(nullable = false, precision = 17, scale = 2)
     private BigDecimal montantRetours = Montants.ZERO;
 
-    /** Compte du versement saisi ; chaque paiement est archivé dans le journal de trésorerie. */
+    /**
+     * Compte du versement saisi (identifiant du compte, ou nom d'un type : le principal de ce type) ; chaque paiement est
+     * archivé dans le journal de trésorerie.
+     */
     @Transient
-    private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
+    private String comptePaiement = "ESPECES";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fournisseur_id")

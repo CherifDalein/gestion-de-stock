@@ -1,6 +1,7 @@
 package org.example.stock.controller;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.support.ComptesDeTest;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationTresorerie;
@@ -416,24 +417,24 @@ class TableauDeBordTests {
 
     private void transfert(Boutique boutique, Utilisateur acteur, LocalDateTime date, String montant) {
         OperationTresorerie operation = operation(boutique, acteur, date, montant, TypeOperationTresorerie.TRANSFERT,
-                CompteTresorerie.BANQUE);
+                TypeCompteTresorerie.BANQUE);
         mouvements.saveAndFlush(mouvement(boutique, acteur, date, "-" + montant, "TRANSFERT", "SORTIE", operation));
         MouvementCaisse entree = mouvement(boutique, acteur, date, montant, "TRANSFERT", "ENTREE", operation);
-        entree.setCompte(CompteTresorerie.BANQUE); mouvements.saveAndFlush(entree);
+        entree.setCompte(ComptesDeTest.de(boutique, TypeCompteTresorerie.BANQUE)); mouvements.saveAndFlush(entree);
     }
 
     private OperationTresorerie operation(Boutique boutique, Utilisateur acteur, LocalDateTime date, String montant,
-                                          TypeOperationTresorerie type, CompteTresorerie destination) {
+                                          TypeOperationTresorerie type, TypeCompteTresorerie destination) {
         OperationTresorerie operation = new OperationTresorerie(); operation.setBoutique(boutique); operation.setUtilisateur(acteur);
-        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(CompteTresorerie.CAISSE);
-        operation.setCompteDestination(destination); operation.setMontant(new BigDecimal(montant));
+        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES));
+        operation.setCompteDestination(destination == null ? null : ComptesDeTest.de(boutique, destination)); operation.setMontant(new BigDecimal(montant));
         operation.setMotif(type == TypeOperationTresorerie.DEPENSE ? "Loyer" : "Versement banque"); operation.setDateOperation(date);
         return operationsTresorerie.saveAndFlush(operation);
     }
 
     private static MouvementCaisse mouvement(Boutique boutique, Utilisateur acteur, LocalDateTime date, String montant,
                                              String source, String type, OperationTresorerie operation) {
-        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setBoutique(boutique); mouvement.setUtilisateur(acteur);
+        MouvementCaisse mouvement = new MouvementCaisse(); mouvement.setCompte(org.example.stock.support.ComptesDeTest.de(boutique, org.example.stock.enums.TypeCompteTresorerie.ESPECES)); mouvement.setBoutique(boutique); mouvement.setUtilisateur(acteur);
         mouvement.setDateMouvement(date); mouvement.setMontant(new BigDecimal(montant)); mouvement.setType(type);
         mouvement.setSource(source); mouvement.setMotif(source); mouvement.setOperationTresorerie(operation);
         return mouvement;

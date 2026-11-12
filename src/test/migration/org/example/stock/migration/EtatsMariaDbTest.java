@@ -3,7 +3,7 @@ package org.example.stock.migration;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.example.stock.config.TrialProperties;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationTresorerie;
@@ -144,32 +144,32 @@ public final class EtatsMariaDbTest {
         Fournisseur diallo = fournisseur(a, "Diallo", "30", null);
 
         // --- Journal de trésorerie de A (mars 2026 : [01/03 00:00, 01/04 00:00))
-        mouvement(a, "OUVERTURE", "SOLDE_INITIAL", CompteTresorerie.CAISSE, "1000.50", LocalDateTime.of(2026, 2, 1, 8, 0), null);
-        mouvement(a, "ENTREE", "SOLDE_CLIENT", CompteTresorerie.ORANGE_MONEY, "40", LocalDateTime.of(2026, 2, 20, 8, 0), m -> m.setClient(y));
-        mouvement(a, "ENTREE", "DIVERS", CompteTresorerie.CAISSE, "5", null, null);                                   // sans date : compté avant tout
+        mouvement(a, "OUVERTURE", "SOLDE_INITIAL", TypeCompteTresorerie.ESPECES, "1000.50", LocalDateTime.of(2026, 2, 1, 8, 0), null);
+        mouvement(a, "ENTREE", "SOLDE_CLIENT", TypeCompteTresorerie.ORANGE_MONEY, "40", LocalDateTime.of(2026, 2, 20, 8, 0), m -> m.setClient(y));
+        mouvement(a, "ENTREE", "DIVERS", TypeCompteTresorerie.ESPECES, "5", null, null);                                   // sans date : compté avant tout
         Vente v = venteClient(a, x, "100.10", "30", "20.05", LocalDateTime.of(2026, 3, 5, 9, 0), LocalDate.now().minusDays(10));
-        MouvementCaisse paiement = mouvement(a, "ENTREE", "VENTE", CompteTresorerie.CAISSE, "200.25", DU.atStartOfDay(), m -> m.setVente(v));       // borne basse incluse
-        mouvement(a, "ENTREE", "VENTE", CompteTresorerie.ORANGE_MONEY, "99.75", AU.plusDays(1).atStartOfDay().minusNanos(1_000), null);              // dernier instant
-        mouvement(a, "ENTREE", "REGLEMENT_VENTE", CompteTresorerie.BANQUE, "50", AU.plusDays(1).atStartOfDay(), null);                              // 01/04 : exclu
-        OperationTresorerie loyer = operation(a, LocalDateTime.of(2026, 3, 10, 9, 0), "30.10", TypeOperationTresorerie.DEPENSE, CompteTresorerie.CAISSE, null);
-        mouvement(a, "SORTIE", "DEPENSE", CompteTresorerie.CAISSE, "-30.10", LocalDateTime.of(2026, 3, 10, 9, 0), m -> m.setOperationTresorerie(loyer));
-        mouvement(a, "SORTIE", "ANNULATION", CompteTresorerie.CAISSE, "-200.25", LocalDateTime.of(2026, 3, 12, 9, 0), m -> m.setAnnulationDe(paiement));
-        OperationTresorerie transfert = operation(a, LocalDateTime.of(2026, 3, 15, 9, 0), "100", TypeOperationTresorerie.TRANSFERT, CompteTresorerie.CAISSE, CompteTresorerie.BANQUE);
-        mouvement(a, "SORTIE", "TRANSFERT", CompteTresorerie.CAISSE, "-100", LocalDateTime.of(2026, 3, 15, 9, 0), m -> m.setOperationTresorerie(transfert));
-        mouvement(a, "ENTREE", "TRANSFERT", CompteTresorerie.BANQUE, "100", LocalDateTime.of(2026, 3, 15, 9, 0), m -> m.setOperationTresorerie(transfert));
+        MouvementCaisse paiement = mouvement(a, "ENTREE", "VENTE", TypeCompteTresorerie.ESPECES, "200.25", DU.atStartOfDay(), m -> m.setVente(v));       // borne basse incluse
+        mouvement(a, "ENTREE", "VENTE", TypeCompteTresorerie.ORANGE_MONEY, "99.75", AU.plusDays(1).atStartOfDay().minusNanos(1_000), null);              // dernier instant
+        mouvement(a, "ENTREE", "REGLEMENT_VENTE", TypeCompteTresorerie.BANQUE, "50", AU.plusDays(1).atStartOfDay(), null);                              // 01/04 : exclu
+        OperationTresorerie loyer = operation(a, LocalDateTime.of(2026, 3, 10, 9, 0), "30.10", TypeOperationTresorerie.DEPENSE, TypeCompteTresorerie.ESPECES, null);
+        mouvement(a, "SORTIE", "DEPENSE", TypeCompteTresorerie.ESPECES, "-30.10", LocalDateTime.of(2026, 3, 10, 9, 0), m -> m.setOperationTresorerie(loyer));
+        mouvement(a, "SORTIE", "ANNULATION", TypeCompteTresorerie.ESPECES, "-200.25", LocalDateTime.of(2026, 3, 12, 9, 0), m -> m.setAnnulationDe(paiement));
+        OperationTresorerie transfert = operation(a, LocalDateTime.of(2026, 3, 15, 9, 0), "100", TypeOperationTresorerie.TRANSFERT, TypeCompteTresorerie.ESPECES, TypeCompteTresorerie.BANQUE);
+        mouvement(a, "SORTIE", "TRANSFERT", TypeCompteTresorerie.ESPECES, "-100", LocalDateTime.of(2026, 3, 15, 9, 0), m -> m.setOperationTresorerie(transfert));
+        mouvement(a, "ENTREE", "TRANSFERT", TypeCompteTresorerie.BANQUE, "100", LocalDateTime.of(2026, 3, 15, 9, 0), m -> m.setOperationTresorerie(transfert));
         Retour remboursement = retourAchat(a, sidi, "10.05", LocalDateTime.of(2026, 3, 20, 9, 0));
-        mouvement(a, "ENTREE", "RETOUR_ACHAT", CompteTresorerie.BANQUE, "10.05", LocalDateTime.of(2026, 3, 20, 9, 0), m -> m.setRetour(remboursement));
+        mouvement(a, "ENTREE", "RETOUR_ACHAT", TypeCompteTresorerie.BANQUE, "10.05", LocalDateTime.of(2026, 3, 20, 9, 0), m -> m.setRetour(remboursement));
         Achat achatSidi = achatFournisseur(a, sidi, "80.10", "20.05", LocalDateTime.of(2026, 3, 2, 9, 0), LocalDate.now().minusDays(20));
-        MouvementCaisse reglementAchat = mouvement(a, "SORTIE", "REGLEMENT_ACHAT", CompteTresorerie.BANQUE, "-20", LocalDateTime.of(2026, 3, 22, 9, 0), m -> m.setAchat(achatSidi));
-        mouvement(a, "ENTREE", "ANNULATION", CompteTresorerie.BANQUE, "20", LocalDateTime.of(2026, 3, 25, 9, 0), m -> m.setAnnulationDe(reglementAchat));
-        OperationTresorerie transport = operation(a, LocalDateTime.of(2026, 3, 18, 9, 0), "40.40", TypeOperationTresorerie.DEPENSE, CompteTresorerie.BANQUE, null);
-        MouvementCaisse sortieTransport = mouvement(a, "SORTIE", "DEPENSE", CompteTresorerie.BANQUE, "-40.40", LocalDateTime.of(2026, 3, 18, 9, 0), m -> m.setOperationTresorerie(transport));
-        mouvement(a, "ENTREE", "ANNULATION", CompteTresorerie.BANQUE, "40.40", LocalDateTime.of(2026, 3, 19, 9, 0), m -> m.setAnnulationDe(sortieTransport));
-        operation(a, AU.plusDays(1).atStartOfDay(), "15", TypeOperationTresorerie.DEPENSE, CompteTresorerie.CAISSE, null);                          // 01/04 : exclue
+        MouvementCaisse reglementAchat = mouvement(a, "SORTIE", "REGLEMENT_ACHAT", TypeCompteTresorerie.BANQUE, "-20", LocalDateTime.of(2026, 3, 22, 9, 0), m -> m.setAchat(achatSidi));
+        mouvement(a, "ENTREE", "ANNULATION", TypeCompteTresorerie.BANQUE, "20", LocalDateTime.of(2026, 3, 25, 9, 0), m -> m.setAnnulationDe(reglementAchat));
+        OperationTresorerie transport = operation(a, LocalDateTime.of(2026, 3, 18, 9, 0), "40.40", TypeOperationTresorerie.DEPENSE, TypeCompteTresorerie.BANQUE, null);
+        MouvementCaisse sortieTransport = mouvement(a, "SORTIE", "DEPENSE", TypeCompteTresorerie.BANQUE, "-40.40", LocalDateTime.of(2026, 3, 18, 9, 0), m -> m.setOperationTresorerie(transport));
+        mouvement(a, "ENTREE", "ANNULATION", TypeCompteTresorerie.BANQUE, "40.40", LocalDateTime.of(2026, 3, 19, 9, 0), m -> m.setAnnulationDe(sortieTransport));
+        operation(a, AU.plusDays(1).atStartOfDay(), "15", TypeOperationTresorerie.DEPENSE, TypeCompteTresorerie.ESPECES, null);                          // 01/04 : exclue
         // Autre boutique : mêmes sources, gros montants.
-        mouvement(b, "OUVERTURE", "SOLDE_INITIAL", CompteTresorerie.CAISSE, "99999", LocalDateTime.of(2026, 2, 1, 8, 0), null);
-        mouvement(b, "ENTREE", "VENTE", CompteTresorerie.CAISSE, "77777", LocalDateTime.of(2026, 3, 10, 8, 0), null);
-        operation(b, LocalDateTime.of(2026, 3, 10, 9, 0), "5555", TypeOperationTresorerie.DEPENSE, CompteTresorerie.CAISSE, null);
+        mouvement(b, "OUVERTURE", "SOLDE_INITIAL", TypeCompteTresorerie.ESPECES, "99999", LocalDateTime.of(2026, 2, 1, 8, 0), null);
+        mouvement(b, "ENTREE", "VENTE", TypeCompteTresorerie.ESPECES, "77777", LocalDateTime.of(2026, 3, 10, 8, 0), null);
+        operation(b, LocalDateTime.of(2026, 3, 10, 9, 0), "5555", TypeOperationTresorerie.DEPENSE, TypeCompteTresorerie.ESPECES, null);
 
         connecter(a.gerant());
         var mars = bilan.calculer(new PeriodeEtat(DU, AU));
@@ -195,7 +195,7 @@ public final class EtatsMariaDbTest {
         var avril = bilan.calculer(new PeriodeEtat(LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30)));
         exigerMontant(avril.tresorerie().get(2).debut(), "110.05", "banque au 1er avril");
         exigerMontant(avril.tresorerie().get(2).fin(), "160.05", "banque au 30 avril");
-        for (var t : avril.tresorerie()) exigerMontant(t.fin(), mouvements.calculerSoldeCompte(a.boutique().getId(), t.compte()).toPlainString(), "fin = solde du journal " + t.compte());
+        for (var t : avril.tresorerie()) exigerMontant(t.fin(), mouvements.calculerSoldeCompte(a.boutique().getId(), compte(a, t.type()).getId()).toPlainString(), "fin = solde du journal " + t.type());
         reussi("la fin de période égale le solde du journal");
 
         // Dépenses : les deux de mars (une annulée par écriture inverse), pas celle d'avril.
@@ -222,8 +222,8 @@ public final class EtatsMariaDbTest {
         venteClient(a, null, "30.30", "0", "0", LocalDateTime.of(2026, 3, 3, 9, 0), LocalDate.now().minusDays(5));
         venteClient(a, x, "50", "50", "0", LocalDateTime.of(2026, 3, 4, 9, 0), null);                                    // soldée : absente
         venteClient(a, z, "10", "60.50", "0", LocalDateTime.of(2026, 3, 6, 9, 0), null);                                // surplus 50,50 : avance 70,50
-        mouvement(a, "ENTREE", "SOLDE_CLIENT", CompteTresorerie.CAISSE, "50.25", LocalDateTime.of(2026, 3, 7, 9, 0), m -> m.setClient(y));
-        mouvement(a, "SORTIE", "SOLDE_FOURNISSEUR", CompteTresorerie.CAISSE, "-40.25", LocalDateTime.of(2026, 3, 7, 9, 0), m -> m.setFournisseur(kaba));
+        mouvement(a, "ENTREE", "SOLDE_CLIENT", TypeCompteTresorerie.ESPECES, "50.25", LocalDateTime.of(2026, 3, 7, 9, 0), m -> m.setClient(y));
+        mouvement(a, "SORTIE", "SOLDE_FOURNISSEUR", TypeCompteTresorerie.ESPECES, "-40.25", LocalDateTime.of(2026, 3, 7, 9, 0), m -> m.setFournisseur(kaba));
         achatFournisseur(a, null, "7.07", "0", LocalDateTime.of(2026, 3, 8, 9, 0), LocalDate.now().minusDays(1));
         achatFournisseur(a, diallo, "10", "15", LocalDateTime.of(2026, 3, 9, 9, 0), null);                              // surplus 5 : avance 35
         // Y : solde de départ 200,50 réglé de 40 (février) puis 50,25 (07/03) : reste 110,25.
@@ -269,18 +269,22 @@ public final class EtatsMariaDbTest {
         reussi("isolation des boutiques");
     }
 
-    private MouvementCaisse mouvement(Env e, String type, String source, CompteTresorerie compte, String montant, LocalDateTime date,
+    private static CompteTresorerieBoutique compte(Env e, TypeCompteTresorerie type) {
+        return e.boutique().getComptesTresorerie().stream().filter(x -> x.getType() == type).findFirst().orElseThrow();
+    }
+
+    private MouvementCaisse mouvement(Env e, String type, String source, TypeCompteTresorerie compte, String montant, LocalDateTime date,
                                       java.util.function.Consumer<MouvementCaisse> complement) {
-        var m = new MouvementCaisse(); m.setBoutique(e.boutique()); m.setType(type); m.setSource(source); m.setCompte(compte);
+        var m = new MouvementCaisse(); m.setBoutique(e.boutique()); m.setType(type); m.setSource(source); m.setCompte(compte(e, compte));
         m.setMontant(new BigDecimal(montant)); m.setDateMouvement(date); m.setMotif("Mouvement de test"); m.setUtilisateur(e.gerant());
         if (complement != null) complement.accept(m);
         return mouvements.saveAndFlush(m);
     }
 
-    private OperationTresorerie operation(Env e, LocalDateTime date, String montant, TypeOperationTresorerie type, CompteTresorerie source, CompteTresorerie destination) {
+    private OperationTresorerie operation(Env e, LocalDateTime date, String montant, TypeOperationTresorerie type, TypeCompteTresorerie source, TypeCompteTresorerie destination) {
         var operation = new OperationTresorerie(); operation.setBoutique(e.boutique()); operation.setUtilisateur(e.gerant());
-        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(source);
-        operation.setCompteDestination(destination); operation.setMontant(new BigDecimal(montant)); operation.setMotif("Motif " + montant);
+        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(compte(e, source));
+        operation.setCompteDestination(destination == null ? null : compte(e, destination)); operation.setMontant(new BigDecimal(montant)); operation.setMotif("Motif " + montant);
         operation.setDateOperation(date); return operations.saveAndFlush(operation);
     }
 
@@ -300,7 +304,7 @@ public final class EtatsMariaDbTest {
     private Retour retourAchat(Env e, Fournisseur fournisseur, String montant, LocalDateTime date) {
         var r = new Retour(); r.setBoutique(e.boutique()); r.setNumero("RA-" + UUID.randomUUID().toString().substring(0, 8)); r.setType(TypeRetour.ACHAT);
         r.setFournisseur(fournisseur); r.setDateRetour(date); r.setMontantTotal(new BigDecimal(montant)); r.setMontantRembourse(new BigDecimal(montant));
-        r.setCompteTresorerie(CompteTresorerie.BANQUE); r.setUtilisateur(e.gerant());
+        r.setCompteTresorerie(compte(e, TypeCompteTresorerie.BANQUE)); r.setUtilisateur(e.gerant());
         return retours.saveAndFlush(r);
     }
 

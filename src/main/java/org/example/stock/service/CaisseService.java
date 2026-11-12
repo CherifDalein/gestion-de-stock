@@ -24,9 +24,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.EnumMap;
-import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.TreeSet;
 import java.util.Objects;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
+import org.example.stock.model.CompteTresorerieBoutique;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.form.OperationTresorerieForm;
 import org.example.stock.form.TransfertTresorerieForm;
@@ -62,6 +64,7 @@ public class CaisseService {
     @Autowired private InitialisationBoutiqueService initialisation;
     @Autowired private StockLockRepository verrous;
     @Autowired private CompteTresorerieBoutiqueRepository comptes;
+    @Autowired private ComptesTresorerieService comptesService;
     @Autowired private OperationTresorerieRepository operations;
 
     @Transactional(readOnly = true)
@@ -69,44 +72,73 @@ public class CaisseService {
 
     @Transactional(readOnly=true)
     public boolean peutInitialiser() {
-        return peutInitialiser(CompteTresorerie.CAISSE);
-    }
-
-    @Transactional(readOnly = true)
-    public boolean peutInitialiser(CompteTresorerie compte) {
         gerant();
-        exigerCompte(compte);
-        return initialisation.estOuverte()
-                && !mouvementRepo.existsByBoutiqueIdAndCompte(boutiqueService.idBoutiqueCourante(), compte);
+        return peutInitialiser(comptes.principal(boutiqueService.idBoutiqueCourante(), TypeCompteTresorerie.ESPECES).map(CompteTresorerieBoutique::getId).orElse(null));
     }
 
+    /** Vrai pendant le démarrage si ce compte actif n'a encore aucun mouvement. */
     @Transactional(readOnly = true)
-    public List<CompteTresorerie> getComptesInitialisables() {
+    public boolean peutInitialiser(Long compteId) {
+        gerant();
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        return initialisation.estOuverte() && compteId != null
+                && comptes.findByIdAndBoutiqueId(compteId, boutiqueId).filter(CompteTresorerieBoutique::isActif).isPresent()
+                && !mouvementRepo.existsByBoutiqueIdAndCompteId(boutiqueId, compteId);
+    }
+
+    /** Comptes actifs sans aucun mouvement, tant que le démarrage de la boutique est ouvert. */
+    @Transactional(readOnly = true)
+    public List<CompteTresorerieBoutique> getComptesInitialisables() {
         gerant();
         if (!initialisation.estOuverte()) return List.of();
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
-        return java.util.Arrays.stream(CompteTresorerie.values())
-                .filter(compte -> !mouvementRepo.existsByBoutiqueIdAndCompte(boutiqueId, compte)).toList();
+        return comptes.listerActifs(boutiqueId).stream()
+                .filter(compte -> !mouvementRepo.existsByBoutiqueIdAndCompteId(boutiqueId, compte.getId())).toList();
     }
 
+    /** Un solde par compte actif (ou portant encore un solde), dans l'ordre d'affichage : type, ordre, identifiant. */
+    public record SoldeCompte(CompteTresorerieBoutique compte, BigDecimal solde) { }
+
     @Transactional(readOnly = true)
-    public Map<CompteTresorerie, BigDecimal> getSoldesParCompte() {
+    public List<SoldeCompte> getSoldesParCompte() {
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
-        Map<CompteTresorerie, BigDecimal> soldes = new EnumMap<>(CompteTresorerie.class);
-        for (CompteTresorerie compte : CompteTresorerie.values()) {
-            soldes.put(compte, normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compte)));
+        Map<Long, BigDecimal> soldes = comptesService.soldes(boutiqueId);
+        List<SoldeCompte> resultat = new java.util.ArrayList<>();
+        for (CompteTresorerieBoutique compte : comptes.lister(boutiqueId)) {
+            BigDecimal solde = soldes.getOrDefault(compte.getId(), Montants.ZERO);
+            if (compte.isActif() || solde.signum() != 0) resultat.add(new SoldeCompte(compte, solde));
         }
-        return soldes;
+        return resultat;
+    }
+
+    /** Total de chaque type de compte (tous les comptes, archivés compris) : les trois types sont toujours présents. */
+    @Transactional(readOnly = true)
+    public Map<TypeCompteTresorerie, BigDecimal> getSoldesParType() {
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        Map<Long, BigDecimal> soldes = comptesService.soldes(boutiqueId);
+        Map<TypeCompteTresorerie, BigDecimal> resultat = new EnumMap<>(TypeCompteTresorerie.class);
+        for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) resultat.put(type, Montants.ZERO);
+        for (CompteTresorerieBoutique compte : comptes.lister(boutiqueId)) {
+            resultat.merge(compte.getType(), soldes.getOrDefault(compte.getId(), Montants.ZERO), BigDecimal::add);
+        }
+        return resultat;
+    }
+
+    /** Nom d'un compte de la boutique courante ; 400 si le compte n'existe pas dans cette boutique. */
+    @Transactional(readOnly = true)
+    public String nomDuCompte(Long compteId) {
+        return comptes.findByIdAndBoutiqueId(compteId, boutiqueService.idBoutiqueCourante()).orElseThrow(CompteTresorerieInvalideException::new).getNom();
     }
 
     @Transactional(readOnly = true)
-    public BigDecimal getSoldeCompte(CompteTresorerie compte) {
-        exigerCompte(compte);
-        return normaliser(mouvementRepo.calculerSoldeCompte(boutiqueService.idBoutiqueCourante(), compte));
+    public BigDecimal getSoldeCompte(Long compteId) {
+        Long boutiqueId = boutiqueService.idBoutiqueCourante();
+        comptes.findByIdAndBoutiqueId(compteId, boutiqueId).orElseThrow(CompteTresorerieInvalideException::new);
+        return normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compteId));
     }
 
     @Transactional(isolation=org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
-    public void initialiser(OuvertureCaisseForm formulaire) {
+    public CompteTresorerieBoutique initialiser(OuvertureCaisseForm formulaire) {
         // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
         verrous.verrouillerBoutiqueCourante();
         Utilisateur acteur=gerant();
@@ -114,15 +146,17 @@ public class CaisseService {
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
         var boutique=initialisation.verrouillerEtExigerOuverte();
         if(formulaire==null||!validator.validate(formulaire).isEmpty()) throw new IllegalArgumentException("Le montant et le motif du solde initial doivent être valides.");
-        CompteTresorerie compte = formulaire.getComptePaiement();
-        verrouillerComptes(boutique.getId(), compte);
-        if(mouvementRepo.existsByBoutiqueIdAndCompte(boutique.getId(), compte)) throw new IllegalArgumentException("Le solde initial de ce compte se renseigne une seule fois, avant son premier mouvement.");
+        CompteTresorerieBoutique compte = comptes.findByIdAndBoutiqueId(comptesService.resoudreId(formulaire.getComptePaiement()), boutique.getId())
+                .orElseThrow(CompteTresorerieInvalideException::new);
+        compte = comptesService.verrouiller(boutique.getId(), acteur, false, true, List.of(compte.getId())).get(compte.getId());
+        if(mouvementRepo.existsByBoutiqueIdAndCompteId(boutique.getId(), compte.getId())) throw new IllegalArgumentException("Le solde initial de ce compte se renseigne une seule fois, avant son premier mouvement.");
         MouvementCaisse mouvement=new MouvementCaisse();
         mouvement.setBoutique(boutique);mouvement.setUtilisateur(acteur);mouvement.setCompte(compte);
         mouvement.setMontant(Montants.positifOuNul(formulaire.getMontant(),"Le solde initial"));
         mouvement.setType("OUVERTURE");mouvement.setSource("SOLDE_INITIAL");mouvement.setMotif(formulaire.getMotif());
         mouvement.setDateMouvement(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
         mouvementRepo.saveAndFlush(mouvement);
+        return compte;
     }
 
     private Utilisateur gerant() {
@@ -174,17 +208,17 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerEntree(montant, motif, source, utilisateur, null, null, CompteTresorerie.CAISSE);
+        enregistrerEntree(montant, motif, source, utilisateur, null, null, comptesService.principal(TypeCompteTresorerie.ESPECES).getId());
     }
 
     @Transactional
     public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur) {
-        enregistrerEntreeVente(montant, motif, vente, utilisateur, CompteTresorerie.CAISSE);
+        enregistrerEntreeVente(montant, motif, vente, utilisateur, comptesService.principal(TypeCompteTresorerie.ESPECES).getId());
     }
 
     @Transactional
-    public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerEntree(montant, motif, SourceMouvement.VENTE, utilisateur, vente, null, compte);
+    public void enregistrerEntreeVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, Long compteId) {
+        enregistrerEntree(montant, motif, SourceMouvement.VENTE, utilisateur, vente, null, compteId);
     }
 
     /**
@@ -192,20 +226,20 @@ public class CaisseService {
      * {@code VENTE} (paiement saisi à la création) pour que seul le règlement ultérieur soit annulable.
      */
     @Transactional
-    public MouvementCaisse enregistrerEntreeReglementVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, CompteTresorerie compte) {
-        return enregistrerEntree(montant, motif, SourceMouvement.REGLEMENT_VENTE, utilisateur, vente, null, compte);
+    public MouvementCaisse enregistrerEntreeReglementVente(BigDecimal montant, String motif, Vente vente, Utilisateur utilisateur, Long compteId) {
+        return enregistrerEntree(montant, motif, SourceMouvement.REGLEMENT_VENTE, utilisateur, vente, null, compteId);
     }
 
     /** Entrée d'un règlement du solde de départ d'un client : mouvement de trésorerie rattaché au client, sans vente. */
     @Transactional
-    public MouvementCaisse enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, CompteTresorerie compte) {
-        return enregistrerEntree(montant, motif, SourceMouvement.SOLDE_CLIENT, utilisateur, null, client, compte);
+    public MouvementCaisse enregistrerEntreeSoldeClient(BigDecimal montant, String motif, Client client, Utilisateur utilisateur, Long compteId) {
+        return enregistrerEntree(montant, motif, SourceMouvement.SOLDE_CLIENT, utilisateur, null, client, compteId);
     }
 
     /** Sortie d'un règlement du solde de départ d'un fournisseur : mouvement de trésorerie rattaché au fournisseur, sans achat. */
     @Transactional
-    public MouvementCaisse enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, CompteTresorerie compte) {
-        return enregistrerSortie(montant, motif, SourceMouvement.SOLDE_FOURNISSEUR, utilisateur, null, fournisseur, compte);
+    public MouvementCaisse enregistrerSortieSoldeFournisseur(BigDecimal montant, String motif, Fournisseur fournisseur, Utilisateur utilisateur, Long compteId) {
+        return enregistrerSortie(montant, motif, SourceMouvement.SOLDE_FOURNISSEUR, utilisateur, null, fournisseur, compteId);
     }
 
     /** Règlements du solde de départ d'un client et leurs annulations, du plus récent au plus ancien. */
@@ -253,21 +287,21 @@ public class CaisseService {
      * de l'achat, du fournisseur et des produits.
      */
     @Transactional
-    public void enregistrerEntreeRetourAchat(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, CompteTresorerie compte) {
+    public void enregistrerEntreeRetourAchat(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, Long compteId) {
         if (retour == null || retour.getId() == null) throw new IllegalArgumentException("Retour introuvable");
-        enregistrerEntree(montant, motif, "RETOUR_ACHAT", utilisateur, null, null, retour, compte);
+        enregistrerEntree(montant, motif, "RETOUR_ACHAT", utilisateur, null, null, retour, compteId);
     }
 
-    private MouvementCaisse enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, CompteTresorerie compte) {
-        return enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compte);
+    private MouvementCaisse enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client, Long compteId) {
+        return enregistrerEntree(montant, motif, source, utilisateur, vente, client, null, compteId);
     }
 
     private MouvementCaisse enregistrerEntree(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Vente vente, Client client,
-                                   Retour retour, CompteTresorerie compte) {
+                                   Retour retour, Long compteId) {
         // Idempotent : déjà tenu quand l'appel vient d'une vente, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
         verifierSourceOperationnelle(source);
-        exigerCompte(compte);
+        exigerCompte(compteId);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (vente != null) {
             vente = venteRepository.findByIdAndBoutiqueId(vente.getId(), boutiqueService.idBoutiqueCourante())
@@ -282,8 +316,10 @@ public class CaisseService {
 
         montant = Montants.valider(montant, "Le montant de caisse");
         initialisation.verrouillerEtClorePourActivite();
-        // Un encaissement positif ne peut pas épuiser un compte : il reste indépendant
-        // des autres ventes. Seules les sorties doivent exclure un contrôle de fonds.
+        // Un encaissement positif ne peut pas épuiser un compte : il reste indépendant des autres ventes. Seules les sorties
+        // doivent exclure un contrôle de fonds. Le compte est tout de même verrouillé en lecture, en dernier : un transfert
+        // ou un archivage en cours le fait attendre, et un compte archivé est refusé.
+        CompteTresorerieBoutique compte = verrouillerCompte(utilisateur, compteId, true);
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setCompte(compte);
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
@@ -302,23 +338,23 @@ public class CaisseService {
 
     @Transactional
     public void enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur) {
-        enregistrerSortie(montant, motif, source, utilisateur, null, null, CompteTresorerie.CAISSE);
+        enregistrerSortie(montant, motif, source, utilisateur, null, null, comptesService.principal(TypeCompteTresorerie.ESPECES).getId());
     }
 
     @Transactional
     public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur) {
-        enregistrerSortieAchat(montant, motif, achat, utilisateur, CompteTresorerie.CAISSE);
+        enregistrerSortieAchat(montant, motif, achat, utilisateur, comptesService.principal(TypeCompteTresorerie.ESPECES).getId());
     }
 
     @Transactional
-    public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
-        enregistrerSortie(montant, motif, SourceMouvement.ACHAT, utilisateur, achat, null, compte);
+    public void enregistrerSortieAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, Long compteId) {
+        enregistrerSortie(montant, motif, SourceMouvement.ACHAT, utilisateur, achat, null, compteId);
     }
 
     /** Sortie d'un règlement ultérieur d'un achat : source {@code REGLEMENT_ACHAT}, distincte du paiement saisi à la création. */
     @Transactional
-    public MouvementCaisse enregistrerSortieReglementAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, CompteTresorerie compte) {
-        return enregistrerSortie(montant, motif, SourceMouvement.REGLEMENT_ACHAT, utilisateur, achat, null, compte);
+    public MouvementCaisse enregistrerSortieReglementAchat(BigDecimal montant, String motif, Achat achat, Utilisateur utilisateur, Long compteId) {
+        return enregistrerSortie(montant, motif, SourceMouvement.REGLEMENT_ACHAT, utilisateur, achat, null, compteId);
     }
 
     public List<MouvementCaisse> listerReglementsAchat(Long achatId) {
@@ -331,21 +367,21 @@ public class CaisseService {
      * après les verrous de la boutique, du client et des produits.
      */
     @Transactional
-    public void enregistrerSortieRetourVente(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, CompteTresorerie compte) {
+    public void enregistrerSortieRetourVente(BigDecimal montant, String motif, Retour retour, Utilisateur utilisateur, Long compteId) {
         if (retour == null || retour.getId() == null) throw new IllegalArgumentException("Retour introuvable");
-        enregistrerSortie(montant, motif, "RETOUR_VENTE", utilisateur, null, null, retour, compte);
+        enregistrerSortie(montant, motif, "RETOUR_VENTE", utilisateur, null, null, retour, compteId);
     }
 
-    private MouvementCaisse enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, CompteTresorerie compte) {
-        return enregistrerSortie(montant, motif, source, utilisateur, achat, fournisseur, null, compte);
+    private MouvementCaisse enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur, Long compteId) {
+        return enregistrerSortie(montant, motif, source, utilisateur, achat, fournisseur, null, compteId);
     }
 
     private MouvementCaisse enregistrerSortie(BigDecimal montant, String motif, String source, Utilisateur utilisateur, Achat achat, Fournisseur fournisseur,
-                                   Retour retour, CompteTresorerie compte) {
+                                   Retour retour, Long compteId) {
         // Idempotent : déjà tenu quand l'appel vient d'un achat, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
         verifierSourceOperationnelle(source);
-        exigerCompte(compte);
+        exigerCompte(compteId);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
         if (achat != null) {
             achat = achatRepository.findByIdAndBoutiqueId(achat.getId(), boutiqueService.idBoutiqueCourante())
@@ -357,7 +393,7 @@ public class CaisseService {
 
         montant = Montants.valider(montant, "Le montant de caisse");
         initialisation.verrouillerEtClorePourActivite();
-        verrouillerComptesEnLecture(boutiqueService.idBoutiqueCourante(), compte);
+        CompteTresorerieBoutique compte = verrouillerCompte(utilisateur, compteId, true);
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setCompte(compte);
         mouvement.setBoutique(boutiqueService.boutiqueCourante());
@@ -402,13 +438,14 @@ public class CaisseService {
         BigDecimal montant = Montants.valider(origine.getMontant(), "Le montant de caisse");
         if (montant.signum() == 0) throw new IllegalArgumentException("Un mouvement sans montant ne s'annule pas.");
         acteur = utilisateurDeLaBoutique(acteur);
-        CompteTresorerie compte = origine.getCompte();
-        verrouillerComptes(boutiqueId, compte);
+        // La contre-passation se fait sur le compte d'origine, même archivé depuis (le compte garde son historique).
+        CompteTresorerieBoutique compte = comptesService.verrouiller(boutiqueId, acteur, false, false, List.of(origine.getCompte().getId()))
+                .get(origine.getCompte().getId());
         if (montant.signum() > 0) {
             // L'annulation d'un encaissement sort l'argent du compte : même règle et même message qu'une dépense.
-            BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compte));
+            BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutiqueId, compte.getId()));
             if (solde.compareTo(montant) < 0) {
-                throw new IllegalArgumentException("Solde insuffisant sur le compte " + compte.getLibelle() + ".");
+                throw new IllegalArgumentException("Solde insuffisant sur le compte " + compte.getNom() + ".");
             }
         }
         MouvementCaisse annulation = new MouvementCaisse();
@@ -440,8 +477,7 @@ public class CaisseService {
         return executerOperation(formulaire, TypeOperationTresorerie.DEPENSE, null);
     }
 
-    private boolean executerOperation(OperationTresorerieForm formulaire, TypeOperationTresorerie type,
-                                      CompteTresorerie destination) {
+    private boolean executerOperation(OperationTresorerieForm formulaire, TypeOperationTresorerie type, String saisieDestination) {
         // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
         verrous.verrouillerBoutiqueCourante();
         Utilisateur acteur = gerant();
@@ -451,43 +487,49 @@ public class CaisseService {
         if (formulaire == null || !validator.validate(formulaire).isEmpty()) {
             throw new IllegalArgumentException("Les comptes, le montant et le motif de l'opération doivent être valides.");
         }
-        if (type == TypeOperationTresorerie.TRANSFERT && formulaire.getCompteSource() == destination) {
+        // Comptes de la boutique, actifs et autorisés ; un compte refusé donne 400 et rien n'est enregistré.
+        Long sourceId = comptesService.resoudreId(formulaire.getCompteSource());
+        Long destinationId = type == TypeOperationTresorerie.TRANSFERT ? comptesService.resoudreId(saisieDestination) : null;
+        if (type == TypeOperationTresorerie.TRANSFERT && sourceId.equals(destinationId)) {
             throw new IllegalArgumentException("Choisissez deux comptes différents pour le transfert.");
         }
         var boutique = boutiqueService.boutiqueCourante();
-        if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;
-        // Clôture du démarrage (boutique déjà verrouillée), puis comptes.
+        if (repetition(formulaire, type, sourceId, destinationId, acteur, boutique.getId())) return true;
+        // Clôture du démarrage (boutique déjà verrouillée), puis comptes, dans l'ordre des identifiants.
         initialisation.verrouillerEtClorePourActivite();
-        verrouillerComptes(boutique.getId(), formulaire.getCompteSource(), destination);
-        if (repetition(formulaire, type, destination, acteur, boutique.getId())) return true;
+        List<Long> aVerrouiller = destinationId == null ? List.of(sourceId) : List.of(sourceId, destinationId);
+        var verrouilles = comptesService.verrouiller(boutique.getId(), acteur, false, true, aVerrouiller);
+        CompteTresorerieBoutique source = verrouilles.get(sourceId);
+        CompteTresorerieBoutique destination = destinationId == null ? null : verrouilles.get(destinationId);
+        if (repetition(formulaire, type, sourceId, destinationId, acteur, boutique.getId())) return true;
         BigDecimal montant = Montants.positifOuNul(formulaire.getMontant(), "Le montant");
         if (montant.signum() <= 0) throw new IllegalArgumentException("Le montant doit être supérieur à zéro.");
         // READ_COMMITTED relit le solde après l'attente des comptes verrouillés.
-        BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutique.getId(), formulaire.getCompteSource()));
+        BigDecimal solde = normaliser(mouvementRepo.calculerSoldeCompte(boutique.getId(), sourceId));
         if (solde.compareTo(montant) < 0) {
-            throw new IllegalArgumentException("Solde insuffisant sur le compte " + formulaire.getCompteSource().getLibelle() + ".");
+            throw new IllegalArgumentException("Solde insuffisant sur le compte " + source.getNom() + ".");
         }
         OperationTresorerie operation = new OperationTresorerie();
         operation.setBoutique(boutique); operation.setUtilisateur(acteur);
         operation.setJeton(formulaire.getJetonOperation()); operation.setType(type);
-        operation.setCompteSource(formulaire.getCompteSource()); operation.setCompteDestination(destination);
+        operation.setCompteSource(source); operation.setCompteDestination(destination);
         operation.setMontant(montant); operation.setMotif(formulaire.getMotif());
         operation.setDateOperation(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
         operations.saveAndFlush(operation);
-        enregistrerEcriture(operation, formulaire.getCompteSource(), montant.negate(), "SORTIE");
+        enregistrerEcriture(operation, source, montant.negate(), "SORTIE");
         if (destination != null) enregistrerEcriture(operation, destination, montant, "ENTREE");
         mouvementRepo.flush();
         return false;
     }
 
     private boolean repetition(OperationTresorerieForm formulaire, TypeOperationTresorerie type,
-                               CompteTresorerie destination, Utilisateur acteur, Long boutiqueId) {
+                               Long sourceId, Long destinationId, Utilisateur acteur, Long boutiqueId) {
         var precedent = operations.findByJeton(formulaire.getJetonOperation()).orElse(null);
         if (precedent == null) return false;
         if (!Objects.equals(precedent.getBoutique().getId(), boutiqueId)
                 || !Objects.equals(precedent.getUtilisateur().getId(), acteur.getId())
-                || precedent.getType() != type || precedent.getCompteSource() != formulaire.getCompteSource()
-                || precedent.getCompteDestination() != destination
+                || precedent.getType() != type || !Objects.equals(precedent.getCompteSource().getId(), sourceId)
+                || !Objects.equals(precedent.getCompteDestination() == null ? null : precedent.getCompteDestination().getId(), destinationId)
                 || precedent.getMontant().compareTo(formulaire.getMontant()) != 0
                 || !Objects.equals(precedent.getMotif(), formulaire.getMotif())) {
             throw new OperationTresorerieConflitException();
@@ -495,7 +537,7 @@ public class CaisseService {
         return true;
     }
 
-    private void enregistrerEcriture(OperationTresorerie operation, CompteTresorerie compte,
+    private void enregistrerEcriture(OperationTresorerie operation, CompteTresorerieBoutique compte,
                                      BigDecimal montant, String type) {
         MouvementCaisse mouvement = new MouvementCaisse();
         mouvement.setBoutique(operation.getBoutique()); mouvement.setUtilisateur(operation.getUtilisateur());
@@ -505,25 +547,14 @@ public class CaisseService {
         mouvementRepo.save(mouvement);
     }
 
-    private void verrouillerComptes(Long boutiqueId, CompteTresorerie... comptesRequis) {
-        verrouillerComptes(boutiqueId, false, comptesRequis);
+    /** Verrouille le compte (dernier maillon de l'ordre global) et le contrôle pour l'acteur : boutique, actif, autorisé. */
+    private CompteTresorerieBoutique verrouillerCompte(Utilisateur acteur, Long compteId, boolean lecture) {
+        exigerCompte(compteId);
+        return comptesService.verrouiller(boutiqueService.idBoutiqueCourante(), acteur, lecture, true, List.of(compteId)).get(compteId);
     }
 
-    private void verrouillerComptesEnLecture(Long boutiqueId, CompteTresorerie... comptesRequis) {
-        verrouillerComptes(boutiqueId, true, comptesRequis);
-    }
-
-    private void verrouillerComptes(Long boutiqueId, boolean lecture, CompteTresorerie... comptesRequis) {
-        EnumSet<CompteTresorerie> ordre = EnumSet.noneOf(CompteTresorerie.class);
-        for (CompteTresorerie compte : comptesRequis) if (compte != null) ordre.add(compte);
-        for (CompteTresorerie compte : ordre) {
-            (lecture ? comptes.verrouillerLecture(boutiqueId, compte) : comptes.verrouiller(boutiqueId, compte)).orElseThrow(() -> new IllegalStateException(
-                    "Les comptes de la boutique ne sont pas initialisés. La migration trésorerie est nécessaire."));
-        }
-    }
-
-    private static void exigerCompte(CompteTresorerie compte) {
-        if (compte == null) throw new IllegalArgumentException("Choisissez un compte de paiement.");
+    private static void exigerCompte(Long compteId) {
+        if (compteId == null) throw new IllegalArgumentException("Choisissez un compte de paiement.");
     }
 
     private BigDecimal normaliser(BigDecimal valeur) {

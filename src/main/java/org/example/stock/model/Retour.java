@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.TypeRetour;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -73,10 +72,9 @@ public class Retour {
     private BigDecimal montantRembourse = Montants.ZERO;
 
     /** Compte du remboursement ; vide quand rien n'est remboursé en trésorerie. */
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.VARCHAR)
-    @Column(length = 16)
-    private CompteTresorerie compteTresorerie;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "compte_tresorerie_id", foreignKey = @ForeignKey(name = "fk_retour_compte_tresorerie"))
+    private CompteTresorerieBoutique compteTresorerie;
 
     @Column(nullable = false, precision = 17, scale = 2)
     @Digits(integer = 15, fraction = 2, message = "Le montant doit comporter au maximum 15 chiffres entiers et 2 décimales")

@@ -2,7 +2,6 @@ package org.example.stock.migration;
 
 import jakarta.persistence.EntityManager;
 import org.example.stock.StockApplication;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationCreation;
 import org.example.stock.model.*;
@@ -125,7 +124,7 @@ public class AvancesPartenairesMariaDbTest {
 
     private void reglerSolde(String montant) {
         connecter();
-        try { soldeDepart.reglerClient(clientId, new BigDecimal(montant), BigDecimal.ZERO, CompteTresorerie.CAISSE, null); }
+        try { soldeDepart.reglerClient(clientId, new BigDecimal(montant), BigDecimal.ZERO, "ESPECES", null); }
         finally { SecurityContextHolder.clearContext(); }
     }
 

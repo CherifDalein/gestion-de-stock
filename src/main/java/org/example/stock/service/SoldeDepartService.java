@@ -1,6 +1,5 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.model.Client;
 import org.example.stock.model.Emails;
@@ -38,15 +37,18 @@ public class SoldeDepartService {
     private final CaisseService caisse;
     private final InitialisationBoutiqueService initialisation;
     private final UtilisateurRepository utilisateurs;
+    private final ComptesTresorerieService comptes;
 
     public SoldeDepartService(StockLockRepository verrous, SoldePartenaireService soldes, BoutiqueService boutiques,
-                              CaisseService caisse, InitialisationBoutiqueService initialisation, UtilisateurRepository utilisateurs) {
+                              CaisseService caisse, InitialisationBoutiqueService initialisation, UtilisateurRepository utilisateurs,
+                              ComptesTresorerieService comptes) {
         this.verrous = verrous;
         this.soldes = soldes;
         this.boutiques = boutiques;
         this.caisse = caisse;
         this.initialisation = initialisation;
         this.utilisateurs = utilisateurs;
+        this.comptes = comptes;
     }
 
     /** Résultat d'une saisie : solde signé et échéance (vide si le partenaire ne doit rien). */
@@ -131,8 +133,9 @@ public class SoldeDepartService {
 
     /** Un client règle (en partie) son solde de départ : entrée de trésorerie rattachée au client. Retourne l'identifiant du mouvement (son reçu). */
     @Transactional
-    public Long reglerClient(Long clientId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
+    public Long reglerClient(Long clientId, BigDecimal montant, BigDecimal reglementAttendu, String compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
+        Long compteId = comptes.resoudreId(compte);
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Client client = verrous.verrouillerClient(clientId);
@@ -143,13 +146,14 @@ public class SoldeDepartService {
             EcheanceService.exigerValide(nouvelleEcheance, null);
             client.setEcheanceSoldeInitial(nouvelleEcheance);
         }
-        return caisse.enregistrerEntreeSoldeClient(montant, "Règlement du solde de départ - Client: " + client.getNom(), client, utilisateurCourant(), compte).getId();
+        return caisse.enregistrerEntreeSoldeClient(montant, "Règlement du solde de départ - Client: " + client.getNom(), client, utilisateurCourant(), compteId).getId();
     }
 
     /** La boutique paie (en partie) son solde de départ à un fournisseur : sortie de trésorerie rattachée au fournisseur. Retourne l'identifiant du mouvement (son reçu). */
     @Transactional
-    public Long reglerFournisseur(Long fournisseurId, BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte, LocalDate nouvelleEcheance) {
+    public Long reglerFournisseur(Long fournisseurId, BigDecimal montant, BigDecimal reglementAttendu, String compte, LocalDate nouvelleEcheance) {
         montant = controlerSaisie(montant, reglementAttendu, compte);
+        Long compteId = comptes.resoudreId(compte);
         verrous.verrouillerBoutiqueCourante();
         initialisation.verrouillerEtClorePourActivite();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(fournisseurId);
@@ -160,11 +164,11 @@ public class SoldeDepartService {
             EcheanceService.exigerValide(nouvelleEcheance, null);
             fournisseur.setEcheanceSoldeInitial(nouvelleEcheance);
         }
-        return caisse.enregistrerSortieSoldeFournisseur(montant, "Règlement du solde de départ - Fournisseur: " + fournisseur.getNom(), fournisseur, utilisateurCourant(), compte).getId();
+        return caisse.enregistrerSortieSoldeFournisseur(montant, "Règlement du solde de départ - Fournisseur: " + fournisseur.getNom(), fournisseur, utilisateurCourant(), compteId).getId();
     }
 
-    private BigDecimal controlerSaisie(BigDecimal montant, BigDecimal reglementAttendu, CompteTresorerie compte) {
-        if (compte == null) throw new IllegalArgumentException("Choisissez le compte de trésorerie du règlement.");
+    private BigDecimal controlerSaisie(BigDecimal montant, BigDecimal reglementAttendu, String compte) {
+        if (compte == null || compte.isBlank()) throw new IllegalArgumentException("Choisissez le compte de trésorerie du règlement.");
         montant = Montants.positifOuNul(montant, "Le règlement");
         if (montant.signum() == 0) throw new IllegalArgumentException("Le règlement doit être supérieur à zéro.");
         if (reglementAttendu == null || reglementAttendu.signum() < 0) throw new IllegalArgumentException("Rechargez le formulaire de règlement.");

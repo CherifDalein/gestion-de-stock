@@ -18,13 +18,13 @@
                     <div class="record-field">
                         <label for="compteSource">Compte de départ</label>
                         <select id="compteSource" class="form-select" th:field="*{compteSource}" required th:attr="aria-invalid=${#fields.hasErrors('compteSource')}">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{compteSource})}"></th:block>
                         </select>
                     </div>
                     <div class="record-field">
                         <label for="compteDestination">Compte d’arrivée</label>
                         <select id="compteDestination" class="form-select" th:field="*{compteDestination}" required th:attr="aria-invalid=${#fields.hasErrors('compteDestination')}">
-                            <option th:each="compte : ${comptesTresorerie}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: options(*{compteDestination})}"></th:block>
                         </select>
                     </div>
                     <div class="record-field">

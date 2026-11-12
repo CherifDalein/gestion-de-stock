@@ -1,6 +1,5 @@
 package org.example.stock.controller;
 
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.export.LivraisonExport;
 import org.example.stock.export.ParametresListe;
 import org.example.stock.service.TresorerieExportService;
@@ -20,14 +19,12 @@ import java.util.stream.Collectors;
 
 /**
  * Exports Excel et PDF du journal de trésorerie. Réservés au gérant (règle de sécurité « /caisse/** ») : le caissier reçoit 403.
- * Filtres : {@code compte=CAISSE|ORANGE_MONEY|BANQUE}, {@code source=<libellé affiché>}, {@code sens=entree|sortie|neutre|inconnu},
+ * Filtres : {@code compte=<identifiant du compte>}, {@code source=<libellé affiché>}, {@code sens=entree|sortie|neutre|inconnu},
  * {@code du=} et {@code au=} (jours inclus) et {@code q=}. Trop volumineux : retour au journal complet.
  */
 @Controller
 @RequestMapping("/caisse/export")
 public class TresorerieExportController {
-    private static final Set<String> COMPTES = Arrays.stream(CompteTresorerie.values()).map(Enum::name).collect(Collectors.toSet());
-
     private final TresorerieExportService export;
     private final LivraisonExport livraison;
 
@@ -56,10 +53,10 @@ public class TresorerieExportController {
     }
 
     private static FiltreJournal filtre(List<String> compte, List<String> source, List<String> sens, List<String> du, List<String> au) {
-        String nomCompte = ParametresListe.choix("compte", compte, COMPTES);
+        Long compteId = ParametresListe.identifiant("compte", compte);
         LocalDate debut = ParametresListe.date(du), fin = ParametresListe.date(au);
         ParametresListe.periodeCoherente(debut, fin);
-        return new FiltreJournal(nomCompte == null ? null : CompteTresorerie.valueOf(nomCompte), ParametresListe.unique("source", source),
+        return new FiltreJournal(compteId, ParametresListe.unique("source", source),
                 ParametresListe.choix("sens", sens, TresorerieExportService.SENS), debut, fin);
     }
 }

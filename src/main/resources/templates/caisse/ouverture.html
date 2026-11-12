@@ -17,7 +17,7 @@
                     <div class="record-field">
                         <label for="comptePaiement">Compte à initialiser</label>
                         <select id="comptePaiement" class="form-select" th:field="*{comptePaiement}" required th:attr="aria-invalid=${#fields.hasErrors('comptePaiement')}">
-                            <option th:each="compte : ${comptesInitialisables}" th:value="${compte}" th:text="${compte.libelle}"></option>
+                            <th:block th:replace="~{fragments/comptes :: optionsDe(${comptesInitialisables}, *{comptePaiement})}"></th:block>
                         </select>
                     </div>
                     <div class="record-field">

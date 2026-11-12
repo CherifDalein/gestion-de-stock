@@ -1,6 +1,6 @@
 package org.example.stock.service;
 
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
@@ -100,21 +100,21 @@ class RetourAchatTests {
         Achat achat = achat(10, "10000", "100000");
         assertThat(caisse.calculerSoldeTotal(boutique.getId())).isEqualByComparingTo("-100000");
 
-        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
 
         Retour retour = unique(achat);
         assertThat(retour.getNumero()).isEqualTo("RA-000001");
         assertThat(retour.getMontantTotal()).isEqualByComparingTo("30000");
         assertThat(retour.getMontantRembourse()).isEqualByComparingTo("30000");
         assertThat(retour.getMontantAvoir()).isEqualByComparingTo("0");
-        assertThat(retour.getCompteTresorerie()).isEqualTo(CompteTresorerie.CAISSE);
+        assertThat(retour.getCompteTresorerie().getType()).isEqualTo(TypeCompteTresorerie.ESPECES);
         new TransactionTemplate(transactions).executeWithoutResult(s -> {
             List<MouvementCaisse> entrees = caisse.findAll().stream().filter(m -> "RETOUR_ACHAT".equals(m.getSource())).toList();
             assertThat(entrees).hasSize(1);
             MouvementCaisse entree = entrees.get(0);
             assertThat(entree.getMontant()).isEqualByComparingTo("30000");
             assertThat(entree.getType()).isEqualTo("ENTREE");
-            assertThat(entree.getCompte()).isEqualTo(CompteTresorerie.CAISSE);
+            assertThat(entree.getCompte().getType()).isEqualTo(TypeCompteTresorerie.ESPECES);
             assertThat(entree.getRetour().getId()).isEqualTo(retour.getId());
             assertThat(entree.getUtilisateur().getEmail()).isEqualTo(ADMIN);
             assertThat(entree.getAchat()).isNull(); // pas parmi les versements de l'achat
@@ -130,10 +130,10 @@ class RetourAchatTests {
     @Test
     void unRemboursementPeutEntrerSurUnAutreCompte() throws Exception {
         Achat achat = achat(10, "10000", "100000");
-        envoyer(achat, ADMIN, "2", ModeRemboursement.ARGENT, CompteTresorerie.ORANGE_MONEY).andExpect(status().is3xxRedirection());
-        assertThat(caisse.findAll().stream().filter(m -> "RETOUR_ACHAT".equals(m.getSource())).map(MouvementCaisse::getCompte))
-                .containsExactly(CompteTresorerie.ORANGE_MONEY);
-        assertThat(unique(achat).getCompteTresorerie()).isEqualTo(CompteTresorerie.ORANGE_MONEY);
+        envoyer(achat, ADMIN, "2", ModeRemboursement.ARGENT, TypeCompteTresorerie.ORANGE_MONEY).andExpect(status().is3xxRedirection());
+        assertThat(caisse.findAll().stream().filter(m -> "RETOUR_ACHAT".equals(m.getSource())).map(m -> m.getCompte().getType()))
+                .containsExactly(TypeCompteTresorerie.ORANGE_MONEY);
+        assertThat(unique(achat).getCompteTresorerie().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
     }
 
     @Test
@@ -160,7 +160,7 @@ class RetourAchatTests {
     @Test
     void unRetourPlusGrandQueLaDetteImputeLaDetteEtRecupereLExcedent() throws Exception {
         Achat achat = achat(10, "10000", "80000"); // reste 20 000
-        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
         Retour retour = unique(achat);
         assertThat(retour.getMontantTotal()).isEqualByComparingTo("50000");
         assertThat(retour.getMontantImpute()).isEqualByComparingTo("20000");
@@ -221,15 +221,15 @@ class RetourAchatTests {
     void uneQuantiteAuDessusDuResteEstRefuseeEtDeuxRetoursSuccessifsSontCumules() throws Exception {
         Achat achat = achat(10, "10000", "100000");
 
-        envoyer(achat, ADMIN, "11", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
-        envoyer(achat, ADMIN, "0", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
-        envoyer(achat, ADMIN, "-1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "11", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "0", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "-1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
         assertThat(retours.count()).isZero();
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(110L);
 
-        envoyer(achat, ADMIN, "6", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
-        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
-        envoyer(achat, ADMIN, "4", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "6", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "4", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
         assertThat(retours.count()).isEqualTo(2);
         assertThat(achats.findById(achat.getId()).orElseThrow().getMontantRetours()).isEqualByComparingTo("100000");
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(100L);
@@ -243,16 +243,16 @@ class RetourAchatTests {
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(5L);
 
         // 6 > stock 5 : refusé, même si l'achat en comptait 10.
-        String page = envoyer(achat, ADMIN, "6", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk())
+        String page = envoyer(achat, ADMIN, "6", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("dépasse le stock actuel");
         assertThat(retours.count()).isZero();
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(5L);
 
-        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "5", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isZero();
         // Plus de stock : plus rien à renvoyer, même s'il reste 5 unités sur la ligne d'achat.
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
         assertThat(retours.count()).isEqualTo(1);
     }
 
@@ -275,7 +275,7 @@ class RetourAchatTests {
             List<Future<Boolean>> resultats = new ArrayList<>();
             for (int i = 0; i < 2; i++) {
                 resultats.add(pool.submit(() -> authentifie(ADMIN, "ADMIN", () -> {
-                    RetourAchatForm form = formulaire(ligne, 7, ModeRemboursement.ARGENT, CompteTresorerie.CAISSE, 0L);
+                    RetourAchatForm form = formulaire(ligne, 7, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES, 0L);
                     attendre(barriere);
                     try { retourService.enregistrer(achat.getId(), form); return true; }
                     catch (RuntimeException refus) { return false; }
@@ -295,10 +295,10 @@ class RetourAchatTests {
     void leServiceRefuseUneQuantiteQuiDepasseLeResteMemeAvecUnFormulaireAJour() {
         Achat achat = achat(10, "10000", "100000");
         authentifierGerant();
-        retourService.enregistrer(achat.getId(), formulaire(achat.getLignes().get(0).getId(), 6, ModeRemboursement.ARGENT, CompteTresorerie.CAISSE, 0L));
+        retourService.enregistrer(achat.getId(), formulaire(achat.getLignes().get(0).getId(), 6, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES, 0L));
         // Formulaire à jour (1 retour connu) mais 5 > 4 restants : le plafond de la ligne est vérifié sous le verrou.
         assertThatThrownBy(() -> retourService.enregistrer(achat.getId(),
-                formulaire(achat.getLignes().get(0).getId(), 5, ModeRemboursement.ARGENT, CompteTresorerie.CAISSE, 1L)))
+                formulaire(achat.getLignes().get(0).getId(), 5, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES, 1L)))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("dépasse ce qui reste à retourner (4)");
         assertThat(retours.count()).isEqualTo(1);
     }
@@ -389,7 +389,7 @@ class RetourAchatTests {
         // Sans retour, la modification fonctionne.
         mvc.perform(get("/achats/modifier/" + achat.getId()).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk());
 
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
 
         mvc.perform(get("/achats/modifier/" + achat.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().is3xxRedirection()).andExpect(flash().attribute("error", ModificationAchatRefuseeException.MESSAGE));
@@ -431,7 +431,7 @@ class RetourAchatTests {
         BigDecimal valeurAvant = tableau().valeurStock().valeur();
         TableauDeBordService.Indicateurs avant = tableau().indicateursDuJour(aujourdHui);
 
-        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
 
         TableauDeBordService.Indicateurs apres = tableau().indicateursDuJour(aujourdHui);
         assertThat(apres.chiffreAffaires()).isEqualByComparingTo(avant.chiffreAffaires());
@@ -460,13 +460,13 @@ class RetourAchatTests {
     void leCaissierEstRefuseSurLeFormulaireLEnregistrementEtLaListe() throws Exception {
         Achat achat = achat(10, "10000", "100000");
         mvc.perform(get("/achats/" + achat.getId() + "/retour").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
-        envoyer(achat, CAISSIER, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isForbidden());
+        envoyer(achat, CAISSIER, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isForbidden());
         mvc.perform(get("/retours").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
         mvc.perform(get("/retours?type=achat").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
         assertThat(retours.count()).isZero();
         // Le service répète la règle.
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(CAISSIER, "", List.of(new SimpleGrantedAuthority("ROLE_CAISSIER"))));
-        assertThatThrownBy(() -> retourService.enregistrer(achat.getId(), formulaire(achat.getLignes().get(0).getId(), 1, ModeRemboursement.ARGENT, CompteTresorerie.CAISSE, 0L)))
+        assertThatThrownBy(() -> retourService.enregistrer(achat.getId(), formulaire(achat.getLignes().get(0).getId(), 1, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES, 0L)))
                 .hasMessageContaining("réservé au gérant");
         // Le gérant voit l'écran.
         mvc.perform(get("/achats/" + achat.getId() + "/retour").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk());
@@ -476,11 +476,11 @@ class RetourAchatTests {
     @Test
     void unAchatOuUnRetourDUneAutreBoutiqueEstIntrouvable() throws Exception {
         Achat achat = achat(10, "10000", "100000");
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
         Retour retour = unique(achat);
 
         mvc.perform(get("/achats/" + achat.getId() + "/retour").with(user(ADMIN2).roles("ADMIN"))).andExpect(status().isNotFound());
-        envoyer(achat, ADMIN2, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isNotFound());
+        envoyer(achat, ADMIN2, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isNotFound());
         mvc.perform(get("/retours/" + retour.getId() + "/imprimer").with(user(ADMIN2).roles("ADMIN"))).andExpect(status().isNotFound());
         mvc.perform(get("/retours/" + retour.getId() + "/imprimer").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk());
         String autre = mvc.perform(get("/retours").with(user(ADMIN2).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
@@ -513,16 +513,16 @@ class RetourAchatTests {
     void lesNumerosRASontConsecutifsParBoutiqueEtIndependantsDesNumerosRV() throws Exception {
         Achat achat = achat(10, "10000", "100000");
         Achat achatAutre = authentifie(ADMIN2, "ADMIN", () -> achatService.enregistrerAchat(nouvelAchat(fournisseurAutre, produitAutre, 5, "10000", "50000")));
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE);
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE);
-        envoyer(achatAutre, ADMIN2, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE);
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE);
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
+        envoyer(achatAutre, ADMIN2, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
         // Un retour de vente dans la première boutique garde son propre compteur.
         Vente vente = vente(2, "20000");
         authentifierGerant();
         RetourVenteForm rv = new RetourVenteForm();
         RetourVenteForm.Ligne l = new RetourVenteForm.Ligne(); l.setDetailVenteId(vente.getLignes().get(0).getId()); l.setQuantite(1);
-        rv.setLignes(new ArrayList<>(List.of(l))); rv.setModeRemboursement(ModeRemboursement.ARGENT); rv.setComptePaiement(CompteTresorerie.CAISSE); rv.setRetoursConnus(0L);
+        rv.setLignes(new ArrayList<>(List.of(l))); rv.setModeRemboursement(ModeRemboursement.ARGENT); rv.setComptePaiement(TypeCompteTresorerie.ESPECES.name()); rv.setRetoursConnus(0L);
         assertThat(retourVenteService.enregistrer(vente.getId(), rv).getNumero()).isEqualTo("RV-000001");
 
         List<String> premiere = retours.findAll().stream().filter(r -> r.getBoutique().getId().equals(boutique.getId()) && r.getNumero().startsWith("RA-")).map(Retour::getNumero).sorted().toList();
@@ -534,8 +534,8 @@ class RetourAchatTests {
     @Test
     void unRefusRendLeNumeroEtNEnregistreRien() throws Exception {
         Achat achat = achat(10, "10000", "100000");
-        envoyer(achat, ADMIN, "11", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().isOk());
-        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "11", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().isOk());
+        envoyer(achat, ADMIN, "1", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES).andExpect(status().is3xxRedirection());
         assertThat(unique(achat).getNumero()).isEqualTo("RA-000001");
         assertThat(boutiques.findById(boutique.getId()).orElseThrow().getProchainNumeroRetourAchat()).isEqualTo(2L);
     }
@@ -557,7 +557,7 @@ class RetourAchatTests {
     @Test
     void laFactureLaListeEtLeBonImprimableMontrentLeRetour() throws Exception {
         Achat achat = achat(10, "10000", "100000");
-        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, CompteTresorerie.CAISSE);
+        envoyer(achat, ADMIN, "3", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
         envoyer(achat, ADMIN, "1", ModeRemboursement.AVOIR, null);
         String facture = mvc.perform(get("/factures/achat/" + achat.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
@@ -567,7 +567,7 @@ class RetourAchatTests {
         authentifierGerant();
         RetourVenteForm rv = new RetourVenteForm();
         RetourVenteForm.Ligne l = new RetourVenteForm.Ligne(); l.setDetailVenteId(vente.getLignes().get(0).getId()); l.setQuantite(1);
-        rv.setLignes(new ArrayList<>(List.of(l))); rv.setModeRemboursement(ModeRemboursement.ARGENT); rv.setComptePaiement(CompteTresorerie.CAISSE); rv.setRetoursConnus(0L);
+        rv.setLignes(new ArrayList<>(List.of(l))); rv.setModeRemboursement(ModeRemboursement.ARGENT); rv.setComptePaiement(TypeCompteTresorerie.ESPECES.name()); rv.setRetoursConnus(0L);
         retourVenteService.enregistrer(vente.getId(), rv);
 
         String tous = mvc.perform(get("/retours").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
@@ -587,7 +587,7 @@ class RetourAchatTests {
 
     // ---- Outils -----------------------------------------------------------------------------------------------
 
-    private ResultActions envoyer(Achat achat, String compte, String quantite, ModeRemboursement mode, CompteTresorerie tresorerie) throws Exception {
+    private ResultActions envoyer(Achat achat, String compte, String quantite, ModeRemboursement mode, TypeCompteTresorerie tresorerie) throws Exception {
         long connus = retours.countByAchatId(achat.getId());
         String role = CAISSIER.equals(compte) ? "CAISSIER" : "ADMIN";
         MockHttpServletRequestBuilder requete = post("/achats/" + achat.getId() + "/retour").with(csrf()).with(user(compte).roles(role))
@@ -598,11 +598,11 @@ class RetourAchatTests {
         return mvc.perform(requete);
     }
 
-    private static RetourAchatForm formulaire(Long ligne, int quantite, ModeRemboursement mode, CompteTresorerie compte, Long connus) {
+    private static RetourAchatForm formulaire(Long ligne, int quantite, ModeRemboursement mode, TypeCompteTresorerie compte, Long connus) {
         RetourAchatForm form = new RetourAchatForm();
         RetourAchatForm.Ligne l = new RetourAchatForm.Ligne(); l.setDetailAchatId(ligne); l.setQuantite(quantite);
         form.setLignes(new ArrayList<>(List.of(l)));
-        form.setModeRemboursement(mode); form.setComptePaiement(compte); form.setRetoursConnus(connus);
+        form.setModeRemboursement(mode); form.setComptePaiement(compte.name()); form.setRetoursConnus(connus);
         return form;
     }
 

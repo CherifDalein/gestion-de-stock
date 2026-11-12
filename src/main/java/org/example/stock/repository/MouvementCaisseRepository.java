@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.example.stock.enums.CompteTresorerie;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
@@ -16,10 +15,18 @@ import java.util.List;
 @Repository
 public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse, Long>, JpaSpecificationExecutor<MouvementCaisse> {
     boolean existsByBoutiqueId(Long boutiqueId);
-    boolean existsByBoutiqueIdAndCompte(Long boutiqueId, CompteTresorerie compte);
+    boolean existsByBoutiqueIdAndCompteId(Long boutiqueId, Long compteId);
 
-    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.compte = :compte")
-    BigDecimal calculerSoldeCompte(@Param("boutiqueId") Long boutiqueId, @Param("compte") CompteTresorerie compte);
+    /** Vrai s'il existe un mouvement du compte autre que son solde de départ : le solde de départ est alors figé. */
+    @Query("SELECT COUNT(m) > 0 FROM MouvementCaisse m WHERE m.compte.id = :compteId AND (m.source IS NULL OR m.source <> 'SOLDE_INITIAL')")
+    boolean existeMouvementAutreQueSoldeDepart(@Param("compteId") Long compteId);
+
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId")
+    BigDecimal calculerSoldeCompte(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId);
+
+    /** Solde de chaque compte de la boutique : [identifiant du compte, Σ des montants] ; un compte sans mouvement n'a pas de ligne. */
+    @Query("SELECT m.compte.id, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId GROUP BY m.compte.id")
+    List<Object[]> soldesParCompte(@Param("boutiqueId") Long boutiqueId);
 
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.dateMouvement >= :date AND m.dateMouvement < :fin AND m.source = 'SOLDE_INITIAL' AND m.boutique.id = :boutiqueId")
     BigDecimal calculerInitialDuJour(@Param("date") LocalDateTime date, @Param("fin") LocalDateTime fin, @Param("boutiqueId") Long boutiqueId);

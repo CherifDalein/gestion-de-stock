@@ -2,7 +2,7 @@ package org.example.stock.service;
 
 import java.time.temporal.ChronoUnit;
 import org.example.stock.enums.Role;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -373,7 +373,7 @@ class ReglementVenteTests {
             invocation.callRealMethod();
             caisse.flush();
             throw new IllegalStateException("Erreur de caisse simulée");
-        }).when(cible).enregistrerEntreeReglementVente(any(BigDecimal.class), anyString(), any(Vente.class), any(Utilisateur.class), any(CompteTresorerie.class));
+        }).when(cible).enregistrerEntreeReglementVente(any(BigDecimal.class), anyString(), any(Vente.class), any(Utilisateur.class), any(Long.class));
         assertThatThrownBy(() -> venteService.reglerVente(vente.getId(), new BigDecimal("10000"), new BigDecimal("50000")))
                 .hasMessage("Erreur de caisse simulée");
         verifierInitial();
@@ -399,14 +399,14 @@ class ReglementVenteTests {
     }
 
     @ParameterizedTest
-    @EnumSource(CompteTresorerie.class)
-    void chaqueVersementClientPeutRejoindreUnCompteDifferent(CompteTresorerie compte) throws Exception {
+    @EnumSource(TypeCompteTresorerie.class)
+    void chaqueVersementClientPeutRejoindreUnCompteDifferent(TypeCompteTresorerie compte) throws Exception {
         mvc.perform(versement("10000", "50000").param("comptePaiement", compte.name()).with(csrf()))
                 .andExpect(status().is3xxRedirection());
         var mouvements = caisse.findByVenteIdOrderByDateMouvementDescIdDesc(vente.getId());
         assertThat(mouvements).hasSize(2);
-        assertThat(mouvements.getFirst().getCompte()).isEqualTo(compte);
-        assertThat(mouvements.getLast().getCompte()).isEqualTo(CompteTresorerie.CAISSE);
+        assertThat(mouvements.getFirst().getCompte().getType()).isEqualTo(compte);
+        assertThat(mouvements.getLast().getCompte().getType()).isEqualTo(TypeCompteTresorerie.ESPECES);
         assertThat(mouvements.getFirst().getMontant()).isEqualByComparingTo("10000");
         assertThat(ventes.findById(vente.getId()).orElseThrow().getMontantVerse()).isEqualByComparingTo("60000");
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isZero();

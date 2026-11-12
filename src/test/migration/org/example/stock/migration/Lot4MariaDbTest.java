@@ -66,6 +66,8 @@ public final class Lot4MariaDbTest {
         Lot1Migration.migrer(c, true);
         Lot2Migration.migrer(c, true);
         Lot4Migration.migrer(c, true);
+        // Les entités décrivent aussi les comptes de trésorerie multiples du lot 3 : même exigence pour Hibernate.
+        Lot3Migration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);

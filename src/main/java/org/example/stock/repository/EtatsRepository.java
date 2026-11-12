@@ -24,21 +24,21 @@ public interface EtatsRepository extends Repository<Vente, Long> {
     // ---- Trésorerie -------------------------------------------------------------------------------------------
 
     /**
-     * Flux de la période par compte et par source : [compte, source, Σ des entrées (montants positifs), Σ des sorties
+     * Flux de la période par compte et par source : [identifiant du compte, source, Σ des entrées (montants positifs), Σ des sorties
      * (montants négatifs, en négatif)]. Un montant vide compte pour 0.
      */
-    @Query("SELECT m.compte, m.source, COALESCE(SUM(CASE WHEN m.montant > 0 THEN m.montant ELSE 0 END), 0), "
+    @Query("SELECT m.compte.id, m.source, COALESCE(SUM(CASE WHEN m.montant > 0 THEN m.montant ELSE 0 END), 0), "
             + "COALESCE(SUM(CASE WHEN m.montant < 0 THEN m.montant ELSE 0 END), 0) FROM MouvementCaisse m "
-            + "WHERE m.boutique.id = :boutiqueId AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY m.compte, m.source")
+            + "WHERE m.boutique.id = :boutiqueId AND m.dateMouvement >= :debut AND m.dateMouvement < :fin GROUP BY m.compte.id, m.source")
     List<Object[]> fluxParCompteEtSource(@Param("boutiqueId") Long boutiqueId,
                                          @Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
     /**
-     * Solde de chaque compte juste avant {@code date} : [compte, Σ des montants]. Un mouvement sans date (donnée ancienne)
+     * Solde de chaque compte juste avant {@code date} : [identifiant du compte, Σ des montants]. Un mouvement sans date (donnée ancienne)
      * est compté comme antérieur à tout, pour que le solde de fin égale toujours le solde du journal.
      */
-    @Query("SELECT m.compte, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId "
-            + "AND (m.dateMouvement IS NULL OR m.dateMouvement < :date) GROUP BY m.compte")
+    @Query("SELECT m.compte.id, COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId "
+            + "AND (m.dateMouvement IS NULL OR m.dateMouvement < :date) GROUP BY m.compte.id")
     List<Object[]> soldesAvant(@Param("boutiqueId") Long boutiqueId, @Param("date") LocalDateTime date);
 
     /** Encaissements de la période (montants positifs hors les sources exclues), avec leurs documents, par date puis identifiant. */

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Digits;
 import lombok.Getter;
 import lombok.Setter;
-import org.example.stock.enums.CompteTresorerie;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
@@ -54,9 +53,12 @@ public class Vente {
     @Column(nullable = false, precision = 17, scale = 2)
     private BigDecimal montantRetours = Montants.ZERO;
 
-    /** Compte de l'encaissement saisi, indépendant de ceux des règlements suivants. */
+    /**
+     * Compte de l'encaissement saisi, indépendant de ceux des règlements suivants : identifiant du compte, ou nom d'un type
+     * (le compte principal de ce type, valeur historique des formulaires). Résolu et contrôlé côté serveur.
+     */
     @Transient
-    private CompteTresorerie comptePaiement = CompteTresorerie.CAISSE;
+    private String comptePaiement = "ESPECES";
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Client client;
