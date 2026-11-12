@@ -70,6 +70,22 @@ entièrement migrée elle ne fait rien (idempotence). Syntaxe MariaDB 10.4 seule
 
 Retour arrière : par la sauvegarde, comme ci-dessus. Les saisies de financement faites après la migration seraient perdues par la restauration.
 
+## Étape 3b2 : contrôles
+
+Toujours la même commande `lot3Migrate`, valable sur une base sans lot 3, avec 3a seule, ou avec 3a et 3b1 ; `lot3Check` annonce ce qui manque.
+
+| Élément | Ajout |
+|---|---|
+| `comptage_caisse` | nouvelle : comptages de caisse ; unique `jeton` |
+| `comptage_billetage` | nouvelle : billets par coupure ; unique `(comptage_id, coupure)` |
+| `ajustement_solde_depart` | nouvelle : corrections du solde de départ d'un client ou d'un fournisseur ; unique `jeton` |
+| `inventaire_creances`, `ligne_inventaire_creances` | nouvelles : inventaire des créances et des dettes |
+| `mouvement_caisse` | `comptage_caisse_id` (NULL), clé `fk_mouvement_caisse_comptage` |
+
+Aucune donnée existante n'est modifiée (colonne vide, tables vides). Aucune colonne « utilisateur » n'est ajoutée : les tables d'opérations en
+portent déjà une. Ordre sûr et reprise après interruption comme pour 3b1 (colonne, tables, contrôles, clés) ; sur une base complète, la relance ne
+fait rien. Retour arrière par la sauvegarde ; les comptages, ajustements et inventaires saisis après la migration seraient perdus.
+
 ## Retour arrière
 
 La migration supprime d'anciennes colonnes : le retour arrière se fait **par la sauvegarde**, pas par un script inverse.

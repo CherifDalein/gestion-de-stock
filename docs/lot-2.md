@@ -624,6 +624,12 @@ en première instruction de sa transaction, puis, dans cet ordre et seulement ce
    paiement, règlement, remboursement) le verrouille en lecture partagée ; un transfert, une annulation, l'archivage d'un compte ou le
    changement de compte principal verrouillent en écriture tous les comptes concernés, triés par identifiant, en une seule fois.
 
+Contrôles de l'étape 3b2 (voir [Contrôles](lot-3.md#contrôles)) : la validation, le refus et l'annulation d'un comptage verrouillent la
+boutique, puis la **ligne du comptage** (au rang du document, étape 2), puis le compte à zéro écart de lecture exclusive (étape 6) ; deux
+validations simultanées du même comptage n'en laissent donc passer qu'une, l'autre reçoit 409. Un ajustement de solde de départ
+verrouille la boutique, puis le partenaire (étape 3), puis ses factures (étape 4). L'inventaire des créances ne prend que le verrou de la
+boutique, car il ne modifie aucun solde.
+
 Rien ne doit être verrouillé avant la boutique : ni document, ni partenaire, ni compte utilisateur. Le verrou est pris une seule
 fois par transaction : un second appel, par exemple depuis `CaisseService` appelé par une vente, ne fait rien et ne relit pas la
 ligne (une modification non flushée, comme la clôture du démarrage, n'est donc pas perdue). Il est tenu jusqu'à la fin de la

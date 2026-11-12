@@ -226,3 +226,96 @@ Deux remboursements simultanés de la même échéance ne paient donc pas deux f
 - Une dépense, un frais de dossier et un déblocage ne sont pas annulables par les écrans de financement.
 - Le gérant seul voit ces écrans ; un caissier n'a aucun accès, même en lecture.
 - Un mouvement daté d'un jour passé est enregistré à midi ; daté d'aujourd'hui, à l'heure de la saisie.
+
+## Contrôles
+
+Étape 3b2 : comptage de caisse, correction du solde de départ, inventaire des créances et des dettes, et la mention « Saisi par ».
+Aucune règle existante (reste à payer, avances, coût moyen, numérotation, retours, comptes de 3a, financements de 3b1) ne change.
+
+### Comptage de caisse (`/controles/comptages`)
+
+Le caissier ou le gérant compte un compte de trésorerie qu'il a le droit d'utiliser (règle de 3a : un caissier voit ses comptes autorisés ou
+les comptes principaux). Il saisit le montant compté et un commentaire facultatif ; l'application affiche le **solde théorique** (somme des
+mouvements du compte, lue sous verrou) et l'**écart = compté − théorique**, figés au moment du comptage.
+
+| Écart | Statut | Mouvement |
+|---|---|---|
+| zéro | **Conforme** | aucun |
+| non nul | **En attente de validation** | aucun, tant que le gérant n'a pas décidé |
+| validé | **Validé** | « Écart de caisse » : entrée si excédent, sortie si manque |
+| refusé | **Refusé** (motif obligatoire) | aucun, l'écart n'est pas régularisé |
+| validé puis annulé | **Annulé** (motif obligatoire) | contre-passation du mouvement d'écart |
+
+Exemple : solde théorique 1 250 000 GNF, compté 1 240 000 : écart -10 000, en attente. Si le gérant valide avec le motif « erreur de rendu »,
+une sortie de 10 000 GNF est postée sur ce compte (source « Écart de caisse », classée en **autres charges** dans le bilan, comme dans 3b1) ; un
+excédent de 5 000 serait une entrée classée en **autres produits**.
+
+**Comptage ancien.** L'écart s'applique **tel qu'il était au moment du comptage**, même si des ventes ont changé la caisse avant la validation :
+le mouvement d'écart vaut l'écart figé, pas un écart recalculé. Le gérant voit le solde théorique et la date du comptage sur la fiche pour juger. À
+la validation il n'y a pas de contrôle du solde pour une sortie d'écart : un manque validé peut rendre le solde du compte négatif (limite connue).
+
+**Billetage (espèces).** Pour un compte d'espèces, le caissier peut saisir des quantités par coupure, et le total doit être égal au montant compté
+(sinon refus). Coupures proposées : **20 000, 10 000, 5 000, 2 000, 1 000, 500, 100, 50, 25, 10, 5 et 1 GNF**. Cette liste a été vérifiée dans
+des sources publiques : 20 000, 10 000, 5 000, 2 000, 1 000 et 500 GNF circulent en billets (500 est le plus petit billet courant) ; 100 est
+encore listé ; 50, 25, 10, 5 et 1 sont des pièces rarement vues, gardées pour ne rien exclure. Pas de billetage sur Orange Money ni sur la banque.
+
+**Décisions.** Seul le gérant valide, refuse ou annule (motif d'au moins 3 caractères). Une décision déjà prise rend **409** (double clic, deux
+gérants). Le gérant a une liste des comptages en attente (`/controles/comptages/en-attente`) et le tableau de bord affiche un badge avec leur
+nombre. **PDF** du comptage (billetage, signatures du caissier et du gérant) et liste exportable (Excel et PDF, gérant).
+
+**Droits.** Le caissier compte et consulte **ses** comptages ; il ne voit ni les autres, ni l'attente, ni les exports, et ne peut ni valider ni
+compter un compte non autorisé (403). Une boutique ne voit jamais les comptages d'une autre.
+
+### Correction du solde de départ
+
+Décision du 7 novembre 2026 : le solde de départ est **gelé après usage**, une erreur se corrige par un **ajustement** (gérant seul, sur la
+fiche du client ou du fournisseur : nouveau montant, sens « il me doit », « je lui dois » ou « avance », et motif obligatoire).
+
+Règle : le nouveau solde (signé) **remplace** le solde de départ dans le calcul ; les règlements déjà enregistrés ne sont pas réécrits. Le
+reste dû du solde de départ est `max(0, dû − déjà réglé)`, et ce qui a été réglé en trop devient une **avance** du partenaire.
+
+Exemple : solde de départ 100 000 GNF « il me doit », 60 000 déjà réglés, reste 40 000. Ajusté à 50 000 : reste 0 et **10 000 d'avance**.
+Ajusté à 150 000 : reste 90 000. Ajusté à 30 000 : reste 0 et 30 000 d'avance.
+
+Garde-fous : l'avance ne devient jamais négative (un ajustement qui la rendrait négative est refusé) ; l'annulation d'un règlement devenu avance est
+refusée si cette avance a été utilisée ; la fiche ne permet plus de modifier le solde de départ une fois ajusté (seul l'ajustement le fait) ;
+l'échéance du solde disparaît quand il n'y a plus de dette. Aucun mouvement de trésorerie. L'**historique** (date, auteur, ancien et nouveau
+solde, motif) figure sur la fiche, le justificatif PDF du partenaire (tableau « Ajustements ») et le relevé, qui part du solde d'origine et
+montre chaque ajustement comme un événement. Un jeton évite le double envoi.
+
+### Inventaire des créances et des dettes (`/controles/creances`)
+
+À une date, le gérant choisit des clients et fournisseurs (au plus 100 par inventaire, recherche par nom ; autres partenaires de 3b1 en option) et
+saisit le solde que chacun **confirme**. L'application compare à son propre solde **au moment de l'enregistrement** (positif : le partenaire me
+doit, pour un client comme pour un fournisseur) et garde l'écart avec la raison. **Aucun solde n'est modifié.** Depuis une ligne avec écart, un lien
+mène à l'ajustement du solde de départ ; il n'est jamais automatique. Documents : liste, détail, Excel et PDF.
+
+### Saisi par
+
+Les écrans et exports suivants affichent l'auteur sous le libellé « Saisi par » : ventes, achats, retours, devis, règlements (historique), journal
+de caisse (dépenses et transferts compris), opérations de financement (prêts, remboursements), comptages, ajustements, inventaires. Les anciennes
+colonnes « Vendeur », « Auteur », « Utilisateur » et « Enregistré par » ont été renommées sans changer de place ; les exports des retours et du
+relevé de financement reçoivent une colonne « Saisi par » **à la fin**. Toutes les tables concernées portaient déjà la colonne utilisateur
+(nullable pour les ventes et achats historiques, affichés « — ») : la migration n'en ajoute aucune. Le gérant peut filtrer le journal de
+trésorerie (écran et exports, paramètre `auteur`) et la liste des ventes (paramètre `vendeur`) par auteur.
+
+### Verrous
+
+Voir l'[ordre des verrous](lot-2.md#ordre-des-verrous) : boutique → comptage → comptes (validation, refus, annulation) ; boutique → partenaire →
+factures (ajustement). `OrdreVerrousMariaDbTest` rejoue deux validations simultanées du même comptage : une seule passe.
+
+### Limites connues
+
+- L'écart validé est celui du moment du comptage ; il n'est pas recalculé à la validation (voir « Comptage ancien »).
+- Pas de contrôle de solde sur la sortie d'un manque validé : le compte peut devenir négatif.
+- Un inventaire fige le solde de l'application à son enregistrement ; il ne suit pas les mouvements suivants. Au plus 100 partenaires par inventaire.
+- Un comptage conforme n'est pas annulable (il n'a aucun effet).
+- Pas de rapprochement bancaire : c'est l'étape 3c.
+
+### Vérifications
+
+```sh
+./gradlew test --no-daemon
+node --test src/test/js/*.cjs
+./gradlew lot3MariaDbTest lot1MariaDbTest lot2MariaDbTest lot4MariaDbTest ordreVerrousMariaDbTest
+```

@@ -247,6 +247,18 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `retour_id` BIGINT NULL, FK `fk_mouvement_caisse_retour` -> `retour.id` : remboursement d'un retour (lot 2)
 - `annulation_de_id` BIGINT NULL, FK `fk_mouvement_caisse_annulation` -> `mouvement_caisse.id`, UNIQUE `uk_mouvement_caisse_annulation` : mouvement qui en annule un autre, au plus une annulation par mouvement (lot 2)
 
+### `comptage_caisse` et `comptage_billetage`
+
+Comptages de caisse (étape 3b2) : `comptage_caisse` porte `boutique_id`, `compte_id`, `utilisateur_id` (le compteur), `date_comptage`, `montant_compte`, `solde_theorique` (lu sous verrou du compte à l'instant du comptage), `ecart` (compté moins théorique, figé), `commentaire`, `statut` (`CONFORME`, `EN_ATTENTE`, `VALIDE`, `REFUSE`, `ANNULE`), la décision (`decideur_id`, `date_decision`, `motif_decision`), l'annulation (`annule_par_id`, `date_annulation`, `motif_annulation`) et un `jeton` unique contre le double envoi. `comptage_billetage` (`comptage_id`, `coupure`, `quantite`, unique `(comptage_id, coupure)`) détaille les billets d'un compte d'espèces. `mouvement_caisse.comptage_caisse_id` (facultatif) relie le mouvement « Écart de caisse » à son comptage. Voir [Contrôles](lot-3.md#contrôles).
+
+### `ajustement_solde_depart`
+
+Historique des corrections du solde de départ d'un client ou d'un fournisseur (3b2) : exactement un de `client_id` ou `fournisseur_id`, `utilisateur_id`, `date_ajustement`, `ancien_solde`, `nouveau_solde` (signés comme `solde_initial`), `motif` obligatoire, `jeton` unique. Aucun mouvement de trésorerie.
+
+### `inventaire_creances` et `ligne_inventaire_creances`
+
+Inventaire des créances et des dettes à une date (3b2) : l'en-tête (`date_inventaire`, `utilisateur_id`, `note`, `jeton` unique) et une ligne par partenaire (`type` `CLIENT`, `FOURNISSEUR` ou `FINANCIER`, `nom` figé, `solde_appli`, `solde_confirme`, `ecart`, `raison`). Un inventaire ne modifie aucun solde.
+
 ### `devis`
 
 Offre de prix valable jusqu'à une date, sans effet sur le stock ni la caisse tant qu'elle n'est pas transformée en vente (lot 2, pas encore utilisée) :

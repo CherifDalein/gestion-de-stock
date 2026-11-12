@@ -133,6 +133,35 @@ public final class Lot3MariaDbTest {
             Lot3MigrationScenarios.exiger(empruntRelu.getPartenaire().getNomCle().equals("bicigui jpa") && empruntRelu.getCapital().compareTo(new java.math.BigDecimal("1200")) == 0
                     && empruntRelu.getPeriodicite() == org.example.stock.enums.Periodicite.MENSUELLE && em.find(ImputationEcheance.class, imputationId).getOperation().getEmprunt().getId().equals(empruntId),
                     "Emprunt, échéancier ou imputation non relus par JPA");
+            // Contrôles (3b2) : comptage avec billetage, mouvement d'écart lié, ajustement de solde de départ, inventaire des créances relus par JPA.
+            em.getTransaction().begin();
+            var bc = em.find(Boutique.class, boutiqueId); var auteur = em.find(Utilisateur.class, caissierId);
+            var comptage = new ComptageCaisse(); comptage.setBoutique(bc); comptage.setCompte(orange2); comptage.setUtilisateur(auteur);
+            comptage.setDateComptage(java.time.LocalDateTime.of(2026, 5, 2, 18, 0)); comptage.setMontantCompte(new java.math.BigDecimal("1490.00"));
+            comptage.setSoldeTheorique(new java.math.BigDecimal("1500.00")); comptage.setEcart(new java.math.BigDecimal("-10.00"));
+            comptage.setStatut(org.example.stock.enums.StatutComptage.VALIDE); comptage.setDecideur(auteur); comptage.setDateDecision(java.time.LocalDateTime.of(2026, 5, 3, 9, 0));
+            comptage.setMotifDecision("Erreur de rendu"); comptage.setJeton(java.util.UUID.randomUUID().toString());
+            comptage.ajouterLigne(1000, 1); comptage.ajouterLigne(500, 0); em.persist(comptage);
+            var ecart = new MouvementCaisse(); ecart.setBoutique(bc); ecart.setCompte(orange2); ecart.setMontant(new java.math.BigDecimal("-10.00")); ecart.setType("SORTIE");
+            ecart.setSource("AUTRE_CHARGE"); ecart.setMotif("Écart de caisse"); ecart.setDateMouvement(java.time.LocalDateTime.of(2026, 5, 3, 9, 0)); ecart.setComptageCaisse(comptage); em.persist(ecart);
+            var client = new Client(); client.setBoutique(bc); client.setNom("Client JPA 3b2"); em.persist(client);
+            var ajustement = new AjustementSoldeDepart(); ajustement.setBoutique(bc); ajustement.setClient(client); ajustement.setUtilisateur(auteur);
+            ajustement.setDateAjustement(java.time.LocalDateTime.of(2026, 5, 4, 9, 0)); ajustement.setAncienSolde(new java.math.BigDecimal("100.00"));
+            ajustement.setNouveauSolde(new java.math.BigDecimal("-50.00")); ajustement.setMotif("Erreur de saisie"); ajustement.setJeton(java.util.UUID.randomUUID().toString()); em.persist(ajustement);
+            var inventaire = new InventaireCreances(); inventaire.setBoutique(bc); inventaire.setUtilisateur(auteur); inventaire.setDateInventaire(java.time.LocalDate.of(2026, 5, 5));
+            inventaire.setDateCreation(java.time.LocalDateTime.of(2026, 5, 5, 10, 0)); inventaire.setJeton(java.util.UUID.randomUUID().toString());
+            var ligne = new LigneInventaire(); ligne.setInventaire(inventaire); ligne.setType(org.example.stock.enums.TypeLigneInventaire.CLIENT); ligne.setClient(client);
+            ligne.setNom("Client JPA 3b2"); ligne.setSoldeAppli(new java.math.BigDecimal("-50.00")); ligne.setSoldeConfirme(new java.math.BigDecimal("-30.00"));
+            ligne.setEcart(new java.math.BigDecimal("20.00")); ligne.setRaison("Paiement non enregistré"); inventaire.getLignes().add(ligne); em.persist(inventaire);
+            em.getTransaction().commit();
+            long comptageId = comptage.getId(), ecartId = ecart.getId(), inventaireId = inventaire.getId(), ajustementId = ajustement.getId();
+            em.clear();
+            var comptageRelu = em.find(ComptageCaisse.class, comptageId);
+            Lot3MigrationScenarios.exiger(comptageRelu.getStatut() == org.example.stock.enums.StatutComptage.VALIDE && comptageRelu.getEcart().compareTo(new java.math.BigDecimal("-10")) == 0
+                    && comptageRelu.getBilletage().size() == 2 && em.find(MouvementCaisse.class, ecartId).getComptageCaisse().getId().equals(comptageId)
+                    && em.find(AjustementSoldeDepart.class, ajustementId).getVariation().compareTo(new java.math.BigDecimal("-150")) == 0
+                    && em.find(InventaireCreances.class, inventaireId).getLignes().get(0).getEcart().compareTo(new java.math.BigDecimal("20")) == 0,
+                    "Comptage, billetage, ajustement ou inventaire non relus par JPA");
             if (historique) {
                 var migre = em.createQuery("select c from CompteTresorerieBoutique c where c.boutique.id = 1 and c.type = :t", CompteTresorerieBoutique.class)
                         .setParameter("t", TypeCompteTresorerie.BANQUE).getSingleResult();
