@@ -9,7 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Numéros uniques par boutique : {@code FV-000123} pour les ventes, {@code FA-000123} pour les achats, {@code FD-000123} pour les devis,
- * {@code RV-000123} pour les retours de vente, {@code RA-000123} pour les retours d'achat.
+ * {@code RV-000123} pour les retours de vente, {@code RA-000123} pour les retours d'achat,
+ * {@code EM-000123} pour les emprunts, {@code PR-000123} pour les prêts.
  *
  * <p>Le compteur est lu et avancé sous le verrou de la ligne boutique, dans la transaction de la création :
  * deux créations simultanées d'une même boutique sont numérotées l'une après l'autre, et une création annulée
@@ -38,7 +39,9 @@ public class NumerotationFactureService {
         ACHAT("FA-", "Achat", "prochain_numero_achat"),
         DEVIS("FD-", "Devis", "prochain_numero_devis"),
         RETOUR_VENTE("RV-", "Retour", "prochain_numero_retour_vente"),
-        RETOUR_ACHAT("RA-", "Retour", "prochain_numero_retour_achat");
+        RETOUR_ACHAT("RA-", "Retour", "prochain_numero_retour_achat"),
+        EMPRUNT("EM-", "Emprunt", "prochain_numero_emprunt"),
+        PRET("PR-", "Emprunt", "prochain_numero_pret");
 
         final String prefixe, entite, colonne;
         Type(String prefixe, String entite, String colonne) {
@@ -69,6 +72,16 @@ public class NumerotationFactureService {
     /** Numéro automatique d'un retour d'achat ({@code RA-000001}), tiré du compteur des retours d'achat ; jamais de numéro manuel. */
     public String attribuerNumeroRetourAchat() {
         return attribuer(Type.RETOUR_ACHAT, null);
+    }
+
+    /** Numéro automatique d'un emprunt ({@code EM-000001}), tiré du compteur des emprunts ; jamais de numéro manuel. */
+    public String attribuerNumeroEmprunt() {
+        return attribuer(Type.EMPRUNT, null);
+    }
+
+    /** Numéro automatique d'un prêt ({@code PR-000001}), tiré du compteur des prêts ; jamais de numéro manuel. */
+    public String attribuerNumeroPret() {
+        return attribuer(Type.PRET, null);
     }
 
     /** Retire les espaces aux bords ; un numéro vide est absent. Ne vérifie pas la longueur. */

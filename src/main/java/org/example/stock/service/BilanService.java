@@ -8,6 +8,7 @@ import org.example.stock.export.FormatPapier;
 import org.example.stock.export.TableauExport;
 import org.example.stock.export.Textes;
 import org.example.stock.model.Montants;
+import org.example.stock.model.SourceMouvement;
 import org.example.stock.repository.EtatsRepository;
 import org.example.stock.repository.TableauDeBordRepository;
 import org.example.stock.service.TableauDeBordService.CreancesDettes;
@@ -73,7 +74,8 @@ public class BilanService {
                         BigDecimal coutDesVentes, List<TresorerieCompte> tresorerie, List<TresorerieDuCompte> tresorerieParCompte,
                         Map<String, Map<TypeCompteTresorerie, BigDecimal>> encaissementsParNature,
                         Map<String, Map<TypeCompteTresorerie, BigDecimal>> decaissementsParNature,
-                        CreancesDettes creancesDettes, ValeurStock stock) {
+                        CreancesDettes creancesDettes, ValeurStock stock,
+                        Map<String, BigDecimal> financements, BigDecimal variationTresorerie, BigDecimal autresFlux) {
         public BigDecimal total(java.util.function.Function<TresorerieCompte, BigDecimal> champ) {
             return tresorerie.stream().map(champ).reduce(Montants.ZERO, BigDecimal::add);
         }
@@ -130,28 +132,52 @@ public class BilanService {
             boolean vide = !compte.isActif() && chiffres.debut().signum() == 0 && chiffres.fin().signum() == 0 && flux.get(compte.getId()) == null;
             if (!vide) parCompte.add(new TresorerieDuCompte(compte, chiffres));
         }
+        // Financements et flux hors ventes et achats, nets de leurs annulations ; le reste de la variation de trésorerie est l'activité.
+        Map<String, BigDecimal> financements = tableau.fluxNetsDesFinancements(boutiqueId, periode.debut(), periode.fin());
+        BigDecimal debutTotal = parType.values().stream().map(TresorerieCompte::debut).reduce(Montants.ZERO, BigDecimal::add);
+        BigDecimal finTotal = parType.values().stream().map(TresorerieCompte::fin).reduce(Montants.ZERO, BigDecimal::add);
+        BigDecimal variation = finTotal.subtract(debutTotal);
+        BigDecimal autres = variation.subtract(financements.values().stream().reduce(Montants.ZERO, BigDecimal::add));
         return new Bilan(periode, echeances.aujourdHui(), ventes, retours, indicateurs, cout, List.copyOf(parType.values()), List.copyOf(parCompte),
-                encaisse, decaisse, tableau.creancesEtDettes(), tableau.valeurStock());
+                encaisse, decaisse, tableau.creancesEtDettes(), tableau.valeurStock(), financements, variation, autres);
     }
 
     static final String AUTRES_ENCAISSEMENTS = "Autres encaissements", AUTRES_DECAISSEMENTS = "Autres décaissements";
-    static final Map<String, String> NATURES_ENCAISSEMENTS = Map.of(
-            "VENTE", "Ventes payées à la création",
-            "REGLEMENT_VENTE", "Règlements de ventes",
-            "SOLDE_CLIENT", "Règlements de soldes de départ des clients",
-            "RETOUR_ACHAT", "Remboursements reçus des fournisseurs");
-    static final Map<String, String> NATURES_DECAISSEMENTS = Map.of(
-            "ACHAT", "Achats payés à la création",
-            "REGLEMENT_ACHAT", "Règlements d'achats",
-            "SOLDE_FOURNISSEUR", "Règlements de soldes de départ des fournisseurs",
-            "RETOUR_VENTE", "Remboursements aux clients",
-            "DEPENSE", "Dépenses");
+    static final Map<String, String> NATURES_ENCAISSEMENTS = Map.ofEntries(
+            Map.entry("VENTE", "Ventes payées à la création"),
+            Map.entry("REGLEMENT_VENTE", "Règlements de ventes"),
+            Map.entry("SOLDE_CLIENT", "Règlements de soldes de départ des clients"),
+            Map.entry("RETOUR_ACHAT", "Remboursements reçus des fournisseurs"),
+            Map.entry(SourceMouvement.APPORT_CAPITAL, "Apports en capital"),
+            Map.entry(SourceMouvement.APPORT_COMPTE_COURANT, "Apports en compte courant"),
+            Map.entry(SourceMouvement.DEBLOCAGE_EMPRUNT, "Emprunts reçus"),
+            Map.entry(SourceMouvement.REMBOURSEMENT_PRET, "Remboursements de capital de prêts reçus"),
+            Map.entry(SourceMouvement.INTERETS_PRET, "Intérêts de prêts reçus"),
+            Map.entry(SourceMouvement.PRODUIT_FINANCIER, "Produits financiers"),
+            Map.entry(SourceMouvement.AUTRE_PRODUIT, "Autres produits"));
+    static final Map<String, String> NATURES_DECAISSEMENTS = Map.ofEntries(
+            Map.entry("ACHAT", "Achats payés à la création"),
+            Map.entry("REGLEMENT_ACHAT", "Règlements d'achats"),
+            Map.entry("SOLDE_FOURNISSEUR", "Règlements de soldes de départ des fournisseurs"),
+            Map.entry("RETOUR_VENTE", "Remboursements aux clients"),
+            Map.entry("DEPENSE", "Dépenses"),
+            Map.entry(SourceMouvement.RETRAIT_CAPITAL, "Retraits de capital"),
+            Map.entry(SourceMouvement.RETRAIT_COMPTE_COURANT, "Retraits en compte courant"),
+            Map.entry(SourceMouvement.DEBLOCAGE_PRET, "Prêts accordés"),
+            Map.entry(SourceMouvement.REMBOURSEMENT_EMPRUNT, "Remboursements de capital d'emprunts"),
+            Map.entry(SourceMouvement.INTERETS_EMPRUNT, "Intérêts d'emprunts payés"),
+            Map.entry(SourceMouvement.FRAIS_DOSSIER, "Frais de dossier d'emprunts"),
+            Map.entry(SourceMouvement.CHARGE_FINANCIERE, "Charges financières"),
+            Map.entry(SourceMouvement.AUTRE_CHARGE, "Autres charges"));
 
     /** Natures dans l'ordre d'affichage ; les « autres » closent chaque liste. */
     private static final List<String> ORDRE_ENCAISSEMENTS = List.of("Ventes payées à la création", "Règlements de ventes",
-            "Règlements de soldes de départ des clients", "Remboursements reçus des fournisseurs", AUTRES_ENCAISSEMENTS);
+            "Règlements de soldes de départ des clients", "Remboursements reçus des fournisseurs", "Apports en capital", "Apports en compte courant",
+            "Emprunts reçus", "Remboursements de capital de prêts reçus", "Intérêts de prêts reçus", "Produits financiers", "Autres produits", AUTRES_ENCAISSEMENTS);
     private static final List<String> ORDRE_DECAISSEMENTS = List.of("Achats payés à la création", "Règlements d'achats",
-            "Règlements de soldes de départ des fournisseurs", "Remboursements aux clients", "Dépenses", AUTRES_DECAISSEMENTS);
+            "Règlements de soldes de départ des fournisseurs", "Remboursements aux clients", "Dépenses", "Retraits de capital", "Retraits en compte courant",
+            "Prêts accordés", "Remboursements de capital d'emprunts", "Intérêts d'emprunts payés", "Frais de dossier d'emprunts", "Charges financières",
+            "Autres charges", AUTRES_DECAISSEMENTS);
 
     @Transactional(readOnly = true)
     public Etat etat(PeriodeEtat periode) {
@@ -175,6 +201,11 @@ public class BilanService {
                 .ligne("Coût des ventes (coût moyen figé à la vente, net des retours)", b.coutDesVentes().negate())
                 .sousTotal("Bénéfice brut", i.beneficeBrut())
                 .ligne("Dépenses (loyer, transport, frais…)", i.depenses().negate())
+                .sousTotal("Résultat d'exploitation", i.resultatExploitation())
+                .ligne("Produits financiers (dont intérêts de prêts reçus)", i.horsExploitation().produitsFinanciers())
+                .ligne("Intérêts et charges financières (dont frais de dossier)", i.horsExploitation().chargesFinancieres().negate())
+                .ligne("Autres produits", i.horsExploitation().autresProduits())
+                .ligne("Autres charges", i.horsExploitation().autresCharges().negate())
                 .totaux("Bénéfice net", i.beneficeNet())
                 .note("Les achats de marchandises ne sont pas des dépenses : leur coût entre dans le bénéfice brut au moment de la vente. "
                         + "Les transferts entre comptes ne sont pas des dépenses.");
@@ -182,7 +213,9 @@ public class BilanService {
             resultat.note(i.lignesSansCout() + (i.lignesSansCout() == 1 ? " ligne de vente sans coût connu, comptée à 0" : " lignes de vente sans coût connu, comptées à 0")
                     + " : le bénéfice brut est surestimé d'autant.");
         }
-        resultat.note("Les apports, emprunts et autres produits et charges seront ajoutés au lot 3 : ils ne figurent pas dans ce bilan.");
+        resultat.note("Le bénéfice net inclut les produits et charges financiers et les autres produits et charges, nets de leurs annulations, à la date du mouvement "
+                + "(intérêts comptés quand ils sont payés ou reçus). Il n'inclut ni le capital des emprunts et des prêts ni les apports et retraits des associés : "
+                + "ces flux changent la trésorerie sans être un produit ni une charge (tableau « Financements et autres flux »).");
         sections.add(resultat);
 
         // 2. Trésorerie par compte (transposée : une colonne par compte).
@@ -216,6 +249,9 @@ public class BilanService {
         nature.note("Les annulations de règlements, les transferts et les fonds de départ sont à part (tableau précédent).");
         sections.add(nature);
 
+        // 3 bis. Financements et autres flux, nets des annulations, et variation de trésorerie.
+        sections.add(financements(b, parametres));
+
         // 4. Créances et dettes.
         CreancesDettes cd = b.creancesDettes();
         TableauExport creances = TableauExport.titre("Créances et dettes (situation du " + edition + ")").nomFeuille("Créances et dettes")
@@ -242,6 +278,45 @@ public class BilanService {
 
         return new Etat("bilan", "Bilan de la période", parametres, List.of(), sections, FormatPapier.A4_PORTRAIT,
                 "bilan", b.periode().du(), b.periode().au());
+    }
+
+    /**
+     * Flux de financement de la période, en montants nets de leurs annulations (le tableau par nature garde les flux bruts, les annulations
+     * restant dans leur ligne), et variation de trésorerie : capital et apports sont ici, hors du bénéfice net.
+     */
+    private static TableauExport financements(Bilan b, String parametres) {
+        Map<String, BigDecimal> f = b.financements();
+        TableauExport t = TableauExport.titre("Financements et autres flux").nomFeuille("Financements").filtres(parametres)
+                .colonnes(Colonne.texte("Rubrique"), Colonne.montant("Montant"));
+        t.ligne("Apports en capital", f.get(SourceMouvement.APPORT_CAPITAL))
+                .ligne("Apports en compte courant", f.get(SourceMouvement.APPORT_COMPTE_COURANT))
+                .ligne("Retraits de capital", f.get(SourceMouvement.RETRAIT_CAPITAL))
+                .ligne("Retraits en compte courant", f.get(SourceMouvement.RETRAIT_COMPTE_COURANT))
+                .ligne("Emprunts reçus", f.get(SourceMouvement.DEBLOCAGE_EMPRUNT))
+                .ligne("Prêts accordés", f.get(SourceMouvement.DEBLOCAGE_PRET))
+                .ligne("Remboursements de capital d'emprunts", f.get(SourceMouvement.REMBOURSEMENT_EMPRUNT))
+                .ligne("Remboursements de capital de prêts reçus", f.get(SourceMouvement.REMBOURSEMENT_PRET));
+        BigDecimal capital = Montants.ZERO;
+        for (String source : List.of(SourceMouvement.APPORT_CAPITAL, SourceMouvement.APPORT_COMPTE_COURANT, SourceMouvement.RETRAIT_CAPITAL,
+                SourceMouvement.RETRAIT_COMPTE_COURANT, SourceMouvement.DEBLOCAGE_EMPRUNT, SourceMouvement.DEBLOCAGE_PRET,
+                SourceMouvement.REMBOURSEMENT_EMPRUNT, SourceMouvement.REMBOURSEMENT_PRET)) capital = capital.add(f.get(source));
+        t.sousTotal("Flux de financement (hors résultat)", capital);
+        BigDecimal resultat = Montants.ZERO;
+        for (String source : List.of(SourceMouvement.INTERETS_EMPRUNT, SourceMouvement.INTERETS_PRET, SourceMouvement.FRAIS_DOSSIER,
+                SourceMouvement.PRODUIT_FINANCIER, SourceMouvement.CHARGE_FINANCIERE, SourceMouvement.AUTRE_PRODUIT, SourceMouvement.AUTRE_CHARGE)) resultat = resultat.add(f.get(source));
+        t.ligne("Intérêts d'emprunts payés", f.get(SourceMouvement.INTERETS_EMPRUNT))
+                .ligne("Intérêts de prêts reçus", f.get(SourceMouvement.INTERETS_PRET))
+                .ligne("Frais de dossier d'emprunts", f.get(SourceMouvement.FRAIS_DOSSIER))
+                .ligne("Produits financiers", f.get(SourceMouvement.PRODUIT_FINANCIER))
+                .ligne("Charges financières", f.get(SourceMouvement.CHARGE_FINANCIERE))
+                .ligne("Autres produits", f.get(SourceMouvement.AUTRE_PRODUIT))
+                .ligne("Autres charges", f.get(SourceMouvement.AUTRE_CHARGE));
+        t.sousTotal("Produits et charges hors activité courante (déjà dans le bénéfice net)", resultat)
+                .ligne("Ventes, achats, règlements, dépenses, retours, fonds de départ et transferts", b.autresFlux())
+                .totaux("Variation de trésorerie de la période (fin − début)", b.variationTresorerie())
+                .note("Montants nets des annulations de la période ; entrées en positif, sorties en négatif. Le capital emprunté et les apports augmentent la "
+                        + "trésorerie sans augmenter le bénéfice ; les remboursements de capital et les retraits la diminuent sans le réduire.");
+        return t;
     }
 
     /** Une ligne par compte (nom du compte, type), les comptes d'un type étant suivis de leur sous-total. */

@@ -87,6 +87,27 @@ public class JustificatifSoldeService {
         public String arreteEnPhrase() { return "Arrêté à la somme de " + montantEnLettres() + "."; }
     }
 
+    /** Une ligne du détail du solde d'un partenaire financier : positive quand la boutique doit, négative quand le partenaire doit. */
+    public record LigneFinancier(String libelle, BigDecimal montant) { }
+
+    /**
+     * Justificatif d'un partenaire financier (banque, associé, personnel, divers). {@code solde} suit {@link PartenairesFinanciersService.Solde} :
+     * positif = la boutique doit au partenaire ; négatif = le partenaire doit à la boutique.
+     */
+    public record JustificatifFinancier(Long partenaireId, String numero, LocalDate arrete, LocalDateTime edition, String nom, String type,
+                                        String telephone, String note, List<LigneFinancier> lignes, BigDecimal capitalApporte, BigDecimal solde) {
+        public BigDecimal montant() { return solde.abs(); }
+        public boolean estNul() { return solde.signum() == 0; }
+        public boolean laBoutiqueDoit() { return solde.signum() > 0; }
+        public String attestation() {
+            if (estNul()) return "Le compte du partenaire est soldé : la boutique ne lui doit rien et il ne doit rien à la boutique.";
+            return laBoutiqueDoit() ? "La boutique doit au partenaire la somme de" : "Le partenaire doit à la boutique la somme de";
+        }
+        public String titreSolde() { return estNul() ? "Solde nul" : laBoutiqueDoit() ? "Solde dû par la boutique" : "Solde dû à la boutique"; }
+        public String montantEnLettres() { return MontantEnLettres.francsGuineens(montant()); }
+        public String arreteEnPhrase() { return "Arrêté à la somme de " + montantEnLettres() + "."; }
+    }
+
     /** Solde d'un compte de trésorerie à la date d'arrêté. */
     public record SoldeCompte(CompteTresorerieBoutique compte, BigDecimal solde) { }
 
@@ -110,6 +131,8 @@ public class JustificatifSoldeService {
         public String arreteEnPhrase() { return "Arrêté à la somme de " + totalEnLettres() + "."; }
     }
 
+    private final PartenairesFinanciersService financiers;
+    private final EmpruntService emprunts;
     private final SoldePartenaireService soldes;
     private final CompteTresorerieBoutiqueRepository comptesRepo;
     private final JustificatifSoldeRepository factures;
@@ -123,8 +146,9 @@ public class JustificatifSoldeService {
 
     public JustificatifSoldeService(SoldePartenaireService soldes, JustificatifSoldeRepository factures, ClientRepository clients,
                                     FournisseurRepository fournisseurs, EtatsRepository etats, CaisseService caisse, BoutiqueService boutiques,
-                                    EcheanceService echeances, LimiteExport limite, CompteTresorerieBoutiqueRepository comptesRepo) {
-        this.comptesRepo = comptesRepo;
+                                    EcheanceService echeances, LimiteExport limite, CompteTresorerieBoutiqueRepository comptesRepo,
+                                    PartenairesFinanciersService financiers, EmpruntService emprunts) {
+        this.comptesRepo = comptesRepo; this.financiers = financiers; this.emprunts = emprunts;
         this.soldes = soldes; this.factures = factures; this.clients = clients; this.fournisseurs = fournisseurs;
         this.etats = etats; this.caisse = caisse; this.boutiques = boutiques; this.echeances = echeances; this.limite = limite;
     }
@@ -183,6 +207,32 @@ public class JustificatifSoldeService {
     }
 
     private static String blanc(String t) { return t == null || t.isBlank() ? null : Textes.pourXml(t.strip()); }
+
+    // ---- Partenaire financier ------------------------------------------------------------------------------------
+
+    /** Numéro stable « JS-AAAAMMJJ-P12 » ; le solde est celui de la fiche du partenaire, arrêté à la date du jour. */
+    public JustificatifFinancier partenaireFinancier(Long partenaireId) {
+        DroitsEtats.exigerGerant();
+        PartenairesFinanciersService.Vue vue = financiers.vue(partenaireId);
+        PartenairesFinanciersService.Solde solde = vue.solde();
+        List<LigneFinancier> lignes = new ArrayList<>();
+        if (solde.compteCourant().signum() != 0) lignes.add(new LigneFinancier("Compte courant (apports moins retraits)", solde.compteCourant()));
+        BigDecimal somme = solde.compteCourant();
+        for (EmpruntService.Vue e : emprunts.listerDuPartenaire(partenaireId)) {
+            SituationEmprunt s = e.situation();
+            BigDecimal du = s.capitalRestantDu().add(s.interetsEchusImpayes());
+            if (du.signum() == 0) continue;
+            boolean emprunt = e.emprunt().estEmprunt();
+            lignes.add(new LigneFinancier((emprunt ? "Emprunt " : "Prêt ") + e.emprunt().getNumero() + " : capital restant dû et intérêts échus impayés", emprunt ? du : du.negate()));
+            somme = somme.add(emprunt ? du : du.negate());
+        }
+        // Le détail doit redonner le solde de la fiche : on ne publie pas un document officiel qui ne s'additionne pas.
+        if (somme.compareTo(solde.total()) != 0) throw new IncoherenceAvanceException("Le détail du solde ne concorde pas avec la fiche du partenaire : relancez le justificatif après vérification.");
+        LocalDate arrete = echeances.aujourdHui();
+        var p = vue.partenaire();
+        return new JustificatifFinancier(p.getId(), numero(arrete, 'P', p.getId()), arrete, echeances.maintenant(), Textes.pourXml(p.getNom()),
+                p.getType().getLibelle(), blanc(p.getTelephone()), blanc(p.getNote()), List.copyOf(lignes), solde.capitalApporte(), solde.total());
+    }
 
     // ---- Trésorerie ----------------------------------------------------------------------------------------------
 

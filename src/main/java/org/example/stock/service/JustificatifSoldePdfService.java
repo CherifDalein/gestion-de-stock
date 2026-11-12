@@ -35,6 +35,14 @@ public class JustificatifSoldePdfService {
         return pdf.rendre("pdf/justificatif-partenaire", variables, contexte, FormatPapier.A4_PORTRAIT);
     }
 
+    public byte[] rendre(JustificatifSoldeService.JustificatifFinancier j, ContexteDocument contexte) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("titre", "Justificatif de solde " + j.numero());
+        variables.put("j", j);
+        variables.put("fmt", new Formats());
+        return pdf.rendre("pdf/justificatif-partenaire-financier", variables, contexte, FormatPapier.A4_PORTRAIT);
+    }
+
     public byte[] rendre(JustificatifTresorerie j, ContexteDocument contexte) {
         Map<String, Object> variables = new HashMap<>();
         variables.put("titre", "Justificatif de solde de trésorerie " + j.numero());

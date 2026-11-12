@@ -266,7 +266,7 @@ public class EtatsListesService {
             case SourceMouvement.ACHAT -> "Paiement d'achat (correction)";
             case SourceMouvement.REGLEMENT_ACHAT -> "Règlement d'achat (correction)";
             case "" -> "Autre entrée";
-            default -> source;
+            default -> SourceMouvement.libelle(source);
         };
     }
 
@@ -274,6 +274,7 @@ public class EtatsListesService {
         if (m.getVente() != null) return m.getVente().getNumero() != null ? m.getVente().getNumero() : "Vente n° " + m.getVente().getId();
         if (m.getRetour() != null) return m.getRetour().getNumero();
         if (m.getClient() != null || m.getFournisseur() != null) return "Solde de départ";
+        if (m.getOperationTresorerie() != null && m.getOperationTresorerie().getEmprunt() != null) return m.getOperationTresorerie().getEmprunt().getNumero();
         return "";
     }
 
@@ -282,6 +283,7 @@ public class EtatsListesService {
         if (m.getClient() != null) return m.getClient().getNom();
         if (m.getRetour() != null && m.getRetour().getFournisseur() != null) return m.getRetour().getFournisseur().getNom();
         if (m.getFournisseur() != null) return m.getFournisseur().getNom();
+        if (m.getOperationTresorerie() != null && m.getOperationTresorerie().getPartenaireFinancier() != null) return m.getOperationTresorerie().getPartenaireFinancier().getNom();
         return "";
     }
 

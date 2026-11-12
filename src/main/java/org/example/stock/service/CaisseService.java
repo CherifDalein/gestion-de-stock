@@ -159,6 +159,18 @@ public class CaisseService {
         return compte;
     }
 
+    /**
+     * Gérant connecté, relu sous verrou partagé comme pour un transfert ou une dépense (ordre global des verrous : la boutique
+     * d'abord, puis le compte du gérant, puis les autres lignes). À appeler dans la transaction d'une écriture de financement.
+     */
+    public Utilisateur gerantPourEcriture() {
+        Utilisateur acteur = gerant();
+        entityManager.refresh(acteur, LockModeType.PESSIMISTIC_READ);
+        if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();
+        boutiqueService.exigerAppartenance(acteur.getBoutique());
+        return acteur;
+    }
+
     private Utilisateur gerant() {
         var auth=SecurityContextHolder.getContext().getAuthentication();
         if(auth==null||!auth.isAuthenticated()||auth.getAuthorities().stream().noneMatch(a->a.getAuthority().equals("ROLE_ADMIN"))) throw interdit();
@@ -462,6 +474,8 @@ public class CaisseService {
         annulation.setClient(origine.getClient());
         annulation.setFournisseur(origine.getFournisseur());
         annulation.setAnnulationDe(origine);
+        // Une opération de financement (apport, remboursement...) se reconnaît annulée à ses mouvements d'annulation.
+        annulation.setOperationTresorerie(origine.getOperationTresorerie());
         return mouvementRepo.saveAndFlush(annulation);
     }
 

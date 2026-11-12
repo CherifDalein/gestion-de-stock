@@ -52,6 +52,12 @@ public class RecuController {
         return pdf(recus.recuReglementSoldeFournisseur(id, mouvementId));
     }
 
+    /** Reçu d'un remboursement d'emprunt ou de prêt : gérant seulement, comme toutes les pages de financement. */
+    @GetMapping("/financements/emprunts/{id}/remboursements/{operationId}/recu")
+    public ResponseEntity<byte[]> remboursement(@PathVariable Long id, @PathVariable Long operationId) {
+        return pdf(recus.recuRemboursement(id, operationId));
+    }
+
     /** Ouverture dans le navigateur (inline), jamais mise en cache : le reçu contient des données de la boutique. */
     private static ResponseEntity<byte[]> pdf(RecuService.Recu recu) {
         return ResponseEntity.ok()
