@@ -4,7 +4,7 @@
 (() => {
     'use strict';
 
-    const COUPURES = [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 25, 10, 5, 1];
+    const COUPURES = [20000, 10000, 5000, 2000, 1000, 500, 100];
 
     /** Montant en centimes (BigInt) depuis « 1000 » ou « 1000,5 » ; vide = 0 ; illisible = null. */
     function lire(valeur) {
@@ -84,7 +84,8 @@
             } else {
                 montant.readOnly = false;
             }
-            const solde = choisi ? lire(choisi.dataset.solde) : null;
+            // Comptage à l'aveugle : sans data-solde (caissier), aucun solde ni écart n'est calculé.
+            const solde = choisi && choisi.dataset.solde !== undefined ? lire(choisi.dataset.solde) : null;
             const compteMontant = lire(montant.value);
             if (theorique) theorique.textContent = solde === null ? '—' : `${solde < 0n ? '− ' : ''}${formater(solde)} GNF`;
             if (ecartTexte) {

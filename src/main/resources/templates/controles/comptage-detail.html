@@ -7,7 +7,7 @@
             <div><p class="record-kicker">Contrôles</p><h1 id="detailTitre" th:text="${'Comptage CC-' + comptage.id}">Comptage CC-1</h1>
                 <p class="record-intro"><span th:replace="~{controles/navigation :: statut(${comptage.statut})}"></span></p></div>
             <div class="fin-actions">
-                <a th:href="@{/controles/comptages/{id}/pdf(id=${comptage.id})}" class="btn btn-outline-danger"><i class="fas fa-file-pdf" aria-hidden="true"></i> Procès-verbal PDF</a>
+                <a th:href="@{/controles/comptages/{id}/pdf(id=${comptage.id})}" class="btn btn-outline-danger" th:if="${voirTheorique}"><i class="fas fa-file-pdf" aria-hidden="true"></i> Procès-verbal PDF</a>
                 <a th:href="@{/controles/comptages}" class="btn btn-outline-secondary">Retour à la liste</a>
             </div>
         </header>
@@ -19,11 +19,11 @@
             <div class="ctl-ligne"><span>Compte</span><strong th:text="${comptage.compte.nom}">Caisse</strong></div>
             <div class="ctl-ligne"><span>Date</span><strong th:text="${#temporals.format(comptage.dateComptage, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</strong></div>
             <div class="ctl-ligne"><span>Saisi par</span><strong th:text="${comptage.utilisateur.nom}">Awa</strong></div>
-            <div class="ctl-ligne"><span>Solde théorique à cette heure</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(comptage.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
+            <div class="ctl-ligne" th:if="${voirTheorique}"><span>Solde théorique à cette heure</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(comptage.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
             <div class="ctl-ligne"><span>Montant compté</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(comptage.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
-            <div class="ctl-ligne"><span th:text="${'Écart (' + comptage.natureEcart + ')'}">Écart</span><strong><span th:replace="~{controles/navigation :: ecart(${comptage.ecart})}"></span></strong></div>
+            <div class="ctl-ligne" th:if="${voirTheorique}"><span th:text="${'Écart (' + comptage.natureEcart + ')'}">Écart</span><strong><span th:replace="~{controles/navigation :: ecart(${comptage.ecart})}"></span></strong></div>
             <p class="mt-2 mb-0" th:if="${comptage.commentaire != null}"><em th:text="${comptage.commentaire}">Commentaire</em></p>
-            <p class="record-help mt-2 mb-0">L'écart est calculé au moment du comptage : un mouvement saisi ensuite ne le modifie pas.</p>
+            <p class="record-help mt-2 mb-0" th:if="${voirTheorique}">L'écart est calculé au moment du comptage : un mouvement saisi ensuite ne le modifie pas.</p>
         </section>
 
         <section class="record-panel" aria-labelledby="detailBilletageTitre" th:unless="${#lists.isEmpty(comptage.billetage)}">
@@ -78,6 +78,9 @@
                  th:if="${comptage.statut.name() == 'EN_ATTENTE' or comptage.statut.name() == 'VALIDE'}">
             <div class="record-panel-heading"><h2 id="actionsTitre" th:text="${comptage.statut.name() == 'EN_ATTENTE' ? 'Décider de l’écart' : 'Annuler ce comptage validé'}">Décision</h2>
                 <p th:if="${comptage.statut.name() == 'VALIDE'}">L'annulation passe le mouvement inverse sur le même compte. Elle est refusée si elle laissait le compte sans la somme nécessaire.</p></div>
+            <p class="alert alert-warning mt-2 mb-0" role="alert"
+               th:if="${comptage.statut.name() == 'EN_ATTENTE' and comptage.ecart.signum() < 0 and soldesActuels != null and soldesActuels.get(comptage.compte.id) != null and soldesActuels.get(comptage.compte.id).add(comptage.ecart).signum() < 0}"
+               th:text="${'Attention : le solde actuel du compte est de ' + #numbers.formatDecimal(soldesActuels.get(comptage.compte.id), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF ; valider ce manque le rendrait négatif (' + #numbers.formatDecimal(soldesActuels.get(comptage.compte.id).add(comptage.ecart), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF).'}"></p>
             <form method="post" th:action="@{/controles/comptages/{id}/valider(id=${comptage.id})}" class="ctl-decision" th:if="${comptage.statut.name() == 'EN_ATTENTE'}">
                 <label for="motifDecision" class="form-label fw-semibold mb-0">Motif (obligatoire)</label>
                 <input id="motifDecision" type="text" name="motif" class="form-control" minlength="3" maxlength="255" required autocomplete="off" />

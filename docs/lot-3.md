@@ -235,8 +235,16 @@ Aucune règle existante (reste à payer, avances, coût moyen, numérotation, re
 ### Comptage de caisse (`/controles/comptages`)
 
 Le caissier ou le gérant compte un compte de trésorerie qu'il a le droit d'utiliser (règle de 3a : un caissier voit ses comptes autorisés ou
-les comptes principaux). Il saisit le montant compté et un commentaire facultatif ; l'application affiche le **solde théorique** (somme des
+les comptes principaux). Il saisit le montant compté et un commentaire facultatif. L'application calcule le **solde théorique** (somme des
 mouvements du compte, lue sous verrou) et l'**écart = compté − théorique**, figés au moment du comptage.
+
+**Comptage à l'aveugle.** Le **caissier ne voit jamais** le solde théorique ni l'écart : ni en direct dans le formulaire, ni après
+l'enregistrement, ni dans la liste ou le détail de ses comptages, ni dans un PDF. Il voit seulement le montant qu'il a compté, le billetage
+et le **statut** (Conforme, En attente de validation, Validé, Refusé). Raison : s'il voyait le chiffre attendu, il n'aurait qu'à le recopier et le
+contrôle ne vérifierait plus rien. Techniquement, le solde n'est ni lu ni transmis au navigateur pour un caissier (aucun `data-solde`, aucun
+élément d'écart, aucun solde de compte dans le parcours), le procès-verbal PDF est réservé au gérant, et aucune route JSON n'existe. Le
+**gérant** garde le solde théorique, l'écart calculé en direct pendant la saisie et le détail complet. Limite : le statut seul laisse
+deviner qu'il y a un écart ; un caissier qui recompte plusieurs fois voit ce statut changer, ce qui est voulu (il doit recompter, pas recopier).
 
 | Écart | Statut | Mouvement |
 |---|---|---|
@@ -252,19 +260,20 @@ excédent de 5 000 serait une entrée classée en **autres produits**.
 
 **Comptage ancien.** L'écart s'applique **tel qu'il était au moment du comptage**, même si des ventes ont changé la caisse avant la validation :
 le mouvement d'écart vaut l'écart figé, pas un écart recalculé. Le gérant voit le solde théorique et la date du comptage sur la fiche pour juger. À
-la validation il n'y a pas de contrôle du solde pour une sortie d'écart : un manque validé peut rendre le solde du compte négatif (limite connue).
+la validation il n'y a pas de blocage sur le solde : un manque validé peut rendre le solde du compte négatif. **Le gérant en est averti** avant de
+valider (fiche et liste « À valider ») : « le solde actuel du compte est de X ; valider ce manque le rendrait négatif (Y) ». Décision confirmée.
 
 **Billetage (espèces).** Pour un compte d'espèces, le caissier peut saisir des quantités par coupure, et le total doit être égal au montant compté
-(sinon refus). Coupures proposées : **20 000, 10 000, 5 000, 2 000, 1 000, 500, 100, 50, 25, 10, 5 et 1 GNF**. Cette liste a été vérifiée dans
-des sources publiques : 20 000, 10 000, 5 000, 2 000, 1 000 et 500 GNF circulent en billets (500 est le plus petit billet courant) ; 100 est
-encore listé ; 50, 25, 10, 5 et 1 sont des pièces rarement vues, gardées pour ne rien exclure. Pas de billetage sur Orange Money ni sur la banque.
+(sinon refus). Coupures proposées : **20 000, 10 000, 5 000, 2 000, 1 000, 500 et 100 GNF**. Les coupures de 50, 25, 10, 5 et 1 GNF ne circulent plus et
+ont été retirées (décision du client) ; la liste est la constante `Billetage.COUPURES`, dans l'ordre du formulaire. Pas de billetage sur
+Orange Money ni sur la banque.
 
 **Décisions.** Seul le gérant valide, refuse ou annule (motif d'au moins 3 caractères). Une décision déjà prise rend **409** (double clic, deux
 gérants). Le gérant a une liste des comptages en attente (`/controles/comptages/en-attente`) et le tableau de bord affiche un badge avec leur
 nombre. **PDF** du comptage (billetage, signatures du caissier et du gérant) et liste exportable (Excel et PDF, gérant).
 
-**Droits.** Le caissier compte et consulte **ses** comptages ; il ne voit ni les autres, ni l'attente, ni les exports, et ne peut ni valider ni
-compter un compte non autorisé (403). Une boutique ne voit jamais les comptages d'une autre.
+**Droits.** Le caissier compte et consulte **ses** comptages (sans théorique ni écart, voir « Comptage à l'aveugle ») ; il ne voit ni les autres,
+ni l'attente, ni les exports, ni le PDF (403), et ne peut ni valider ni compter un compte non autorisé. Une boutique ne voit jamais les comptages d'une autre.
 
 ### Correction du solde de départ
 
@@ -307,7 +316,7 @@ factures (ajustement). `OrdreVerrousMariaDbTest` rejoue deux validations simulta
 ### Limites connues
 
 - L'écart validé est celui du moment du comptage ; il n'est pas recalculé à la validation (voir « Comptage ancien »).
-- Pas de contrôle de solde sur la sortie d'un manque validé : le compte peut devenir négatif.
+- Pas de blocage de solde sur la sortie d'un manque validé : le compte peut devenir négatif ; un avertissement s'affiche au gérant.
 - Un inventaire fige le solde de l'application à son enregistrement ; il ne suit pas les mouvements suivants. Au plus 100 partenaires par inventaire.
 - Un comptage conforme n'est pas annulable (il n'a aucun effet).
 - Pas de rapprochement bancaire : c'est l'étape 3c.

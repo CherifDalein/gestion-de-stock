@@ -69,6 +69,7 @@ public class ComptageCaisseController {
                         @RequestParam(name = "au", required = false) List<String> au, Model model) {
         ComptageCaisseService.Filtre filtre = filtre(statut, du, au);
         model.addAttribute("comptages", service.lister(filtre));
+        model.addAttribute("voirTheorique", gerant());
         model.addAttribute("filtre", filtre);
         model.addAttribute("statuts", StatutComptage.values());
         ajouterNombreEnAttente(model);
@@ -107,7 +108,14 @@ public class ComptageCaisseController {
         return "dashboard";
     }
 
+    /** Comptage à l'aveugle : seul le gérant voit le solde théorique et l'écart (voir docs/lot-3.md). */
+    private static boolean gerant() {
+        var a = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return a != null && a.isAuthenticated() && a.getAuthorities().stream().anyMatch(x -> x.getAuthority().equals("ROLE_ADMIN"));
+    }
+
     private void preparerSaisie(Model model) {
+        model.addAttribute("voirTheorique", gerant());
         model.addAttribute("comptesAComter", service.comptesAComter());
         model.addAttribute("coupures", Billetage.COUPURES);
         model.addAttribute("view", "controles/comptage-form");
@@ -118,6 +126,7 @@ public class ComptageCaisseController {
     @GetMapping("/en-attente")
     public String enAttente(Model model) {
         model.addAttribute("comptages", service.enAttente());
+        model.addAttribute("soldesActuels", service.soldesActuels());
         model.addAttribute("decisionComptage", new DecisionComptageForm());
         ajouterNombreEnAttente(model);
         model.addAttribute("view", "controles/comptages-attente");
@@ -171,6 +180,8 @@ public class ComptageCaisseController {
     public String detail(@PathVariable Long id, Model model) {
         ComptageCaisse comptage = service.trouver(id);
         model.addAttribute("comptage", comptage);
+        model.addAttribute("voirTheorique", gerant());
+        if (gerant()) model.addAttribute("soldesActuels", service.soldesActuels());
         model.addAttribute("mouvements", service.mouvementsDe(comptage));
         model.addAttribute("decisionComptage", new DecisionComptageForm());
         ajouterNombreEnAttente(model);

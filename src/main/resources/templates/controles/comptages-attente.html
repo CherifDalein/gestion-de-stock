@@ -20,6 +20,9 @@
             <div class="ctl-ligne"><span>Solde théorique</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(c.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
             <div class="ctl-ligne"><span>Montant compté</span><strong class="ctl-montant" th:text="${#numbers.formatDecimal(c.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</strong></div>
             <div class="ctl-ligne"><span th:text="${c.natureEcart}">Manque</span><strong th:text="${c.ecart.signum() > 0 ? 'Une entrée sera passée' : 'Une sortie sera passée'}">Une sortie sera passée</strong></div>
+            <p class="alert alert-warning mt-2 mb-0" role="alert"
+               th:if="${c.ecart.signum() < 0 and soldesActuels != null and soldesActuels.get(c.compte.id) != null and soldesActuels.get(c.compte.id).add(c.ecart).signum() < 0}"
+               th:text="${'Attention : le solde actuel du compte est de ' + #numbers.formatDecimal(soldesActuels.get(c.compte.id), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF ; valider ce manque le rendrait négatif (' + #numbers.formatDecimal(soldesActuels.get(c.compte.id).add(c.ecart), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF).'}"></p>
             <p th:if="${c.commentaire != null}" class="mt-2 mb-0"><em th:text="${c.commentaire}">Commentaire</em></p>
             <form method="post" th:action="@{/controles/comptages/{id}/valider(id=${c.id})}" class="ctl-decision mt-2">
                 <label th:for="${'motif' + c.id}" class="form-label fw-semibold mb-0">Motif de la décision</label>

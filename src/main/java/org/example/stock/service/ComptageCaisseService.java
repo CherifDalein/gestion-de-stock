@@ -253,11 +253,22 @@ public class ComptageCaisseService {
         return mouvements.mouvementsDuComptage(boutiques.idBoutiqueCourante(), comptage.getId());
     }
 
-    /** Comptes que l'utilisateur peut compter, avec leur solde théorique actuel (indicatif : le solde qui fait foi est lu sous verrou à l'envoi). */
+    /**
+     * Comptes que l'utilisateur peut compter. Comptage à l'aveugle : le solde n'est renseigné que pour le gérant (indicatif : le solde qui fait
+     * foi est lu sous verrou à l'envoi) ; pour un caissier il vaut {@code null}, jamais lu ni transmis à l'écran.
+     */
     @Transactional(readOnly = true)
     public List<CompteAvecSolde> comptesAComter() {
-        Map<Long, BigDecimal> soldes = comptes.soldes(boutiques.idBoutiqueCourante());
-        return comptes.utilisables().stream().map(c -> new CompteAvecSolde(c, soldes.getOrDefault(c.getId(), BigDecimal.ZERO))).toList();
+        boolean gerant = estGerantSession();
+        Map<Long, BigDecimal> soldes = gerant ? comptes.soldes(boutiques.idBoutiqueCourante()) : Map.of();
+        return comptes.utilisables().stream().map(c -> new CompteAvecSolde(c, gerant ? soldes.getOrDefault(c.getId(), BigDecimal.ZERO) : null)).toList();
+    }
+
+    /** Solde actuel de chaque compte de la boutique, pour avertir le gérant qu'un manque validé rendrait un solde négatif (gérant seulement). */
+    @Transactional(readOnly = true)
+    public Map<Long, BigDecimal> soldesActuels() {
+        exigerGerantSession();
+        return comptes.soldes(boutiques.idBoutiqueCourante());
     }
 
     public record CompteAvecSolde(CompteTresorerieBoutique compte, BigDecimal solde) { }

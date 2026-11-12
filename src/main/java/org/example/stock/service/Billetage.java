@@ -11,7 +11,7 @@ import java.util.List;
  * non utilisées restent vides. Elle est documentée dans {@code docs/lot-3.md}.</p>
  */
 public final class Billetage {
-    public static final List<Integer> COUPURES = List.of(20_000, 10_000, 5_000, 2_000, 1_000, 500, 100, 50, 25, 10, 5, 1);
+    public static final List<Integer> COUPURES = List.of(20_000, 10_000, 5_000, 2_000, 1_000, 500, 100);
     /** Quantité maximale par coupure : borne de saisie (évite un total hors limites). */
     public static final int QUANTITE_MAXIMALE = 1_000_000;
 

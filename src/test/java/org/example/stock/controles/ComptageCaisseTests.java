@@ -97,7 +97,7 @@ class ComptageCaisseTests {
         assertThat(nombreEnAttente()).isEqualTo(1);
         String liste = mvc.perform(get("/controles/comptages").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(liste).contains("CC-" + c.getId(), "En attente de validation", "97 500,00 GNF", "− 2 500,00 GNF");
+        assertThat(liste).contains("CC-" + c.getId(), "En attente de validation", "97 500,00 GNF").doesNotContain("100 000", "2 500,00", "Théorique");
         // Le badge du gérant sur le tableau de bord.
         String accueil = mvc.perform(get("/").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(accueil).contains("comptagesEnAttenteAlerte", "1 comptage de caisse attend");
@@ -235,7 +235,7 @@ class ComptageCaisseTests {
         String liste = mvc.perform(get("/controles/comptages").with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString();
         assertThat(liste).contains("CC-" + mien.getId()).doesNotContain("CC-" + autreCaissier.getId());
         mvc.perform(get("/controles/comptages/" + autreCaissier.getId()).with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isNotFound());
-        mvc.perform(get("/controles/comptages/" + autreCaissier.getId() + "/pdf").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isNotFound());
+        mvc.perform(get("/controles/comptages/" + autreCaissier.getId() + "/pdf").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
         String gerant = mvc.perform(get("/controles/comptages").with(user(GERANT).roles("ADMIN"))).andReturn().getResponse().getContentAsString();
         assertThat(gerant).contains("CC-" + mien.getId(), "CC-" + autreCaissier.getId());
         // Boutique voisine : 404 partout, rien n'est modifié.
@@ -251,20 +251,20 @@ class ComptageCaisseTests {
 
     @Test
     void leBilletageDesEspecesDonneLeTotalCompteEtEstConserve() throws Exception {
-        // 3 x 20 000 + 2 x 10 000 + 1 x 5 000 + 4 x 2 000 + 7 x 500 + 1 x 25 = 96 525
+        // 3 x 20 000 + 2 x 10 000 + 1 x 5 000 + 4 x 2 000 + 7 x 500 + 1 x 100 = 96 600
         ResultActions r = poster(CAISSIER, "/controles/comptages", "compte", "CAISSE", "jeton", "j-12",
                 "quantites[0]", "3", "quantites[1]", "2", "quantites[2]", "1", "quantites[3]", "4", "quantites[4]", "", "quantites[5]", "7",
-                "quantites[8]", "1");
+                "quantites[6]", "1");
         r.andExpect(status().is3xxRedirection());
         ComptageCaisse c = comptages.findByBoutiqueIdAndJeton(boutique.getId(), "j-12").orElseThrow();
-        assertThat(c.getMontantCompte()).isEqualByComparingTo("96525");
-        assertThat(c.getEcart()).isEqualByComparingTo("-3475");
+        assertThat(c.getMontantCompte()).isEqualByComparingTo("96600");
+        assertThat(c.getEcart()).isEqualByComparingTo("-3400");
         authentifier(CAISSIER, "CAISSIER");
         ComptageCaisse lu = service.trouver(c.getId());
-        assertThat(lu.getBilletage()).extracting(LigneBilletage::getCoupure).containsExactly(20000, 10000, 5000, 2000, 500, 25);
+        assertThat(lu.getBilletage()).extracting(LigneBilletage::getCoupure).containsExactly(20000, 10000, 5000, 2000, 500, 100);
         assertThat(lu.getBilletage()).extracting(LigneBilletage::getQuantite).containsExactly(3, 2, 1, 4, 7, 1);
         String page = mvc.perform(get("/controles/comptages/" + c.getId()).with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("Billetage", "20 000 GNF", "96 525,00 GNF");
+        assertThat(page).contains("Billetage", "20 000 GNF", "96 600,00 GNF");
     }
 
     @Test
@@ -315,12 +315,68 @@ class ComptageCaisseTests {
         assertThat(journal).contains("Écart de caisse");
     }
 
+    // ---- Comptage à l'aveugle ----------------------------------------------------------------------------------
+
+    private String page(String url, String email, String role) throws Exception {
+        return mvc.perform(get(url).with(user(email).roles(role))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    void leCaissierCompteALAveugleAvantEtApresLEnregistrement() throws Exception {
+        // Le solde théorique de la caisse est 100 000 ; ni la valeur, ni l'écart, ni un solde de compte (Orange Money 50 000, arrière 30 000)
+        // n'apparaissent dans le HTML du caissier, ni dans les data-*, ni dans le JS servi.
+        String formulaire = page("/controles/comptages/nouveau", CAISSIER, "CAISSIER");
+        assertThat(formulaire).contains("Billetage", "comptageTotalBilletage", "Montant compté")
+                .doesNotContain("100000.00", "100 000", "50000.00", "50 000", "data-solde", "comptageTheorique", "comptageEcart", "Solde théorique", "Écart");
+        ComptageCaisse c = compter(CAISSIER, "CAISSE", "97500", "j-aveugle");
+        String detail = page("/controles/comptages/" + c.getId(), CAISSIER, "CAISSIER");
+        assertThat(detail).contains("En attente de validation", "97 500,00 GNF")
+                .doesNotContain("100000.00", "100 000", "2 500", "Solde théorique", "Écart", "/pdf", "Procès-verbal");
+        String liste = page("/controles/comptages", CAISSIER, "CAISSIER");
+        assertThat(liste).doesNotContain("100 000", "2 500", "Théorique", "Écart");
+        mvc.perform(get("/controles/comptages/" + c.getId() + "/pdf").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
+        // Le message enregistré non plus : seul le statut est communiqué.
+        String redirige = poster(CAISSIER, "/controles/comptages", "compte", "CAISSE", "montantCompte", "97400", "jeton", "j-aveugle2")
+                .andReturn().getFlashMap().toString();
+        assertThat(redirige).doesNotContain("100 000", "2 600");
+        // Conforme : le caissier voit seulement le statut.
+        ComptageCaisse conforme = compter(CAISSIER, "CAISSE", "100000", "j-aveugle3");
+        assertThat(page("/controles/comptages/" + conforme.getId(), CAISSIER, "CAISSIER")).contains("Conforme").doesNotContain("Solde théorique", "Écart");
+        // Le JS ne contient aucune valeur de compte : il ne calcule l'écart que si le gérant a reçu un data-solde.
+        String js = mvc.perform(get("/js/comptage.js")).andReturn().getResponse().getContentAsString();
+        assertThat(js).doesNotContain("100000");
+    }
+
+    @Test
+    void leGerantGardeLeSoldeTheoriqueEtLEcartEnDirect() throws Exception {
+        String formulaire = page("/controles/comptages/nouveau", GERANT, "ADMIN");
+        assertThat(formulaire).contains("data-solde=\"100000.00\"", "comptageTheorique", "comptageEcart", "Solde théorique");
+        ComptageCaisse c = compter(CAISSIER, "CAISSE", "97500", "j-gerant-voit");
+        String detail = page("/controles/comptages/" + c.getId(), GERANT, "ADMIN");
+        assertThat(detail).contains("100 000,00 GNF", "2 500,00", "Solde théorique", "/pdf");
+        assertThat(page("/controles/comptages", GERANT, "ADMIN")).contains("100 000,00 GNF", "Théorique");
+    }
+
+    @Test
+    void lAvertissementPrevientLeGerantQuUnManqueValideRendraitLeSoldeNegatif() throws Exception {
+        solde(caisse2, "0");
+        ComptageCaisse c = compter(CAISSIER, "CAISSE", "1000", "j-negatif");   // théorique 100 000, manque de 99 000
+        solde(caisse, "-98000");                                            // le solde actuel tombe à 2 000 : valider le laisserait à -97 000
+        String attente = page("/controles/comptages/en-attente", GERANT, "ADMIN");
+        assertThat(attente).contains("valider ce manque le rendrait négatif", "2 000,00 GNF");
+        assertThat(page("/controles/comptages/" + c.getId(), GERANT, "ADMIN")).contains("valider ce manque le rendrait négatif");
+        ComptageCaisse petit = compter(CAISSIER, "CAISSE", "1999", "j-negatif2");
+        solde(caisse, "200000");
+        assertThat(page("/controles/comptages/" + petit.getId(), GERANT, "ADMIN")).doesNotContain("le rendrait négatif");
+    }
+
     // ---- Documents --------------------------------------------------------------------------------------------
 
     @Test
     void leProcesVerbalPdfEtLesExportsDuGerantSontProduits() throws Exception {
         ComptageCaisse c = compter(CAISSIER, "CAISSE", "97500", "j-16");
-        MockHttpServletResponse pdf = mvc.perform(get("/controles/comptages/" + c.getId() + "/pdf").with(user(CAISSIER).roles("CAISSIER")))
+        mvc.perform(get("/controles/comptages/" + c.getId() + "/pdf").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isForbidden());
+        MockHttpServletResponse pdf = mvc.perform(get("/controles/comptages/" + c.getId() + "/pdf").with(user(GERANT).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse();
         assertThat(pdf.getContentType()).isEqualTo("application/pdf");
         assertThat(new String(pdf.getContentAsByteArray(), 0, 5)).isEqualTo("%PDF-");

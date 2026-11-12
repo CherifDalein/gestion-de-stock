@@ -48,7 +48,7 @@ public class SecurityConfig {
                         // Contrôles (étape 3b2) : le caissier et le gérant comptent la caisse et voient leurs comptages ; les décisions, l'export et
                         // l'inventaire des créances et dettes sont réservés au gérant. Les règles du gérant précèdent la règle commune.
                         .requestMatchers("/controles/comptages/en-attente", "/controles/comptages/export/**", "/controles/comptages/*/valider",
-                                "/controles/comptages/*/refuser", "/controles/comptages/*/annuler").hasRole("ADMIN")
+                                "/controles/comptages/*/refuser", "/controles/comptages/*/annuler", "/controles/comptages/*/pdf").hasRole("ADMIN")
                         .requestMatchers("/controles/comptages", "/controles/comptages/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/controles", "/controles/**").hasRole("ADMIN")
                         .requestMatchers("/etats", "/etats/**").hasRole("ADMIN")

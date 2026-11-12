@@ -9,7 +9,7 @@ vm.runInContext(readFileSync(path.resolve(__dirname, '../../main/resources/stati
 const C = contexte.Comptage;
 
 test('les coupures sont celles du franc guinéen, de la plus grande à la plus petite', () => {
-    assert.deepEqual(Array.from(C.COUPURES), [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 25, 10, 5, 1]);
+    assert.deepEqual(Array.from(C.COUPURES), [20000, 10000, 5000, 2000, 1000, 500, 100]);
 });
 
 test('le total du billetage multiplie chaque coupure par sa quantité', () => {

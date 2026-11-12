@@ -29,7 +29,7 @@ public class ComptageForm {
     private BigDecimal montantCompte;
 
     /** Quantités par coupure, dans l'ordre de {@code Billetage.COUPURES} (20 000 en premier). */
-    private List<Integer> quantites = new ArrayList<>(Collections.nCopies(12, (Integer) null));
+    private List<Integer> quantites = new ArrayList<>(Collections.nCopies(7, (Integer) null));
 
     @Size(max = 255, message = "Le commentaire comporte au plus 255 caractères")
     private String commentaire;
