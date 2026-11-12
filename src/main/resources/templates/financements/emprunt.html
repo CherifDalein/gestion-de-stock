@@ -33,16 +33,16 @@
             <div class="record-panel-heading"><h2 id="echeancierTitre">Échéancier</h2>
                 <p th:text="${e.nombreEcheances + ' échéances ' + #strings.toLowerCase(e.periodicite.libelle) + 's, capital constant, intérêts simples.'}"></p></div>
             <div class="table-responsive">
-                <table class="table fin-table">
+                <table class="table fin-table fin-empilee">
                     <thead><tr><th>N°</th><th>Date</th><th class="text-end">Capital</th><th class="text-end">Intérêts</th><th class="text-end">Reste à payer</th><th>État</th></tr></thead>
                     <tbody>
                     <tr th:each="l : ${s.lignes()}" th:classappend="${l.enRetard(s.aujourdhui()) ? 'fin-ligne-retard' : ''}">
-                        <td th:text="${l.rang()}">1</td>
-                        <td th:text="${#temporals.format(l.date(), 'dd/MM/yyyy')}">01/01/2027</td>
-                        <td class="text-end" th:text="${#numbers.formatDecimal(l.echeance.capital, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
-                        <td class="text-end" th:text="${#numbers.formatDecimal(l.echeance.interet, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
-                        <td class="text-end" th:text="${#numbers.formatDecimal(l.resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00</td>
-                        <td><span th:if="${l.soldee()}" class="fin-etat fin-clos">Payée</span>
+                        <td data-label="N°" th:text="${l.rang()}">1</td>
+                        <td data-label="Date" th:text="${#temporals.format(l.date(), 'dd/MM/yyyy')}">01/01/2027</td>
+                        <td data-label="Capital" class="text-end" th:text="${#numbers.formatDecimal(l.echeance.capital, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                        <td data-label="Intérêts" class="text-end" th:text="${#numbers.formatDecimal(l.echeance.interet, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                        <td data-label="Reste à payer" class="text-end" th:text="${#numbers.formatDecimal(l.resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00</td>
+                        <td data-label="État"><span th:if="${l.soldee()}" class="fin-etat fin-clos">Payée</span>
                             <span th:if="${l.enRetard(s.aujourdhui())}" class="fin-etat fin-retard" th:text="${'En retard de ' + l.joursDeRetard(s.aujourdhui()) + ' j'}">En retard</span>
                             <span th:if="${!l.soldee() and !l.enRetard(s.aujourdhui()) and l.partielle()}" class="fin-etat fin-cours">Partielle</span>
                             <span th:if="${!l.soldee() and !l.enRetard(s.aujourdhui()) and !l.partielle()}" class="fin-etat fin-attente">À venir</span></td>

@@ -199,9 +199,9 @@ public class RecuService {
         for (MouvementCaisse m : mouvements.findByOperationTresorerieIdOrderByIdAsc(op.getId()))
             if (SourceMouvement.ANNULATION.equals(m.getSource())) { annulation = m; break; }
         String annuleLe = annulation == null ? null : "ANNULÉ le " + (annulation.getDateMouvement() == null ? "date non renseignée" : Textes.dateHeure(annulation.getDateMouvement()));
-        String document = (pret ? "Prêt " : "Emprunt ") + emprunt.getNumero() + " : capital " + Textes.montant(capital) + " GNF, intérêts " + Textes.montant(interets) + " GNF";
+        String document = (pret ? "Prêt " : "Emprunt ") + emprunt.getNumero() + " (" + douces(emprunt.getPartenaire().getNom()) + ") : capital " + Textes.montant(capital) + " GNF, intérêts " + Textes.montant(interets) + " GNF";
         RecuReglement vue = new RecuReglement(pret ? "Remboursement d'un prêt accordé" : "Remboursement d'un emprunt", "Remboursement n° " + op.getId(),
-                Textes.dateHeure(op.getDateOperation()), document, douces(emprunt.getPartenaire().getNom()), pret,
+                Textes.dateHeure(op.getDateOperation()), document, null, pret,
                 Textes.montant(capital.add(interets)), op.getCompteSource() == null ? "Non renseigné" : op.getCompteSource().getNom(),
                 Textes.montant(reste), reste.signum() == 0, nomUtilisateur(op.getUtilisateur(), "Non renseigné"), annuleLe,
                 annulation == null ? null : douces(annulation.getMotif()), annulation == null ? null : nomUtilisateur(annulation.getUtilisateur(), null),

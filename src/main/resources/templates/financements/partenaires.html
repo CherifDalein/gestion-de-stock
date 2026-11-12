@@ -18,16 +18,16 @@
             <div class="record-panel-heading"><h2 id="partListeTitre" th:text="${#lists.size(vues) + (#lists.size(vues) == 1 ? ' partenaire' : ' partenaires')}">0 partenaire</h2></div>
             <p class="record-help" th:if="${#lists.isEmpty(vues)}">Aucun partenaire. Ajoutez une banque ou un associé pour commencer.</p>
             <div class="table-responsive" th:unless="${#lists.isEmpty(vues)}">
-                <table class="table fin-table">
+                <table class="table fin-table fin-empilee">
                     <thead><tr><th>Nom</th><th>Type</th><th>Téléphone</th><th class="text-end">Solde</th><th>Dossiers en cours</th></tr></thead>
                     <tbody>
                     <tr th:each="v : ${vues}">
-                        <td><a th:href="@{/financements/partenaires/{id}(id=${v.partenaire.id})}" th:text="${v.partenaire.nom}">Nom</a><small th:unless="${v.partenaire.actif}"> (archivé)</small></td>
-                        <td th:text="${v.partenaire.type.libelle}">Banque</td>
-                        <td th:text="${v.partenaire.telephone}">—</td>
-                        <td class="text-end"><span th:text="${#numbers.formatDecimal(v.solde.absolu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</span><br>
+                        <td data-label="Nom"><a th:href="@{/financements/partenaires/{id}(id=${v.partenaire.id})}" th:text="${v.partenaire.nom}">Nom</a><small th:unless="${v.partenaire.actif}"> (archivé)</small></td>
+                        <td data-label="Type" th:text="${v.partenaire.type.libelle}">Banque</td>
+                        <td data-label="Téléphone" th:text="${v.partenaire.telephone}">—</td>
+                        <td data-label="Solde" class="text-end"><span th:text="${#numbers.formatDecimal(v.solde.absolu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</span><br>
                             <small th:text="${v.solde.laBoutiqueDoit() ? 'La boutique doit' : (v.solde.ilDoit() ? 'Il doit à la boutique' : 'Soldé')}"></small></td>
-                        <td th:text="${v.empruntsEnCours}">0</td>
+                        <td data-label="Dossiers en cours" th:text="${v.empruntsEnCours}">0</td>
                     </tr>
                     </tbody>
                 </table>
