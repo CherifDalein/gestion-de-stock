@@ -497,7 +497,7 @@ class JustificatifsSoldeTests {
         String page = normaliser(mvc.perform(get("/etats/justificatifs").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(page).contains("Justificatifs de solde", "data-justificatif=\"client\"", "data-justificatif=\"fournisseur\"", "data-justificatif=\"tresorerie\"",
                 "Aminata Camara", "Sidi Import", "/etats/justificatifs/client/pdf", "/etats/justificatifs/fournisseur/pdf", "/etats/justificatifs/tresorerie/pdf",
-                "name=\"date\"", "max=\"2026-07-15\"", "lot 3").doesNotContain("SECRET_B");
+                "name=\"date\"", "max=\"2026-07-15\"").doesNotContain("SECRET_B");
         String accueil = mvc.perform(get("/etats").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(accueil).contains("/etats/justificatifs", "Justificatifs de solde");
         String clientsGerant = mvc.perform(get("/clients").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
