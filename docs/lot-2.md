@@ -618,7 +618,10 @@ en première instruction de sa transaction, puis, dans cet ordre et seulement ce
 4. les factures du partenaire : lectures `FOR UPDATE` des ventes ou achats qui portent une avance (`SoldePartenaireService`),
    des retours et des règlements du solde de départ ;
 5. les produits, par identifiant croissant ;
-6. les comptes de trésorerie.
+6. les comptes de trésorerie (`compte_tresorerie_boutique`), **par identifiant croissant** : une boutique peut en avoir jusqu'à douze
+   (voir [Comptes de trésorerie multiples](lot-3.md#comptes-de-trésorerie-multiples)). Une écriture sur un seul compte (encaissement,
+   paiement, règlement, remboursement) le verrouille en lecture partagée ; un transfert, une annulation, l'archivage d'un compte ou le
+   changement de compte principal verrouillent en écriture tous les comptes concernés, triés par identifiant, en une seule fois.
 
 Rien ne doit être verrouillé avant la boutique : ni document, ni partenaire, ni compte utilisateur. Le verrou est pris une seule
 fois par transaction : un second appel, par exemple depuis `CaisseService` appelé par une vente, ne fait rien et ne relit pas la

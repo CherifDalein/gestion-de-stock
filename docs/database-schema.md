@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les vingt-quatre tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)), puis les réglages des reçus du lot 4 (voir la [migration du lot 4](migrations/lot-4.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les vingt-cinq tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)), puis les réglages des reçus du lot 4 (voir la [migration du lot 4](migrations/lot-4.md)) et les comptes de trésorerie multiples du lot 3 (voir la [migration du lot 3](migrations/lot-3.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -22,15 +22,19 @@ Les fiches produit démarrent à zéro, sans prix à saisir. L’achat ou le sto
 
 Le stock initial et le solde initial de caisse sont réservés à la préparation de la boutique. La fermeture explicite, le premier achat, la première vente ou un mouvement opérationnel de caisse ferme définitivement cette phase. Les corrections manuelles ne sont plus disponibles ; leurs événements historiques sont conservés. Voir la [migration du démarrage](migrations/demarrage-boutique.md).
 
-Le solde initial de chaque compte utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL`, `type=OUVERTURE` et son `compte`. Il contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour. Chaque compte peut être initialisé une fois pendant le démarrage.
+Le solde initial de chaque compte utilise `mouvement_caisse`, avec `source=SOLDE_INITIAL`, `type=OUVERTURE` et son `compte_id`. Il contribue au solde à l’ouverture et au solde total, et reste exclu des recettes et variations opérationnelles du jour. Chaque compte peut être initialisé une fois pendant le démarrage.
 
 ### `compte_tresorerie_boutique`
 
-Identifiants de verrou pour les trois comptes `CAISSE`, `ORANGE_MONEY` et `BANQUE` de chaque boutique : `id` BIGINT auto-incrémenté, `boutique_id` BIGINT NOT NULL avec clé étrangère sans cascade, `compte` VARCHAR(32) NOT NULL, contrainte unique `(boutique_id, compte)`. Les soldes sont calculés depuis `mouvement_caisse` ; cette table ne contient aucun montant. Les nouvelles boutiques reçoivent les trois lignes lors de leur création ; la migration les ajoute aux boutiques existantes.
+Comptes de trésorerie d'une boutique (lot 3), jusqu'à douze comptes actifs par boutique : `id` BIGINT auto-incrémenté, `boutique_id` BIGINT NOT NULL avec clé étrangère sans cascade, `type` VARCHAR(32) NOT NULL (`ESPECES`, `ORANGE_MONEY` ou `BANQUE`), `nom` VARCHAR(60) NOT NULL, `nom_cle` VARCHAR(60) NOT NULL (le nom en minuscules, sans espaces superflus), `numero` VARCHAR(40) facultatif, `principal_type` VARCHAR(32) facultatif (égal à `type` pour le compte principal du type, vide sinon), `actif` BOOLEAN NOT NULL DEFAULT TRUE (un compte archivé est inactif), `ordre` INT NOT NULL DEFAULT 0. Contraintes uniques `uk_compte_tresorerie_nom (boutique_id, nom_cle)` : nom unique par boutique sans tenir compte de la casse ; et `uk_compte_tresorerie_principal (boutique_id, principal_type)` : un seul compte principal par type (les valeurs vides ne se contredisent pas). Les soldes sont calculés depuis `mouvement_caisse` ; cette table ne contient aucun montant. Elle sert aussi de point de verrouillage (voir l'[ordre des verrous](lot-2.md#ordre-des-verrous)). Les nouvelles boutiques reçoivent leurs trois comptes de base principaux (« Caisse », « Orange Money », « Banque ») lors de leur création. Voir [Comptes de trésorerie multiples](lot-3.md#comptes-de-trésorerie-multiples).
+
+### `compte_tresorerie_autorise`
+
+Comptes autorisés à un caissier (lot 3) : `id` BIGINT auto-incrémenté, `utilisateur_id` BIGINT NOT NULL (`fk_compte_autorise_utilisateur` -> `utilisateur.id`), `compte_id` BIGINT NOT NULL (`fk_compte_autorise_compte` -> `compte_tresorerie_boutique.id`), contrainte unique `uk_compte_tresorerie_autorise (utilisateur_id, compte_id)`. Un caissier sans aucune ligne utilise les comptes principaux ; le gérant n'a pas de ligne (il utilise tous les comptes actifs).
 
 ### `operation_tresorerie`
 
-En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique_id` et `utilisateur_id` BIGINT NOT NULL avec clés étrangères sans cascade, `jeton` VARCHAR(36) NOT NULL UNIQUE, `type` VARCHAR(32) (`TRANSFERT` ou `DEPENSE`), `compte_source` VARCHAR(32) NOT NULL, `compte_destination` VARCHAR(32) facultatif (vide uniquement pour une dépense), `montant` DECIMAL(17,2) strictement positif, `motif` VARCHAR(255) NOT NULL et `date_operation` DATETIME(6) NOT NULL. Index `(boutique_id, date_operation, id)`. Une opération de transfert produit deux mouvements de sens opposés dans une seule transaction ; elle ne change pas le solde total. Voir la [migration trésorerie](migrations/tresorerie.md).
+En-têtes des transferts et dépenses : `id` BIGINT auto-incrémenté, `boutique_id` et `utilisateur_id` BIGINT NOT NULL avec clés étrangères sans cascade, `jeton` VARCHAR(36) NOT NULL UNIQUE, `type` VARCHAR(32) (`TRANSFERT` ou `DEPENSE`), `compte_source_id` BIGINT NOT NULL (`fk_operation_tresorerie_source` -> `compte_tresorerie_boutique.id`), `compte_destination_id` BIGINT facultatif (`fk_operation_tresorerie_destination` ; vide uniquement pour une dépense), `montant` DECIMAL(17,2) strictement positif, `motif` VARCHAR(255) NOT NULL et `date_operation` DATETIME(6) NOT NULL. Index `(boutique_id, date_operation, id)`. Une opération de transfert produit deux mouvements de sens opposés dans une seule transaction ; elle ne change pas le solde total. Voir la [migration trésorerie](migrations/tresorerie.md).
 
 ### `boutique`
 - `id` PK
@@ -221,7 +225,7 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 - `vente_id` FK optionnelle -> `vente.id`, pour les versements clients
 - `client_id` BIGINT NULL, FK `fk_mouvement_caisse_client` -> `client.id` : règlement du solde de départ d'un client (`source=SOLDE_CLIENT`)
 - `fournisseur_id` BIGINT NULL, FK `fk_mouvement_caisse_fournisseur` -> `fournisseur.id` : règlement du solde de départ d'un fournisseur (`source=SOLDE_FOURNISSEUR`)
-- `compte` VARCHAR(32) NOT NULL DEFAULT 'CAISSE' : espèces, Orange Money ou banque pour ce mouvement
+- `compte_id` BIGINT NOT NULL, FK `fk_mouvement_caisse_compte` -> `compte_tresorerie_boutique.id` : compte débité ou crédité par ce mouvement (lot 3 ; remplace l'ancienne énumération `compte`)
 - `operation_tresorerie_id` FK optionnelle -> `operation_tresorerie.id`, pour les transferts et dépenses
 - `retour_id` BIGINT NULL, FK `fk_mouvement_caisse_retour` -> `retour.id` : remboursement d'un retour (lot 2)
 - `annulation_de_id` BIGINT NULL, FK `fk_mouvement_caisse_annulation` -> `mouvement_caisse.id`, UNIQUE `uk_mouvement_caisse_annulation` : mouvement qui en annule un autre, au plus une annulation par mouvement (lot 2)
@@ -254,7 +258,7 @@ Marchandise rendue par un client (`VENTE`, livrée par le retour de vente) ou à
 - `vente_id`, `achat_id`, `client_id`, `fournisseur_id`, `utilisateur_id` BIGINT NULL, clés étrangères vers `vente`, `achat`, `client`, `fournisseur` et `utilisateur`
 - `date_retour` DATETIME(6) NOT NULL
 - `montant_total` DECIMAL(17,2) NOT NULL ; `montant_rembourse` DECIMAL(17,2) NOT NULL DEFAULT 0 ; `montant_avoir` DECIMAL(17,2) NOT NULL DEFAULT 0
-- `compte_tresorerie` VARCHAR(16) NULL : `CAISSE`, `ORANGE_MONEY` ou `BANQUE` (`CompteTresorerie`), compte du remboursement
+- `compte_tresorerie_id` BIGINT NULL, FK `fk_retour_compte_tresorerie` -> `compte_tresorerie_boutique.id` : compte du remboursement (lot 3 ; remplace l'ancienne énumération `compte_tresorerie`)
 - `motif` VARCHAR(255) NULL
 
 ### `detail_retour`

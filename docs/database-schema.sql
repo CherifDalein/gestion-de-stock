@@ -193,14 +193,36 @@ CREATE TABLE IF NOT EXISTS detail_vente (
         FOREIGN KEY (produit_id) REFERENCES produit (id)
 );
 
+-- Lot 3 : comptes de trésorerie multiples. Un compte appartient à une boutique et à un type (ESPECES, ORANGE_MONEY, BANQUE).
+-- principal_type vaut le type du compte principal et reste vide sinon : l'unicité (boutique_id, principal_type) garantit un seul
+-- principal par type. nom_cle est le nom en minuscules : l'unicité du nom ne tient pas compte de la casse.
 CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique (
     id BIGINT NOT NULL AUTO_INCREMENT,
     boutique_id BIGINT NOT NULL,
-    compte VARCHAR(32) NOT NULL,
+    type VARCHAR(32) NOT NULL,
+    nom VARCHAR(60) NOT NULL,
+    nom_cle VARCHAR(60) NOT NULL,
+    numero VARCHAR(40) NULL,
+    principal_type VARCHAR(32) NULL,
+    actif BOOLEAN NOT NULL DEFAULT TRUE,
+    ordre INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
-    CONSTRAINT uk_compte_tresorerie_boutique UNIQUE (boutique_id, compte),
+    CONSTRAINT uk_compte_tresorerie_nom UNIQUE (boutique_id, nom_cle),
+    CONSTRAINT uk_compte_tresorerie_principal UNIQUE (boutique_id, principal_type),
     CONSTRAINT fk_compte_tresorerie_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS compte_tresorerie_autorise (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    utilisateur_id BIGINT NOT NULL,
+    compte_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_compte_tresorerie_autorise UNIQUE (utilisateur_id, compte_id),
+    CONSTRAINT fk_compte_autorise_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_compte_autorise_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS operation_tresorerie (
@@ -209,13 +231,17 @@ CREATE TABLE IF NOT EXISTS operation_tresorerie (
     utilisateur_id BIGINT NOT NULL,
     jeton VARCHAR(36) NOT NULL,
     type VARCHAR(32) NOT NULL,
-    compte_source VARCHAR(32) NOT NULL,
-    compte_destination VARCHAR(32) NULL,
+    compte_source_id BIGINT NOT NULL,
+    compte_destination_id BIGINT NULL,
     montant DECIMAL(17,2) NOT NULL,
     motif VARCHAR(255) NOT NULL,
     date_operation DATETIME(6) NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_operation_tresorerie_jeton UNIQUE (jeton),
+    CONSTRAINT fk_operation_tresorerie_source
+        FOREIGN KEY (compte_source_id) REFERENCES compte_tresorerie_boutique (id),
+    CONSTRAINT fk_operation_tresorerie_destination
+        FOREIGN KEY (compte_destination_id) REFERENCES compte_tresorerie_boutique (id),
     CONSTRAINT fk_operation_tresorerie_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_operation_tresorerie_utilisateur
@@ -276,11 +302,13 @@ CREATE TABLE IF NOT EXISTS retour (
     date_retour DATETIME(6) NOT NULL,
     montant_total DECIMAL(17,2) NOT NULL,
     montant_rembourse DECIMAL(17,2) NOT NULL DEFAULT 0,
-    compte_tresorerie VARCHAR(16) NULL,
+    compte_tresorerie_id BIGINT NULL,
     montant_avoir DECIMAL(17,2) NOT NULL DEFAULT 0,
     motif VARCHAR(255) NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_retour_boutique_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT fk_retour_compte_tresorerie
+        FOREIGN KEY (compte_tresorerie_id) REFERENCES compte_tresorerie_boutique (id),
     CONSTRAINT fk_retour_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
     CONSTRAINT fk_retour_vente
@@ -326,7 +354,7 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     utilisateur_id BIGINT,
     achat_id BIGINT,
     vente_id BIGINT,
-    compte VARCHAR(32) NOT NULL DEFAULT 'CAISSE',
+    compte_id BIGINT NOT NULL,
     operation_tresorerie_id BIGINT NULL,
     client_id BIGINT NULL,
     fournisseur_id BIGINT NULL,
@@ -334,6 +362,8 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
     annulation_de_id BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),
+    CONSTRAINT fk_mouvement_caisse_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id),
     CONSTRAINT fk_mouvement_caisse_retour
         FOREIGN KEY (retour_id) REFERENCES retour (id),
     CONSTRAINT fk_mouvement_caisse_annulation
