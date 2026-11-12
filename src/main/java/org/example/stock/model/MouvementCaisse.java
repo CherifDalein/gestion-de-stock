@@ -72,8 +72,18 @@ public class MouvementCaisse {
     @JoinColumn(name = "annulation_de_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_annulation"))
     private MouvementCaisse annulationDe;
 
+    /**
+     * Comptage de caisse dont ce mouvement est l'ajustement « Écart de caisse » (étape 3b2) ; l'annulation de cet ajustement porte le même
+     * comptage. Vide pour tous les autres mouvements.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comptage_caisse_id", foreignKey = @ForeignKey(name = "fk_mouvement_caisse_comptage"))
+    private ComptageCaisse comptageCaisse;
 
     /** Libellé français de la source pour le journal (les sources de financement ont un libellé clair, les autres restent telles quelles). */
     @Transient
-    public String getSourceLibelle() { return SourceMouvement.libelle(source == null ? null : source.strip()); }
+    public String getSourceLibelle() {
+        if (comptageCaisse != null && !SourceMouvement.ANNULATION.equals(source)) return SourceMouvement.ECART_CAISSE;
+        return SourceMouvement.libelle(source == null ? null : source.strip());
+    }
 }

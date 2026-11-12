@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Lot 3 : comptes de trésorerie multiples. Avant le lot, une boutique avait un compte par type, désigné par une valeur
@@ -24,6 +25,9 @@ import java.util.*;
  *   <li>seulement alors : colonnes rendues obligatoires, contraintes d'unicité et clés étrangères, puis suppression des anciennes
  *       colonnes à énumération.</li>
  * </ol>
+ * L'étape 3b1 (financements) ajoute les partenaires financiers, les emprunts et leur échéancier ; l'étape 3b2 (contrôles) ajoute les comptages de caisse
+ * (avec leur billetage), les ajustements de solde de départ et les inventaires des créances et dettes, ainsi que le lien d'un mouvement vers son comptage.
+ * Une base sans lot 3, une base où seule l'étape 3a est appliquée et une base 3a + 3b1 sont toutes amenées au même schéma par la même commande.
  * Aucune valeur déjà migrée n'est réécrite : un compte renommé ou choisi principal depuis la migration reste tel quel.
  * Le lot 4 doit être terminé (et, par lui, les lots 1 et 2). Syntaxes acceptées par MariaDB 10.4 uniquement.
  */
@@ -31,7 +35,8 @@ public final class Lot3Migration {
     static final String VERROU = "stock_lot3_migration";
     static final List<String> ANCIENS = List.of("CAISSE", "ORANGE_MONEY", "BANQUE");
     static final List<String> TYPES = List.of("ESPECES", "ORANGE_MONEY", "BANQUE");
-    static final String COMPTES = "compte_tresorerie_boutique", AUTORISES = "compte_tresorerie_autorise", PARTENAIRES = "partenaire_financier";
+    static final String COMPTES = "compte_tresorerie_boutique", AUTORISES = "compte_tresorerie_autorise", PARTENAIRES = "partenaire_financier",
+            COMPTAGES = "comptage_caisse";
     private static final Set<Integer> BOOLEEN = Set.of(Types.BOOLEAN, Types.BIT, Types.TINYINT);
     private static final Set<Integer> TEXTE = Set.of(Types.VARCHAR);
     private static final Set<Integer> ENTIER = Set.of(Types.INTEGER);
@@ -61,14 +66,17 @@ public final class Lot3Migration {
             new Champ("boutique", "prochain_numero_emprunt", "BIGINT NOT NULL DEFAULT 1", "BIGINT NOT NULL DEFAULT 1", LONG, 0, true, "1"),
             new Champ("boutique", "prochain_numero_pret", "BIGINT NOT NULL DEFAULT 1", "BIGINT NOT NULL DEFAULT 1", LONG, 0, true, "1"),
             new Champ("operation_tresorerie", "partenaire_financier_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null),
-            new Champ("operation_tresorerie", "emprunt_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null));
+            new Champ("operation_tresorerie", "emprunt_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null),
+            // Étape 3b2 : rattachement de l'ajustement « Écart de caisse » (et de son annulation) à son comptage.
+            new Champ("mouvement_caisse", "comptage_caisse_id", "BIGINT NULL", "BIGINT NULL", LONG, 0, false, null));
     static final List<Cle> CLES = List.of(
             new Cle("mouvement_caisse", "compte_id", "fk_mouvement_caisse_compte", COMPTES),
             new Cle("operation_tresorerie", "compte_source_id", "fk_operation_tresorerie_source", COMPTES),
             new Cle("operation_tresorerie", "compte_destination_id", "fk_operation_tresorerie_destination", COMPTES),
             new Cle("retour", "compte_tresorerie_id", "fk_retour_compte_tresorerie", COMPTES),
             new Cle("operation_tresorerie", "partenaire_financier_id", "fk_operation_tresorerie_partenaire", PARTENAIRES),
-            new Cle("operation_tresorerie", "emprunt_id", "fk_operation_tresorerie_emprunt", "emprunt"));
+            new Cle("operation_tresorerie", "emprunt_id", "fk_operation_tresorerie_emprunt", "emprunt"),
+            new Cle("mouvement_caisse", "comptage_caisse_id", "fk_mouvement_caisse_comptage", COMPTAGES));
     /** Dans l'ordre de création : chaque table ne référence que les précédentes. */
     static final List<TableNeuve> TABLES_FINANCEMENTS = List.of(
             new TableNeuve(PARTENAIRES, "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, nom VARCHAR(80) NOT NULL, nom_cle VARCHAR(80) NOT NULL,"
@@ -102,6 +110,53 @@ public final class Lot3Migration {
                     + " CONSTRAINT fk_imputation_echeance_echeance FOREIGN KEY (echeance_id) REFERENCES echeance_emprunt (id))",
                     Set.of("id", "operation_id", "echeance_id", "capital", "interet", "interet_remis"),
                     List.of(), Map.of("operation_id", "operation_tresorerie", "echeance_id", "echeance_emprunt")));
+    /** Tables de l'étape 3b2 (contrôles) : comptages de caisse et billetage, ajustements de solde de départ, inventaires des créances et dettes. */
+    static final List<TableNeuve> TABLES_CONTROLES = List.of(
+            new TableNeuve(COMPTAGES, "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, compte_id BIGINT NOT NULL, utilisateur_id BIGINT NOT NULL,"
+                    + " date_comptage DATETIME(6) NOT NULL, montant_compte DECIMAL(17,2) NOT NULL, solde_theorique DECIMAL(17,2) NOT NULL, ecart DECIMAL(17,2) NOT NULL,"
+                    + " commentaire VARCHAR(255) NULL, statut VARCHAR(16) NOT NULL, decideur_id BIGINT NULL, date_decision DATETIME(6) NULL, motif_decision VARCHAR(255) NULL,"
+                    + " annule_par_id BIGINT NULL, date_annulation DATETIME(6) NULL, motif_annulation VARCHAR(255) NULL, jeton VARCHAR(36) NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_comptage_caisse_jeton UNIQUE (jeton),"
+                    + " CONSTRAINT fk_comptage_caisse_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                    + " CONSTRAINT fk_comptage_caisse_compte FOREIGN KEY (compte_id) REFERENCES " + COMPTES + " (id),"
+                    + " CONSTRAINT fk_comptage_caisse_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),"
+                    + " CONSTRAINT fk_comptage_caisse_decideur FOREIGN KEY (decideur_id) REFERENCES utilisateur (id),"
+                    + " CONSTRAINT fk_comptage_caisse_annule_par FOREIGN KEY (annule_par_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "boutique_id", "compte_id", "utilisateur_id", "date_comptage", "montant_compte", "solde_theorique", "ecart", "commentaire", "statut",
+                            "decideur_id", "date_decision", "motif_decision", "annule_par_id", "date_annulation", "motif_annulation", "jeton"),
+                    List.of(List.of("jeton")),
+                    Map.of("boutique_id", "boutique", "compte_id", COMPTES, "utilisateur_id", "utilisateur", "decideur_id", "utilisateur", "annule_par_id", "utilisateur")),
+            new TableNeuve("comptage_billetage", "%s (id BIGINT NOT NULL %s, comptage_id BIGINT NOT NULL, coupure INT NOT NULL, quantite INT NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_comptage_billetage UNIQUE (comptage_id, coupure),"
+                    + " CONSTRAINT fk_comptage_billetage_comptage FOREIGN KEY (comptage_id) REFERENCES " + COMPTAGES + " (id))",
+                    Set.of("id", "comptage_id", "coupure", "quantite"), List.of(List.of("comptage_id", "coupure")), Map.of("comptage_id", COMPTAGES)),
+            new TableNeuve("ajustement_solde_depart", "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, client_id BIGINT NULL, fournisseur_id BIGINT NULL,"
+                    + " utilisateur_id BIGINT NOT NULL, date_ajustement DATETIME(6) NOT NULL, ancien_solde DECIMAL(17,2) NOT NULL, nouveau_solde DECIMAL(17,2) NOT NULL,"
+                    + " motif VARCHAR(255) NOT NULL, jeton VARCHAR(36) NOT NULL, PRIMARY KEY (id), CONSTRAINT uk_ajustement_solde_depart_jeton UNIQUE (jeton),"
+                    + " CONSTRAINT fk_ajustement_solde_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                    + " CONSTRAINT fk_ajustement_solde_client FOREIGN KEY (client_id) REFERENCES client (id),"
+                    + " CONSTRAINT fk_ajustement_solde_fournisseur FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),"
+                    + " CONSTRAINT fk_ajustement_solde_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "boutique_id", "client_id", "fournisseur_id", "utilisateur_id", "date_ajustement", "ancien_solde", "nouveau_solde", "motif", "jeton"),
+                    List.of(List.of("jeton")), Map.of("boutique_id", "boutique", "client_id", "client", "fournisseur_id", "fournisseur", "utilisateur_id", "utilisateur")),
+            new TableNeuve("inventaire_creances", "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, utilisateur_id BIGINT NOT NULL, date_inventaire DATE NOT NULL,"
+                    + " date_creation DATETIME(6) NOT NULL, note VARCHAR(255) NULL, jeton VARCHAR(36) NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_inventaire_creances_jeton UNIQUE (jeton),"
+                    + " CONSTRAINT fk_inventaire_creances_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                    + " CONSTRAINT fk_inventaire_creances_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "boutique_id", "utilisateur_id", "date_inventaire", "date_creation", "note", "jeton"),
+                    List.of(List.of("jeton")), Map.of("boutique_id", "boutique", "utilisateur_id", "utilisateur")),
+            new TableNeuve("ligne_inventaire_creances", "%s (id BIGINT NOT NULL %s, inventaire_id BIGINT NOT NULL, type VARCHAR(16) NOT NULL, client_id BIGINT NULL,"
+                    + " fournisseur_id BIGINT NULL, partenaire_financier_id BIGINT NULL, nom VARCHAR(255) NOT NULL, solde_appli DECIMAL(17,2) NOT NULL,"
+                    + " solde_confirme DECIMAL(17,2) NOT NULL, ecart DECIMAL(17,2) NOT NULL, raison VARCHAR(255) NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT fk_ligne_inventaire_inventaire FOREIGN KEY (inventaire_id) REFERENCES inventaire_creances (id),"
+                    + " CONSTRAINT fk_ligne_inventaire_client FOREIGN KEY (client_id) REFERENCES client (id),"
+                    + " CONSTRAINT fk_ligne_inventaire_fournisseur FOREIGN KEY (fournisseur_id) REFERENCES fournisseur (id),"
+                    + " CONSTRAINT fk_ligne_inventaire_partenaire FOREIGN KEY (partenaire_financier_id) REFERENCES " + PARTENAIRES + " (id))",
+                    Set.of("id", "inventaire_id", "type", "client_id", "fournisseur_id", "partenaire_financier_id", "nom", "solde_appli", "solde_confirme", "ecart", "raison"),
+                    List.of(), Map.of("inventaire_id", "inventaire_creances", "client_id", "client", "fournisseur_id", "fournisseur", "partenaire_financier_id", PARTENAIRES)));
+    /** Toutes les tables ajoutées par le lot 3 après les comptes : financements (3b1) puis contrôles (3b2), chacune ne référençant que les précédentes. */
+    static final List<TableNeuve> TABLES_NEUVES = Stream.concat(TABLES_FINANCEMENTS.stream(), TABLES_CONTROLES.stream()).toList();
     /** Anciennes colonnes à énumération, supprimées en dernier. */
     static final List<String[]> ANCIENNES_COLONNES = List.of(
             new String[]{"mouvement_caisse", "compte"}, new String[]{"operation_tresorerie", "compte_source"},
@@ -156,7 +211,7 @@ public final class Lot3Migration {
             if (!dejaFinalise) {
                 ajouterColonnes(c);
                 creerAutorises(c);
-                creerFinancements(c);
+                creerTablesNeuves(c);
                 verifierPresents(c);
                 remplir(c);
                 verifierRemplissage(c, totaux);
@@ -206,9 +261,9 @@ public final class Lot3Migration {
                 + (maria(c) ? " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" : ""));
     }
 
-    /** Tables de l'étape 3b1, vides à la création ; une table déjà présente n'est ni recréée ni modifiée. */
-    static void creerFinancements(Connection c) throws SQLException {
-        for (var t : TABLES_FINANCEMENTS) {
+    /** Tables des étapes 3b1 et 3b2, vides à la création ; une table déjà présente n'est ni recréée ni modifiée. */
+    static void creerTablesNeuves(Connection c) throws SQLException {
+        for (var t : TABLES_NEUVES) {
             if (BoutiquesMigration.tables(c).containsKey(t.nom())) continue;
             sql(c, "CREATE TABLE " + t.nom() + " " + t.creation().formatted("", maria(c) ? "AUTO_INCREMENT" : "GENERATED BY DEFAULT AS IDENTITY").substring(1)
                     + (maria(c) ? " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" : ""));
@@ -279,7 +334,7 @@ public final class Lot3Migration {
             if (col == null || champ.obligatoire() && col.nullable() != DatabaseMetaData.columnNoNulls) manquants++;
         }
         if (!BoutiquesMigration.tables(c).containsKey(AUTORISES)) manquants++;
-        for (var t : TABLES_FINANCEMENTS) if (!BoutiquesMigration.tables(c).containsKey(t.nom())) manquants++;
+        for (var t : TABLES_NEUVES) if (!BoutiquesMigration.tables(c).containsKey(t.nom())) manquants++;
         for (var a : ANCIENNES_COLONNES) if (colonnes(c, a[0]).containsKey(a[1])) manquants++;
         if (colonnes(c, COMPTES).containsKey("nom_cle")) {
             var uniques = indexesUniques(c, COMPTES).values();
@@ -321,7 +376,7 @@ public final class Lot3Migration {
             String cible = cles(c, cle.table()).get(cle.colonne());
             if (cible != null && !cible.equals(cle.cible())) nonConforme(cle.table() + "." + cle.colonne() + " doit référencer " + cle.cible());
         }
-        for (var t : TABLES_FINANCEMENTS) if (BoutiquesMigration.tables(c).containsKey(t.nom())) {
+        for (var t : TABLES_NEUVES) if (BoutiquesMigration.tables(c).containsKey(t.nom())) {
             if (!colonnes(c, t.nom()).keySet().equals(t.colonnes())) nonConforme("colonnes inattendues dans " + t.nom());
             for (var unique : t.uniques()) if (!indexesUniques(c, t.nom()).containsValue(unique)) nonConforme(t.nom() + " : unicité " + unique + " absente");
             if (!cles(c, t.nom()).equals(new TreeMap<>(t.cles()))) nonConforme(t.nom() + " : clés étrangères absentes ou vers une mauvaise table");
@@ -366,9 +421,26 @@ public final class Lot3Migration {
         coherenceBoutiques(c, "operation_tresorerie", "compte_source_id");
         coherenceBoutiques(c, "operation_tresorerie", "compte_destination_id");
         coherenceBoutiques(c, "retour", "compte_tresorerie_id");
+        verifierControles(c);
         if (BoutiquesMigration.tables(c).containsKey(AUTORISES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, AUTORISES) + " a JOIN " + table(c, COMPTES)
                 + " x ON x.id=a.compte_id JOIN " + table(c, "utilisateur") + " u ON u.id=a.utilisateur_id WHERE x.boutique_id<>u.boutique_id") != 0)
             nonConforme("un caissier est autorisé sur le compte d'une autre boutique");
+    }
+
+    /** Étape 3b2 : statut connu, compte de la bonne boutique, un seul partenaire par ajustement, lien d'un mouvement vers un comptage de sa boutique. */
+    private static void verifierControles(Connection c) throws SQLException {
+        var tables = BoutiquesMigration.tables(c);
+        if (tables.containsKey(COMPTAGES)) {
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, COMPTAGES) + " WHERE statut NOT IN ('CONFORME','EN_ATTENTE','VALIDE','REFUSE','ANNULE')") != 0)
+                nonConforme("un comptage de caisse a un statut inconnu");
+            coherenceBoutiques(c, COMPTAGES, "compte_id");
+            if (colonnes(c, "mouvement_caisse").containsKey("comptage_caisse_id") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "mouvement_caisse") + " m JOIN "
+                    + table(c, COMPTAGES) + " x ON x.id=m.comptage_caisse_id WHERE x.boutique_id<>m.boutique_id") != 0)
+                nonConforme("un mouvement référence le comptage d'une autre boutique");
+        }
+        if (tables.containsKey("ajustement_solde_depart") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "ajustement_solde_depart")
+                + " WHERE (client_id IS NULL AND fournisseur_id IS NULL) OR (client_id IS NOT NULL AND fournisseur_id IS NOT NULL)") != 0)
+            nonConforme("un ajustement de solde de départ doit concerner un client ou un fournisseur, pas l'un et l'autre");
     }
 
     /** Un document ne référence jamais le compte d'une autre boutique. */
@@ -408,7 +480,7 @@ public final class Lot3Migration {
     }
 
     private static boolean nouvelleTable(String nom) {
-        for (var t : TABLES_FINANCEMENTS) if (t.nom().equals(nom)) return true;
+        for (var t : TABLES_NEUVES) if (t.nom().equals(nom)) return true;
         return false;
     }
 

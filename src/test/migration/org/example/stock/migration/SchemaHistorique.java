@@ -51,11 +51,21 @@ public final class SchemaHistorique {
     }
 
     /**
+     * Schéma de l'étape 3a + 3b1 : sans les contrôles de l'étape 3b2 (comptages de caisse et billetage, ajustements de solde de départ,
+     * inventaires des créances et dettes) ni le lien d'un mouvement vers son comptage.
+     */
+    public static String sansControles(String schema) {
+        String resultat = schema.replaceAll("(?s)-- Lot 3b2 :.*?-- Fin lot 3b2\\R(?:[ \\t]*\\R)?", "")
+                .replaceAll("(?m)^[ \\t]*comptage_caisse_id BIGINT NULL,[ \\t]*\\R", "");
+        return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_mouvement_caisse_comptage\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
+    }
+
+    /**
      * Schéma de l'étape 3a seule (comptes multiples), sans les financements de l'étape 3b1 : ni les quatre tables, ni les compteurs EM-/PR-
      * de la boutique, ni le partenaire et l'emprunt des opérations de trésorerie.
      */
     public static String sansFinancements(String schema) {
-        String resultat = schema.replaceAll("(?s)-- Lot 3b1 :.*?-- Fin lot 3b1\\R(?:[ \\t]*\\R)?", "");
+        String resultat = sansControles(schema).replaceAll("(?s)-- Lot 3b1 :.*?-- Fin lot 3b1\\R(?:[ \\t]*\\R)?", "");
         for (String ligne : List.of("prochain_numero_emprunt BIGINT NOT NULL DEFAULT 1,", "prochain_numero_pret BIGINT NOT NULL DEFAULT 1,",
                 "partenaire_financier_id BIGINT NULL,", "emprunt_id BIGINT NULL,"))
             resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
