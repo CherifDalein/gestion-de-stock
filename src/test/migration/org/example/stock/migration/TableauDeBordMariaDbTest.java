@@ -3,7 +3,7 @@ package org.example.stock.migration;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.example.stock.config.TrialProperties;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationTresorerie;
@@ -409,13 +409,17 @@ public final class TableauDeBordMariaDbTest {
     }
 
     private void transfert(Env e, LocalDateTime date, String montant) {
-        operation(e, date, montant, TypeOperationTresorerie.TRANSFERT, CompteTresorerie.BANQUE);
+        operation(e, date, montant, TypeOperationTresorerie.TRANSFERT, TypeCompteTresorerie.BANQUE);
     }
 
-    private void operation(Env e, LocalDateTime date, String montant, TypeOperationTresorerie type, CompteTresorerie destination) {
+    private static CompteTresorerieBoutique compte(Env e, TypeCompteTresorerie type) {
+        return e.boutique().getComptesTresorerie().stream().filter(x -> x.getType() == type).findFirst().orElseThrow();
+    }
+
+    private void operation(Env e, LocalDateTime date, String montant, TypeOperationTresorerie type, TypeCompteTresorerie destination) {
         var operation = new OperationTresorerie(); operation.setBoutique(e.boutique()); operation.setUtilisateur(e.gerant());
-        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(CompteTresorerie.CAISSE);
-        operation.setCompteDestination(destination); operation.setMontant(new BigDecimal(montant)); operation.setMotif("Opération");
+        operation.setJeton(UUID.randomUUID().toString()); operation.setType(type); operation.setCompteSource(compte(e, TypeCompteTresorerie.ESPECES));
+        operation.setCompteDestination(destination == null ? null : compte(e, destination)); operation.setMontant(new BigDecimal(montant)); operation.setMotif("Opération");
         operation.setDateOperation(date); operations.saveAndFlush(operation);
     }
 

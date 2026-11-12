@@ -1,6 +1,7 @@
 package org.example.stock.migration;
 
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Les scénarios des migrations antérieures reconstruisent leur schéma d'origine. */
@@ -20,11 +21,38 @@ public final class SchemaHistorique {
             "CONSTRAINT uk_mouvement_caisse_annulation UNIQUE (annulation_de_id),");
     private static final List<String> LIGNES_LOT4 = List.of(
             "format_recu VARCHAR(16) NOT NULL DEFAULT 'A4',", "proposer_impression_recu BOOLEAN NOT NULL DEFAULT TRUE,");
+    private static final String COMPTES_AVANT_LOT3 = """
+            CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique (
+                id BIGINT NOT NULL AUTO_INCREMENT,
+                boutique_id BIGINT NOT NULL,
+                compte VARCHAR(32) NOT NULL,
+                PRIMARY KEY (id),
+                CONSTRAINT uk_compte_tresorerie_boutique UNIQUE (boutique_id, compte),
+                CONSTRAINT fk_compte_tresorerie_boutique
+                    FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+            ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+            """;
     private SchemaHistorique() {}
+
+    /**
+     * Schéma antérieur au lot 3 (comptes de trésorerie multiples) : un compte par type désigné par une valeur d'énumération
+     * ({@code CAISSE}, {@code ORANGE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
+     * et {@code retour.compte_tresorerie}, sans table des comptes autorisés aux caissiers.
+     */
+    public static String sansLot3(String schema) {
+        String resultat = schema.replaceAll("(?m)^-- Lot 3 : [^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        resultat = resultat.replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", Matcher.quoteReplacement(COMPTES_AVANT_LOT3))
+                .replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_autorise \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
+        resultat = resultat.replace("    compte_source_id BIGINT NOT NULL,\n    compte_destination_id BIGINT NULL,\n", "    compte_source VARCHAR(32) NOT NULL,\n    compte_destination VARCHAR(32) NULL,\n")
+                .replace("    compte_tresorerie_id BIGINT NULL,\n", "    compte_tresorerie VARCHAR(16) NULL,\n")
+                .replace("    compte_id BIGINT NOT NULL,\n", "    compte VARCHAR(32) NOT NULL DEFAULT 'CAISSE',\n");
+        return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_(?:operation_tresorerie_source|operation_tresorerie_destination|retour_compte_tresorerie|mouvement_caisse_compte)\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
+    }
 
     /** Schéma antérieur au lot 4 : sans le format des reçus ni le réglage du bouton « Imprimer le reçu » de la boutique. */
     public static String sansLot4(String schema) {
-        String resultat = schema;
+        String resultat = sansLot3(schema);
         for (String ligne : LIGNES_LOT4) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
         return resultat;
     }

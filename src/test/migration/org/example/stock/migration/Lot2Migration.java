@@ -333,10 +333,15 @@ public final class Lot2Migration {
     /** Une table déjà présente doit avoir exactement la forme attendue : colonnes, clé primaire, uniques, relations sans cascade, moteur. */
     private static void verifierTable(Connection c, Table table) throws SQLException {
         var cols = colonnes(c, table.nom());
-        if (!cols.keySet().equals(table.noms())) nonConforme("colonnes inattendues dans " + table.nom());
+        // Le lot 3 remplace retour.compte_tresorerie (énumération) par retour.compte_tresorerie_id (compte de la boutique).
+        boolean lot3 = table.nom().equals(RETOUR) && Lot3Migration.appliquee(c);
+        var attendues0 = new HashSet<>(table.noms());
+        if (lot3) { attendues0.remove("compte_tresorerie"); attendues0.add("compte_tresorerie_id"); }
+        if (!cols.keySet().equals(attendues0)) nonConforme("colonnes inattendues dans " + table.nom());
         var identifiant = cols.get("id");
         if (identifiant.type() != Types.BIGINT || identifiant.nullable() != DatabaseMetaData.columnNoNulls || !identifiant.autoIncrement()) nonConforme(table.nom() + ".id doit être BIGINT auto-incrémenté");
         for (var champ : table.champs()) {
+            if (lot3 && champ.nom().equals("compte_tresorerie")) continue;
             var col = cols.get(champ.nom());
             verifierColonne(champ, col, true);
             if (col.autoIncrement()) nonConforme(champ.cle() + " ne doit pas être auto-incrémenté");
@@ -360,8 +365,9 @@ public final class Lot2Migration {
             if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, DEVIS) + " d LEFT JOIN " + table(c, "boutique") + " b ON b.id=d.boutique_id WHERE b.id IS NULL") != 0) nonConforme("un devis référence une boutique absente");
         }
         if (existe(c, RETOUR)) {
+            String compteConnu = colonnes(c, RETOUR).containsKey("compte_tresorerie") ? " OR compte_tresorerie IS NOT NULL AND compte_tresorerie NOT IN ('CAISSE','ORANGE_MONEY','BANQUE')" : "";
             if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, RETOUR) + " WHERE type NOT IN ('VENTE','ACHAT') OR montant_total<0 OR montant_rembourse<0 OR montant_avoir<0"
-                    + " OR compte_tresorerie IS NOT NULL AND compte_tresorerie NOT IN ('CAISSE','ORANGE_MONEY','BANQUE')") != 0) nonConforme("un retour a un type ou un compte inconnu ou un montant négatif");
+                    + compteConnu) != 0) nonConforme("un retour a un type ou un compte inconnu ou un montant négatif");
         }
         var boutique = colonnes(c, "boutique");
         for (String nom : List.of("prochain_numero_devis", "prochain_numero_retour_vente", "prochain_numero_retour_achat")) if (boutique.containsKey(nom)
@@ -417,7 +423,7 @@ public final class Lot2Migration {
         try (var r = c.getMetaData().getImportedKeys(c.getCatalog(), c.getSchema(), BoutiquesMigration.tables(c).get(nom))) {
             while (r.next()) {
                 String colonne = r.getString("FKCOLUMN_NAME").toLowerCase(Locale.ROOT);
-                if (!nouvelle && !colonnesLot2.contains(colonne)) continue;
+                if (!nouvelle && !colonnesLot2.contains(colonne) || colonne.equals("compte_tresorerie_id")) continue;
                 if (r.getShort("KEY_SEQ") != 1 || !r.getString("PKCOLUMN_NAME").equalsIgnoreCase("id")
                         || !Set.of((int) DatabaseMetaData.importedKeyNoAction, (int) DatabaseMetaData.importedKeyRestrict).contains((int) r.getShort("DELETE_RULE"))
                         || !Set.of((int) DatabaseMetaData.importedKeyNoAction, (int) DatabaseMetaData.importedKeyRestrict).contains((int) r.getShort("UPDATE_RULE"))

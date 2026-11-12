@@ -2,7 +2,6 @@ package org.example.stock.migration;
 
 import jakarta.persistence.EntityManager;
 import org.example.stock.StockApplication;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationCreation;
 import org.example.stock.model.*;
@@ -135,7 +134,7 @@ public class RetourVenteMariaDbTest {
             RetourVenteForm form = new RetourVenteForm();
             RetourVenteForm.Ligne l = new RetourVenteForm.Ligne(); l.setDetailVenteId(ligne); l.setQuantite(quantite);
             form.setLignes(new ArrayList<>(List.of(l))); form.setModeRemboursement(mode);
-            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement(CompteTresorerie.CAISSE);
+            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement("ESPECES");
             form.setRetoursConnus(0L);
             retourService.enregistrer(venteId, form);
         } finally { SecurityContextHolder.clearContext(); }
@@ -143,7 +142,7 @@ public class RetourVenteMariaDbTest {
 
     private void regler(long venteId, String montant) {
         connecter();
-        try { venteService.reglerVente(venteId, new BigDecimal(montant), BigDecimal.ZERO, CompteTresorerie.CAISSE); }
+        try { venteService.reglerVente(venteId, new BigDecimal(montant), BigDecimal.ZERO, "ESPECES"); }
         finally { SecurityContextHolder.clearContext(); }
     }
 

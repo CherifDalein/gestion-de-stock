@@ -4,7 +4,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.validation.Validator;
 import org.example.stock.config.TrialProperties;
-import org.example.stock.enums.CompteTresorerie;
+import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.Role;
 import org.example.stock.form.OuvertureCaisseForm;
 import org.example.stock.form.TransfertTresorerieForm;
@@ -47,7 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 
-import static org.example.stock.enums.CompteTresorerie.*;
+import static org.example.stock.enums.TypeCompteTresorerie.*;
 
 /** Services réels et transactions MariaDB, exclusivement dans une base jetable, sans serveur web ni emails. */
 public final class TresorerieServiceMariaDbTest {
@@ -134,12 +134,12 @@ public final class TresorerieServiceMariaDbTest {
     }
 
     private void tousLesSens() {
-        for (CompteTresorerie source : CompteTresorerie.values()) for (CompteTresorerie destination : CompteTresorerie.values()) {
+        for (TypeCompteTresorerie source : TypeCompteTresorerie.values()) for (TypeCompteTresorerie destination : TypeCompteTresorerie.values()) {
             if (source == destination) continue;
             Env e = environnement();
             caisse.transferer(transfert(source, destination, "80"));
-            exiger(caisse.getSoldeCompte(source).compareTo(new BigDecimal("20")) == 0, "Le compte source n'a pas été débité.");
-            exiger(caisse.getSoldeCompte(destination).compareTo(new BigDecimal("180")) == 0, "Le compte destination n'a pas été crédité.");
+            exiger(caisse.getSoldesParType().get(source).compareTo(new BigDecimal("20")) == 0, "Le compte source n'a pas été débité.");
+            exiger(caisse.getSoldesParType().get(destination).compareTo(new BigDecimal("180")) == 0, "Le compte destination n'a pas été crédité.");
             exiger(caisse.getSoldeActuel().compareTo(new BigDecimal("300")) == 0, "Un transfert a modifié le total.");
             exiger(caisse.listerTous().size() == 5, "Les deux écritures liées sont absentes ou dupliquées.");
             reussi("transfert " + source + " vers " + destination);
@@ -150,7 +150,7 @@ public final class TresorerieServiceMariaDbTest {
         Env e = environnement();
         var f = depense(BANQUE, "40");
         exiger(!caisse.depenser(f) && caisse.depenser(f), "La répétition exacte de dépense n'est pas idempotente.");
-        exiger(caisse.getSoldeCompte(BANQUE).compareTo(new BigDecimal("60")) == 0, "La dépense a été comptée plusieurs fois.");
+        exiger(caisse.getSoldesParType().get(BANQUE).compareTo(new BigDecimal("60")) == 0, "La dépense a été comptée plusieurs fois.");
         exiger(caisse.getSoldeActuel().compareTo(new BigDecimal("260")) == 0 && caisse.listerTous().size() == 4,
                 "La dépense affecte plusieurs comptes ou son historique est incorrect.");
         f.setMontant(new BigDecimal("41"));
@@ -163,25 +163,25 @@ public final class TresorerieServiceMariaDbTest {
         Env e = environnement();
         var resultats = concurrent(() -> {
             connecter(e.premier());
-            return resultat(() -> caisse.transferer(transfert(BANQUE, CAISSE, "80")));
+            return resultat(() -> caisse.transferer(transfert(BANQUE, ESPECES, "80")));
         }, () -> {
             connecter(e.second());
             return resultat(() -> caisse.depenser(depense(BANQUE, "80")));
         });
         connecter(e.premier());
         exiger(resultats.contains("ok") && resultats.contains("insuffisant"), "Deux demandes ont consommé le même solde.");
-        exiger(caisse.getSoldeCompte(BANQUE).compareTo(new BigDecimal("20")) == 0, "Le solde après attente n'a pas été relu.");
-        exiger(caisse.getSoldesParCompte().values().stream().noneMatch(v -> v.signum() < 0), "Un compte est devenu négatif.");
+        exiger(caisse.getSoldesParType().get(BANQUE).compareTo(new BigDecimal("20")) == 0, "Le solde après attente n'a pas été relu.");
+        exiger(caisse.getSoldesParType().values().stream().noneMatch(v -> v.signum() < 0), "Un compte est devenu négatif.");
         reussi("transfert et dépense concurrents : relecture après verrou avec serveur REPEATABLE READ");
     }
 
     private void concurrenceInverse() throws Exception {
         Env e = environnement();
-        concurrent(() -> { connecter(e.premier()); caisse.transferer(transfert(CAISSE, ORANGE_MONEY, "80")); return "ok"; },
-                () -> { connecter(e.second()); caisse.transferer(transfert(ORANGE_MONEY, CAISSE, "80")); return "ok"; });
+        concurrent(() -> { connecter(e.premier()); caisse.transferer(transfert(ESPECES, ORANGE_MONEY, "80")); return "ok"; },
+                () -> { connecter(e.second()); caisse.transferer(transfert(ORANGE_MONEY, ESPECES, "80")); return "ok"; });
         connecter(e.premier());
-        exiger(caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("100")) == 0
-                && caisse.getSoldeCompte(ORANGE_MONEY).compareTo(new BigDecimal("100")) == 0,
+        exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("100")) == 0
+                && caisse.getSoldesParType().get(ORANGE_MONEY).compareTo(new BigDecimal("100")) == 0,
                 "Les transferts inverses ont perdu une écriture.");
         exiger(caisse.getSoldeActuel().compareTo(new BigDecimal("300")) == 0 && caisse.listerTous().size() == 7,
                 "Le total ou les quatre jambes sont incorrects.");
@@ -221,7 +221,7 @@ public final class TresorerieServiceMariaDbTest {
             second.get(15, TimeUnit.SECONDS);
         }
         connecter(e.premier());
-        exiger(caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("120")) == 0
+        exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("120")) == 0
                 && caisse.getSoldeActuel().compareTo(new BigDecimal("320")) == 0 && caisse.listerTous().size() == 5,
                 "Les deux encaissements du même acteur n'ont pas conservé leurs écritures.");
         reussi("deux encaissements d'une même boutique s'exécutent l'un après l'autre");
@@ -238,11 +238,11 @@ public final class TresorerieServiceMariaDbTest {
                     new TransactionTemplate(transactions).execute(status -> {
                         // Ordre global des verrous : la boutique, puis le compte.
                         verrous.verrouillerBoutiqueCourante();
-                        comptes.verrouillerLecture(e.boutique().getId(), CAISSE).orElseThrow();
+                        comptes.verrouillerLecture(e.boutique().getId(), idCompte(e, ESPECES)).orElseThrow();
                         comptePris.countDown();
                         try { exiger(terminerPaiement.await(10, TimeUnit.SECONDS), "L'paiement n'a pas été libéré."); }
                         catch (InterruptedException exception) { Thread.currentThread().interrupt(); throw new IllegalStateException(exception); }
-                        caisse.enregistrerSortieAchat(new BigDecimal("10"), "Paiement fournisseur concurrent", null, e.premier(), CAISSE);
+                        caisse.enregistrerSortieAchat(new BigDecimal("10"), "Paiement fournisseur concurrent", null, e.premier(), idCompte(e, ESPECES));
                         return null;
                     });
                 } finally { SecurityContextHolder.clearContext(); }
@@ -250,7 +250,7 @@ public final class TresorerieServiceMariaDbTest {
             exiger(comptePris.await(5, TimeUnit.SECONDS), "Le verrou du compte n'a pas été acquis.");
             var transfert = executeur.submit(() -> {
                 connecter(e.premier());
-                try { transfertDemarre.countDown(); caisse.transferer(transfert(CAISSE, ORANGE_MONEY, "80")); }
+                try { transfertDemarre.countDown(); caisse.transferer(transfert(ESPECES, ORANGE_MONEY, "80")); }
                 finally { SecurityContextHolder.clearContext(); }
             });
             try {
@@ -272,26 +272,26 @@ public final class TresorerieServiceMariaDbTest {
             paiement.get(15, TimeUnit.SECONDS); transfert.get(15, TimeUnit.SECONDS);
         }
         connecter(e.premier());
-        exiger(caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("10")) == 0
-                && caisse.getSoldeCompte(ORANGE_MONEY).compareTo(new BigDecimal("180")) == 0
+        exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("10")) == 0
+                && caisse.getSoldesParType().get(ORANGE_MONEY).compareTo(new BigDecimal("180")) == 0
                 && caisse.getSoldeActuel().compareTo(new BigDecimal("290")) == 0,
                 "L'paiement et le transfert du même acteur n'ont pas conservé les écritures.");
         reussi("paiement et transfert du même acteur : aucune inversion des verrous auteur/compte");
     }
 
     private void repetitionConcurrente() throws Exception {
-        Env e = environnement(); var f = transfert(CAISSE, BANQUE, "70");
+        Env e = environnement(); var f = transfert(ESPECES, BANQUE, "70");
         var resultats = concurrent(() -> { connecter(e.premier()); return String.valueOf(caisse.transferer(f)); },
                 () -> { connecter(e.premier()); return String.valueOf(caisse.transferer(f)); });
         connecter(e.premier());
         exiger(resultats.contains("true") && resultats.contains("false"), "Les renvois n'ont pas été reconnus.");
-        exiger(caisse.listerTous().size() == 5 && caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("30")) == 0,
+        exiger(caisse.listerTous().size() == 5 && caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("30")) == 0,
                 "Un formulaire concurrent a débité deux fois.");
         reussi("même transfert concurrent appliqué une seule fois");
     }
 
     private void isolationBoutiques() {
-        Env a = environnement(); var f = transfert(CAISSE, BANQUE, "70"); caisse.transferer(f);
+        Env a = environnement(); var f = transfert(ESPECES, BANQUE, "70"); caisse.transferer(f);
         Env b = environnement();
         try { caisse.transferer(f); throw new IllegalStateException("Un jeton étranger a été accepté."); }
         catch (OperationTresorerieConflitException attendu) { }
@@ -302,7 +302,7 @@ public final class TresorerieServiceMariaDbTest {
     }
 
     private void rollbackComplet() {
-        Env e = environnement(); var f = transfert(CAISSE, BANQUE, "70");
+        Env e = environnement(); var f = transfert(ESPECES, BANQUE, "70");
         var tx = new TransactionTemplate(transactions); tx.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         try {
             tx.execute(status -> { caisse.transferer(f); throw new IllegalArgumentException("annulation de test"); });
@@ -310,8 +310,8 @@ public final class TresorerieServiceMariaDbTest {
         } catch (IllegalArgumentException attendu) { }
         exiger(operations.findByJeton(f.getJetonOperation()).isEmpty() && caisse.listerTous().size() == 3,
                 "Une annulation a conservé une opération ou une seule jambe.");
-        exiger(caisse.getSoldeCompte(CAISSE).compareTo(new BigDecimal("100")) == 0
-                && caisse.getSoldeCompte(BANQUE).compareTo(new BigDecimal("100")) == 0,
+        exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("100")) == 0
+                && caisse.getSoldesParType().get(BANQUE).compareTo(new BigDecimal("100")) == 0,
                 "Une annulation a modifié les comptes.");
         reussi("annulation atomique du transfert et de ses deux écritures");
     }
@@ -319,11 +319,15 @@ public final class TresorerieServiceMariaDbTest {
     private Env environnement() {
         Boutique b = new Boutique(); b.setNom("Boutique trésorerie temporaire"); b = boutiques.saveAndFlush(b);
         Utilisateur premier = compte(b), second = compte(b); connecter(premier);
-        for (var compte : CompteTresorerie.values()) {
-            var f = new OuvertureCaisseForm(); f.setComptePaiement(compte); f.setMontant(new BigDecimal("100")); caisse.initialiser(f);
+        for (var compte : TypeCompteTresorerie.values()) {
+            var f = new OuvertureCaisseForm(); f.setComptePaiement(compte.name()); f.setMontant(new BigDecimal("100")); caisse.initialiser(f);
         }
         b.setInitialisationTerminee(true); boutiques.saveAndFlush(b);
         return new Env(b, premier, second);
+    }
+
+    private static Long idCompte(Env e, TypeCompteTresorerie type) {
+        return e.boutique().getComptesTresorerie().stream().filter(x -> x.getType() == type).findFirst().orElseThrow().getId();
     }
 
     private Utilisateur compte(Boutique b) {
@@ -337,13 +341,13 @@ public final class TresorerieServiceMariaDbTest {
                 List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))); SecurityContextHolder.setContext(contexte);
     }
 
-    private static TransfertTresorerieForm transfert(CompteTresorerie source, CompteTresorerie destination, String montant) {
-        var f = new TransfertTresorerieForm(); f.setCompteSource(source); f.setCompteDestination(destination);
+    private static TransfertTresorerieForm transfert(TypeCompteTresorerie source, TypeCompteTresorerie destination, String montant) {
+        var f = new TransfertTresorerieForm(); f.setCompteSource(source.name()); f.setCompteDestination(destination.name());
         f.setMontant(new BigDecimal(montant)); f.setMotif("Transfert MariaDB temporaire"); f.setJetonOperation(UUID.randomUUID().toString()); return f;
     }
 
-    private static DepenseTresorerieForm depense(CompteTresorerie source, String montant) {
-        var f = new DepenseTresorerieForm(); f.setCompteSource(source); f.setMontant(new BigDecimal(montant));
+    private static DepenseTresorerieForm depense(TypeCompteTresorerie source, String montant) {
+        var f = new DepenseTresorerieForm(); f.setCompteSource(source.name()); f.setMontant(new BigDecimal(montant));
         f.setMotif("Dépense MariaDB temporaire"); f.setJetonOperation(UUID.randomUUID().toString()); return f;
     }
 

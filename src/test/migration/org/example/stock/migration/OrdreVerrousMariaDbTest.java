@@ -2,7 +2,6 @@ package org.example.stock.migration;
 
 import jakarta.persistence.EntityManager;
 import org.example.stock.StockApplication;
-import org.example.stock.enums.CompteTresorerie;
 import org.example.stock.enums.ModeRemboursement;
 import org.example.stock.enums.Role;
 import org.example.stock.enums.TypeOperationCreation;
@@ -11,6 +10,8 @@ import org.example.stock.form.RetourVenteForm;
 import org.example.stock.model.*;
 import org.example.stock.service.AchatService;
 import org.example.stock.service.AnnulationReglementService;
+import org.example.stock.service.CaisseService;
+import org.example.stock.service.ComptesTresorerieService;
 import org.example.stock.service.ReglementVenteObsoleteException;
 import org.example.stock.service.OperationCreationService;
 import org.example.stock.service.RetourAchatService;
@@ -61,6 +62,8 @@ public class OrdreVerrousMariaDbTest {
     private final VenteService venteService;
     private final SoldeDepartService soldeDepartService;
     private final AnnulationReglementService annulationService;
+    private final CaisseService caisseService;
+    private final ComptesTresorerieService comptesService;
     private final TransactionTemplate transaction;
     private final JdbcTemplate jdbc;
     private EntityManager em;
@@ -106,6 +109,8 @@ public class OrdreVerrousMariaDbTest {
         venteService = contexte.getBean(VenteService.class);
         soldeDepartService = contexte.getBean(SoldeDepartService.class);
         annulationService = contexte.getBean(AnnulationReglementService.class);
+        caisseService = contexte.getBean(CaisseService.class);
+        comptesService = contexte.getBean(ComptesTresorerieService.class);
         transaction = new TransactionTemplate(contexte.getBean(PlatformTransactionManager.class));
         transaction.setTimeout(30);
         jdbc = contexte.getBean(JdbcTemplate.class);
@@ -218,7 +223,7 @@ public class OrdreVerrousMariaDbTest {
                     () -> retournerVente(b, venteB, 1, ModeRemboursement.AVOIR), () -> achat(a, a.fournisseurAvanceId, 1, "0"));
         }
         // Fonds de départ de la caisse : les scénarios précédents l'ont vidée, et annuler un encaissement exige le solde du compte.
-        jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte) SELECT boutique_id,NOW(6),100000000,'OUVERTURE','Fonds de test','SOLDE_INITIAL','CAISSE' FROM utilisateur WHERE email=?", a.email);
+        fonds(a, "ESPECES", "100000000");
         // 7. Annulation d'un règlement + nouveau règlement de la même vente (le second peut légitimement être périmé si l'annulation passe d'abord).
         for (int tour = 0; tour < TOURS; tour++) {
             connecter(a);
@@ -246,6 +251,33 @@ public class OrdreVerrousMariaDbTest {
             exiger(decimal("SELECT montant_verse FROM vente WHERE id=" + credit).compareTo(new BigDecimal(annule ? "40000" : "50000")) == 0, "Montant versé cohérent (annulé=" + annule + ")");
             exiger(decimal("SELECT montant_retours FROM vente WHERE id=" + credit).compareTo(new BigDecimal("12000")) == 0, "Retour enregistré");
         }
+        // 9. Comptes multiples (lot 3) : deux comptes Orange Money d'une même boutique. Des transferts croisés (A vers B et B vers A) ne se
+        //    bloquent pas (les comptes sont verrouillés par identifiant croissant), pas plus qu'un règlement de vente sur un compte pendant
+        //    un transfert qui le débite, ou l'archivage d'un compte vide pendant une écriture sur l'autre compte du même type.
+        connecter(a);
+        long orange1 = comptePrincipal(a, "ORANGE_MONEY");
+        long orange2 = creerCompte(a, "Orange Money Labé", "ORANGE_MONEY");
+        fonds(a, "ORANGE_MONEY", "50000000");
+        jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte_id) SELECT boutique_id,NOW(6),50000000,'OUVERTURE','Fonds de test','SOLDE_INITIAL',id FROM compte_tresorerie_boutique WHERE id=?", orange2);
+        BigDecimal totalOrange = totalType(a, "ORANGE_MONEY");
+        for (int tour = 0; tour < TOURS; tour++) {
+            simultanesSansErreur("transferts croisés entre deux comptes #" + tour,
+                    () -> transferer(a, orange1, orange2, "1000"), () -> transferer(a, orange2, orange1, "1000"),
+                    () -> transferer(a, orange1, orange2, "500"), () -> transferer(a, orange2, orange1, "500"));
+        }
+        exiger(totalType(a, "ORANGE_MONEY").compareTo(totalOrange) == 0, "Le total du type Orange Money est inchangé par les transferts");
+        for (int tour = 0; tour < TOURS; tour++) {
+            connecter(a);
+            vente(a, a.clientId, 5, "0");
+            long credit = dernier("vente");
+            simultanesSansErreur("règlement de vente sur un compte+transfert qui le débite #" + tour,
+                    () -> reglerVenteSur(a, credit, "10000", BigDecimal.ZERO, orange1), () -> transferer(a, orange1, orange2, "1000"));
+            exiger(decimal("SELECT montant_verse FROM vente WHERE id=" + credit).compareTo(new BigDecimal("10000")) == 0, "Règlement enregistré sur le compte choisi");
+        }
+        long videId = creerCompte(a, "Orange vide", "ORANGE_MONEY");
+        simultanesSansErreur("archivage d'un compte vide+écriture sur un autre compte du même type",
+                () -> archiver(a, videId), () -> reglerVenteSur(a, dernier("vente"), "1000", new BigDecimal("10000"), orange2));
+        exiger(decimal("SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id=" + videId + " AND actif=FALSE").signum() > 0, "Le compte vide est archivé");
         // Invariants finaux : numéros distincts par boutique, aucune avance utilisée en excès.
         for (String table : List.of("achat", "vente", "retour")) {
             exiger(decimal("SELECT COUNT(*) - COUNT(DISTINCT boutique_id, numero) FROM " + table).signum() == 0, "Numéros distincts par boutique : " + table);
@@ -264,7 +296,7 @@ public class OrdreVerrousMariaDbTest {
             RetourAchatForm form = new RetourAchatForm();
             RetourAchatForm.Ligne l = new RetourAchatForm.Ligne(); l.setDetailAchatId(ligne); l.setQuantite(quantite);
             form.setLignes(new ArrayList<>(List.of(l))); form.setModeRemboursement(mode);
-            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement(CompteTresorerie.CAISSE);
+            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement("ESPECES");
             form.setRetoursConnus(0L);
             retourAchatService.enregistrer(achatId, form);
         } finally { SecurityContextHolder.clearContext(); }
@@ -277,7 +309,7 @@ public class OrdreVerrousMariaDbTest {
             RetourVenteForm form = new RetourVenteForm();
             RetourVenteForm.Ligne l = new RetourVenteForm.Ligne(); l.setDetailVenteId(ligne); l.setQuantite(quantite);
             form.setLignes(new ArrayList<>(List.of(l))); form.setModeRemboursement(mode);
-            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement(CompteTresorerie.CAISSE);
+            if (mode == ModeRemboursement.ARGENT) form.setComptePaiement("ESPECES");
             form.setRetoursConnus(0L);
             retourVenteService.enregistrer(venteId, form);
         } finally { SecurityContextHolder.clearContext(); }
@@ -285,25 +317,25 @@ public class OrdreVerrousMariaDbTest {
 
     private void reglerAchat(Boutiquier t, long achatId, String montant, BigDecimal verseAttendu) {
         connecter(t);
-        try { achatService.reglerAchat(achatId, new BigDecimal(montant), verseAttendu, CompteTresorerie.CAISSE); }
+        try { achatService.reglerAchat(achatId, new BigDecimal(montant), verseAttendu, "ESPECES"); }
         finally { SecurityContextHolder.clearContext(); }
     }
 
     private void reglerVente(Boutiquier t, long venteId, String montant, BigDecimal verseAttendu) {
         connecter(t);
-        try { venteService.reglerVente(venteId, new BigDecimal(montant), verseAttendu, CompteTresorerie.CAISSE); }
+        try { venteService.reglerVente(venteId, new BigDecimal(montant), verseAttendu, "ESPECES"); }
         finally { SecurityContextHolder.clearContext(); }
     }
 
     private void reglerSoldeClient(Boutiquier t, String montant, BigDecimal attendu) {
         connecter(t);
-        try { soldeDepartService.reglerClient(t.clientSoldeDepartId, new BigDecimal(montant), attendu, CompteTresorerie.CAISSE, null); }
+        try { soldeDepartService.reglerClient(t.clientSoldeDepartId, new BigDecimal(montant), attendu, "ESPECES", null); }
         finally { SecurityContextHolder.clearContext(); }
     }
 
     private void reglerSoldeFournisseur(Boutiquier t, long fournisseurId, String montant, BigDecimal attendu) {
         connecter(t);
-        try { soldeDepartService.reglerFournisseur(fournisseurId, new BigDecimal(montant), attendu, CompteTresorerie.CAISSE, null); }
+        try { soldeDepartService.reglerFournisseur(fournisseurId, new BigDecimal(montant), attendu, "ESPECES", null); }
         finally { SecurityContextHolder.clearContext(); }
     }
 
@@ -368,6 +400,52 @@ public class OrdreVerrousMariaDbTest {
             }
         }
         exiger(erreurs.isEmpty(), "Aucune erreur attendue (" + scenario + ") : " + erreurs);
+    }
+
+    private void fonds(Boutiquier t, String type, String montant) {
+        jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte_id) SELECT u.boutique_id,NOW(6),?,'OUVERTURE','Fonds de test','SOLDE_INITIAL',c.id"
+                + " FROM utilisateur u JOIN compte_tresorerie_boutique c ON c.boutique_id=u.boutique_id AND c.type=? AND c.principal_type IS NOT NULL WHERE u.email=?", new BigDecimal(montant), type, t.email);
+    }
+
+    private long comptePrincipal(Boutiquier t, String type) {
+        return jdbc.queryForObject("SELECT c.id FROM compte_tresorerie_boutique c JOIN utilisateur u ON u.boutique_id=c.boutique_id WHERE u.email=? AND c.type=? AND c.principal_type IS NOT NULL",
+                Long.class, t.email, type);
+    }
+
+    private long creerCompte(Boutiquier t, String nom, String type) {
+        connecter(t);
+        try {
+            var form = new org.example.stock.form.CompteTresorerieForm();
+            form.setType(org.example.stock.enums.TypeCompteTresorerie.valueOf(type)); form.setNom(nom);
+            return comptesService.creer(form).getId();
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void archiver(Boutiquier t, long compteId) {
+        connecter(t);
+        try { comptesService.archiver(compteId); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void transferer(Boutiquier t, long source, long destination, String montant) {
+        connecter(t);
+        try {
+            var f = new org.example.stock.form.TransfertTresorerieForm();
+            f.setCompteSource(String.valueOf(source)); f.setCompteDestination(String.valueOf(destination)); f.setMontant(new BigDecimal(montant));
+            f.setMotif("Transfert concurrent"); f.setJetonOperation(java.util.UUID.randomUUID().toString());
+            caisseService.transferer(f);
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void reglerVenteSur(Boutiquier t, long venteId, String montant, BigDecimal verseAttendu, long compteId) {
+        connecter(t);
+        try { venteService.reglerVente(venteId, new BigDecimal(montant), verseAttendu, String.valueOf(compteId)); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private BigDecimal totalType(Boutiquier t, String type) {
+        return decimal("SELECT COALESCE(SUM(m.montant),0) FROM mouvement_caisse m JOIN compte_tresorerie_boutique c ON c.id=m.compte_id JOIN utilisateur u ON u.boutique_id=c.boutique_id"
+                + " WHERE c.type='" + type + "' AND u.email='" + t.email + "'");
     }
 
     private long dernier(String table) { return decimal("SELECT MAX(id) FROM " + table).longValue(); }
