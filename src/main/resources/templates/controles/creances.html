@@ -1,0 +1,34 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/controles.css}">
+    <section class="record-page fin-page ctl-page" aria-labelledby="creancesTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Contrôles</p><h1 id="creancesTitre">Inventaire des créances et dettes</h1>
+                <p class="record-intro">Notez le solde que chaque client ou fournisseur vous confirme et comparez-le à celui de l'application. L'inventaire ne modifie aucun solde.</p></div>
+            <div class="fin-actions">
+                <a th:href="@{/controles/creances/nouveau}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvel inventaire</a>
+            </div>
+        </header>
+        <div th:replace="~{controles/navigation :: onglets('creances')}"></div>
+        <div th:replace="~{controles/navigation :: alertes}"></div>
+        <section class="record-panel" aria-labelledby="inventairesListeTitre">
+            <div class="record-panel-heading"><h2 id="inventairesListeTitre" th:text="${#lists.size(inventaires) + (#lists.size(inventaires) == 1 ? ' inventaire' : ' inventaires')}">0 inventaire</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(inventaires)}">Aucun inventaire pour le moment.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(inventaires)}">
+                <table class="table fin-table fin-empilee">
+                    <thead><tr><th>Numéro</th><th>Date</th><th class="text-end">Partenaires</th><th class="text-end">Écarts</th><th>Saisi par</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${inventaires}">
+                        <td data-label="Numéro"><a th:href="@{/controles/creances/{id}(id=${r.inventaire.id})}" th:text="${'IC-' + r.inventaire.id}">IC-1</a></td>
+                        <td data-label="Date" th:text="${#temporals.format(r.inventaire.dateInventaire, 'dd/MM/yyyy')}">09/11/2026</td>
+                        <td data-label="Partenaires" class="text-end" th:text="${r.lignes}">3</td>
+                        <td data-label="Écarts" class="text-end"><span class="ctl-statut" th:classappend="${r.ecarts > 0 ? 'ctl-statut--en_attente' : 'ctl-statut--conforme'}" th:text="${r.ecarts == 0 ? 'Aucun' : r.ecarts}">1</span></td>
+                        <td data-label="Saisi par" th:text="${r.inventaire.utilisateur.nom}">Gérant</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>
