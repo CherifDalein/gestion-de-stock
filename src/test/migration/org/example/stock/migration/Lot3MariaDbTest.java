@@ -107,6 +107,32 @@ public final class Lot3MariaDbTest {
             var relu = em.find(MouvementCaisse.class, mouvementId);
             Lot3MigrationScenarios.exiger(relu.getCompte().getId().equals(orange2Id) && relu.getCompte().getType() == TypeCompteTresorerie.ORANGE_MONEY
                     && "Orange Money Labé".equals(relu.getCompte().getNom()) && "622 00 00 00".equals(relu.getCompte().getNumero()) && !relu.getCompte().isPrincipal(), "Mouvement ou compte non relu par JPA");
+            // Financements (3b1) : partenaire, emprunt, échéancier, remboursement et imputation relus par JPA.
+            em.getTransaction().begin();
+            var bf = em.find(Boutique.class, boutiqueId);
+            var pf = new PartenaireFinancier(); pf.setBoutique(bf); pf.renommer("BICIGUI JPA"); pf.setType(org.example.stock.enums.TypePartenaireFinancier.BANQUE);
+            pf.setActif(true); pf.setDateCreation(java.time.LocalDateTime.of(2026, 3, 1, 8, 0)); em.persist(pf);
+            var emprunt = new Emprunt(); emprunt.setBoutique(bf); emprunt.setPartenaire(pf); emprunt.setUtilisateur(em.find(Utilisateur.class, caissierId)); emprunt.setCompte(orange2);
+            emprunt.setNumero("EM-000001"); emprunt.setSens(org.example.stock.enums.SensEmprunt.EMPRUNT); emprunt.setDateEmprunt(java.time.LocalDate.of(2026, 3, 1));
+            emprunt.setCapital(new java.math.BigDecimal("1200.00")); emprunt.setTauxAnnuel(new java.math.BigDecimal("12.00")); emprunt.setNombreEcheances(2);
+            emprunt.setPeriodicite(org.example.stock.enums.Periodicite.MENSUELLE); emprunt.setDatePremiereEcheance(java.time.LocalDate.of(2026, 4, 1));
+            emprunt.setFraisDossier(java.math.BigDecimal.ZERO); emprunt.setJeton(java.util.UUID.randomUUID().toString()); emprunt.setDateCreation(java.time.LocalDateTime.of(2026, 3, 1, 8, 0));
+            em.persist(emprunt);
+            var echeance = new EcheanceEmprunt(); echeance.setEmprunt(emprunt); echeance.setRang(1); echeance.setDateEcheance(java.time.LocalDate.of(2026, 4, 1));
+            echeance.setCapital(new java.math.BigDecimal("600.00")); echeance.setInteret(new java.math.BigDecimal("12.00")); em.persist(echeance);
+            var remboursement = new OperationTresorerie(); remboursement.setBoutique(b2); remboursement.setUtilisateur(em.find(Utilisateur.class, caissierId));
+            remboursement.setJeton(java.util.UUID.randomUUID().toString()); remboursement.setType(org.example.stock.enums.TypeOperationTresorerie.REMBOURSEMENT);
+            remboursement.setCompteSource(orange2); remboursement.setMontant(new java.math.BigDecimal("100.00")); remboursement.setMotif("Remboursement JPA");
+            remboursement.setDateOperation(java.time.LocalDateTime.of(2026, 4, 1, 9, 0)); remboursement.setPartenaireFinancier(pf); remboursement.setEmprunt(emprunt); em.persist(remboursement);
+            var imputation = new ImputationEcheance(); imputation.setOperation(remboursement); imputation.setEcheance(echeance);
+            imputation.setCapital(new java.math.BigDecimal("88.00")); imputation.setInteret(new java.math.BigDecimal("12.00")); em.persist(imputation);
+            em.getTransaction().commit();
+            long empruntId = emprunt.getId(), imputationId = imputation.getId();
+            em.clear();
+            var empruntRelu = em.find(Emprunt.class, empruntId);
+            Lot3MigrationScenarios.exiger(empruntRelu.getPartenaire().getNomCle().equals("bicigui jpa") && empruntRelu.getCapital().compareTo(new java.math.BigDecimal("1200")) == 0
+                    && empruntRelu.getPeriodicite() == org.example.stock.enums.Periodicite.MENSUELLE && em.find(ImputationEcheance.class, imputationId).getOperation().getEmprunt().getId().equals(empruntId),
+                    "Emprunt, échéancier ou imputation non relus par JPA");
             if (historique) {
                 var migre = em.createQuery("select c from CompteTresorerieBoutique c where c.boutique.id = 1 and c.type = :t", CompteTresorerieBoutique.class)
                         .setParameter("t", TypeCompteTresorerie.BANQUE).getSingleResult();

@@ -9,7 +9,8 @@ import java.util.*;
  */
 final class Lot3MigrationScenarios {
     static final List<String> VALIDES = List.of("ancien", "vide", "schema_neuf", "comptes_manquants", "boutique_sans_compte", "colonnes_partielles",
-            "reprise_colonnes", "reprise_remplissage", "reprise_cle_absente", "reprise_unicite_absente", "relance", "nouvelle_boutique");
+            "reprise_colonnes", "reprise_remplissage", "reprise_cle_absente", "reprise_unicite_absente", "relance", "nouvelle_boutique",
+            "trois_a_seule", "financements_partiels", "relance_financements");
     static final List<String> INVALIDES = List.of("mouvement_compte_inconnu", "operation_source_inconnue", "operation_destination_inconnue", "retour_compte_inconnu",
             "compte_type_inconnu", "principal_incoherent", "nom_facultatif", "type_longueur", "mouvement_autre_boutique", "operation_autre_boutique",
             "autorisation_autre_boutique", "cle_mauvaise_cible", "autorises_colonne_en_trop");
@@ -84,9 +85,44 @@ final class Lot3MigrationScenarios {
                 sql(c, "ALTER TABLE retour DROP " + (maria(c) ? "FOREIGN KEY" : "CONSTRAINT") + " fk_retour_compte_tresorerie");
                 sql(c, "ALTER TABLE retour ADD CONSTRAINT fk_retour_compte_tresorerie FOREIGN KEY(compte_tresorerie_id) REFERENCES boutique(id)");
             }
+            // Base où seule l'étape 3a est appliquée : les éléments des financements (3b1) sont retirés, la migration les ajoute.
+            case "trois_a_seule" -> retirerFinancements(c, true);
+            // Interruption pendant 3b1 : les partenaires existent, pas les emprunts ni les colonnes de la boutique.
+            case "financements_partiels" -> { retirerFinancements(c, false); }
+            // Après la migration, le gérant a saisi un partenaire, un emprunt, son échéancier et un remboursement : une relance n'y touche pas.
+            case "relance_financements" -> saisirFinancements(c);
             case "autorises_colonne_en_trop" -> sql(c, "ALTER TABLE compte_tresorerie_autorise ADD COLUMN note VARCHAR(10) NULL");
             default -> throw new IllegalStateException("Scénario lot 3 inconnu.");
         }
+    }
+
+    private static String supprimerCle(Connection c) throws SQLException { return maria(c) ? "DROP FOREIGN KEY " : "DROP CONSTRAINT "; }
+
+    /** Retire les éléments de 3b1 d'une base migrée ; {@code tout} retire aussi les partenaires et les colonnes de la boutique. */
+    private static void retirerFinancements(Connection c, boolean tout) throws SQLException {
+        sql(c, "DROP TABLE imputation_echeance");
+        sql(c, "DROP TABLE echeance_emprunt");
+        sql(c, "ALTER TABLE operation_tresorerie " + supprimerCle(c) + "fk_operation_tresorerie_emprunt");
+        sql(c, "ALTER TABLE operation_tresorerie DROP COLUMN emprunt_id");
+        sql(c, "DROP TABLE emprunt");
+        if (!tout) return;
+        sql(c, "ALTER TABLE operation_tresorerie " + supprimerCle(c) + "fk_operation_tresorerie_partenaire");
+        sql(c, "ALTER TABLE operation_tresorerie DROP COLUMN partenaire_financier_id");
+        sql(c, "DROP TABLE partenaire_financier");
+        sql(c, "ALTER TABLE boutique DROP COLUMN prochain_numero_emprunt");
+        sql(c, "ALTER TABLE boutique DROP COLUMN prochain_numero_pret");
+    }
+
+    private static void saisirFinancements(Connection c) throws SQLException {
+        sql(c, "INSERT INTO partenaire_financier(id,boutique_id,nom,nom_cle,type,telephone,actif,date_creation) VALUES"
+                + "(10,1,'BICIGUI','bicigui','BANQUE','622000000',TRUE,'2026-02-01 08:00:00.000000'),(11,1,'Ancien associé','ancien associé','ASSOCIE',NULL,FALSE,'2026-02-02 08:00:00.000000')");
+        sql(c, "INSERT INTO emprunt(id,boutique_id,partenaire_id,utilisateur_id,compte_id,numero,sens,date_emprunt,capital,taux_annuel,nombre_echeances,periodicite,date_premiere_echeance,frais_dossier,jeton,date_creation) VALUES"
+                + "(20,1,10,1,(SELECT MIN(id) FROM compte_tresorerie_boutique WHERE boutique_id=1),'EM-000001','EMPRUNT','2026-02-01',1200.00,12.00,2,'MENSUELLE','2026-03-01',0,'b0000000-0000-0000-0000-000000000020','2026-02-01 08:00:00.000000')");
+        sql(c, "INSERT INTO echeance_emprunt(id,emprunt_id,rang,date_echeance,capital,interet) VALUES(30,20,1,'2026-03-01',600.00,12.00),(31,20,2,'2026-04-01',600.00,6.00)");
+        sql(c, "INSERT INTO operation_tresorerie(id,boutique_id,utilisateur_id,jeton,type,compte_source_id,montant,motif,date_operation,partenaire_financier_id,emprunt_id) VALUES"
+                + "(400,1,1,'b0000000-0000-0000-0000-000000000400','REMBOURSEMENT',(SELECT MIN(id) FROM compte_tresorerie_boutique WHERE boutique_id=1),612.00,'Remboursement factice','2026-03-01 08:00:00.000000',10,20)");
+        sql(c, "INSERT INTO imputation_echeance(id,operation_id,echeance_id,capital,interet,interet_remis) VALUES(40,400,30,600.00,12.00,0)");
+        sql(c, "UPDATE boutique SET prochain_numero_emprunt=2 WHERE id=1");
     }
 
     /** Scénarios dont l'incohérence est celle de la base historique : elle est introduite avant toute migration. */
@@ -143,6 +179,25 @@ final class Lot3MigrationScenarios {
             exiger(!InscriptionEssaiMigration.colonnes(c, ancienne[0]).containsKey(ancienne[1]), "Ancienne colonne conservée : " + ancienne[0] + "." + ancienne[1]);
         exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse m JOIN compte_tresorerie_boutique x ON x.id=m.compte_id WHERE x.boutique_id<>m.boutique_id") == 0,
                 "Un mouvement référence le compte d'une autre boutique");
+        for (String table : List.of("partenaire_financier", "emprunt", "echeance_emprunt", "imputation_echeance"))
+            exiger(BoutiquesMigration.tables(c).containsKey(table), "Table de financement absente : " + table);
+        exiger(InscriptionEssaiMigration.colonnes(c, "operation_tresorerie").keySet().containsAll(Set.of("partenaire_financier_id", "emprunt_id"))
+                && InscriptionEssaiMigration.colonnes(c, "boutique").keySet().containsAll(Set.of("prochain_numero_emprunt", "prochain_numero_pret")), "Colonnes de financement absentes");
+        if (scenario.equals("relance_financements")) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM partenaire_financier") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM emprunt WHERE id=20 AND numero='EM-000001'") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM echeance_emprunt") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM imputation_echeance") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1 AND prochain_numero_emprunt=2") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM operation_tresorerie WHERE id=400 AND emprunt_id=20 AND partenaire_financier_id=10") == 1,
+                    "Une relance a modifié des saisies de financement");
+            return;
+        }
+        if (!scenario.equals("relance_financements")) {
+            // Sans saisie : les nouvelles tables sont vides, les compteurs de numéros valent 1 et aucune opération n'a de partenaire ni d'emprunt.
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM partenaire_financier") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM emprunt") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE prochain_numero_emprunt<>1 OR prochain_numero_pret<>1") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM operation_tresorerie WHERE partenaire_financier_id IS NOT NULL OR emprunt_id IS NOT NULL") == 0,
+                    "Les éléments de financement ajoutés doivent être vides");
+        }
         if (scenario.equals("vide") || scenario.equals("schema_neuf")) return;
         long boutiques = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique");
         if (scenario.equals("relance")) {
