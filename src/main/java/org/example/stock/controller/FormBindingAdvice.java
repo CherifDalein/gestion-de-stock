@@ -22,7 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Limite les données des formulaires et empêche le binding sur une relation déjà persistée. */
 @ControllerAdvice
 public class FormBindingAdvice {
-    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm", "retourAchatForm", "annulationReglement"})
+    @InitBinder({"achat", "vente", "produit", "client", "fournisseur", "categorie", "nouvelleCategorie", "reglementAchat", "reglementVente", "reglementSolde", "inscription", "devisForm", "prolongationDevis", "retourVenteForm", "retourAchatForm", "annulationReglement", "ajustementSolde"})
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         // Depuis Spring 6.2, les en-têtes sont aussi proposés au binding des formulaires.
         // Ils ne font pas partie des champs métier et ne doivent ni les alimenter ni être rejetés comme tels.
@@ -45,6 +45,8 @@ public class FormBindingAdvice {
             case "reglementSolde" -> new String[]{"montant", "reglementAttendu", "comptePaiement", "dateEcheance"};
             // Annulation d'un règlement : seul le motif vient du navigateur ; le mouvement et son document viennent de l'adresse.
             case "annulationReglement" -> new String[]{"motif"};
+            // Ajustement d'un solde de départ : le partenaire vient de l'adresse, l'auteur et la date de la session.
+            case "ajustementSolde" -> new String[]{"montant", "sens", "motif", "jeton"};
             case "inscription" -> new String[]{"nom", "email", "password"};
             case "produit" -> new String[]{"nom", "reference", "unite", "seuilAlerte",
                     "categorie", "categorie.id", "fournisseur", "fournisseur.id"};
@@ -96,6 +98,9 @@ public class FormBindingAdvice {
             }
             if (parametre.equals("confirmationSoldeDepart") && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule confirmation du solde de départ peut être envoyée");
+            }
+            if (binder.getObjectName().equals("ajustementSolde") && !parametre.equals("_csrf") && request.getParameterValues(parametre).length != 1) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Une seule valeur peut être envoyée pour ce champ");
             }
             if (binder.getObjectName().equals("annulationReglement") && parametre.equals("motif") && request.getParameterValues(parametre).length != 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Un seul motif peut être envoyé");

@@ -57,6 +57,7 @@
             </section>
 
             <div th:replace="~{fragments/solde-depart :: section(${soldeDepartSituation}, 'Il me doit', 'Je lui dois (avance du client)')}"></div>
+            <div th:replace="~{fragments/ajustements-solde :: section(${ajustementsSolde}, true, ${'/clients/solde/ajuster/' + client.id})}"></div>
 
             <div class="record-actions">
                 <a th:href="@{/clients}" class="btn btn-outline-secondary">Annuler</a>

@@ -195,20 +195,44 @@ public class SoldePartenaireService {
     @Transactional(propagation = Propagation.MANDATORY)
     public BigDecimal avanceDisponibleVerrouillee(Client client) {
         Factures factures = soldes.facturesVerrouillees(Partenaire.CLIENT, boutiques.idBoutiqueCourante(), client.getId());
-        return avance(client.getSoldeInitial().negate(), factures);
+        BigDecimal exces = exces(Partenaire.CLIENT, client.getSoldeInitial(), reglementsVerrouilles(Partenaire.CLIENT, client.getId()).net());
+        return avance(client.getSoldeInitial().negate(), factures, exces);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public BigDecimal avanceDisponibleVerrouillee(Fournisseur fournisseur) {
         Factures factures = soldes.facturesVerrouillees(Partenaire.FOURNISSEUR, boutiques.idBoutiqueCourante(), fournisseur.getId());
-        return avance(fournisseur.getSoldeInitial(), factures);
+        BigDecimal exces = exces(Partenaire.FOURNISSEUR, fournisseur.getSoldeInitial(), reglementsVerrouilles(Partenaire.FOURNISSEUR, fournisseur.getId()).net());
+        return avance(fournisseur.getSoldeInitial(), factures, exces);
     }
 
     /** Avance d'un solde de départ hypothétique (modification de la fiche), relue sous verrou. */
     @Transactional(propagation = Propagation.MANDATORY)
     public BigDecimal avanceDisponibleAvecSolde(Partenaire type, Long partenaireId, BigDecimal nouveauSolde) {
         Factures factures = soldes.facturesVerrouillees(type, boutiques.idBoutiqueCourante(), partenaireId);
-        return avanceBrute(type == Partenaire.CLIENT ? nouveauSolde.negate() : nouveauSolde, factures);
+        BigDecimal exces = exces(type, nouveauSolde, reglementsVerrouilles(type, partenaireId).net());
+        return avanceBrute(type == Partenaire.CLIENT ? nouveauSolde.negate() : nouveauSolde, factures).add(exces);
+    }
+
+    /**
+     * Avance qui resterait après l'annulation d'un règlement du solde de départ (fiche déjà verrouillée) : si le solde a été
+     * ajusté sous ce qui avait été réglé, le trop-réglé est une avance, et l'annuler la retire.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public BigDecimal avanceApresAnnulationReglement(Partenaire type, Long partenaireId, BigDecimal soldeInitial, BigDecimal montantAnnule) {
+        Factures factures = soldes.facturesVerrouillees(type, boutiques.idBoutiqueCourante(), partenaireId);
+        BigDecimal regle = reglementsVerrouilles(type, partenaireId).net().subtract(montantAnnule);
+        return avanceBrute(type == Partenaire.CLIENT ? soldeInitial.negate() : soldeInitial, factures).add(exces(type, soldeInitial, regle));
+    }
+
+    /**
+     * Part des règlements du solde de départ qui dépasse ce qui est dû : cela n'arrive qu'après un ajustement du solde de départ
+     * sous le montant déjà réglé. Ce trop-réglé est une avance du partenaire (client) ou de la boutique (fournisseur).
+     */
+    static BigDecimal exces(Partenaire type, BigDecimal soldeInitial, BigDecimal regle) {
+        BigDecimal solde = Montants.ouZero(soldeInitial);
+        BigDecimal du = (type == Partenaire.CLIENT ? solde : solde.negate()).max(BigDecimal.ZERO);
+        return regle.subtract(du).max(BigDecimal.ZERO);
     }
 
     /** Règlements du solde de départ (nets de leurs annulations, et bruts), relus sous verrou en valeur absolue. */
@@ -224,8 +248,8 @@ public class SoldePartenaireService {
     }
 
     /** Avance disponible, ou {@link IncoherenceAvanceException} si le calcul donne une valeur négative. */
-    private static BigDecimal avance(BigDecimal partieSolde, Factures factures) {
-        BigDecimal avance = avanceBrute(partieSolde, factures);
+    private static BigDecimal avance(BigDecimal partieSolde, Factures factures, BigDecimal exces) {
+        BigDecimal avance = avanceBrute(partieSolde, factures).add(exces);
         if (avance.signum() < 0) {
             throw new IncoherenceAvanceException("L'avance de ce partenaire est négative (" + avance.toPlainString()
                     + "). Les données sont incohérentes : l'opération est annulée, vérifiez ses factures et son solde de départ.");
@@ -242,11 +266,9 @@ public class SoldePartenaireService {
         BigDecimal regle = reglements.net();
         boolean client = type == Partenaire.CLIENT;
         BigDecimal du = (client ? soldeInitial : soldeInitial.negate()).max(BigDecimal.ZERO);
-        BigDecimal reste = du.subtract(regle);
-        if (reste.signum() < 0) {
-            throw new IncoherenceAvanceException("Les règlements du solde de départ dépassent le solde : vérifiez la fiche et son historique.");
-        }
-        BigDecimal avance = avance(client ? soldeInitial.negate() : soldeInitial, factures);
+        // Le trop-réglé (solde ajusté sous ce qui a été payé) devient une avance : le reste ne descend jamais sous zéro.
+        BigDecimal reste = du.subtract(regle).max(BigDecimal.ZERO);
+        BigDecimal avance = avance(client ? soldeInitial.negate() : soldeInitial, factures, exces(type, soldeInitial, regle));
         BigDecimal creances = reste.add(factures.reste());
         BigDecimal net = client ? creances.subtract(avance) : avance.subtract(creances);
         return new SoldePartenaire(soldeInitial, regle, reste, reste.signum() > 0 ? echeance : null, factures.reste(), avance, net, factures.avanceUtilisee(), reglements.brut());

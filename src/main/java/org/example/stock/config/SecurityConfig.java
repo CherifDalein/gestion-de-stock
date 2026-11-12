@@ -38,6 +38,8 @@ public class SecurityConfig {
                         // L'annulation d'un règlement (vente ou solde de départ d'un client) est réservée au gérant ; celles des achats et des
                         // fournisseurs sont couvertes par « /achats/** » et « /fournisseurs/** » plus bas. À placer avant les règles larges.
                         .requestMatchers("/ventes/regler/*/annuler/**", "/clients/solde/regler/*/annuler/**").hasRole("ADMIN")
+                        // L'ajustement d'un solde de départ est réservé au gérant ; celui d'un fournisseur est couvert par « /fournisseurs/** ».
+                        .requestMatchers("/clients/solde/ajuster/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**", "/ventes/**", "/devis/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers(HttpMethod.GET, "/factures/liste", "/factures/vente/*",
                                 "/factures/client/*", "/factures/client/*/cumule").hasAnyRole("ADMIN", "CAISSIER")

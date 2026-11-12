@@ -166,14 +166,18 @@ public class AnnulationReglementService {
                         boutiques.boutiqueCourante().getDelaiFournisseursJours()));
             }
             case SOLDE_CLIENT -> {
-                verrous.verrouillerClient(documentId);
+                var client = verrous.verrouillerClient(documentId);
                 exigerNonAnnule(origine);
-                verifierSoldeReglable(Partenaire.CLIENT, documentId, montantAnnule(origine, true));
+                BigDecimal annule = montantAnnule(origine, true);
+                verifierSoldeReglable(Partenaire.CLIENT, documentId, annule);
+                verifierAvanceApresAnnulation(Partenaire.CLIENT, documentId, client.getSoldeInitial(), annule);
             }
             case SOLDE_FOURNISSEUR -> {
-                verrous.verrouillerFournisseur(documentId);
+                var fournisseur = verrous.verrouillerFournisseur(documentId);
                 exigerNonAnnule(origine);
-                verifierSoldeReglable(Partenaire.FOURNISSEUR, documentId, montantAnnule(origine, false));
+                BigDecimal annule = montantAnnule(origine, false);
+                verifierSoldeReglable(Partenaire.FOURNISSEUR, documentId, annule);
+                verifierAvanceApresAnnulation(Partenaire.FOURNISSEUR, documentId, fournisseur.getSoldeInitial(), annule);
             }
         }
         // Mouvement inverse sur le même compte : les comptes sont verrouillés en dernier, et le solde est contrôlé pour une sortie.
@@ -238,6 +242,13 @@ public class AnnulationReglementService {
     private void verifierSoldeReglable(Partenaire type, Long partenaireId, BigDecimal montant) {
         if (soldes.reglementsVerrouilles(type, partenaireId).net().compareTo(montant) < 0) {
             throw new IncoherenceAvanceException("Les règlements du solde de départ sont inférieurs au montant à annuler : vérifiez la fiche et son historique.");
+        }
+    }
+
+    /** Un règlement devenu avance (solde ajusté) ne s'annule pas si l'avance a déjà été utilisée sur des factures. */
+    private void verifierAvanceApresAnnulation(Partenaire type, Long partenaireId, BigDecimal soldeInitial, BigDecimal montant) {
+        if (soldes.avanceApresAnnulationReglement(type, partenaireId, Montants.ouZero(soldeInitial), montant).signum() < 0) {
+            throw new IllegalArgumentException("Ce règlement est devenu une avance après un ajustement du solde de départ, et cette avance a déjà été utilisée : il ne peut plus être annulé.");
         }
     }
 
