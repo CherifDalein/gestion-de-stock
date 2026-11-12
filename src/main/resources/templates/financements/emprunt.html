@@ -1,0 +1,74 @@
+<div th:fragment="content" th:with="e=${detail.vue.emprunt}, s=${detail.vue.situation}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="empruntTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${e.sens.libelle}">Emprunt</p>
+                <h1 id="empruntTitre" th:text="${e.numero + ' · ' + e.partenaire.nom}">EM-000001</h1>
+                <p class="record-intro"><span class="fin-etat" th:classappend="${s.clos() ? 'fin-clos' : (s.enRetardMaintenant() ? 'fin-retard' : 'fin-cours')}" th:text="${s.statut()}">En cours</span>
+                    <span th:text="${' · du ' + #temporals.format(e.dateEmprunt, 'dd/MM/yyyy') + ' · compte ' + e.compte.nom}"></span></p></div>
+            <a th:href="@{/financements/emprunts}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{financements/navigation :: alertes}"></div>
+        <div class="alert alert-warning" role="alert" th:if="${s.enRetardMaintenant()}">
+            <strong th:text="${s.nombreRetards() + (s.nombreRetards() == 1 ? ' échéance en retard' : ' échéances en retard')}">1 échéance en retard</strong> :
+            <span th:text="${#numbers.formatDecimal(s.montantEnRetard(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF, jusqu’à ' + s.plusGrandRetardEnJours() + ' jours de retard.'}"></span>
+        </div>
+        <section class="fin-chiffres" aria-label="Situation du dossier">
+            <article><span>Capital</span><strong th:text="${#numbers.formatDecimal(e.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small th:text="${'Taux annuel ' + #numbers.formatDecimal(e.tauxAnnuel, 1, 'WHITESPACE', 2, 'COMMA') + ' %'}"></small></article>
+            <article><span>Capital restant dû</span><strong th:text="${#numbers.formatDecimal(s.capitalRestantDu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small th:text="${'Déjà remboursé : ' + #numbers.formatDecimal(s.capitalPaye(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></article>
+            <article><span>Intérêts payés</span><strong th:text="${#numbers.formatDecimal(s.interetsPayes(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small th:text="${'Prévus : ' + #numbers.formatDecimal(s.interetsPrevus(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></article>
+            <article><span>Prochaine échéance</span>
+                <strong th:if="${s.prochaine() != null}" th:text="${#temporals.format(s.prochaine().date(), 'dd/MM/yyyy')}">01/01/2027</strong>
+                <strong th:if="${s.prochaine() == null}">Aucune</strong>
+                <small th:if="${s.prochaine() != null}" th:text="${#numbers.formatDecimal(s.prochaine().resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></article>
+        </section>
+        <div class="fin-actions">
+            <a th:unless="${s.clos()}" th:href="@{/financements/emprunts/{id}/rembourser(id=${e.id})}" class="btn btn-primary"><i class="fa-solid fa-money-bill-transfer" aria-hidden="true"></i> Enregistrer un remboursement</a>
+            <a th:unless="${s.aUnRemboursement()}" th:href="@{/financements/emprunts/{id}/echeancier(id=${e.id})}" class="btn btn-outline-secondary"><i class="fa-solid fa-pen" aria-hidden="true"></i> Modifier l’échéancier</a>
+            <a th:href="@{/financements/emprunts/{id}/echeancier/pdf(id=${e.id})}" class="btn btn-outline-danger"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Échéancier PDF</a>
+            <a th:href="@{/financements/emprunts/{id}/echeancier/excel(id=${e.id})}" class="btn btn-outline-success"><i class="fa-solid fa-file-excel" aria-hidden="true"></i> Échéancier Excel</a>
+        </div>
+        <section class="record-panel" aria-labelledby="echeancierTitre">
+            <div class="record-panel-heading"><h2 id="echeancierTitre">Échéancier</h2>
+                <p th:text="${e.nombreEcheances + ' échéances ' + #strings.toLowerCase(e.periodicite.libelle) + 's, capital constant, intérêts simples.'}"></p></div>
+            <div class="table-responsive">
+                <table class="table fin-table">
+                    <thead><tr><th>N°</th><th>Date</th><th class="text-end">Capital</th><th class="text-end">Intérêts</th><th class="text-end">Reste à payer</th><th>État</th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${s.lignes()}" th:classappend="${l.enRetard(s.aujourdhui()) ? 'fin-ligne-retard' : ''}">
+                        <td th:text="${l.rang()}">1</td>
+                        <td th:text="${#temporals.format(l.date(), 'dd/MM/yyyy')}">01/01/2027</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(l.echeance.capital, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(l.echeance.interet, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(l.resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00</td>
+                        <td><span th:if="${l.soldee()}" class="fin-etat fin-clos">Payée</span>
+                            <span th:if="${l.enRetard(s.aujourdhui())}" class="fin-etat fin-retard" th:text="${'En retard de ' + l.joursDeRetard(s.aujourdhui()) + ' j'}">En retard</span>
+                            <span th:if="${!l.soldee() and !l.enRetard(s.aujourdhui()) and l.partielle()}" class="fin-etat fin-cours">Partielle</span>
+                            <span th:if="${!l.soldee() and !l.enRetard(s.aujourdhui()) and !l.partielle()}" class="fin-etat fin-attente">À venir</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="record-panel" aria-labelledby="historiqueTitre">
+            <div class="record-panel-heading"><h2 id="historiqueTitre">Historique</h2>
+                <p>Déblocage, frais de dossier et remboursements. Un remboursement s’annule du plus récent au plus ancien.</p></div>
+            <ul class="fin-historique">
+                <li th:if="${detail.deblocage != null}"><strong th:text="${e.estEmprunt() ? 'Déblocage de l’emprunt' : 'Déblocage du prêt'}">Déblocage</strong>
+                    <span th:text="${#temporals.format(detail.deblocage.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(detail.deblocage.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + detail.deblocage.compteSource.nom}"></span></li>
+                <li th:if="${detail.frais != null}"><strong>Frais de dossier</strong>
+                    <span th:text="${#temporals.format(detail.frais.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(detail.frais.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span></li>
+                <li th:each="r : ${detail.remboursements}" th:classappend="${r.annule ? 'fin-annule' : ''}">
+                    <strong th:text="${'Remboursement n° ' + r.operation.id}">Remboursement</strong>
+                    <span th:text="${#temporals.format(r.operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · capital ' + #numbers.formatDecimal(r.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' · intérêts ' + #numbers.formatDecimal(r.interet, 1, 'WHITESPACE', 2, 'COMMA') + (r.interetRemis.signum() > 0 ? ' · intérêts remis ' + #numbers.formatDecimal(r.interetRemis, 1, 'WHITESPACE', 2, 'COMMA') : '') + ' GNF · ' + r.operation.compteSource.nom}"></span>
+                    <em th:if="${r.annule}">Annulé</em>
+                    <a th:unless="${r.annule}" th:href="@{/financements/emprunts/{id}/remboursements/{op}/recu(id=${e.id},op=${r.operation.id})}" target="_blank" rel="noopener">Reçu</a>
+                    <a th:if="${r.annulable}" th:href="@{/financements/emprunts/{id}/remboursements/{op}/annuler(id=${e.id},op=${r.operation.id})}">Annuler</a>
+                </li>
+                <li th:if="${detail.deblocage == null and detail.frais == null and #lists.isEmpty(detail.remboursements)}">Aucune opération enregistrée.</li>
+            </ul>
+        </section>
+        <p class="record-help" th:if="${e.note != null and !#strings.isEmpty(e.note)}" th:text="${'Note : ' + e.note}"></p>
+    </section>
+</div>

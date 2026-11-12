@@ -1,0 +1,30 @@
+/* Financements (étape 3b1) : onglets, chiffres clés, tableaux et historiques. */
+.fin-page .fin-actions { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.fin-onglets { display: flex; flex-wrap: wrap; gap: .25rem; margin: 0 0 1rem; border-bottom: 1px solid var(--bs-border-color, #dee2e6); }
+.fin-onglets a { padding: .5rem .9rem; text-decoration: none; color: inherit; border-bottom: 3px solid transparent; }
+.fin-onglets a.actif { border-bottom-color: #0d6efd; font-weight: 600; }
+.fin-chiffres { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .75rem; margin: 0 0 1rem; }
+.fin-chiffres article { border: 1px solid var(--bs-border-color, #dee2e6); border-radius: .5rem; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .15rem; background: var(--bs-body-bg, #fff); }
+.fin-chiffres span { font-size: .85rem; opacity: .75; }
+.fin-chiffres strong { font-size: 1.2rem; overflow-wrap: anywhere; }
+.fin-chiffres small { opacity: .7; }
+.fin-filtres { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: 0 0 1rem; }
+.fin-filtres > div { min-width: 160px; }
+.fin-table th, .fin-table td { vertical-align: middle; }
+.fin-etat { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.fin-cours { background: #e7f1ff; color: #084298; }
+.fin-retard { background: #f8d7da; color: #842029; }
+.fin-clos { background: #d1e7dd; color: #0f5132; }
+.fin-attente { background: #f1f3f5; color: #495057; }
+.fin-ligne-retard { background: rgba(220, 53, 69, .06); }
+.fin-historique { list-style: none; margin: 0; padding: 0; }
+.fin-historique li { padding: .6rem 0; border-bottom: 1px solid var(--bs-border-color, #dee2e6); display: flex; flex-wrap: wrap; gap: .25rem .75rem; align-items: baseline; }
+.fin-historique li:last-child { border-bottom: 0; }
+.fin-annule { opacity: .6; text-decoration: line-through; }
+.fin-annule em { text-decoration: none; display: inline-block; }
+.fin-case { display: flex; gap: .5rem; align-items: center; font-weight: 600; }
+.fin-bascule { margin: 0 0 .75rem; }
+@media (max-width: 575.98px) {
+    .fin-page .fin-actions .btn { flex: 1 1 100%; }
+    .fin-onglets a { flex: 1 1 100%; }
+}

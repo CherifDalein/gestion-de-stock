@@ -1,0 +1,25 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="annOpTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${operation.type.libelle}">Apport</p><h1 id="annOpTitre" th:text="${'Annuler l’opération n° ' + operation.id}">Annuler</h1>
+                <p class="record-intro" th:text="${#temporals.format(operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(operation.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + operation.compteSource.nom}"></p></div>
+            <a th:href="${retourUrl}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div class="alert alert-info" role="status" th:if="${dejaAnnulee}">Cette opération est déjà annulée.</div>
+        <div class="alert alert-warning" role="status" th:if="${!annulable and !dejaAnnulee}">Ce type d’opération ne peut pas être annulé ici.</div>
+        <form th:if="${annulable and !dejaAnnulee}" th:action="@{${actionUrl}}" th:object="${annulationReglement}" method="post" class="operation-form">
+            <section class="record-panel">
+                <p class="record-help">Un mouvement inverse sera enregistré dans le journal de caisse ; rien n’est effacé.</p>
+                <div th:replace="~{financements/navigation :: erreurs('annulationReglement')}"></div>
+                <div class="record-field"><label for="motif">Motif de l’annulation (3 à 255 caractères)</label>
+                    <textarea id="motif" class="form-control" th:field="*{motif}" rows="3" minlength="3" maxlength="255" required></textarea></div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="${retourUrl}" class="btn btn-outline-secondary">Ne pas annuler</a>
+                <button type="submit" class="btn btn-danger"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Annuler l’opération</button>
+            </div>
+        </form>
+    </section>
+</div>

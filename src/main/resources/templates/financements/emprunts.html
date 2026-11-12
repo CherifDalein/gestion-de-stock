@@ -1,0 +1,55 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="empruntsTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Financements</p><h1 id="empruntsTitre">Emprunts et prêts</h1>
+                <p class="record-intro">Suivez ce que la boutique doit rembourser et ce qu'on lui doit, avec les échéances et les retards.</p></div>
+            <div class="fin-actions">
+                <a th:href="@{/financements/emprunts/nouveau(sens='EMPRUNT')}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvel emprunt</a>
+                <a th:href="@{/financements/emprunts/nouveau(sens='PRET')}" class="btn btn-outline-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouveau prêt</a>
+            </div>
+        </header>
+        <div th:replace="~{financements/navigation :: onglets('emprunts')}"></div>
+        <div th:replace="~{financements/navigation :: alertes}"></div>
+        <div class="alert alert-warning" role="alert" th:if="${!retards.aucun()}">
+            <strong th:text="${retards.echeances + (retards.echeances == 1 ? ' échéance en retard' : ' échéances en retard')}">2 échéances en retard</strong>
+            sur <span th:text="${retards.emprunts + (retards.emprunts == 1 ? ' dossier' : ' dossiers')}">1 dossier</span>, pour
+            <strong th:text="${#numbers.formatDecimal(retards.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>.
+        </div>
+        <section class="fin-chiffres" aria-label="Capital restant dû">
+            <article><span>Capital restant à rembourser</span><strong th:text="${#numbers.formatDecimal(restantEmprunts, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Emprunts</small></article>
+            <article><span>Capital restant à recevoir</span><strong th:text="${#numbers.formatDecimal(restantPrets, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Prêts accordés</small></article>
+        </section>
+        <form method="get" th:action="@{/financements/emprunts}" class="fin-filtres" aria-label="Filtrer les dossiers">
+            <div><label for="filtreSens" class="form-label">Nature</label>
+                <select id="filtreSens" name="sens" class="form-select"><option value="">Tous</option>
+                    <option value="EMPRUNT" th:selected="${filtreSens == 'EMPRUNT'}">Emprunts</option><option value="PRET" th:selected="${filtreSens == 'PRET'}">Prêts</option></select></div>
+            <div><label for="filtreStatut" class="form-label">État</label>
+                <select id="filtreStatut" name="statut" class="form-select"><option value="">Tous</option>
+                    <option value="en-cours" th:selected="${filtreStatut == 'en-cours'}">En cours</option>
+                    <option value="retard" th:selected="${filtreStatut == 'retard'}">En retard</option>
+                    <option value="clos" th:selected="${filtreStatut == 'clos'}">Clos</option></select></div>
+            <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+        </form>
+        <section class="record-panel" aria-labelledby="empruntsListeTitre">
+            <div class="record-panel-heading"><h2 id="empruntsListeTitre" th:text="${#lists.size(vues) + (#lists.size(vues) == 1 ? ' dossier affiché' : ' dossiers affichés') + ' sur ' + total}">0 dossier</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(vues)}">Aucun emprunt ni prêt à afficher.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(vues)}">
+                <table class="table fin-table">
+                    <thead><tr><th>Numéro</th><th>Partenaire</th><th class="text-end">Capital</th><th class="text-end">Restant dû</th><th>Prochaine échéance</th><th>État</th></tr></thead>
+                    <tbody>
+                    <tr th:each="v : ${vues}">
+                        <td><a th:href="@{/financements/emprunts/{id}(id=${v.emprunt.id})}" th:text="${v.emprunt.numero}">EM-000001</a><br><small th:text="${v.emprunt.sens.libelle}">Emprunt</small></td>
+                        <td th:text="${v.emprunt.partenaire.nom}">Banque</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(v.emprunt.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</td>
+                        <td class="text-end" th:text="${#numbers.formatDecimal(v.situation.capitalRestantDu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</td>
+                        <td><span th:if="${v.situation.prochaine() != null}" th:text="${#temporals.format(v.situation.prochaine().date(), 'dd/MM/yyyy') + ' : ' + #numbers.formatDecimal(v.situation.prochaine().resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">01/01/2027</span><span th:if="${v.situation.prochaine() == null}">Aucune</span></td>
+                        <td><span class="fin-etat" th:classappend="${v.situation.clos() ? 'fin-clos' : (v.situation.enRetardMaintenant() ? 'fin-retard' : 'fin-cours')}" th:text="${v.situation.statut()}">En cours</span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

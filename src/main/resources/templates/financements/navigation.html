@@ -1,0 +1,13 @@
+<!-- Bandeau commun des pages de financement : onglets et alertes. -->
+<div th:fragment="onglets(actif)" class="fin-onglets" role="navigation" aria-label="Financements">
+    <a th:href="@{/financements/emprunts}" th:classappend="${actif == 'emprunts' ? 'actif' : ''}" th:attr="aria-current=${actif == 'emprunts' ? 'page' : null}">Emprunts et prêts</a>
+    <a th:href="@{/financements/partenaires}" th:classappend="${actif == 'partenaires' ? 'actif' : ''}" th:attr="aria-current=${actif == 'partenaires' ? 'page' : null}">Partenaires</a>
+    <a th:href="@{/financements/operations}" th:classappend="${actif == 'operations' ? 'actif' : ''}" th:attr="aria-current=${actif == 'operations' ? 'page' : null}">Apports, retraits et autres flux</a>
+</div>
+<div th:fragment="alertes">
+    <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+</div>
+<div th:fragment="erreurs(objet)" class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}">
+    <p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p>
+</div>

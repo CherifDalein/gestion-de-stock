@@ -71,6 +71,9 @@
                     <a class="nav-link" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'caisse/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'caisse/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>Trésorerie
                     </a>
+                    <a class="nav-link" th:href="@{/financements/emprunts}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'financements/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'financements/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-landmark" aria-hidden="true"></i></span>Financements
+                    </a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading">Catalogue</div>
                     <a class="nav-link" th:href="@{/produits}" th:classappend="${#strings.startsWith(page, 'produits/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'produits/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-cube" aria-hidden="true"></i></span>Produits

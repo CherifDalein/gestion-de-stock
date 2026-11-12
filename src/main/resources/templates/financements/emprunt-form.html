@@ -1,0 +1,76 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <section class="record-page fin-page" aria-labelledby="empruntFormTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Financements</p>
+                <h1 id="empruntFormTitre" th:text="${empruntForm.sens.name() == 'PRET' ? 'Nouveau prêt accordé' : 'Nouvel emprunt'}">Nouvel emprunt</h1>
+                <p class="record-intro" th:text="${empruntForm.sens.name() == 'PRET' ? 'Le capital sort du compte choisi à la date du prêt. L’échéancier est calculé en capital constant.' : 'Le capital entre sur le compte choisi à la date de l’emprunt. L’échéancier est calculé en capital constant.'}">Aide</p></div>
+            <a th:href="@{/financements/emprunts}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <form th:action="@{/financements/emprunts/nouveau}" th:object="${empruntForm}" method="post" class="operation-form tresorerie-form">
+            <div th:replace="~{fragments/tresorerie :: soldes}"></div>
+            <input type="hidden" th:field="*{jetonOperation}">
+            <input type="hidden" th:field="*{sens}">
+            <section class="record-panel" aria-labelledby="empruntFormPanel">
+                <div class="record-panel-heading"><h2 id="empruntFormPanel">Détails du dossier</h2><p>Les intérêts sont simples : capital restant dû multiplié par le taux annuel et la part d’année de la période.</p></div>
+                <div th:replace="~{financements/navigation :: erreurs('empruntForm')}"></div>
+                <div class="record-grid">
+                    <div class="record-field">
+                        <label for="partenaireId">Partenaire</label>
+                        <select id="partenaireId" class="form-select" th:field="*{partenaireId}" required>
+                            <option value="">Choisir un partenaire</option>
+                            <option th:each="p : ${partenairesActifs}" th:value="${p.id}" th:text="${p.nom + ' (' + p.type.libelle + ')'}"></option>
+                        </select>
+                        <p class="record-help"><a th:href="@{/financements/partenaires/nouveau}">Créer un partenaire</a> s’il n’est pas dans la liste.</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="compte" th:text="${empruntForm.sens.name() == 'PRET' ? 'Compte débité' : 'Compte crédité'}">Compte</label>
+                        <select id="compte" class="form-select" th:field="*{compte}" required><th:block th:replace="~{fragments/comptes :: options(*{compte})}"></th:block></select>
+                    </div>
+                    <div class="record-field">
+                        <label for="dateEmprunt">Date du dossier</label>
+                        <input id="dateEmprunt" class="form-control" type="date" th:field="*{dateEmprunt}" required>
+                    </div>
+                    <div class="record-field">
+                        <label for="capital">Capital (GNF)</label>
+                        <input id="capital" class="form-control" type="number" th:field="*{capital}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required>
+                    </div>
+                    <div class="record-field">
+                        <label for="tauxAnnuel">Taux annuel (%)</label>
+                        <input id="tauxAnnuel" class="form-control" type="number" th:field="*{tauxAnnuel}" min="0" max="100" step="0.01" inputmode="decimal" required>
+                        <p class="record-help">0 pour un dossier sans intérêt.</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="nombreEcheances">Nombre d’échéances</label>
+                        <input id="nombreEcheances" class="form-control" type="number" th:field="*{nombreEcheances}" min="1" max="120" step="1" required>
+                    </div>
+                    <div class="record-field">
+                        <label for="periodicite">Périodicité</label>
+                        <select id="periodicite" class="form-select" th:field="*{periodicite}" required>
+                            <option th:each="p : ${periodicites}" th:value="${p.name()}" th:text="${p.libelle}"></option>
+                        </select>
+                    </div>
+                    <div class="record-field">
+                        <label for="datePremiereEcheance">Première échéance</label>
+                        <input id="datePremiereEcheance" class="form-control" type="date" th:field="*{datePremiereEcheance}" required>
+                    </div>
+                    <div class="record-field" th:if="${empruntForm.sens.name() == 'EMPRUNT'}">
+                        <label for="fraisDossier">Frais de dossier (GNF, facultatif)</label>
+                        <input id="fraisDossier" class="form-control" type="number" th:field="*{fraisDossier}" min="0" step="0.01" inputmode="decimal">
+                        <p class="record-help">Sortent du même compte et comptent comme charge financière.</p>
+                    </div>
+                    <div class="record-field">
+                        <label for="note">Note (facultatif)</label>
+                        <textarea id="note" class="form-control" th:field="*{note}" rows="2" maxlength="255"></textarea>
+                    </div>
+                </div>
+            </section>
+            <div class="operation-actions">
+                <a th:href="@{/financements/emprunts}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Enregistrer le dossier</button>
+            </div>
+        </form>
+    </section>
+</div>
