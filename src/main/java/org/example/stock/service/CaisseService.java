@@ -67,6 +67,7 @@ public class CaisseService {
     @Autowired private CompteTresorerieBoutiqueRepository comptes;
     @Autowired private ComptesTresorerieService comptesService;
     @Autowired private OperationTresorerieRepository operations;
+    @Autowired private org.example.stock.repository.RapprochementMouvementRepository rapprochementsMouvements;
 
     @Transactional(readOnly = true)
     public void verifierGestionTresorerie() { gerant(); }
@@ -448,6 +449,11 @@ public class CaisseService {
         if (origine == null || origine.getId() == null || origine.getBoutique() == null || !Objects.equals(origine.getBoutique().getId(), boutiqueId)) {
             throw new IllegalArgumentException("Mouvement introuvable");
         }
+        // Étape 3c : un mouvement rapproché sur un relevé validé est figé. La boutique est verrouillée : une validation en cours est terminée.
+        rapprochementsMouvements.releveDuMouvement(origine.getId()).filter(org.example.stock.model.ReleveBancaire::estValide).ifPresent(releve -> {
+            throw new IllegalArgumentException("Annulation impossible : mouvement rapproché sur le relevé " + releve.getNumero() + " validé. "
+                    + "Dévalidez ce relevé (dernier relevé validé du compte) pour pouvoir annuler le mouvement.");
+        });
         BigDecimal montant = Montants.valider(origine.getMontant(), "Le montant de caisse");
         if (montant.signum() == 0) throw new IllegalArgumentException("Un mouvement sans montant ne s'annule pas.");
         acteur = utilisateurDeLaBoutique(acteur);

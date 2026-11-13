@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  État de rapprochement bancaire (étape 3c). Variables : e (EtatRapprochementService.Etat), numero, groupes (nombre de rapprochements), fmt, doc, format.
+  Document complet : sa feuille de style est dans le head (openhtmltopdf ignore les style du corps). XHTML strict (docs/lot-4.md).
+-->
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title th:text="${titre}">État de rapprochement</title>
+    <meta name="author" th:content="${doc.nomBoutique}" content="Boutique" />
+    <style th:utext="${cssPage}">@page { size: A4 portrait; margin: 14mm 12mm 18mm 12mm; }</style>
+    <style th:replace="~{pdf/justificatif-commun :: style}"></style>
+</head>
+<body>
+<th:block th:replace="~{pdf/base :: entete}"></th:block>
+<h1 class="js-titre">État de rapprochement</h1>
+<table class="js-ref">
+    <tr>
+        <td><span class="js-etiquette">Numéro du document</span><span class="js-valeur" th:text="${numero}">RB-202611-3</span></td>
+        <td><span class="js-etiquette">Compte</span><span class="js-valeur" th:text="${e.releve.compte.nom}">Ecobank</span></td>
+        <td><span class="js-etiquette">Statut</span><span class="js-valeur" th:text="${e.releve.statut.libelle}">Validé</span></td>
+    </tr>
+    <tr>
+        <td><span class="js-etiquette">Période du relevé</span><span class="js-valeur" th:text="${fmt.date(e.releve.dateDebut) + ' au ' + fmt.date(e.releve.dateFin)}">01/11/2026 au 30/11/2026</span></td>
+        <td><span class="js-etiquette">Solde d'ouverture</span><span class="js-valeur" th:text="${fmt.montant(e.releve.soldeOuverture) + ' GNF'}">0 GNF</span></td>
+        <td><span class="js-etiquette">Solde de clôture</span><span class="js-valeur" th:text="${fmt.montant(e.releve.soldeCloture) + ' GNF'}">0 GNF</span></td>
+    </tr>
+</table>
+
+<h2 class="js-section">Calcul</h2>
+<table class="js-detail">
+    <thead><tr><th>Élément</th><th class="num">Montant (GNF)</th></tr></thead>
+    <tbody>
+    <tr class="js-sous"><td th:text="${'Solde du compte selon l’appli au ' + fmt.date(e.releve.dateFin)}">Solde selon l'appli</td><td class="num" th:text="${fmt.montant(e.soldeAppli)}">0</td></tr>
+    <tr th:if="${e.pointesApresCloture.signum() != 0}"><td>Plus : mouvements rapprochés datés après la clôture</td><td class="num" th:text="${fmt.signe(e.pointesApresCloture)}">0</td></tr>
+    <tr><td th:text="${'Moins : mouvements de l’appli non pointés (' + #lists.size(e.mouvementsNonPointes) + ')'}">Moins : mouvements non pointés</td><td class="num" th:text="${fmt.signe(e.totalMouvementsNonPointes.negate())}">0</td></tr>
+    <tr><td th:text="${'Plus : lignes du relevé non pointées (' + #lists.size(e.lignesNonPointees) + ')'}">Plus : lignes non pointées</td><td class="num" th:text="${fmt.signe(e.totalLignesNonPointees)}">0</td></tr>
+    <tr class="js-sous"><td>Solde du relevé calculé</td><td class="num" th:text="${fmt.montant(e.soldeCalcule)}">0</td></tr>
+    <tr><td>Solde de clôture du relevé</td><td class="num" th:text="${fmt.montant(e.releve.soldeCloture)}">0</td></tr>
+    <tr class="js-total"><td>Écart de rapprochement (zéro attendu)</td><td class="num" th:text="${fmt.signe(e.ecart)}">0</td></tr>
+    </tbody>
+</table>
+
+<th:block th:if="${!e.mouvementsNonPointes.isEmpty()}">
+<h2 class="js-section">Mouvements de l'appli non pointés</h2>
+<table class="js-detail">
+    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant (GNF)</th></tr></thead>
+    <tbody>
+    <tr th:each="m : ${e.mouvementsNonPointes}">
+        <td class="nw" th:text="${fmt.date(m.dateMouvement.toLocalDate())}">01/11/2026</td>
+        <td th:text="${fmt.libelleMouvement(m)}">Vente</td>
+        <td class="num" th:text="${fmt.signe(m.montant)}">0</td>
+    </tr>
+    <tr class="js-sous-total"><td colspan="2">Total des mouvements non pointés</td><td class="num" th:text="${fmt.signe(e.totalMouvementsNonPointes)}">0</td></tr>
+    </tbody>
+</table>
+</th:block>
+
+<th:block th:if="${!e.lignesNonPointees.isEmpty()}">
+<h2 class="js-section">Lignes du relevé non pointées</h2>
+<table class="js-detail">
+    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant (GNF)</th></tr></thead>
+    <tbody>
+    <tr th:each="l : ${e.lignesNonPointees}">
+        <td class="nw" th:text="${fmt.date(l.dateOperation)}">01/11/2026</td>
+        <td th:text="${l.reference != null ? l.libelle + ' (' + l.reference + ')' : l.libelle}">Frais bancaires</td>
+        <td class="num" th:text="${fmt.signe(l.montant)}">0</td>
+    </tr>
+    <tr class="js-sous-total"><td colspan="2">Total des lignes non pointées</td><td class="num" th:text="${fmt.signe(e.totalLignesNonPointees)}">0</td></tr>
+    </tbody>
+</table>
+</th:block>
+
+<p class="js-mention" th:text="${groupes + (groupes == 1 ? ' rapprochement' : ' rapprochements') + ' enregistré' + (groupes == 1 ? '' : 's') + '. Montants en francs guinéens (GNF) ; crédit positif, débit négatif. Un rapprochement valide a des sommes égales, sans écart toléré.'}">Mention</p>
+<p class="js-mention" th:if="${e.releve.dateValidation != null}" th:text="${'Validé le ' + fmt.dateHeure(e.releve.dateValidation) + ' par ' + e.releve.validePar.nom + '.'}">Validé</p>
+
+<table class="js-signatures">
+    <tr>
+        <td class="js-gauche">
+            <div class="js-zone-titre">Le gérant</div>
+            <div class="js-zone-aide">Nom, date et signature</div>
+            <div class="js-zone"></div>
+        </td>
+        <td class="js-droite">
+            <div class="js-zone-titre">Vérifié par</div>
+            <div class="js-zone-aide">Nom, date et signature</div>
+            <div class="js-zone"></div>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
