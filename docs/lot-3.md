@@ -319,7 +319,7 @@ factures (ajustement). `OrdreVerrousMariaDbTest` rejoue deux validations simulta
 - Pas de blocage de solde sur la sortie d'un manque validé : le compte peut devenir négatif ; un avertissement s'affiche au gérant.
 - Un inventaire fige le solde de l'application à son enregistrement ; il ne suit pas les mouvements suivants. Au plus 100 partenaires par inventaire.
 - Un comptage conforme n'est pas annulable (il n'a aucun effet).
-- Pas de rapprochement bancaire : c'est l'étape 3c.
+- Le rapprochement bancaire est décrit dans la section suivante (étape 3c).
 
 ### Vérifications
 
@@ -327,4 +327,123 @@ factures (ajustement). `OrdreVerrousMariaDbTest` rejoue deux validations simulta
 ./gradlew test --no-daemon
 node --test src/test/js/*.cjs
 ./gradlew lot3MariaDbTest lot1MariaDbTest lot2MariaDbTest lot4MariaDbTest ordreVerrousMariaDbTest
+```
+
+## Rapprochement bancaire
+
+Étape 3c : comparer le relevé d'un compte **Banque** ou **Orange Money** avec les mouvements de l'application (`/rapprochements`). Aucune règle
+existante ne change ; un mouvement annulé, une opération de financement ou un transfert se rapprochent comme les autres mouvements du compte.
+Un compte d'espèces n'a pas de relevé : il se contrôle par le [comptage de caisse](#comptage-de-caisse-controlescomptages).
+
+### Droits
+
+Le **gérant seul** voit et utilise ces écrans, les exports et la carte du tableau de bord. Un caissier reçoit 403 partout (pages, actions,
+PDF, Excel). Un relevé d'une autre boutique répond 404. Les formulaires n'acceptent que leurs champs (un champ inconnu ou répété, ou plus de
+100 cases cochées, donnent 400) ; chaque action est un POST protégé par le jeton CSRF.
+
+### Le relevé
+
+Un relevé a un compte, une période (au plus 366 jours), un **solde d'ouverture**, un **solde de clôture**, un numéro `RB-AAAAMM-<n>` (mois de
+la fin, `<n>` : numéro du compte, suivi de `-2`, `-3`… si ce numéro existe déjà) et un statut : *En cours* ou *Validé*. Ses lignes ont une date dans la période, un libellé, une référence
+facultative et un **montant signé** : crédit positif, débit négatif. Au plus 5 000 lignes par relevé. On ajoute, modifie et supprime des lignes à
+la main tant que le relevé n'est pas validé.
+
+**Contrôle des soldes** : ouverture + somme des lignes = clôture. Sinon un avertissement s'affiche (avec l'écart) ; il **bloque la validation, pas la
+saisie**. Le relevé suivant d'un compte propose la clôture du précédent comme ouverture et le lendemain de sa fin comme début. Les périodes d'un
+même compte ne se chevauchent jamais.
+
+### Import CSV ou Excel
+
+Fichier `.csv`, `.txt` ou `.xlsx` (le `.xls` et le PDF sont refusés), **2 Mo** et **5 000 lignes de données** au plus. Le type est vérifié sur le contenu et
+sur l'extension. Le fichier n'est **jamais écrit sur le disque** : il reste en mémoire 30 minutes (au plus 30 imports en attente, liés à la boutique,
+au relevé et au gérant), puis est oublié. Les formules ne sont jamais évaluées ; un libellé ou une référence qui commence par `=`, `+`, `-` ou `@` reçoit
+une apostrophe en tête.
+
+- **CSV** : séparateur `;`, `,` ou tabulation et encodage UTF-8 ou Windows-1252 reconnus automatiquement.
+- **Écran de correspondance** : on indique la ligne d'en-tête (ou « aucune »), la colonne de la date, du libellé, de la référence (facultative) et soit **une
+  colonne de montant signé**, soit **une colonne de débit et une colonne de crédit** ; puis le format de date (`jj/mm/aaaa`, `aaaa-mm-jj`, `jj-mm-aaaa`) et le
+  séparateur décimal (virgule ou point). Les titres du fichier servent à proposer un choix.
+- **Montants** : espaces, espaces insécables, « GNF » ou « FG » acceptés (`1 200 000,50 GNF`) ; plus de deux décimales refusées.
+- **Aperçu** des 10 premières lignes avec les erreurs signalées (date illisible, libellé ou montant manquant, montant nul, date hors période). Rien n'est
+  enregistré avant la confirmation ; les lignes en erreur ne sont jamais importées.
+- **Doublons** : une ligne identique (date, montant, libellé, référence) à une ligne déjà enregistrée sur ce compte, dans n'importe quel relevé, est signalée
+  et **ignorée par défaut** (case « importer aussi les doublons »). Deux frais identiques le même jour dans un même fichier restent deux lignes.
+- **Mémoire** : la correspondance choisie est mémorisée par compte et reproposée pour le fichier suivant.
+
+### Pointage
+
+L'écran de pointage montre deux colonnes : les lignes du relevé non rapprochées et les mouvements de l'appli non rapprochés (du début du relevé moins 7 jours à
+sa fin plus 7 jours ; un lien affiche tous les mouvements plus anciens du compte). Sur un téléphone, deux onglets.
+
+- **Propositions automatiques** : même montant exact (signe compris), date du mouvement à **3 jours** au plus de celle de la ligne. S'il y a plusieurs
+  candidats, la **date la plus proche** l'emporte ; un mouvement n'est **jamais proposé deux fois**. On accepte, on refuse (la paire n'est plus proposée)
+  ou on clique **Tout accepter**.
+- **Pointage manuel 1-n et n-1** : une ligne avec plusieurs mouvements, ou plusieurs lignes avec un mouvement, **de sommes égales au franc près**, sans aucune
+  tolérance. Un rapprochement porte au plus 100 éléments de chaque côté.
+- **Enregistrer dans l'appli** : pour une ligne sans mouvement (frais, agios, intérêts, frais Orange Money, virement inconnu), crée à la date de la ligne l'opération
+  de trésorerie adaptée (crédit : produit financier ou autre produit ; débit : charge financière ou autre charge) et la rapproche aussitôt. Aucun contrôle de solde
+  pour une sortie : la banque a déjà débité. L'opération reste dans le journal si on défait le rapprochement (elle s'annule par l'écran des financements).
+- **Défaire** un rapprochement tant que le relevé n'est pas validé.
+- **Mouvement annulé** : il ne se rapproche jamais seul. Le mouvement et sa contre-passation s'**excluent ensemble** (type *Exclusion*) : ils se compensent, aucune ligne
+  n'est concernée.
+
+### État de rapprochement
+
+```
+solde du compte selon l'appli à la clôture
+ − mouvements de l'appli non pointés
+ + lignes du relevé non pointées
+ = solde calculé       (doit égaler le solde de clôture du relevé : écart 0)
+```
+
+Exemple (GNF). Solde de départ de l'appli au 20/02 : 1 000 000. Relevé de mars : ouverture 1 000 000, lignes +500 000 (virement du 05/03), −200 000 (chèque du
+10/03), −15 000 (frais du 20/03), clôture 1 285 000 (1 000 000 + 285 000, soldes cohérents). L'appli a un encaissement de 500 000 le 04/03, un autre de 500 000 le 07/03
+et un paiement de 200 000 le 12/03 : solde de l'appli au 31/03 = 1 800 000. Après « Tout accepter », la ligne du 05/03 est liée à l'encaissement du 04/03 (écart
+d'un jour, le plus proche) et celle du 10/03 au paiement du 12/03. Restent un mouvement non pointé de +500 000 (l'encaissement du 07/03, absent du relevé) et une ligne non
+pointée de −15 000 (les frais). Calcul : 1 800 000 − 500 000 + (−15 000) = **1 285 000** = solde du relevé, **écart 0**. Le gérant peut alors enregistrer les frais dans
+l'appli (le mouvement non pointé et la ligne disparaissent de l'état) ou valider tel quel.
+
+L'état s'affiche à l'écran et s'exporte en **PDF** (A4, en-tête de la boutique, numéro `RB-AAAAMM-<compte>`, cadres de signature « Le gérant » et « Vérifié par ») et en
+**Excel**. Un mouvement antérieur au premier relevé du compte n'y figure pas (il est dans le solde de l'appli) ; les lignes non pointées d'un relevé précédent y figurent.
+
+### Validation et dévalidation
+
+La **validation** exige : soldes cohérents (ouverture + lignes = clôture), **écart de rapprochement nul**, période sans chevauchement, relevé précédent du compte déjà
+validé avec sa clôture égale à l'ouverture, et aucun mouvement pointé annulé depuis sans sa contre-passation dans le même rapprochement. Le relevé est alors **figé** : lignes,
+soldes et rapprochements ne changent plus, et un mouvement rapproché **ne peut plus être annulé** (« mouvement rapproché sur le relevé RB-… validé »). Le solde de l'appli
+est conservé avec la validation.
+
+La **dévalidation** n'est possible que pour le **dernier relevé validé du compte**, avec un motif (3 à 255 caractères). Le relevé redevient modifiable, et ses mouvements
+annulables ; l'historique (validations et dévalidations, avec auteur, date, motif) est conservé et affiché. Un relevé non validé peut être supprimé ; ses lignes et
+rapprochements aussi, mais les opérations créées par « Enregistrer dans l'appli » restent dans le journal.
+
+### Tableau de bord du gérant
+
+Une carte indique, pour chaque compte Banque et Orange Money, la date de fin du **dernier relevé validé**. Elle signale en rouge « À rapprocher » un compte dont ce
+relevé date de plus de **45 jours**, ou qui n'en a aucun.
+
+### Verrous
+
+Ordre : boutique → **relevé** (au rang du document) → comptes → mouvements, par identifiant croissant (voir [ordre des verrous](lot-2.md#ordre-des-verrous)). Deux validations
+simultanées du même relevé n'en laissent passer qu'une (l'autre reçoit 409) ; l'annulation d'un mouvement qui croise la validation du relevé qui le contient a un seul gagnant
+cohérent : relevé validé et mouvement intact, ou mouvement annulé et validation refusée. `OrdreVerrousMariaDbTest` rejoue ce croisement avec les vrais verrous InnoDB.
+
+### Limites connues
+
+- Les propositions ne comparent que le montant et la date : ni libellé, ni référence.
+- Pas de tolérance de montant : un écart de 1 GNF empêche le rapprochement (on saisit alors la différence comme ligne ou comme opération).
+- Un fichier importé est gardé 30 minutes en mémoire du serveur ; il est perdu si le serveur redémarre (renvoyer le fichier).
+- Pas d'import `.xls`, PDF ou OFX/MT940 ; une seule feuille, la première, d'un classeur Excel est lue.
+- L'écran affiche au plus 1 000 lignes et 1 000 mouvements non rapprochés (un message l'indique) ; un relevé compte au plus 5 000 lignes.
+- Les anciens mouvements d'un compte (avant sa première période de relevé) ne sont pas à pointer ; le premier relevé doit partir d'une ouverture qui reprend le solde de l'appli.
+- Pas de rapprochement des comptes d'espèces ; pas de relevé multi-comptes.
+- Le mouvement d'une opération saisie après la validation, mais datée dans la période d'un relevé validé, apparaît comme non pointé et crée un écart au relevé suivant ;
+  il se règle en dévalidant le dernier relevé ou par une ligne du relevé suivant.
+
+### Vérifications
+
+```sh
+./gradlew test --tests '*LecteurReleveTests' --tests '*RapprochementBancaireTests'
+node --test src/test/js/rapprochement.test.cjs
+./gradlew lot3MariaDbTest ordreVerrousMariaDbTest
 ```

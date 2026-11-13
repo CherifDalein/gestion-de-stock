@@ -86,6 +86,26 @@ Aucune donnée existante n'est modifiée (colonne vide, tables vides). Aucune co
 portent déjà une. Ordre sûr et reprise après interruption comme pour 3b1 (colonne, tables, contrôles, clés) ; sur une base complète, la relance ne
 fait rien. Retour arrière par la sauvegarde ; les comptages, ajustements et inventaires saisis après la migration seraient perdus.
 
+## Étape 3c : rapprochement bancaire
+
+Même commande `lot3Migrate`, valable sur une base sans lot 3, avec 3a seule, avec 3a et 3b1, ou avec 3a, 3b1 et 3b2 ; `lot3Check` annonce ce qui manque.
+
+| Élément | Ajout |
+|---|---|
+| `releve_bancaire` | nouvelle : relevés (compte, période, soldes, statut `BROUILLON`/`VALIDE`, validation) ; uniques `(boutique_id, numero)` et `jeton` |
+| `rapprochement` | nouvelle : groupes de pointage (`AUTO`, `MANUEL`, `ENREGISTREMENT`, `EXCLUSION`) |
+| `ligne_releve` | nouvelle : lignes de relevé, `rapprochement_id` (NULL), empreinte pour les doublons |
+| `rapprochement_mouvement` | nouvelle : mouvements d'un rapprochement ; unique `mouvement_id` (un mouvement n'est que dans un rapprochement) |
+| `correspondance_import` | nouvelle : correspondance des colonnes mémorisée, unique par compte |
+| `evenement_releve` | nouvelle : historique des validations et dévalidations |
+| `refus_proposition` | nouvelle : paires refusées, unique `(ligne_id, mouvement_id)` |
+
+Aucune donnée existante n'est modifiée (aucune colonne ajoutée aux tables existantes, sept tables vides). Ordre sûr (tables dans l'ordre de leurs dépendances, contrôles,
+clés étrangères) et reprise après interruption comme pour 3b1 et 3b2 ; sur une base complète, la relance ne fait rien (idempotence prouvée par une photographie du schéma
+avant et après). Les contrôles vérifient aussi les tables présentes en l'état : relevé d'un compte d'espèces, statut inconnu, relevé validé sans validateur, ligne ou
+rapprochement d'un autre relevé, mouvement d'un autre compte, refus dont les clés pointent un autre relevé, ou relevé d'une autre boutique que son compte. Retour arrière par
+la sauvegarde ; les relevés saisis après la migration seraient perdus.
+
 ## Retour arrière
 
 La migration supprime d'anciennes colonnes : le retour arrière se fait **par la sauvegarde**, pas par un script inverse.
@@ -101,7 +121,7 @@ une migration défaillante, avant la reprise de l'activité.
 
 ```bash
 ./gradlew test --no-daemon --tests '*Lot3MigrationTests'   # H2 : scénarios valides et invalides, base sans lot 3, base 3a seule, idempotence, sauvegarde, lot 4 requis, schéma migré = schéma neuf
-service mariadb start && ./gradlew lot3MariaDbTest         # MariaDB jetable : mêmes scénarios, verrou, Hibernate validate (migré et neuf)
+service mariadb start && ./gradlew lot3MariaDbTest         # MariaDB jetable (bases 3a, 3a+3b1, 3a+3b1+3b2 comprises) : mêmes scénarios, verrou, Hibernate validate (migré et neuf)
 ./gradlew lot1MariaDbTest lot2MariaDbTest lot4MariaDbTest  # les lots précédents appliquent aussi le lot 3 avant Hibernate validate
 ```
 

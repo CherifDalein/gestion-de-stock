@@ -630,6 +630,12 @@ validations simultanées du même comptage n'en laissent donc passer qu'une, l'a
 verrouille la boutique, puis le partenaire (étape 3), puis ses factures (étape 4). L'inventaire des créances ne prend que le verrou de la
 boutique, car il ne modifie aucun solde.
 
+Rapprochement bancaire (étape 3c, voir [Rapprochement bancaire](lot-3.md#rapprochement-bancaire)) : toute écriture sur un relevé verrouille la boutique, puis la **ligne du
+relevé** (au rang du document, étape 2), puis les comptes (étape 6, le compte du relevé), puis les **mouvements concernés par identifiant croissant** (`RapprochementMouvementRepository.verrouillerMouvements`).
+La validation, la dévalidation, un pointage, « Tout accepter » et « Enregistrer dans l'appli » suivent cet ordre. L'annulation d'un mouvement (`CaisseService.enregistrerAnnulation`, appelée par
+les services qui annulent, tous en READ COMMITTED) lit le relevé du mouvement **après** le verrou de la boutique : elle voit une validation terminée et la refuse (« mouvement rapproché sur le relevé RB-… validé »)
+ou, si elle passe la première, la validation est refusée parce que le mouvement a été annulé depuis le pointage. Deux validations simultanées du même relevé n'en laissent passer qu'une (409).
+
 Rien ne doit être verrouillé avant la boutique : ni document, ni partenaire, ni compte utilisateur. Le verrou est pris une seule
 fois par transaction : un second appel, par exemple depuis `CaisseService` appelé par une vente, ne fait rien et ne relit pas la
 ligne (une modification non flushée, comme la clôture du démarrage, n'est donc pas perdue). Il est tenu jusqu'à la fin de la
