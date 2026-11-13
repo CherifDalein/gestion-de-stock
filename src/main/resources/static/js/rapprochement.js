@@ -82,10 +82,15 @@
         const onglets = document.querySelector('.rap-onglets-mobile');
         if (onglets) {
             const boutons = Array.from(onglets.querySelectorAll('button[data-cible]'));
+            const mobile = typeof globalThis.matchMedia === 'function' ? globalThis.matchMedia('(max-width: 575.98px)') : null;
+            let courant = boutons.length ? boutons[0].dataset.cible : null;
+            // Les deux colonnes restent côte à côte hors mobile : on ne masque une colonne que sur un petit écran.
             const montrer = cible => {
+                courant = cible;
                 boutons.forEach(b => b.setAttribute('aria-selected', String(b.dataset.cible === cible)));
-                boutons.forEach(b => { const colonne = document.getElementById(b.dataset.cible); if (colonne) colonne.hidden = b.dataset.cible !== cible; });
+                boutons.forEach(b => { const colonne = document.getElementById(b.dataset.cible); if (colonne) colonne.hidden = !!mobile && mobile.matches && b.dataset.cible !== cible; });
             };
+            if (mobile && mobile.addEventListener) mobile.addEventListener('change', () => { if (courant) montrer(courant); });
             onglets.hidden = false;
             document.documentElement.classList.add('rap-js');
             boutons.forEach(b => b.addEventListener('click', () => montrer(b.dataset.cible)));

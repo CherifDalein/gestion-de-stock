@@ -35,7 +35,7 @@
                     <tr th:each="r : ${releves}">
                         <td data-label="Numéro"><a th:href="@{/rapprochements/{id}(id=${r.id})}" th:text="${r.numero}">RB-202610-3</a></td>
                         <td data-label="Compte" th:text="${r.compte.nom}">Ecobank</td>
-                        <td data-label="Période" class="text-nowrap" th:text="${@formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin)}">01/10/2026 au 31/10/2026</td>
+                        <td data-label="Période" th:text="${@formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin)}">01/10/2026 au 31/10/2026</td>
                         <td data-label="Ouverture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeOuverture)}">0 GNF</td>
                         <td data-label="Clôture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeCloture)}">0 GNF</td>
                         <td data-label="Statut"><span th:replace="~{rapprochement/commun :: statut(${r})}"></span></td>
