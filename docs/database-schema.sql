@@ -589,6 +589,135 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
         FOREIGN KEY (vente_id) REFERENCES vente (id)
 );
 
+-- Lot 3c : rapprochement bancaire. Un relevé (période, solde d'ouverture et de clôture) appartient à un compte Banque ou Orange Money ;
+-- ses lignes (montant signé : crédit positif, débit négatif) se pointent avec les mouvements de l'appli dans des rapprochements. Un
+-- mouvement ne figure que dans un seul rapprochement (uk_rapprochement_mouvement_mouvement). Un relevé validé est figé ; l'historique
+-- (validations et dévalidations) est conservé. La correspondance des colonnes d'import est mémorisée par compte ; aucun fichier n'est gardé.
+CREATE TABLE IF NOT EXISTS releve_bancaire (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    boutique_id BIGINT NOT NULL,
+    compte_id BIGINT NOT NULL,
+    numero VARCHAR(40) NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    solde_ouverture DECIMAL(17,2) NOT NULL,
+    solde_cloture DECIMAL(17,2) NOT NULL,
+    statut VARCHAR(16) NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    jeton VARCHAR(36) NOT NULL,
+    valide_par_id BIGINT NULL,
+    date_validation DATETIME(6) NULL,
+    solde_appli_validation DECIMAL(17,2) NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_releve_bancaire_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT uk_releve_bancaire_jeton UNIQUE (jeton),
+    INDEX idx_releve_bancaire_compte_debut (compte_id, date_debut),
+    CONSTRAINT fk_releve_bancaire_boutique
+        FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_releve_bancaire_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id),
+    CONSTRAINT fk_releve_bancaire_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),
+    CONSTRAINT fk_releve_bancaire_valide_par
+        FOREIGN KEY (valide_par_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rapprochement (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    releve_id BIGINT NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    montant DECIMAL(17,2) NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_rapprochement_releve (releve_id),
+    CONSTRAINT fk_rapprochement_releve
+        FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),
+    CONSTRAINT fk_rapprochement_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ligne_releve (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    releve_id BIGINT NOT NULL,
+    date_operation DATE NOT NULL,
+    libelle VARCHAR(255) NOT NULL,
+    reference VARCHAR(100) NULL,
+    montant DECIMAL(17,2) NOT NULL,
+    origine VARCHAR(16) NOT NULL,
+    empreinte VARCHAR(64) NOT NULL,
+    rapprochement_id BIGINT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_ligne_releve_releve (releve_id, date_operation, id),
+    INDEX idx_ligne_releve_empreinte (empreinte),
+    CONSTRAINT fk_ligne_releve_releve
+        FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),
+    CONSTRAINT fk_ligne_releve_rapprochement
+        FOREIGN KEY (rapprochement_id) REFERENCES rapprochement (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS rapprochement_mouvement (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    rapprochement_id BIGINT NOT NULL,
+    mouvement_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_rapprochement_mouvement_mouvement UNIQUE (mouvement_id),
+    INDEX idx_rapprochement_mouvement_rapprochement (rapprochement_id),
+    CONSTRAINT fk_rapprochement_mouvement_rapprochement
+        FOREIGN KEY (rapprochement_id) REFERENCES rapprochement (id),
+    CONSTRAINT fk_rapprochement_mouvement_mouvement
+        FOREIGN KEY (mouvement_id) REFERENCES mouvement_caisse (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS correspondance_import (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    compte_id BIGINT NOT NULL,
+    ligne_entete INT NOT NULL,
+    colonne_date INT NOT NULL,
+    colonne_libelle INT NOT NULL,
+    colonne_reference INT NULL,
+    colonne_montant INT NULL,
+    colonne_debit INT NULL,
+    colonne_credit INT NULL,
+    format_date VARCHAR(20) NOT NULL,
+    separateur_decimal VARCHAR(10) NOT NULL,
+    date_modification DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_correspondance_import_compte UNIQUE (compte_id),
+    CONSTRAINT fk_correspondance_import_compte
+        FOREIGN KEY (compte_id) REFERENCES compte_tresorerie_boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS evenement_releve (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    releve_id BIGINT NOT NULL,
+    type VARCHAR(16) NOT NULL,
+    utilisateur_id BIGINT NOT NULL,
+    date_evenement DATETIME(6) NOT NULL,
+    motif VARCHAR(255) NULL,
+    solde_appli DECIMAL(17,2) NULL,
+    PRIMARY KEY (id),
+    INDEX idx_evenement_releve_releve (releve_id, id),
+    CONSTRAINT fk_evenement_releve_releve
+        FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),
+    CONSTRAINT fk_evenement_releve_utilisateur
+        FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS refus_proposition (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    ligne_id BIGINT NOT NULL,
+    mouvement_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_refus_proposition UNIQUE (ligne_id, mouvement_id),
+    CONSTRAINT fk_refus_proposition_ligne
+        FOREIGN KEY (ligne_id) REFERENCES ligne_releve (id),
+    CONSTRAINT fk_refus_proposition_mouvement
+        FOREIGN KEY (mouvement_id) REFERENCES mouvement_caisse (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Fin lot 3c
+
 CREATE TABLE IF NOT EXISTS operation_creation (
     jeton VARCHAR(36) NOT NULL,
     boutique_id BIGINT NOT NULL,

@@ -162,6 +162,41 @@ public final class Lot3MariaDbTest {
                     && em.find(AjustementSoldeDepart.class, ajustementId).getVariation().compareTo(new java.math.BigDecimal("-150")) == 0
                     && em.find(InventaireCreances.class, inventaireId).getLignes().get(0).getEcart().compareTo(new java.math.BigDecimal("20")) == 0,
                     "Comptage, billetage, ajustement ou inventaire non relus par JPA");
+            // Rapprochement bancaire (3c) : relevé, ligne, rapprochement, lien vers le mouvement, correspondance mémorisée, historique et refus relus par JPA.
+            em.getTransaction().begin();
+            var br = em.find(Boutique.class, boutiqueId); var gerant = em.find(Utilisateur.class, caissierId); var compteR = em.find(CompteTresorerieBoutique.class, orange2Id);
+            var releve = new ReleveBancaire(); releve.setBoutique(br); releve.setCompte(compteR); releve.setNumero("RB-202603-" + orange2Id);
+            releve.setDateDebut(java.time.LocalDate.of(2026, 3, 1)); releve.setDateFin(java.time.LocalDate.of(2026, 3, 31));
+            releve.setSoldeOuverture(java.math.BigDecimal.ZERO); releve.setSoldeCloture(new java.math.BigDecimal("1500.00")); releve.setUtilisateur(gerant);
+            releve.setDateCreation(java.time.LocalDateTime.of(2026, 4, 1, 8, 0)); releve.setJeton(java.util.UUID.randomUUID().toString()); em.persist(releve);
+            var groupe = new Rapprochement(); groupe.setReleve(releve); groupe.setType(org.example.stock.enums.TypeRapprochement.MANUEL); groupe.setMontant(new java.math.BigDecimal("1500.00"));
+            groupe.setUtilisateur(gerant); groupe.setDateCreation(java.time.LocalDateTime.of(2026, 4, 1, 9, 0)); em.persist(groupe);
+            var ligneR = new LigneReleve(); ligneR.setReleve(releve); ligneR.setDateOperation(java.time.LocalDate.of(2026, 3, 1)); ligneR.setLibelle("Virement reçu");
+            ligneR.setMontant(new java.math.BigDecimal("1500.00")); ligneR.setOrigine(org.example.stock.enums.OrigineLigneReleve.IMPORT); ligneR.setEmpreinte("c".repeat(64)); ligneR.setRapprochement(groupe); em.persist(ligneR);
+            var lien = new RapprochementMouvement(); lien.setRapprochement(groupe); lien.setMouvement(em.find(MouvementCaisse.class, mouvementId)); em.persist(lien);
+            var evenement = new EvenementReleve(); evenement.setReleve(releve); evenement.setType(org.example.stock.enums.TypeEvenementReleve.VALIDATION); evenement.setUtilisateur(gerant);
+            evenement.setDateEvenement(java.time.LocalDateTime.of(2026, 4, 2, 8, 0)); evenement.setSoldeAppli(new java.math.BigDecimal("1500.00")); em.persist(evenement);
+            var memo = new CorrespondanceImport(); memo.setCompte(compteR); memo.setLigneEntete(1); memo.setColonneDate(1); memo.setColonneLibelle(2); memo.setColonneMontant(3);
+            memo.setFormatDate(org.example.stock.enums.FormatDateReleve.JJ_MM_AAAA); memo.setSeparateurDecimal(org.example.stock.enums.SeparateurDecimal.VIRGULE);
+            memo.setDateModification(java.time.LocalDateTime.of(2026, 4, 1, 8, 30)); em.persist(memo);
+            var refus = new RefusProposition(); refus.setLigne(ligneR); refus.setMouvement(ecart); em.persist(refus);
+            em.getTransaction().commit();
+            long releveId = releve.getId(), ligneRId = ligneR.getId();
+            em.clear();
+            var releveRelu = em.find(ReleveBancaire.class, releveId);
+            Lot3MigrationScenarios.exiger(releveRelu.getCompte().getId().equals(orange2Id) && releveRelu.getSoldeCloture().compareTo(new java.math.BigDecimal("1500")) == 0
+                    && em.find(LigneReleve.class, ligneRId).getRapprochement().getReleve().getId().equals(releveId)
+                    && em.createQuery("select count(x) from RapprochementMouvement x where x.mouvement.id = :m", Long.class).setParameter("m", mouvementId).getSingleResult() == 1L,
+                    "Relevé, ligne ou rapprochement non relus par JPA");
+            boolean mouvementDeuxFois = false;
+            try {
+                em.getTransaction().begin();
+                var autreGroupe = new Rapprochement(); autreGroupe.setReleve(em.find(ReleveBancaire.class, releveId)); autreGroupe.setType(org.example.stock.enums.TypeRapprochement.MANUEL);
+                autreGroupe.setMontant(new java.math.BigDecimal("1500.00")); autreGroupe.setUtilisateur(em.find(Utilisateur.class, caissierId)); autreGroupe.setDateCreation(java.time.LocalDateTime.of(2026, 4, 1, 9, 0)); em.persist(autreGroupe);
+                var deuxieme = new RapprochementMouvement(); deuxieme.setRapprochement(autreGroupe); deuxieme.setMouvement(em.find(MouvementCaisse.class, mouvementId)); em.persist(deuxieme);
+                em.getTransaction().commit();
+            } catch (RuntimeException e) { mouvementDeuxFois = true; if (em.getTransaction().isActive()) em.getTransaction().rollback(); }
+            Lot3MigrationScenarios.exiger(mouvementDeuxFois, "L'unicité du mouvement rapproché n'a pas refusé un second rapprochement");
             if (historique) {
                 var migre = em.createQuery("select c from CompteTresorerieBoutique c where c.boutique.id = 1 and c.type = :t", CompteTresorerieBoutique.class)
                         .setParameter("t", TypeCompteTresorerie.BANQUE).getSingleResult();

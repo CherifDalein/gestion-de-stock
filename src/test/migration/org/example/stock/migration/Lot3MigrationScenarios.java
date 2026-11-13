@@ -10,11 +10,14 @@ import java.util.*;
 final class Lot3MigrationScenarios {
     static final List<String> VALIDES = List.of("ancien", "vide", "schema_neuf", "comptes_manquants", "boutique_sans_compte", "colonnes_partielles",
             "reprise_colonnes", "reprise_remplissage", "reprise_cle_absente", "reprise_unicite_absente", "relance", "nouvelle_boutique",
-            "trois_a_seule", "financements_partiels", "relance_financements", "trois_b1_seule", "controles_partiels", "relance_controles");
+            "trois_a_seule", "financements_partiels", "relance_financements", "trois_b1_seule", "controles_partiels", "relance_controles",
+            "trois_b2_seule", "rapprochement_partiel", "relance_rapprochement");
     static final List<String> INVALIDES = List.of("mouvement_compte_inconnu", "operation_source_inconnue", "operation_destination_inconnue", "retour_compte_inconnu",
             "compte_type_inconnu", "principal_incoherent", "nom_facultatif", "type_longueur", "mouvement_autre_boutique", "operation_autre_boutique",
             "autorisation_autre_boutique", "cle_mauvaise_cible", "autorises_colonne_en_trop", "comptage_colonne_en_trop", "comptage_autre_boutique",
-            "comptage_statut_inconnu", "ajustement_sans_partenaire", "ligne_inventaire_cle_mauvaise_cible", "mouvement_comptage_autre_boutique");
+            "comptage_statut_inconnu", "ajustement_sans_partenaire", "ligne_inventaire_cle_mauvaise_cible", "mouvement_comptage_autre_boutique",
+            "releve_colonne_en_trop", "releve_compte_especes", "releve_statut_inconnu", "releve_valide_sans_validateur", "ligne_autre_releve",
+            "rapprochement_mouvement_autre_compte", "refus_cle_mauvaise_cible", "releve_autre_boutique");
     private Lot3MigrationScenarios() {}
 
     static void schema(Connection c, boolean vide) throws Exception {
@@ -107,6 +110,30 @@ final class Lot3MigrationScenarios {
                 sql(c, "ALTER TABLE ligne_inventaire_creances " + supprimerCle(c) + "fk_ligne_inventaire_client");
                 sql(c, "ALTER TABLE ligne_inventaire_creances ADD CONSTRAINT fk_ligne_inventaire_client FOREIGN KEY(client_id) REFERENCES boutique(id)");
             }
+            // Base 3a + 3b1 + 3b2 : seul le rapprochement de l'étape 3c est retiré, la migration l'ajoute sans toucher aux contrôles.
+            case "trois_b2_seule" -> { saisirControles(c); retirerRapprochement(c, true); }
+            // Interruption pendant 3c : les relevés, lignes et rapprochements existent, pas les liens, la correspondance, l'historique ni les refus.
+            case "rapprochement_partiel" -> { saisirRapprochement(c); retirerRapprochement(c, false); }
+            // Après la migration, le gérant a saisi un relevé validé avec un rapprochement : une relance n'y touche pas.
+            case "relance_rapprochement" -> saisirRapprochement(c);
+            case "releve_colonne_en_trop" -> sql(c, "ALTER TABLE releve_bancaire ADD COLUMN note VARCHAR(10) NULL");
+            case "releve_compte_especes" -> { saisirRapprochement(c); sql(c, "UPDATE releve_bancaire SET compte_id=(SELECT MIN(id) FROM compte_tresorerie_boutique WHERE boutique_id=1 AND type='ESPECES') WHERE id=800"); }
+            case "releve_autre_boutique" -> { saisirRapprochement(c); sql(c, "UPDATE releve_bancaire SET boutique_id=2 WHERE id=800"); }
+            case "releve_statut_inconnu" -> { saisirRapprochement(c); sql(c, "UPDATE releve_bancaire SET statut='AUTRE' WHERE id=800"); }
+            case "releve_valide_sans_validateur" -> { saisirRapprochement(c); sql(c, "UPDATE releve_bancaire SET valide_par_id=NULL WHERE id=800"); }
+            case "ligne_autre_releve" -> {
+                saisirRapprochement(c);
+                sql(c, "INSERT INTO releve_bancaire(id,boutique_id,compte_id,numero,date_debut,date_fin,solde_ouverture,solde_cloture,statut,utilisateur_id,date_creation,jeton) VALUES"
+                        + "(801,1,(SELECT compte_id FROM releve_bancaire WHERE id=800),'RB-202504-X','2025-04-01','2025-04-30',0,0,'BROUILLON',1,'2025-05-01 08:00:00.000000','d0000000-0000-0000-0000-000000000801')");
+                sql(c, "UPDATE ligne_releve SET releve_id=801 WHERE id=810");
+            }
+            case "rapprochement_mouvement_autre_compte" -> { saisirRapprochement(c); sql(c, "UPDATE rapprochement_mouvement SET mouvement_id=300 WHERE id=830"); }
+            case "refus_cle_mauvaise_cible" -> {
+                saisirRapprochement(c);
+                sql(c, "DELETE FROM refus_proposition");
+                sql(c, "ALTER TABLE refus_proposition " + supprimerCle(c) + "fk_refus_proposition_ligne");
+                sql(c, "ALTER TABLE refus_proposition ADD CONSTRAINT fk_refus_proposition_ligne FOREIGN KEY(ligne_id) REFERENCES boutique(id)");
+            }
             case "autorises_colonne_en_trop" -> sql(c, "ALTER TABLE compte_tresorerie_autorise ADD COLUMN note VARCHAR(10) NULL");
             default -> throw new IllegalStateException("Scénario lot 3 inconnu.");
         }
@@ -135,6 +162,7 @@ final class Lot3MigrationScenarios {
      * comptages et leur billetage sont conservés (interruption après leur création).
      */
     private static void retirerControles(Connection c, boolean tout) throws SQLException {
+        retirerRapprochement(c, true);
         sql(c, "DROP TABLE ligne_inventaire_creances");
         sql(c, "DROP TABLE inventaire_creances");
         sql(c, "DROP TABLE ajustement_solde_depart");
@@ -143,6 +171,41 @@ final class Lot3MigrationScenarios {
         if (!tout) return;
         sql(c, "DROP TABLE comptage_billetage");
         sql(c, "DROP TABLE comptage_caisse");
+    }
+
+    /**
+     * Retire les éléments de 3c d'une base migrée. Avec {@code tout} faux, les relevés, rapprochements et lignes sont conservés (interruption après leur création) ;
+     * les liens vers les mouvements, la correspondance, l'historique et les refus sont retirés.
+     */
+    private static void retirerRapprochement(Connection c, boolean tout) throws SQLException {
+        if (!BoutiquesMigration.tables(c).containsKey("releve_bancaire")) return;
+        sql(c, "DROP TABLE IF EXISTS refus_proposition");
+        sql(c, "DROP TABLE IF EXISTS evenement_releve");
+        sql(c, "DROP TABLE IF EXISTS correspondance_import");
+        sql(c, "DROP TABLE IF EXISTS rapprochement_mouvement");
+        if (!tout) return;
+        sql(c, "DROP TABLE ligne_releve");
+        sql(c, "DROP TABLE rapprochement");
+        sql(c, "DROP TABLE releve_bancaire");
+    }
+
+    /**
+     * Saisies de 3c faites après la migration : un relevé validé du compte bancaire de la boutique 1 (deux lignes, un rapprochement avec le mouvement 301),
+     * son historique, une correspondance mémorisée et un refus.
+     */
+    private static void saisirRapprochement(Connection c) throws SQLException {
+        String compte = "(SELECT MIN(id) FROM compte_tresorerie_boutique WHERE boutique_id=1 AND type='BANQUE')";
+        sql(c, "INSERT INTO releve_bancaire(id,boutique_id,compte_id,numero,date_debut,date_fin,solde_ouverture,solde_cloture,statut,utilisateur_id,date_creation,jeton,valide_par_id,date_validation,solde_appli_validation) VALUES"
+                + "(800,1," + compte + ",'RB-202503-1','2025-03-01','2025-03-31',0.00,240.25,'VALIDE',1,'2025-04-01 08:00:00.000000','d0000000-0000-0000-0000-000000000800',1,'2025-04-02 08:00:00.000000',240.25)");
+        sql(c, "INSERT INTO rapprochement(id,releve_id,type,montant,utilisateur_id,date_creation) VALUES(820,800,'MANUEL',250.50,1,'2025-04-01 09:00:00.000000')");
+        sql(c, "INSERT INTO ligne_releve(id,releve_id,date_operation,libelle,reference,montant,origine,empreinte,rapprochement_id) VALUES"
+                + "(810,800,'2025-03-02','Virement client','V1',250.50,'SAISIE','" + "a".repeat(64) + "',820),"
+                + "(811,800,'2025-03-04','Frais de tenue de compte',NULL,-10.25,'IMPORT','" + "b".repeat(64) + "',NULL)");
+        sql(c, "INSERT INTO rapprochement_mouvement(id,rapprochement_id,mouvement_id) VALUES(830,820,301)");
+        sql(c, "INSERT INTO evenement_releve(id,releve_id,type,utilisateur_id,date_evenement,motif,solde_appli) VALUES(840,800,'VALIDATION',1,'2025-04-02 08:00:00.000000',NULL,240.25)");
+        sql(c, "INSERT INTO correspondance_import(id,compte_id,ligne_entete,colonne_date,colonne_libelle,colonne_reference,colonne_montant,colonne_debit,colonne_credit,format_date,separateur_decimal,date_modification) VALUES"
+                + "(850," + compte + ",1,1,2,3,4,NULL,NULL,'JJ_MM_AAAA','VIRGULE','2025-04-01 08:30:00.000000')");
+        sql(c, "INSERT INTO refus_proposition(id,ligne_id,mouvement_id) VALUES(860,811,304)");
     }
 
     /** Saisies de 3b2 faites après la migration : un comptage validé (avec billetage et son mouvement), un ajustement, un inventaire. */
@@ -236,7 +299,7 @@ final class Lot3MigrationScenarios {
         for (String table : List.of("comptage_caisse", "comptage_billetage", "ajustement_solde_depart", "inventaire_creances", "ligne_inventaire_creances"))
             exiger(BoutiquesMigration.tables(c).containsKey(table), "Table de contrôle absente : " + table);
         exiger(InscriptionEssaiMigration.colonnes(c, "mouvement_caisse").containsKey("comptage_caisse_id"), "Colonne comptage_caisse_id absente");
-        if (scenario.equals("relance_controles")) {
+        if (scenario.equals("relance_controles") || scenario.equals("trois_b2_seule")) {
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_caisse") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_billetage") == 2
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_caisse WHERE id=700 AND statut='VALIDE' AND ecart=-10000.00 AND motif_decision='Erreur de rendu'") == 1
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE id=730 AND comptage_caisse_id=700 AND source='AUTRE_CHARGE'") == 1
@@ -249,6 +312,26 @@ final class Lot3MigrationScenarios {
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM inventaire_creances") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_inventaire_creances") == 0
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM comptage_billetage") == 0
                     && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM mouvement_caisse WHERE comptage_caisse_id IS NOT NULL") == 0, "Les éléments de contrôle ajoutés doivent être vides");
+        }
+        for (String table : List.of("releve_bancaire", "rapprochement", "ligne_releve", "rapprochement_mouvement", "correspondance_import", "evenement_releve", "refus_proposition"))
+            exiger(BoutiquesMigration.tables(c).containsKey(table), "Table de rapprochement absente : " + table);
+        if (Set.of("relance_rapprochement", "rapprochement_partiel").contains(scenario)) {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM releve_bancaire WHERE id=800 AND statut='VALIDE' AND solde_cloture=240.25 AND numero='RB-202503-1'") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_releve") == 2 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM rapprochement WHERE id=820 AND montant=250.50") == 1
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_releve WHERE id=810 AND rapprochement_id=820") == 1,
+                    "Une relance a modifié les relevés saisis");
+            if (scenario.equals("relance_rapprochement"))
+                exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM rapprochement_mouvement WHERE mouvement_id=301") == 1 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM evenement_releve") == 1
+                        && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM correspondance_import WHERE colonne_montant=4") == 1 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM refus_proposition") == 1,
+                        "Une relance a modifié le pointage, l'historique, la correspondance ou les refus");
+            else
+                exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM rapprochement_mouvement") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM evenement_releve") == 0,
+                        "Les éléments de rapprochement ajoutés doivent être vides");
+        } else {
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM releve_bancaire") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM ligne_releve") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM rapprochement") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM rapprochement_mouvement") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM correspondance_import") == 0 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM evenement_releve") == 0
+                    && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM refus_proposition") == 0, "Les tables de rapprochement ajoutées doivent être vides");
         }
         if (scenario.equals("trois_b1_seule")) {
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM emprunt WHERE id=20 AND numero='EM-000001'") == 1 && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM imputation_echeance") == 1
