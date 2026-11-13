@@ -1,0 +1,44 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapNouveauTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Rapprochement bancaire</p><h1 id="rapNouveauTitre">Nouveau relevé</h1>
+                <p class="record-intro">Recopiez la période et les deux soldes imprimés sur le relevé de la banque ou de l'opérateur. Les lignes viennent ensuite, à la main ou par un fichier.</p></div>
+            <a th:href="@{/rapprochements}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <p class="alert alert-warning" th:if="${#lists.isEmpty(comptes)}">Aucun compte Banque ou Orange Money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
+        <form th:unless="${#lists.isEmpty(comptes)}" th:action="@{/rapprochements}" th:object="${releveForm}" method="post" id="formReleve" novalidate>
+            <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
+            <input type="hidden" th:field="*{jeton}" />
+            <section class="record-panel" aria-labelledby="rapNouveauCompteTitre">
+                <div class="record-panel-heading"><h2 id="rapNouveauCompteTitre">Compte et période</h2></div>
+                <div class="record-field">
+                    <label for="releveCompte">Compte</label>
+                    <select id="releveCompte" class="form-select" th:field="*{compte}" required data-recharger="/rapprochements/nouveau">
+                        <option value="">Choisir un compte</option>
+                        <option th:each="c : ${comptes}" th:value="${c.id}" th:text="${c.nom + ' (' + c.type.libelle + ')'}">Ecobank</option>
+                    </select>
+                </div>
+                <div class="rap-grille">
+                    <div class="record-field"><label for="releveDebut">Du</label><input id="releveDebut" type="date" class="form-control" th:field="*{dateDebut}" required /></div>
+                    <div class="record-field"><label for="releveFin">Au</label><input id="releveFin" type="date" class="form-control" th:field="*{dateFin}" required /></div>
+                </div>
+            </section>
+            <section class="record-panel" aria-labelledby="rapNouveauSoldesTitre">
+                <div class="record-panel-heading"><h2 id="rapNouveauSoldesTitre">Soldes du relevé</h2>
+                    <p>Le solde d'ouverture proposé est la clôture du relevé précédent du compte. Un solde peut être négatif.</p></div>
+                <div class="rap-grille">
+                    <div class="record-field"><label for="releveOuverture">Solde d'ouverture (GNF)</label><input id="releveOuverture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeOuverture}" required /></div>
+                    <div class="record-field"><label for="releveCloture">Solde de clôture (GNF)</label><input id="releveCloture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeCloture}" required /></div>
+                </div>
+            </section>
+            <div class="record-actions">
+                <a th:href="@{/rapprochements}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check" aria-hidden="true"></i> Créer le relevé</button>
+            </div>
+        </form>
+        <script th:src="@{/js/rapprochement.js}"></script>
+    </section>
+</div>

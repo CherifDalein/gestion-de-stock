@@ -27,7 +27,8 @@ import java.util.stream.Stream;
  * </ol>
  * L'étape 3b1 (financements) ajoute les partenaires financiers, les emprunts et leur échéancier ; l'étape 3b2 (contrôles) ajoute les comptages de caisse
  * (avec leur billetage), les ajustements de solde de départ et les inventaires des créances et dettes, ainsi que le lien d'un mouvement vers son comptage.
- * Une base sans lot 3, une base où seule l'étape 3a est appliquée et une base 3a + 3b1 sont toutes amenées au même schéma par la même commande.
+ * L'étape 3c (rapprochement bancaire) ajoute les relevés, leurs lignes, les rapprochements, la correspondance d'import mémorisée par compte et l'historique des validations.
+ * Une base sans lot 3, une base où seule l'étape 3a est appliquée, une base 3a + 3b1 et une base 3a + 3b1 + 3b2 sont toutes amenées au même schéma par la même commande.
  * Aucune valeur déjà migrée n'est réécrite : un compte renommé ou choisi principal depuis la migration reste tel quel.
  * Le lot 4 doit être terminé (et, par lui, les lots 1 et 2). Syntaxes acceptées par MariaDB 10.4 uniquement.
  */
@@ -155,8 +156,65 @@ public final class Lot3Migration {
                     + " CONSTRAINT fk_ligne_inventaire_partenaire FOREIGN KEY (partenaire_financier_id) REFERENCES " + PARTENAIRES + " (id))",
                     Set.of("id", "inventaire_id", "type", "client_id", "fournisseur_id", "partenaire_financier_id", "nom", "solde_appli", "solde_confirme", "ecart", "raison"),
                     List.of(), Map.of("inventaire_id", "inventaire_creances", "client_id", "client", "fournisseur_id", "fournisseur", "partenaire_financier_id", PARTENAIRES)));
-    /** Toutes les tables ajoutées par le lot 3 après les comptes : financements (3b1) puis contrôles (3b2), chacune ne référençant que les précédentes. */
-    static final List<TableNeuve> TABLES_NEUVES = Stream.concat(TABLES_FINANCEMENTS.stream(), TABLES_CONTROLES.stream()).toList();
+    /** Tables de l'étape 3c (rapprochement bancaire) : relevés, rapprochements, lignes, liens vers les mouvements, correspondance d'import, historique, refus. */
+    static final List<TableNeuve> TABLES_RAPPROCHEMENT = List.of(
+            new TableNeuve("releve_bancaire", "%s (id BIGINT NOT NULL %s, boutique_id BIGINT NOT NULL, compte_id BIGINT NOT NULL, numero VARCHAR(40) NOT NULL,"
+                    + " date_debut DATE NOT NULL, date_fin DATE NOT NULL, solde_ouverture DECIMAL(17,2) NOT NULL, solde_cloture DECIMAL(17,2) NOT NULL,"
+                    + " statut VARCHAR(16) NOT NULL, utilisateur_id BIGINT NOT NULL, date_creation DATETIME(6) NOT NULL, jeton VARCHAR(36) NOT NULL,"
+                    + " valide_par_id BIGINT NULL, date_validation DATETIME(6) NULL, solde_appli_validation DECIMAL(17,2) NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_releve_bancaire_numero UNIQUE (boutique_id, numero), CONSTRAINT uk_releve_bancaire_jeton UNIQUE (jeton),"
+                    + " INDEX idx_releve_bancaire_compte_debut (compte_id, date_debut),"
+                    + " CONSTRAINT fk_releve_bancaire_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                    + " CONSTRAINT fk_releve_bancaire_compte FOREIGN KEY (compte_id) REFERENCES " + COMPTES + " (id),"
+                    + " CONSTRAINT fk_releve_bancaire_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id),"
+                    + " CONSTRAINT fk_releve_bancaire_valide_par FOREIGN KEY (valide_par_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "boutique_id", "compte_id", "numero", "date_debut", "date_fin", "solde_ouverture", "solde_cloture", "statut", "utilisateur_id",
+                            "date_creation", "jeton", "valide_par_id", "date_validation", "solde_appli_validation"),
+                    List.of(List.of("boutique_id", "numero"), List.of("jeton")),
+                    Map.of("boutique_id", "boutique", "compte_id", COMPTES, "utilisateur_id", "utilisateur", "valide_par_id", "utilisateur")),
+            new TableNeuve("rapprochement", "%s (id BIGINT NOT NULL %s, releve_id BIGINT NOT NULL, type VARCHAR(16) NOT NULL, montant DECIMAL(17,2) NOT NULL,"
+                    + " utilisateur_id BIGINT NOT NULL, date_creation DATETIME(6) NOT NULL, PRIMARY KEY (id), INDEX idx_rapprochement_releve (releve_id),"
+                    + " CONSTRAINT fk_rapprochement_releve FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),"
+                    + " CONSTRAINT fk_rapprochement_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "releve_id", "type", "montant", "utilisateur_id", "date_creation"),
+                    List.of(), Map.of("releve_id", "releve_bancaire", "utilisateur_id", "utilisateur")),
+            new TableNeuve("ligne_releve", "%s (id BIGINT NOT NULL %s, releve_id BIGINT NOT NULL, date_operation DATE NOT NULL, libelle VARCHAR(255) NOT NULL,"
+                    + " reference VARCHAR(100) NULL, montant DECIMAL(17,2) NOT NULL, origine VARCHAR(16) NOT NULL, empreinte VARCHAR(64) NOT NULL,"
+                    + " rapprochement_id BIGINT NULL, PRIMARY KEY (id), INDEX idx_ligne_releve_releve (releve_id, date_operation, id),"
+                    + " INDEX idx_ligne_releve_empreinte (empreinte),"
+                    + " CONSTRAINT fk_ligne_releve_releve FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),"
+                    + " CONSTRAINT fk_ligne_releve_rapprochement FOREIGN KEY (rapprochement_id) REFERENCES rapprochement (id))",
+                    Set.of("id", "releve_id", "date_operation", "libelle", "reference", "montant", "origine", "empreinte", "rapprochement_id"),
+                    List.of(), Map.of("releve_id", "releve_bancaire", "rapprochement_id", "rapprochement")),
+            new TableNeuve("rapprochement_mouvement", "%s (id BIGINT NOT NULL %s, rapprochement_id BIGINT NOT NULL, mouvement_id BIGINT NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_rapprochement_mouvement_mouvement UNIQUE (mouvement_id), INDEX idx_rapprochement_mouvement_rapprochement (rapprochement_id),"
+                    + " CONSTRAINT fk_rapprochement_mouvement_rapprochement FOREIGN KEY (rapprochement_id) REFERENCES rapprochement (id),"
+                    + " CONSTRAINT fk_rapprochement_mouvement_mouvement FOREIGN KEY (mouvement_id) REFERENCES mouvement_caisse (id))",
+                    Set.of("id", "rapprochement_id", "mouvement_id"), List.of(List.of("mouvement_id")),
+                    Map.of("rapprochement_id", "rapprochement", "mouvement_id", "mouvement_caisse")),
+            new TableNeuve("correspondance_import", "%s (id BIGINT NOT NULL %s, compte_id BIGINT NOT NULL, ligne_entete INT NOT NULL, colonne_date INT NOT NULL,"
+                    + " colonne_libelle INT NOT NULL, colonne_reference INT NULL, colonne_montant INT NULL, colonne_debit INT NULL, colonne_credit INT NULL,"
+                    + " format_date VARCHAR(20) NOT NULL, separateur_decimal VARCHAR(10) NOT NULL, date_modification DATETIME(6) NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_correspondance_import_compte UNIQUE (compte_id),"
+                    + " CONSTRAINT fk_correspondance_import_compte FOREIGN KEY (compte_id) REFERENCES " + COMPTES + " (id))",
+                    Set.of("id", "compte_id", "ligne_entete", "colonne_date", "colonne_libelle", "colonne_reference", "colonne_montant", "colonne_debit",
+                            "colonne_credit", "format_date", "separateur_decimal", "date_modification"),
+                    List.of(List.of("compte_id")), Map.of("compte_id", COMPTES)),
+            new TableNeuve("evenement_releve", "%s (id BIGINT NOT NULL %s, releve_id BIGINT NOT NULL, type VARCHAR(16) NOT NULL, utilisateur_id BIGINT NOT NULL,"
+                    + " date_evenement DATETIME(6) NOT NULL, motif VARCHAR(255) NULL, solde_appli DECIMAL(17,2) NULL, PRIMARY KEY (id),"
+                    + " INDEX idx_evenement_releve_releve (releve_id, id),"
+                    + " CONSTRAINT fk_evenement_releve_releve FOREIGN KEY (releve_id) REFERENCES releve_bancaire (id),"
+                    + " CONSTRAINT fk_evenement_releve_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateur (id))",
+                    Set.of("id", "releve_id", "type", "utilisateur_id", "date_evenement", "motif", "solde_appli"),
+                    List.of(), Map.of("releve_id", "releve_bancaire", "utilisateur_id", "utilisateur")),
+            new TableNeuve("refus_proposition", "%s (id BIGINT NOT NULL %s, ligne_id BIGINT NOT NULL, mouvement_id BIGINT NOT NULL, PRIMARY KEY (id),"
+                    + " CONSTRAINT uk_refus_proposition UNIQUE (ligne_id, mouvement_id),"
+                    + " CONSTRAINT fk_refus_proposition_ligne FOREIGN KEY (ligne_id) REFERENCES ligne_releve (id),"
+                    + " CONSTRAINT fk_refus_proposition_mouvement FOREIGN KEY (mouvement_id) REFERENCES mouvement_caisse (id))",
+                    Set.of("id", "ligne_id", "mouvement_id"), List.of(List.of("ligne_id", "mouvement_id")),
+                    Map.of("ligne_id", "ligne_releve", "mouvement_id", "mouvement_caisse")));
+    /** Toutes les tables ajoutées par le lot 3 après les comptes : financements (3b1), contrôles (3b2) puis rapprochement (3c), chacune ne référençant que les précédentes. */
+    static final List<TableNeuve> TABLES_NEUVES = Stream.of(TABLES_FINANCEMENTS, TABLES_CONTROLES, TABLES_RAPPROCHEMENT).flatMap(List::stream).toList();
     /** Anciennes colonnes à énumération, supprimées en dernier. */
     static final List<String[]> ANCIENNES_COLONNES = List.of(
             new String[]{"mouvement_caisse", "compte"}, new String[]{"operation_tresorerie", "compte_source"},
@@ -261,7 +319,7 @@ public final class Lot3Migration {
                 + (maria(c) ? " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" : ""));
     }
 
-    /** Tables des étapes 3b1 et 3b2, vides à la création ; une table déjà présente n'est ni recréée ni modifiée. */
+    /** Tables des étapes 3b1, 3b2 et 3c, vides à la création ; une table déjà présente n'est ni recréée ni modifiée. */
     static void creerTablesNeuves(Connection c) throws SQLException {
         for (var t : TABLES_NEUVES) {
             if (BoutiquesMigration.tables(c).containsKey(t.nom())) continue;
@@ -422,6 +480,7 @@ public final class Lot3Migration {
         coherenceBoutiques(c, "operation_tresorerie", "compte_destination_id");
         coherenceBoutiques(c, "retour", "compte_tresorerie_id");
         verifierControles(c);
+        verifierRapprochement(c);
         if (BoutiquesMigration.tables(c).containsKey(AUTORISES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, AUTORISES) + " a JOIN " + table(c, COMPTES)
                 + " x ON x.id=a.compte_id JOIN " + table(c, "utilisateur") + " u ON u.id=a.utilisateur_id WHERE x.boutique_id<>u.boutique_id") != 0)
             nonConforme("un caissier est autorisé sur le compte d'une autre boutique");
@@ -441,6 +500,32 @@ public final class Lot3Migration {
         if (tables.containsKey("ajustement_solde_depart") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "ajustement_solde_depart")
                 + " WHERE (client_id IS NULL AND fournisseur_id IS NULL) OR (client_id IS NOT NULL AND fournisseur_id IS NOT NULL)") != 0)
             nonConforme("un ajustement de solde de départ doit concerner un client ou un fournisseur, pas l'un et l'autre");
+    }
+
+    /**
+     * Étape 3c : statuts connus ; un relevé porte sur un compte de sa boutique, de type Banque ou Orange Money ; un relevé validé a son validateur ;
+     * une ligne ne figure que dans un rapprochement de son propre relevé ; un mouvement rapproché appartient au compte du relevé.
+     */
+    private static void verifierRapprochement(Connection c) throws SQLException {
+        var tables = BoutiquesMigration.tables(c);
+        if (tables.containsKey("releve_bancaire")) {
+            String r = table(c, "releve_bancaire");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " WHERE statut NOT IN ('BROUILLON','VALIDE')") != 0) nonConforme("un relevé bancaire a un statut inconnu");
+            coherenceBoutiques(c, "releve_bancaire", "compte_id");
+            if (colonnes(c, COMPTES).containsKey("type") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " b JOIN " + table(c, COMPTES)
+                    + " x ON x.id=b.compte_id WHERE x.type NOT IN ('BANQUE','ORANGE_MONEY')") != 0) nonConforme("un relevé bancaire porte sur un compte qui n'est ni Banque ni Orange Money");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " WHERE date_fin < date_debut OR statut='VALIDE' AND (valide_par_id IS NULL OR date_validation IS NULL)") != 0)
+                nonConforme("un relevé bancaire a une période inversée ou une validation incomplète");
+            if (tables.containsKey("ligne_releve") && tables.containsKey("rapprochement") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "ligne_releve") + " l JOIN "
+                    + table(c, "rapprochement") + " g ON g.id=l.rapprochement_id WHERE g.releve_id<>l.releve_id") != 0) nonConforme("une ligne de relevé figure dans le rapprochement d'un autre relevé");
+            if (tables.containsKey("rapprochement_mouvement") && tables.containsKey("rapprochement") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "rapprochement_mouvement")
+                    + " rm JOIN " + table(c, "rapprochement") + " g ON g.id=rm.rapprochement_id JOIN " + r + " b ON b.id=g.releve_id JOIN " + table(c, "mouvement_caisse")
+                    + " m ON m.id=rm.mouvement_id WHERE m.compte_id<>b.compte_id") != 0) nonConforme("un mouvement rapproché n'appartient pas au compte du relevé");
+        }
+        if (tables.containsKey("rapprochement") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "rapprochement")
+                + " WHERE type NOT IN ('AUTO','MANUEL','ENREGISTREMENT','EXCLUSION')") != 0) nonConforme("un rapprochement a un type inconnu");
+        if (tables.containsKey("evenement_releve") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "evenement_releve")
+                + " WHERE type NOT IN ('VALIDATION','DEVALIDATION')") != 0) nonConforme("un événement de relevé a un type inconnu");
     }
 
     /** Un document ne référence jamais le compte d'une autre boutique. */

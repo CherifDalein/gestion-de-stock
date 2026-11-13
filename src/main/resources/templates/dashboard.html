@@ -74,6 +74,9 @@
                     <a class="nav-link" th:href="@{/financements/emprunts}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'financements/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'financements/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-landmark" aria-hidden="true"></i></span>Financements
                     </a>
+                    <a class="nav-link" th:href="@{/rapprochements}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'rapprochement/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'rapprochement/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>Rapprochement bancaire
+                    </a>
                     <a class="nav-link" th:href="@{/controles/comptages}" sec:authorize="hasAnyRole('ADMIN', 'CAISSIER')" th:classappend="${#strings.startsWith(page, 'controles/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'controles/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-clipboard-check" aria-hidden="true"></i></span>Contrôles<span class="badge rounded-pill bg-danger ms-2" sec:authorize="hasRole('ADMIN')" th:if="${comptagesEnAttente != null and comptagesEnAttente > 0}" th:text="${comptagesEnAttente}">2</span>
                     </a>

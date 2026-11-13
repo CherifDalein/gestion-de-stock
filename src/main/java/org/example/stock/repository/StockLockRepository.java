@@ -9,6 +9,7 @@ import org.example.stock.model.ComptageCaisse;
 import org.example.stock.model.Devis;
 import org.example.stock.model.Emprunt;
 import org.example.stock.model.PartenaireFinancier;
+import org.example.stock.model.ReleveBancaire;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
@@ -28,7 +29,7 @@ import java.util.TreeSet;
  * Les verrous restent détenus jusqu'à la fin de la transaction métier.
  *
  * <p>Ordre global des verrous (voir « Ordre des verrous » dans {@code docs/lot-2.md}) : toute écriture métier commence par
- * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis, emprunt), le partenaire (client, fournisseur, partenaire
+ * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis, emprunt, comptage, relevé bancaire), le partenaire (client, fournisseur, partenaire
  * financier), les factures du partenaire, les produits et enfin les comptes de trésorerie.</p>
  */
 @Repository
@@ -141,6 +142,19 @@ public class StockLockRepository {
         entityManager.refresh(comptage, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(comptage.getBoutique());
         return comptage;
+    }
+
+    /**
+     * Verrou en écriture d'un relevé bancaire de la boutique courante (404 sinon), après celui de la boutique et avant ceux des comptes et des
+     * mouvements : deux validations simultanées du même relevé s'y sérialisent, la seconde relit le statut et reçoit 409.
+     */
+    public ReleveBancaire verrouillerReleve(Long id) {
+        verifierIdentifiant("ReleveBancaire", id, boutiques.idBoutiqueCourante());
+        ReleveBancaire releve = entityManager.find(ReleveBancaire.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (releve == null) throw introuvable("Relevé");
+        entityManager.refresh(releve, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(releve.getBoutique());
+        return releve;
     }
 
     /** Verrou en écriture d'un emprunt ou d'un prêt de la boutique courante (404 sinon), après celui de la boutique et avant celui du partenaire. */

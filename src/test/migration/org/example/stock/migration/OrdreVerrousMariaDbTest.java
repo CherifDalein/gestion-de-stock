@@ -324,6 +324,33 @@ public class OrdreVerrousMariaDbTest {
             exiger(decimal("SELECT COALESCE(SUM(montant),0) FROM mouvement_caisse WHERE comptage_caisse_id=" + comptage).compareTo(new BigDecimal("-1000")) == 0, "Le manque n'est posté qu'une fois");
             exiger("VALIDE".equals(jdbc.queryForObject("SELECT statut FROM comptage_caisse WHERE id=" + comptage, String.class)), "Le comptage est validé");
         }
+        // 12. Rapprochement bancaire (3c) : boutique, relevé, comptes, mouvements. L'annulation d'un mouvement rapproché et la validation du relevé qui
+        //     le contient se croisent : un seul gagnant cohérent (relevé validé et mouvement intact, ou mouvement annulé et relevé non validé),
+        //     même avec une seconde validation du même relevé (celle-ci reçoit « déjà traité », donc 409).
+        long banqueId = comptePrincipal(a, "BANQUE");
+        for (int tour = 0; tour < TOURS; tour++) {
+            java.time.LocalDate jour = java.time.LocalDate.now().minusDays(TOURS + 3L - tour);
+            BigDecimal ouverture = jdbc.queryForObject("SELECT COALESCE(SUM(montant),0) FROM mouvement_caisse WHERE compte_id=? AND date_mouvement < ?", BigDecimal.class,
+                    banqueId, java.sql.Timestamp.valueOf(jour.atStartOfDay()));
+            jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte_id) SELECT boutique_id,?,1000,'ENTREE','Virement reçu','SOLDE_INITIAL',id"
+                    + " FROM compte_tresorerie_boutique WHERE id=?", java.sql.Timestamp.valueOf(jour.atTime(10, 0)), banqueId);
+            long mouvement = jdbc.queryForObject("SELECT MAX(id) FROM mouvement_caisse WHERE compte_id=" + banqueId, Long.class);
+            long[] releve = relevePointe(a, banqueId, jour, ouverture, mouvement);
+            AtomicInteger validations = new AtomicInteger(), dejaTraite = new AtomicInteger(), annulations = new AtomicInteger(), refusees = new AtomicInteger();
+            simultanesSansErreur("validation du relevé ×2 + annulation du mouvement rapproché #" + tour,
+                    () -> validerReleve(a, releve[0], validations, dejaTraite, refusees), () -> validerReleve(a, releve[0], validations, dejaTraite, refusees),
+                    () -> annulerMouvement(a, mouvement, annulations, refusees));
+            exiger(validations.get() + annulations.get() == 1, "Un seul gagnant (validations=" + validations + ", annulations=" + annulations + ")");
+            String statut = jdbc.queryForObject("SELECT statut FROM releve_bancaire WHERE id=" + releve[0], String.class);
+            long contrePassations = decimal("SELECT COUNT(*) FROM mouvement_caisse WHERE annulation_de_id=" + mouvement).longValue();
+            if (annulations.get() == 1) {
+                exiger("BROUILLON".equals(statut) && contrePassations == 1, "Annulation gagnante : relevé non validé (" + statut + ") et une contre-passation (" + contrePassations + ")");
+                supprimerReleve(a, releve[0]);
+            } else {
+                exiger("VALIDE".equals(statut) && contrePassations == 0, "Validation gagnante : relevé validé (" + statut + ") et mouvement intact (" + contrePassations + ")");
+                exiger(dejaTraite.get() == 1, "La seconde validation reçoit « déjà traité » (" + dejaTraite + ")");
+            }
+        }
         // Invariants finaux : numéros distincts par boutique, aucune avance utilisée en excès.
         for (String table : List.of("achat", "vente", "retour")) {
             exiger(decimal("SELECT COUNT(*) - COUNT(DISTINCT boutique_id, numero) FROM " + table).signum() == 0, "Numéros distincts par boutique : " + table);
@@ -544,6 +571,49 @@ public class OrdreVerrousMariaDbTest {
         connecter(t);
         try { comptageService.valider(comptageId, "Validation concurrente"); acceptes.incrementAndGet(); }
         catch (ComptageDejaTraiteException e) { refuses.incrementAndGet(); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private long[] relevePointe(Boutiquier t, long compteId, java.time.LocalDate jour, BigDecimal ouverture, long mouvementId) {
+        connecter(t);
+        try {
+            var releves = contexteBean(org.example.stock.service.ReleveBancaireService.class);
+            var r = releves.creer(compteId, jour, jour, ouverture, ouverture.add(new BigDecimal("1000")), java.util.UUID.randomUUID().toString());
+            var ligne = releves.ajouterLigne(r.getId(), jour, "Virement concurrent", null, new BigDecimal("1000"));
+            contexteBean(org.example.stock.service.RapprochementService.class).accepter(r.getId(), ligne.getId(), mouvementId);
+            return new long[]{r.getId(), ligne.getId()};
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void validerReleve(Boutiquier t, long releveId, AtomicInteger acceptes, AtomicInteger dejaTraite, AtomicInteger refuses) {
+        connecter(t);
+        try { contexteBean(org.example.stock.service.ValidationReleveService.class).valider(releveId); acceptes.incrementAndGet(); }
+        catch (org.example.stock.service.ReleveDejaTraiteException e) { dejaTraite.incrementAndGet(); }
+        catch (IllegalArgumentException e) { refuses.incrementAndGet(); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void annulerMouvement(Boutiquier t, long mouvementId, AtomicInteger acceptees, AtomicInteger refusees) {
+        connecter(t);
+        try {
+            var gerant = contexteBean(org.example.stock.repository.UtilisateurRepository.class).findByEmail(t.email).orElseThrow();
+            MouvementCaisse origine = transaction.execute(status -> {
+                MouvementCaisse m = contexteBean(EntityManager.class).find(MouvementCaisse.class, mouvementId);
+                m.getBoutique().getId(); m.getCompte().getId();
+                return m;
+            });
+            // Comme tous les services qui annulent un mouvement (READ_COMMITTED) : la lecture après le verrou de la boutique voit une validation terminée.
+            var rc = new TransactionTemplate(contexteBean(PlatformTransactionManager.class));
+            rc.setIsolationLevel(org.springframework.transaction.TransactionDefinition.ISOLATION_READ_COMMITTED); rc.setTimeout(30);
+            rc.executeWithoutResult(status -> caisseService.enregistrerAnnulation(origine, "Annulation concurrente", gerant));
+            acceptees.incrementAndGet();
+        } catch (IllegalArgumentException e) { refusees.incrementAndGet(); }
+        finally { SecurityContextHolder.clearContext(); }
+    }
+
+    private void supprimerReleve(Boutiquier t, long releveId) {
+        connecter(t);
+        try { contexteBean(org.example.stock.service.ReleveBancaireService.class).supprimer(releveId); }
         finally { SecurityContextHolder.clearContext(); }
     }
 

@@ -50,12 +50,17 @@ public final class SchemaHistorique {
         return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_(?:operation_tresorerie_source|operation_tresorerie_destination|retour_compte_tresorerie|mouvement_caisse_compte)\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
     }
 
+    /** Schéma de l'étape 3a + 3b1 + 3b2 : sans le rapprochement bancaire de l'étape 3c (relevés, lignes, rapprochements, correspondances, historique). */
+    public static String sansRapprochement(String schema) {
+        return schema.replaceAll("(?s)-- Lot 3c :.*?-- Fin lot 3c\\R(?:[ \\t]*\\R)?", "");
+    }
+
     /**
      * Schéma de l'étape 3a + 3b1 : sans les contrôles de l'étape 3b2 (comptages de caisse et billetage, ajustements de solde de départ,
      * inventaires des créances et dettes) ni le lien d'un mouvement vers son comptage.
      */
     public static String sansControles(String schema) {
-        String resultat = schema.replaceAll("(?s)-- Lot 3b2 :.*?-- Fin lot 3b2\\R(?:[ \\t]*\\R)?", "")
+        String resultat = sansRapprochement(schema).replaceAll("(?s)-- Lot 3b2 :.*?-- Fin lot 3b2\\R(?:[ \\t]*\\R)?", "")
                 .replaceAll("(?m)^[ \\t]*comptage_caisse_id BIGINT NULL,[ \\t]*\\R", "");
         return resultat.replaceAll("(?m)^[ \\t]*CONSTRAINT fk_mouvement_caisse_comptage\\R[ \\t]*FOREIGN KEY \\([a-z_]+\\) REFERENCES [a-z_]+ \\(id\\),[ \\t]*\\R", "");
     }

@@ -25,6 +25,21 @@ public interface MouvementCaisseRepository extends JpaRepository<MouvementCaisse
     @Query("SELECT m FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.comptageCaisse.id = :comptageId ORDER BY m.id")
     List<MouvementCaisse> mouvementsDuComptage(@Param("boutiqueId") Long boutiqueId, @Param("comptageId") Long comptageId);
 
+    // ---- Rapprochement bancaire (étape 3c) ----
+
+    /** Solde d'un compte selon l'appli : somme des mouvements datés avant {@code avant} (exclu). */
+    @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId AND m.dateMouvement < :avant")
+    BigDecimal calculerSoldeCompteAvant(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId, @Param("avant") LocalDateTime avant);
+
+    /** Mouvements d'un compte datés dans [du, au[ qui ne sont dans aucun rapprochement, dans l'ordre des dates. */
+    @Query("SELECT m FROM MouvementCaisse m LEFT JOIN FETCH m.annulationDe WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId AND m.dateMouvement >= :du AND m.dateMouvement < :au "
+            + "AND NOT EXISTS (SELECT 1 FROM RapprochementMouvement rm WHERE rm.mouvement = m) ORDER BY m.dateMouvement, m.id")
+    List<MouvementCaisse> nonRapproches(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId, @Param("du") LocalDateTime du, @Param("au") LocalDateTime au);
+
+    /** Mouvements d'un compte de la boutique, par identifiants (jamais ceux d'un autre compte ou d'une autre boutique). */
+    @Query("SELECT m FROM MouvementCaisse m LEFT JOIN FETCH m.annulationDe WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId AND m.id IN :ids")
+    List<MouvementCaisse> duCompteParIds(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId, @Param("ids") java.util.Collection<Long> ids);
+
     @Query("SELECT COALESCE(SUM(m.montant), 0) FROM MouvementCaisse m WHERE m.boutique.id = :boutiqueId AND m.compte.id = :compteId")
     BigDecimal calculerSoldeCompte(@Param("boutiqueId") Long boutiqueId, @Param("compteId") Long compteId);
 

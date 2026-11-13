@@ -1,0 +1,88 @@
+<div th:fragment="content" th:with="r=${e.releve()}, brouillon=${!e.releve().estValide()}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapEtatTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${r.compte.nom + ' · ' + r.compte.type.libelle}">Ecobank · Banque</p>
+                <h1 id="rapEtatTitre">État de rapprochement <span th:text="${r.numero}">RB-202610-3</span> <span th:replace="~{rapprochement/commun :: statut(${r})}"></span></h1>
+                <p class="record-intro" th:text="${'Relevé du ' + @formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin)}">Période</p></div>
+            <a th:href="@{/rapprochements}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+        <div th:replace="~{rapprochement/commun :: onglets(${r}, 'etat')}"></div>
+
+        <section class="record-panel" aria-labelledby="rapCalculTitre">
+            <div class="record-panel-heading"><h2 id="rapCalculTitre">Calcul</h2>
+                <p>Solde selon l'appli à la clôture, moins les mouvements de l'appli non pointés, plus les lignes du relevé non pointées : on doit retrouver le solde du relevé.</p></div>
+            <table class="table rap-etat" id="tableEtat">
+                <caption class="visually-hidden">État de rapprochement, montants en GNF</caption>
+                <tbody>
+                <tr><th scope="row" th:text="${'Solde du compte selon l’appli au ' + @formatsVue.date(r.dateFin)}">Solde selon l'appli</th><td class="num" id="etatSoldeAppli" th:text="${@formatsVue.gnf(e.soldeAppli())}">0 GNF</td></tr>
+                <tr th:if="${e.pointesApresCloture().signum() != 0}"><th scope="row">Plus : mouvements rapprochés datés après la clôture</th><td class="num" th:text="${@formatsVue.signe(e.pointesApresCloture())}">0</td></tr>
+                <tr><th scope="row" th:text="${'Moins : mouvements de l’appli non pointés (' + #lists.size(e.mouvementsNonPointes()) + ')'}">Moins : mouvements non pointés</th><td class="num" id="etatMouvements" th:text="${@formatsVue.signe(e.totalMouvementsNonPointes().negate())}">0</td></tr>
+                <tr><th scope="row" th:text="${'Plus : lignes du relevé non pointées (' + #lists.size(e.lignesNonPointees()) + ')'}">Plus : lignes non pointées</th><td class="num" id="etatLignes" th:text="${@formatsVue.signe(e.totalLignesNonPointees())}">0</td></tr>
+                <tr class="rap-total"><th scope="row">Solde du relevé calculé</th><td class="num" id="etatCalcule" th:text="${@formatsVue.gnf(e.soldeCalcule())}">0 GNF</td></tr>
+                <tr><th scope="row">Solde de clôture du relevé</th><td class="num" id="etatCloture" th:text="${@formatsVue.gnf(r.soldeCloture)}">0 GNF</td></tr>
+                <tr class="rap-total" th:classappend="${e.ecartNul() ? 'rap-total--ok' : 'rap-total--ecart'}"><th scope="row">Écart de rapprochement (zéro attendu)</th><td class="num" id="etatEcart" th:text="${@formatsVue.signe(e.ecart())}">0 GNF</td></tr>
+                </tbody>
+            </table>
+            <p class="record-help" th:if="${e.dontLignesAnterieures().signum() != 0}" th:text="${'Dont ' + @formatsVue.signe(e.dontLignesAnterieures()) + ' de lignes de relevés précédents encore non pointées.'}">…</p>
+            <p class="alert alert-success" role="status" th:if="${e.ecartNul()}">L'écart est nul : le relevé est rapproché.</p>
+            <p class="alert alert-warning" role="alert" th:unless="${e.ecartNul()}" th:text="${'L’écart est de ' + @formatsVue.signe(e.ecart()) + '. Pointez les éléments manquants, enregistrez dans l’appli les lignes qui n’y sont pas, ou corrigez les soldes du relevé.'}">Écart</p>
+            <p class="alert alert-warning" role="alert" th:unless="${e.controle().coherent()}" th:text="${'Les soldes du relevé ne concordent pas : ouverture + lignes = ' + @formatsVue.gnf(e.controle().attendu()) + ', clôture indiquée ' + @formatsVue.gnf(e.controle().cloture()) + '.'}">Soldes</p>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapDetailMvtTitre" th:unless="${#lists.isEmpty(e.mouvementsNonPointes())}">
+            <div class="record-panel-heading"><h2 id="rapDetailMvtTitre">Mouvements de l'appli non pointés</h2></div>
+            <div class="table-responsive"><table class="table fin-table fin-empilee rap-table">
+                <thead><tr><th>Date</th><th>Libellé</th><th class="text-end">Montant</th></tr></thead>
+                <tbody><tr th:each="m : ${e.mouvementsNonPointes()}">
+                    <td data-label="Date" class="text-nowrap" th:text="${@formatsVue.date(m.dateMouvement.toLocalDate())}">02/10/2026</td>
+                    <td data-label="Libellé"><span th:text="${m.motif != null and !#strings.isEmpty(m.motif) ? m.motif : m.sourceLibelle}">Vente</span>
+                        <span class="rap-pastille rap-pastille--erreur" th:if="${e.annules().contains(m.id)}">Annulé</span>
+                        <span class="rap-pastille rap-pastille--erreur" th:if="${m.annulationDe != null}">Annulation</span></td>
+                    <td data-label="Montant" class="text-end"><span th:replace="~{rapprochement/commun :: signe(${m.montant})}"></span></td>
+                </tr></tbody></table></div>
+        </section>
+        <section class="record-panel" aria-labelledby="rapDetailLignesTitre" th:unless="${#lists.isEmpty(e.lignesNonPointees())}">
+            <div class="record-panel-heading"><h2 id="rapDetailLignesTitre">Lignes du relevé non pointées</h2></div>
+            <div class="table-responsive"><table class="table fin-table fin-empilee rap-table">
+                <thead><tr><th>Date</th><th>Libellé</th><th class="text-end">Montant</th></tr></thead>
+                <tbody><tr th:each="l : ${e.lignesNonPointees()}">
+                    <td data-label="Date" class="text-nowrap" th:text="${@formatsVue.date(l.dateOperation)}">02/10/2026</td>
+                    <td data-label="Libellé" th:text="${l.reference != null ? l.libelle + ' (' + l.reference + ')' : l.libelle}">Frais</td>
+                    <td data-label="Montant" class="text-end"><span th:replace="~{rapprochement/commun :: signe(${l.montant})}"></span></td>
+                </tr></tbody></table></div>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapDocsTitre">
+            <div class="record-panel-heading"><h2 id="rapDocsTitre">Documents et décision</h2></div>
+            <div class="fin-actions rap-actions">
+                <a th:href="@{/rapprochements/{id}/etat/pdf(id=${r.id})}" class="btn btn-outline-danger"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                <a th:href="@{/rapprochements/{id}/etat/excel(id=${r.id})}" class="btn btn-outline-success"><i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel</a>
+                <form th:if="${brouillon}" th:action="@{/rapprochements/{id}/valider(id=${r.id})}" method="post">
+                    <button type="submit" class="btn btn-primary" id="boutonValider" th:disabled="${!e.ecartNul() or !e.controle().coherent()}"><i class="fa-solid fa-lock" aria-hidden="true"></i> Valider le relevé</button></form>
+            </div>
+            <p class="record-help" th:if="${brouillon and (!e.ecartNul() or !e.controle().coherent())}">La validation demande un écart nul et des soldes cohérents.</p>
+            <p class="record-help" th:if="${brouillon and e.ecartNul() and e.controle().coherent()}">Valider fige le relevé et ses rapprochements : les mouvements rapprochés ne pourront plus être annulés tant que le relevé reste validé. Le relevé suivant du compte proposera la clôture comme solde d'ouverture.</p>
+            <th:block th:unless="${brouillon}">
+                <p class="alert alert-info" role="status" th:text="${'Relevé validé le ' + @formatsVue.dateHeure(r.dateValidation) + (r.validePar != null ? ' par ' + r.validePar.nom : '') + '. Solde de l’appli figé à la validation : ' + @formatsVue.gnf(r.soldeAppliValidation) + '.'}">Validé</p>
+                <form th:if="${peutDevalider}" th:action="@{/rapprochements/{id}/devalider(id=${r.id})}" th:object="${decisionReleve}" method="post" class="rap-devalidation">
+                    <div class="record-field"><label for="motifDevalidation">Motif de la dévalidation (obligatoire)</label>
+                        <input id="motifDevalidation" type="text" class="form-control" maxlength="255" minlength="3" th:field="*{motif}" required /></div>
+                    <button type="submit" class="btn btn-outline-danger"><i class="fa-solid fa-lock-open" aria-hidden="true"></i> Dévalider</button>
+                </form>
+                <p class="record-help" th:unless="${peutDevalider}">Seul le dernier relevé validé du compte peut être dévalidé : dévalidez d'abord les relevés plus récents.</p>
+            </th:block>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapHistoTitre" th:unless="${#lists.isEmpty(historique)}">
+            <div class="record-panel-heading"><h2 id="rapHistoTitre">Historique</h2></div>
+            <ul class="fin-historique">
+                <li th:each="h : ${historique}"><strong th:text="${h.type.libelle}">Validation</strong>
+                    <span th:text="${@formatsVue.dateHeure(h.dateEvenement) + ' · ' + h.utilisateur.nom + (h.motif != null ? ' · motif : ' + h.motif : '')}">…</span></li>
+            </ul>
+        </section>
+    </section>
+</div>

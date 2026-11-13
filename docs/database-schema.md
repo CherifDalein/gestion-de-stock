@@ -251,6 +251,14 @@ des périodes. Voir la [migration des abonnements](migrations/abonnement.md).
 
 Comptages de caisse (étape 3b2) : `comptage_caisse` porte `boutique_id`, `compte_id`, `utilisateur_id` (le compteur), `date_comptage`, `montant_compte`, `solde_theorique` (lu sous verrou du compte à l'instant du comptage), `ecart` (compté moins théorique, figé), `commentaire`, `statut` (`CONFORME`, `EN_ATTENTE`, `VALIDE`, `REFUSE`, `ANNULE`), la décision (`decideur_id`, `date_decision`, `motif_decision`), l'annulation (`annule_par_id`, `date_annulation`, `motif_annulation`) et un `jeton` unique contre le double envoi. `comptage_billetage` (`comptage_id`, `coupure`, `quantite`, unique `(comptage_id, coupure)`) détaille les billets d'un compte d'espèces. `mouvement_caisse.comptage_caisse_id` (facultatif) relie le mouvement « Écart de caisse » à son comptage. Voir [Contrôles](lot-3.md#contrôles).
 
+### `releve_bancaire`, `ligne_releve`, `rapprochement`, `rapprochement_mouvement`
+
+Rapprochement bancaire (étape 3c). `releve_bancaire` : `boutique_id`, `compte_id` (Banque ou Orange Money), `numero` (`RB-AAAAMM-<compte>`, unique par boutique), `date_debut`, `date_fin`, `solde_ouverture`, `solde_cloture`, `statut` (`BROUILLON`, `VALIDE`), `utilisateur_id`, `date_creation`, `jeton` unique, et à la validation `valide_par_id`, `date_validation`, `solde_appli_validation`. `ligne_releve` : `releve_id`, `date_operation`, `libelle`, `reference`, `montant` signé (crédit positif, débit négatif), `origine` (`SAISIE`, `IMPORT`), `empreinte` (détection des doublons), `rapprochement_id` (NULL tant que la ligne est libre). `rapprochement` : `releve_id`, `type` (`AUTO`, `MANUEL`, `ENREGISTREMENT`, `EXCLUSION`), `montant`, auteur et date. `rapprochement_mouvement` : un mouvement par ligne, **unique `mouvement_id`** : un mouvement figure dans un seul rapprochement. Voir [Rapprochement bancaire](lot-3.md#rapprochement-bancaire).
+
+### `correspondance_import`, `evenement_releve`, `refus_proposition`
+
+`correspondance_import` : la correspondance des colonnes d'import mémorisée, une par compte (`ligne_entete`, `colonne_date`, `colonne_libelle`, `colonne_reference`, `colonne_montant` ou `colonne_debit` et `colonne_credit`, `format_date`, `separateur_decimal`) ; aucun fichier n'est conservé. `evenement_releve` : historique des validations et dévalidations (`type`, `utilisateur_id`, `date_evenement`, `motif`, `solde_appli`). `refus_proposition` : paires (ligne, mouvement) refusées, uniques.
+
 ### `ajustement_solde_depart`
 
 Historique des corrections du solde de départ d'un client ou d'un fournisseur (3b2) : exactement un de `client_id` ou `fournisseur_id`, `utilisateur_id`, `date_ajustement`, `ancien_solde`, `nouveau_solde` (signés comme `solde_initial`), `motif` obligatoire, `jeton` unique. Aucun mouvement de trésorerie.

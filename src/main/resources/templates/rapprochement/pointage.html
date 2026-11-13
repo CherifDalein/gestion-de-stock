@@ -1,0 +1,151 @@
+<div th:fragment="content" th:with="r=${ecran.releve()}, fige=${ecran.releve().estValide()}">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page rap-pointage" aria-labelledby="rapPointageTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${r.compte.nom + ' · ' + r.compte.type.libelle}">Ecobank · Banque</p>
+                <h1 id="rapPointageTitre"><span th:text="${r.numero}">RB-202610-3</span> <span th:replace="~{rapprochement/commun :: statut(${r})}"></span></h1>
+                <p class="record-intro" th:text="${'Relevé du ' + @formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin) + '. Mouvements de l’appli du ' + @formatsVue.date(ecran.du()) + ' au ' + @formatsVue.date(ecran.au()) + ' (7 jours de marge).'}">Période</p></div>
+            <a th:href="@{/rapprochements}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+        <div th:replace="~{rapprochement/commun :: onglets(${r}, 'pointage')}"></div>
+        <p class="alert alert-info" th:if="${fige}" role="status">Ce relevé est validé : le pointage est figé. Dévalidez-le depuis l'<a th:href="@{/rapprochements/{id}/etat(id=${r.id})}">état de rapprochement</a> pour le modifier.</p>
+
+        <!--/* Propositions automatiques : même montant exact, date à 3 jours au plus. */-->
+        <section class="record-panel" aria-labelledby="rapPropTitre" id="propositions">
+            <div class="record-panel-heading">
+                <h2 id="rapPropTitre" th:text="${#lists.size(ecran.propositions()) + (#lists.size(ecran.propositions()) > 1 ? ' propositions' : ' proposition')}">0 proposition</h2>
+                <p>Même montant exact et date à 3 jours au plus ; en cas de plusieurs candidats, la date la plus proche l'emporte. Un mouvement n'est jamais proposé deux fois.</p>
+            </div>
+            <p class="record-help" th:if="${#lists.isEmpty(ecran.propositions())}">Aucune proposition pour le moment.</p>
+            <div class="rap-actions" th:if="${!fige}">
+                <form th:action="@{/rapprochements/{id}/pointage/tout-accepter(id=${r.id})}" method="post" th:unless="${#lists.isEmpty(ecran.propositions())}">
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check-double" aria-hidden="true"></i> Tout accepter</button></form>
+                <form th:action="@{/rapprochements/{id}/pointage/reinitialiser-refus(id=${r.id})}" method="post" th:if="${ecran.refusees() > 0}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm" th:text="${'Reproposer les ' + ecran.refusees() + ' paire(s) refusée(s)'}">Reproposer</button></form>
+            </div>
+            <ul class="rap-propositions" th:unless="${#lists.isEmpty(ecran.propositions())}">
+                <li th:each="p : ${ecran.propositions()}" class="rap-proposition" th:attr="data-ligne=${p.ligne().id},data-mouvement=${p.mouvement().id}">
+                    <div class="rap-paire">
+                        <div><small>Relevé</small><strong th:text="${@formatsVue.date(p.ligne().dateOperation) + ' · ' + p.ligne().libelle}">02/10/2026 · Virement</strong></div>
+                        <div class="rap-lien" aria-hidden="true"><i class="fa-solid fa-arrows-left-right"></i></div>
+                        <div><small>Appli</small><strong th:text="${@formatsVue.date(p.mouvement().dateMouvement.toLocalDate()) + ' · ' + (p.mouvement().motif != null ? p.mouvement().motif : p.mouvement().sourceLibelle)}">02/10/2026 · Vente</strong></div>
+                    </div>
+                    <div class="rap-paire-pied">
+                        <span th:replace="~{rapprochement/commun :: signe(${p.ligne().montant})}"></span>
+                        <span class="rap-pastille" th:text="${p.ecartJours() == 0 ? 'Même jour' : 'Écart de ' + p.ecartJours() + (p.ecartJours() > 1 ? ' jours' : ' jour')}">Même jour</span>
+                        <span class="rap-pastille rap-pastille--ok" th:if="${p.unique()}">Seul candidat</span>
+                        <span class="rap-pastille" th:unless="${p.unique()}">Plusieurs candidats</span>
+                        <th:block th:if="${!fige}">
+                            <form th:action="@{/rapprochements/{id}/pointage/accepter(id=${r.id})}" method="post" class="d-inline">
+                                <input type="hidden" name="ligne" th:value="${p.ligne().id}" /><input type="hidden" name="mouvement" th:value="${p.mouvement().id}" />
+                                <button type="submit" class="btn btn-sm btn-primary">Accepter</button></form>
+                            <form th:action="@{/rapprochements/{id}/pointage/refuser(id=${r.id})}" method="post" class="d-inline">
+                                <input type="hidden" name="ligne" th:value="${p.ligne().id}" /><input type="hidden" name="mouvement" th:value="${p.mouvement().id}" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Refuser</button></form>
+                        </th:block>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!--/* Deux colonnes : lignes du relevé non rapprochées et mouvements de l'appli non rapprochés. Sur mobile : deux onglets. */-->
+        <div class="rap-onglets-mobile" role="tablist" aria-label="Colonnes du pointage" hidden>
+            <button type="button" role="tab" class="btn btn-sm btn-outline-primary" data-cible="rapColReleve" aria-selected="true" th:text="${'Relevé (' + #lists.size(ecran.lignesLibres()) + ')'}">Relevé</button>
+            <button type="button" role="tab" class="btn btn-sm btn-outline-primary" data-cible="rapColAppli" aria-selected="false" th:text="${'Appli (' + #lists.size(ecran.mouvementsLibres()) + ')'}">Appli</button>
+        </div>
+        <div class="rap-selection">
+            <div class="rap-colonnes">
+                <section class="record-panel rap-colonne" id="rapColReleve" aria-labelledby="rapColLignesTitre">
+                    <div class="record-panel-heading"><h2 id="rapColLignesTitre">Lignes du relevé non rapprochées</h2>
+                        <p th:text="${#lists.size(ecran.lignesLibres()) + ' ligne(s) · total ' + @formatsVue.signe(ecran.totalLignesLibres())}">0 ligne</p></div>
+                    <p class="record-help" th:if="${#lists.isEmpty(ecran.lignesLibres())}">Toutes les lignes sont rapprochées.</p>
+                    <ul class="rap-liste">
+                        <li th:each="l : ${ecran.lignesLibres()}" class="rap-element" th:attr="data-ligne=${l.id}">
+                            <label class="rap-choix" th:if="${!fige}">
+                                <input type="checkbox" name="lignes" form="formRapprocher" th:value="${l.id}" th:attr="data-montant=${l.montant.toPlainString()},aria-label=${'Choisir la ligne ' + l.libelle}" />
+                            </label>
+                            <div class="rap-corps">
+                                <div class="rap-ligne-titre"><strong th:text="${l.libelle}">Virement</strong><span th:replace="~{rapprochement/commun :: signe(${l.montant})}"></span></div>
+                                <small th:text="${@formatsVue.date(l.dateOperation) + (l.reference != null ? ' · réf. ' + l.reference : '')}">02/10/2026</small>
+                                <details class="rap-enregistrer" th:if="${!fige}">
+                                    <summary>Enregistrer dans l'appli</summary>
+                                    <p class="record-help">Crée l'opération sur ce compte à la date de la ligne, puis la rapproche aussitôt.</p>
+                                    <form th:action="@{/rapprochements/{id}/pointage/enregistrer(id=${r.id})}" method="post" class="rap-enregistrer-formulaire">
+                                        <input type="hidden" name="ligne" th:value="${l.id}" />
+                                        <label th:for="${'nat' + l.id}">Nature</label>
+                                        <select th:id="${'nat' + l.id}" name="nature" class="form-select form-select-sm">
+                                            <option th:each="n : ${l.montant.signum() > 0 ? naturesCredit : naturesDebit}" th:value="${n.name()}" th:text="${n.libelle}">Produit financier</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Enregistrer</button>
+                                    </form>
+                                </details>
+                            </div>
+                        </li>
+                    </ul>
+                    <p class="record-help" th:if="${ecran.lignesTronquees()}">Seules les 1 000 premières lignes sont affichées.</p>
+                </section>
+
+                <section class="record-panel rap-colonne" id="rapColAppli" aria-labelledby="rapColAppliTitre">
+                    <div class="record-panel-heading"><h2 id="rapColAppliTitre">Mouvements de l'appli non rapprochés</h2>
+                        <p th:text="${#lists.size(ecran.mouvementsLibres()) + ' mouvement(s) · total ' + @formatsVue.signe(ecran.totalMouvementsLibres())}">0 mouvement</p></div>
+                    <p class="record-help" th:if="${#lists.isEmpty(ecran.mouvementsLibres())}">Aucun mouvement à rapprocher sur cette période.</p>
+                    <ul class="rap-liste">
+                        <li th:each="v : ${ecran.mouvementsLibres()}" class="rap-element" th:classappend="${v.seulImpossible() ? 'rap-element--annule' : ''}" th:attr="data-mouvement=${v.mouvement().id}">
+                            <label class="rap-choix" th:if="${!fige}">
+                                <input type="checkbox" name="mouvements" form="formRapprocher" th:value="${v.mouvement().id}" th:attr="data-montant=${v.mouvement().montant.toPlainString()},aria-label=${'Choisir le mouvement ' + (v.mouvement().motif != null ? v.mouvement().motif : v.mouvement().sourceLibelle)}" />
+                            </label>
+                            <div class="rap-corps">
+                                <div class="rap-ligne-titre"><strong th:text="${v.mouvement().motif != null and !#strings.isEmpty(v.mouvement().motif) ? v.mouvement().motif : v.mouvement().sourceLibelle}">Vente</strong><span th:replace="~{rapprochement/commun :: signe(${v.mouvement().montant})}"></span></div>
+                                <small th:text="${@formatsVue.dateHeure(v.mouvement().dateMouvement) + ' · ' + v.mouvement().sourceLibelle}">02/10/2026 09:00</small>
+                                <div th:if="${v.seulImpossible()}" class="rap-annule">
+                                    <span class="rap-pastille rap-pastille--erreur" th:text="${v.annule() ? 'Annulé' : 'Annulation d’un mouvement'}">Annulé</span>
+                                    <span class="record-help">Il ne se rapproche pas seul.</span>
+                                    <form th:if="${!fige}" th:action="@{/rapprochements/{id}/pointage/exclure(id=${r.id})}" method="post" class="d-inline">
+                                        <input type="hidden" name="mouvement" th:value="${v.mouvement().id}" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Exclure ensemble</button></form>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <p class="record-help" th:if="${ecran.mouvementsTronques()}">Seuls les 1 000 premiers mouvements sont affichés.</p>
+                    <p class="record-help" th:unless="${ecran.tousLesMouvements()}">Un mouvement plus ancien (chèque émis il y a plusieurs semaines) ? <a th:href="@{/rapprochements/{id}/pointage(id=${r.id},tous=1)}">Afficher tous les mouvements non rapprochés du compte</a>.</p>
+                    <p class="record-help" th:if="${ecran.tousLesMouvements()}"><a th:href="@{/rapprochements/{id}/pointage(id=${r.id})}">Revenir à la période du relevé ± 7 jours</a>.</p>
+                </section>
+            </div>
+
+            <div class="rap-barre" th:if="${!fige}" id="barreAssocier">
+                <div class="rap-barre-chiffres" aria-live="polite">
+                    <span>Relevé choisi : <strong id="sommeLignes">0</strong> GNF</span>
+                    <span>Appli choisie : <strong id="sommeMouvements">0</strong> GNF</span>
+                    <span id="verdictSommes" class="rap-verdict">Choisissez au moins une ligne et un mouvement.</span>
+                </div>
+                <form th:action="@{/rapprochements/{id}/pointage/rapprocher(id=${r.id})}" method="post" id="formRapprocher">
+                    <button type="submit" class="btn btn-primary" id="boutonAssocier"><i class="fa-solid fa-link" aria-hidden="true"></i> Associer la sélection</button>
+                </form>
+            </div>
+        </div>
+
+        <section class="record-panel" aria-labelledby="rapGroupesTitre">
+            <div class="record-panel-heading"><h2 id="rapGroupesTitre" th:text="${#lists.size(ecran.groupes()) + (#lists.size(ecran.groupes()) > 1 ? ' rapprochements faits' : ' rapprochement fait')}">0 rapprochement</h2>
+                <p>Défaire un rapprochement libère ses lignes et ses mouvements ; c'est possible tant que le relevé n'est pas validé.</p></div>
+            <p class="record-help" th:if="${#lists.isEmpty(ecran.groupes())}">Aucun rapprochement pour le moment.</p>
+            <ul class="rap-groupes" th:unless="${#lists.isEmpty(ecran.groupes())}">
+                <li th:each="g : ${ecran.groupes()}" class="rap-groupe" th:attr="data-rapprochement=${g.rapprochement().id}">
+                    <div class="rap-ligne-titre"><strong th:text="${g.rapprochement().type.libelle}">Pointage manuel</strong><span class="rap-montant" th:text="${@formatsVue.gnf(g.rapprochement().montant)}">0 GNF</span></div>
+                    <p class="rap-alerte" th:if="${g.annulationRompue()}" role="alert"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Un mouvement de ce rapprochement a été annulé depuis le pointage : défaites-le avant de valider.</p>
+                    <div class="rap-groupe-cotes">
+                        <ul><li th:each="l : ${g.lignes()}" th:text="${'Relevé : ' + @formatsVue.date(l.dateOperation) + ' · ' + l.libelle + ' · ' + @formatsVue.signe(l.montant)}">Relevé</li></ul>
+                        <ul><li th:each="m : ${g.mouvements()}" th:text="${'Appli : ' + @formatsVue.date(m.dateMouvement.toLocalDate()) + ' · ' + (m.motif != null ? m.motif : m.sourceLibelle) + ' · ' + @formatsVue.signe(m.montant)}">Appli</li></ul>
+                    </div>
+                    <form th:if="${!fige}" th:action="@{/rapprochements/{id}/pointage/defaire(id=${r.id})}" method="post">
+                        <input type="hidden" name="rapprochement" th:value="${g.rapprochement().id}" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Défaire</button></form>
+                </li>
+            </ul>
+        </section>
+        <script th:src="@{/js/rapprochement.js}"></script>
+    </section>
+</div>
