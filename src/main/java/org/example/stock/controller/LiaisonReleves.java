@@ -25,7 +25,7 @@ final class LiaisonReleves {
         exiger(request, simples, multiples);
         List<String> autorises = new ArrayList<>(simples);
         autorises.addAll(multiples);
-        autorises.addAll(List.of("_csrf", "id", "ligneId", "rapprochementId"));
+        autorises.addAll(List.of("_csrf", "id", "ligneId", "rapprochementId", "jeton"));
         binder.setAllowedFields(autorises.toArray(String[]::new));
     }
 

@@ -271,11 +271,13 @@ public class RapprochementService {
     public void defaire(Long releveId, Long rapprochementId) {
         Contexte c = ouvrir(releveId, false);
         Rapprochement g = rapprochements.findByIdAndReleveId(rapprochementId, releveId).orElseThrow(ReleveBancaireService::introuvable);
-        List<Long> ids = liens.duReleve(releveId).stream().filter(rm -> rm.getRapprochement().getId().equals(rapprochementId)).map(rm -> rm.getMouvement().getId()).sorted().toList();
+        List<RapprochementMouvement> aRetirer = liens.duReleve(releveId).stream().filter(rm -> rm.getRapprochement().getId().equals(rapprochementId)).toList();
+        List<Long> ids = aRetirer.stream().map(rm -> rm.getMouvement().getId()).sorted().toList();
         if (!ids.isEmpty()) liens.verrouillerMouvements(ids);
         for (LigneReleve l : lignes.duReleve(releveId)) if (l.getRapprochement() != null && l.getRapprochement().getId().equals(rapprochementId)) l.setRapprochement(null);
         lignes.flush();
-        liens.supprimerDuRapprochement(rapprochementId);
+        liens.deleteAll(aRetirer);
+        liens.flush();
         rapprochements.delete(g);
         rapprochements.flush();
     }

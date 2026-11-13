@@ -41,10 +41,6 @@ public interface RapprochementMouvementRepository extends JpaRepository<Rapproch
     List<MouvementCaisse> verrouillerMouvements(@Param("ids") Collection<Long> ids);
 
     @Modifying
-    @Query("delete from RapprochementMouvement rm where rm.rapprochement.id = :rapprochement")
-    void supprimerDuRapprochement(@Param("rapprochement") Long rapprochementId);
-
-    @Modifying
     @Query("delete from RapprochementMouvement rm where rm.rapprochement.releve.id = :releve")
     void supprimerDuReleve(@Param("releve") Long releveId);
 }
