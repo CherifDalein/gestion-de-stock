@@ -104,6 +104,12 @@ public class ValidationReleveService {
         releves.flush();
     }
 
+    /** Vrai si ce relevé est le dernier relevé validé de son compte (le seul qui puisse être dévalidé). */
+    @Transactional(readOnly = true)
+    public boolean peutEtreDevalide(ReleveBancaire r) {
+        return r.estValide() && releves.parStatut(r.getCompte().getId(), StatutReleve.VALIDE).stream().findFirst().map(d -> d.getId().equals(r.getId())).orElse(false);
+    }
+
     @Transactional(readOnly = true)
     public List<EvenementReleve> historique(Long releveId) {
         DroitsExport.exigerGerant();

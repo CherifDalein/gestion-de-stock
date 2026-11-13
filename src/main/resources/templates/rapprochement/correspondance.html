@@ -1,0 +1,112 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapCorrespTitre"
+             th:with="debitCredit=${importForm.modeMontant == 'DEBIT_CREDIT'}, colonnes=${etape.tableau().colonnes()}">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${releve.numero + ' · ' + releve.compte.nom}">RB-202610-3</p><h1 id="rapCorrespTitre">Correspondance des colonnes</h1>
+                <p class="record-intro" th:text="${'Fichier : ' + etape.nomFichier() + '. Indiquez où se trouve chaque information ; rien n’est enregistré avant votre confirmation.'}">Fichier</p></div>
+            <a th:href="@{/rapprochements/{id}(id=${releve.id})}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+        <p class="alert alert-warning" role="alert" th:if="${avertissement != null}" th:text="${avertissement}"></p>
+        <p class="alert alert-danger" role="alert" th:if="${etape.erreur() != null}" th:text="${etape.erreur()}"></p>
+        <p class="alert alert-info" role="status" th:if="${etape.origine() == 'memorisee'}">Les colonnes sont celles mémorisées pour ce compte lors du dernier import.</p>
+        <p class="alert alert-info" role="status" th:if="${etape.origine() == 'proposee'}">Les colonnes sont proposées d'après les titres du fichier : vérifiez-les.</p>
+
+        <section class="record-panel" aria-labelledby="rapContenuTitre">
+            <div class="record-panel-heading"><h2 id="rapContenuTitre">Contenu du fichier</h2><p>Les premières lignes, avec leur numéro et la lettre de chaque colonne.</p></div>
+            <div class="rap-defile" tabindex="0" role="region" aria-labelledby="rapContenuTitre">
+                <table class="table table-sm rap-brut">
+                    <thead><tr><th scope="col">Ligne</th><th scope="col" th:each="j : ${#numbers.sequence(1, colonnes)}" th:text="${'Col. ' + j}">Col. 1</th></tr></thead>
+                    <tbody>
+                    <tr th:each="ligne, i : ${lignesBrutes}">
+                        <th scope="row" th:text="${i.count}">1</th>
+                        <td th:each="cellule : ${ligne}" th:text="${cellule.texte}">…</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <form th:action="@{/rapprochements/{id}/import/{jeton}(id=${releve.id},jeton=${etape.jeton()})}" th:object="${importForm}" method="post" id="formCorrespondance" novalidate>
+            <section class="record-panel" aria-labelledby="rapColonnesTitre">
+                <div class="record-panel-heading"><h2 id="rapColonnesTitre">Colonnes</h2></div>
+                <div class="rap-grille rap-grille--colonnes">
+                    <div class="record-field"><label for="cEntete">Ligne d'en-tête</label>
+                        <select id="cEntete" class="form-select" th:field="*{ligneEntete}">
+                            <option value="0">Aucune (les données commencent à la ligne 1)</option>
+                            <option th:each="n : ${#numbers.sequence(1, #lists.size(lignesBrutes))}" th:value="${n}" th:text="${'Ligne ' + n}">Ligne 1</option>
+                        </select></div>
+                    <div class="record-field"><label for="cDate">Date</label>
+                        <select id="cDate" class="form-select" th:field="*{colonneDate}"><option value="">Choisir…</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 1</option></select></div>
+                    <div class="record-field"><label for="cLibelle">Libellé</label>
+                        <select id="cLibelle" class="form-select" th:field="*{colonneLibelle}"><option value="">Choisir…</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 2</option></select></div>
+                    <div class="record-field"><label for="cReference">Référence <span class="record-optional">(facultatif)</span></label>
+                        <select id="cReference" class="form-select" th:field="*{colonneReference}"><option value="">Aucune</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 3</option></select></div>
+                </div>
+                <fieldset class="rap-mode">
+                    <legend>Montant</legend>
+                    <label class="fin-case"><input type="radio" name="modeMontant" value="SIGNE" th:checked="${!debitCredit}" /> Une colonne de montant signé (crédit positif, débit négatif)</label>
+                    <label class="fin-case"><input type="radio" name="modeMontant" value="DEBIT_CREDIT" th:checked="${debitCredit}" /> Deux colonnes : débit et crédit</label>
+                    <div class="rap-grille rap-grille--colonnes">
+                        <div class="record-field" data-mode="SIGNE"><label for="cMontant">Colonne du montant</label>
+                            <select id="cMontant" class="form-select" th:field="*{colonneMontant}"><option value="">Choisir…</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 4</option></select></div>
+                        <div class="record-field" data-mode="DEBIT_CREDIT"><label for="cDebit">Colonne du débit</label>
+                            <select id="cDebit" class="form-select" th:field="*{colonneDebit}"><option value="">Choisir…</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 4</option></select></div>
+                        <div class="record-field" data-mode="DEBIT_CREDIT"><label for="cCredit">Colonne du crédit</label>
+                            <select id="cCredit" class="form-select" th:field="*{colonneCredit}"><option value="">Choisir…</option><option th:each="j : ${#numbers.sequence(1, colonnes)}" th:value="${j}" th:text="${'Colonne ' + j}">Colonne 5</option></select></div>
+                    </div>
+                </fieldset>
+                <div class="rap-grille rap-grille--colonnes">
+                    <div class="record-field"><label for="cFormat">Format des dates</label>
+                        <select id="cFormat" class="form-select" th:field="*{formatDate}"><option th:each="f : ${formats}" th:value="${f.name()}" th:text="${f.libelle}">jj/mm/aaaa</option></select></div>
+                    <div class="record-field"><label for="cSeparateur">Séparateur décimal des montants</label>
+                        <select id="cSeparateur" class="form-select" th:field="*{separateur}"><option th:each="s : ${separateurs}" th:value="${s.name()}" th:text="${s.libelle}">virgule</option></select></div>
+                </div>
+                <div class="record-actions rap-actions">
+                    <button type="submit" class="btn btn-outline-primary" th:formaction="@{/rapprochements/{id}/import/{jeton}/apercu(id=${releve.id},jeton=${etape.jeton()})}"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualiser l'aperçu</button>
+                </div>
+            </section>
+
+            <section class="record-panel" aria-labelledby="rapApercuTitre" th:if="${etape.analyse() != null}">
+                <div class="record-panel-heading"><h2 id="rapApercuTitre">Aperçu</h2>
+                    <p th:text="${'Les ' + #lists.size(apercu) + ' premières lignes sur ' + #lists.size(etape.analyse().lignes()) + '.'}">Aperçu</p></div>
+                <ul class="rap-bilan" aria-label="Bilan de l'analyse">
+                    <li><strong th:text="${#lists.size(etape.analyse().valides()) - etape.analyse().doublons()}">0</strong> à importer</li>
+                    <li><strong th:text="${etape.analyse().doublons()}">0</strong> doublon(s), ignoré(s) par défaut</li>
+                    <li><strong th:text="${#lists.size(etape.analyse().erreurs())}">0</strong> en erreur (non importées)</li>
+                </ul>
+                <div class="table-responsive">
+                    <table class="table fin-table fin-empilee rap-table">
+                        <thead><tr><th>Ligne</th><th>Date</th><th>Libellé</th><th>Référence</th><th class="text-end">Montant</th><th>État</th></tr></thead>
+                        <tbody>
+                        <tr th:each="a : ${apercu}" th:classappend="${!a.valide() ? 'rap-ligne-erreur' : (a.doublon() ? 'rap-ligne-doublon' : '')}">
+                            <td data-label="Ligne" th:text="${a.numeroLigne()}">2</td>
+                            <td data-label="Date" class="text-nowrap" th:text="${a.valide() ? @formatsVue.date(a.date()) : '—'}">02/10/2026</td>
+                            <td data-label="Libellé" th:text="${a.valide() ? a.libelle() : '—'}">Virement</td>
+                            <td data-label="Référence" th:text="${a.valide() and a.reference() != null ? a.reference() : '—'}">—</td>
+                            <td data-label="Montant" class="text-end"><th:block th:if="${a.valide()}"><span th:replace="~{rapprochement/commun :: signe(${a.montant()})}"></span></th:block><span th:unless="${a.valide()}">—</span></td>
+                            <td data-label="État">
+                                <span class="rap-pastille rap-pastille--erreur" th:if="${!a.valide()}" th:text="${'Erreur : ' + a.erreur()}">Erreur</span>
+                                <span class="rap-pastille rap-pastille--doublon" th:if="${a.valide() and a.doublon()}">Doublon</span>
+                                <span class="rap-pastille rap-pastille--ok" th:if="${a.valide() and !a.doublon()}">OK</span>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <label class="fin-case rap-doublons" th:if="${etape.analyse().doublons() > 0}"><input type="checkbox" name="avecDoublons" value="oui" th:checked="${importForm.avecDoublons == 'oui'}" /> Importer aussi les doublons</label>
+                <div class="record-actions">
+                    <a th:href="@{/rapprochements/{id}(id=${releve.id})}" class="btn btn-outline-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-primary" id="confirmerImport" th:disabled="${#lists.isEmpty(etape.analyse().aImporter(importForm.avecDoublons == 'oui'))}"><i class="fa-solid fa-check" aria-hidden="true"></i> Importer les lignes</button>
+                </div>
+            </section>
+        </form>
+        <form th:action="@{/rapprochements/{id}/import/{jeton}/abandonner(id=${releve.id},jeton=${etape.jeton()})}" method="post" class="rap-suppression">
+            <button type="submit" class="btn btn-link btn-sm">Abandonner cet import (le fichier est oublié)</button>
+        </form>
+        <script th:src="@{/js/rapprochement.js}"></script>
+    </section>
+</div>

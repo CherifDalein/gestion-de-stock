@@ -1,0 +1,111 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapFicheTitre" th:with="brouillon=${!releve.estValide()}">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${releve.compte.nom + ' · ' + releve.compte.type.libelle}">Ecobank · Banque</p>
+                <h1 id="rapFicheTitre"><span th:text="${releve.numero}">RB-202610-3</span> <span th:replace="~{rapprochement/commun :: statut(${releve})}"></span></h1>
+                <p class="record-intro" th:text="${'Du ' + @formatsVue.date(releve.dateDebut) + ' au ' + @formatsVue.date(releve.dateFin)}">Du 01/10/2026 au 31/10/2026</p></div>
+            <a th:href="@{/rapprochements}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+        <div th:replace="~{rapprochement/commun :: onglets(${releve}, 'fiche')}"></div>
+
+        <p class="alert alert-info" th:if="${!brouillon}" role="status">Ce relevé est validé : il est figé avec ses rapprochements. Pour le modifier, dévalidez-le depuis l'<a th:href="@{/rapprochements/{id}/etat(id=${releve.id})}">état de rapprochement</a> (seul le dernier relevé validé du compte peut l'être).</p>
+
+        <section class="fin-chiffres" aria-label="Soldes du relevé">
+            <article><span>Solde d'ouverture</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.ouverture())}">0 GNF</strong></article>
+            <article><span th:text="${'Somme des ' + nombreLignes + (nombreLignes > 1 ? ' lignes' : ' ligne')}">Somme des lignes</span><strong th:replace="~{rapprochement/commun :: signe(${controle.sommeLignes()})}"></strong></article>
+            <article><span>Clôture attendue (ouverture + lignes)</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.attendu())}">0 GNF</strong></article>
+            <article><span>Clôture du relevé</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.cloture())}">0 GNF</strong></article>
+        </section>
+        <div class="alert alert-warning" role="alert" id="avertissementSoldes" th:unless="${controle.coherent()}">
+            <strong>Les soldes ne concordent pas.</strong>
+            <span th:text="${'Ouverture + lignes = ' + @formatsVue.gnf(controle.attendu()) + ', mais la clôture du relevé est ' + @formatsVue.gnf(controle.cloture()) + ' (écart ' + @formatsVue.signe(controle.ecart()) + '). Il manque peut-être des lignes ou un solde est mal recopié. Vous pouvez continuer la saisie et le pointage ; la validation reste bloquée tant que cet écart existe.'}">Écart</span>
+        </div>
+        <p class="alert alert-success" role="status" th:if="${controle.coherent()}">Les soldes concordent : ouverture + lignes = clôture.</p>
+
+        <div class="fin-actions rap-actions">
+            <a th:href="@{/rapprochements/{id}/pointage(id=${releve.id})}" class="btn btn-primary"><i class="fa-solid fa-link" aria-hidden="true"></i> Pointer</a>
+            <a th:href="@{/rapprochements/{id}/etat(id=${releve.id})}" class="btn btn-outline-primary"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> État de rapprochement</a>
+            <a th:if="${brouillon}" th:href="@{/rapprochements/{id}/import(id=${releve.id})}" class="btn btn-outline-secondary"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Importer un fichier</a>
+        </div>
+
+        <section class="record-panel" aria-labelledby="rapAjoutTitre" th:if="${brouillon}">
+            <div class="record-panel-heading"><h2 id="rapAjoutTitre">Ajouter une ligne</h2><p>Crédit en positif (argent reçu), débit en négatif (argent sorti).</p></div>
+            <form th:action="@{/rapprochements/{id}/lignes(id=${releve.id})}" th:object="${ligneForm}" method="post" class="rap-ligne-form" id="formLigne">
+                <div class="record-field"><label for="ligneDate">Date</label><input id="ligneDate" type="date" class="form-control" th:field="*{dateOperation}" th:min="${releve.dateDebut}" th:max="${releve.dateFin}" required /></div>
+                <div class="record-field rap-large"><label for="ligneLibelle">Libellé</label><input id="ligneLibelle" type="text" maxlength="255" class="form-control" th:field="*{libelle}" required /></div>
+                <div class="record-field"><label for="ligneReference">Référence <span class="record-optional">(facultatif)</span></label><input id="ligneReference" type="text" maxlength="100" class="form-control" th:field="*{reference}" /></div>
+                <div class="record-field"><label for="ligneMontant">Montant (GNF)</label><input id="ligneMontant" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{montant}" required /></div>
+                <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter</button></div>
+            </form>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapLignesTitre">
+            <div class="record-panel-heading"><h2 id="rapLignesTitre" th:text="${nombreLignes + (nombreLignes > 1 ? ' lignes' : ' ligne')}">0 ligne</h2></div>
+            <p class="record-help" th:if="${nombreLignes == 0}">Aucune ligne. Ajoutez-les à la main ou importez un fichier CSV ou Excel.</p>
+            <div class="table-responsive" th:if="${nombreLignes > 0}">
+                <table class="table fin-table fin-empilee rap-table">
+                    <thead><tr><th>Date</th><th>Libellé</th><th>Référence</th><th class="text-end">Montant</th><th>Pointage</th><th th:if="${brouillon}"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    <tr th:each="l : ${lignes}" th:attr="data-ligne=${l.id}">
+                        <td data-label="Date" class="text-nowrap" th:text="${@formatsVue.date(l.dateOperation)}">02/10/2026</td>
+                        <td data-label="Libellé" th:text="${l.libelle}">Virement</td>
+                        <td data-label="Référence" th:text="${l.reference != null ? l.reference : '—'}">—</td>
+                        <td data-label="Montant" class="text-end"><span th:replace="~{rapprochement/commun :: signe(${l.montant})}"></span></td>
+                        <td data-label="Pointage"><span class="rap-pastille" th:classappend="${l.estRapprochee() ? 'rap-pastille--ok' : ''}" th:text="${l.estRapprochee() ? 'Pointée' : 'Non pointée'}">Non pointée</span></td>
+                        <td data-label="Actions" th:if="${brouillon}" class="rap-actions-ligne">
+                            <th:block th:unless="${l.estRapprochee()}">
+                                <details class="rap-modifier">
+                                    <summary class="btn btn-sm btn-outline-secondary">Modifier</summary>
+                                    <form th:action="@{/rapprochements/{id}/lignes/{ligneId}(id=${releve.id},ligneId=${l.id})}" method="post" class="rap-ligne-form">
+                                        <div class="record-field"><label th:for="${'md' + l.id}">Date</label><input th:id="${'md' + l.id}" type="date" name="dateOperation" class="form-control" th:value="${l.dateOperation}" th:min="${releve.dateDebut}" th:max="${releve.dateFin}" required /></div>
+                                        <div class="record-field rap-large"><label th:for="${'ml' + l.id}">Libellé</label><input th:id="${'ml' + l.id}" type="text" name="libelle" maxlength="255" class="form-control" th:value="${l.libelle}" required /></div>
+                                        <div class="record-field"><label th:for="${'mr' + l.id}">Référence</label><input th:id="${'mr' + l.id}" type="text" name="reference" maxlength="100" class="form-control" th:value="${l.reference}" /></div>
+                                        <div class="record-field"><label th:for="${'mm' + l.id}">Montant (GNF)</label><input th:id="${'mm' + l.id}" type="number" name="montant" step="0.01" class="form-control" th:value="${l.montant}" required /></div>
+                                        <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary btn-sm">Enregistrer</button></div>
+                                    </form>
+                                </details>
+                                <form th:action="@{/rapprochements/{id}/lignes/{ligneId}/supprimer(id=${releve.id},ligneId=${l.id})}" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" th:attr="aria-label=${'Supprimer la ligne ' + l.libelle}">Supprimer</button></form>
+                            </th:block>
+                            <span th:if="${l.estRapprochee()}" class="record-help">Défaites le rapprochement pour la modifier.</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="record-help" th:if="${lignesTronquees}">Les 300 premières lignes sur <span th:text="${nombreLignes}">0</span> sont affichées. <a th:href="@{/rapprochements/{id}(id=${releve.id},toutes=1)}">Afficher toutes les lignes</a>.</p>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapEnteteTitre" th:if="${brouillon}">
+            <div class="record-panel-heading"><h2 id="rapEnteteTitre">Période et soldes du relevé</h2></div>
+            <details class="rap-modifier">
+                <summary class="btn btn-outline-secondary btn-sm">Modifier la période ou les soldes</summary>
+                <form th:action="@{/rapprochements/{id}/entete(id=${releve.id})}" th:object="${releveForm}" method="post" class="rap-ligne-form">
+                    <div class="record-field"><label for="enteteDebut">Du</label><input id="enteteDebut" type="date" class="form-control" th:field="*{dateDebut}" required /></div>
+                    <div class="record-field"><label for="enteteFin">Au</label><input id="enteteFin" type="date" class="form-control" th:field="*{dateFin}" required /></div>
+                    <div class="record-field"><label for="enteteOuverture">Ouverture (GNF)</label><input id="enteteOuverture" type="number" step="0.01" class="form-control" th:field="*{soldeOuverture}" required /></div>
+                    <div class="record-field"><label for="enteteCloture">Clôture (GNF)</label><input id="enteteCloture" type="number" step="0.01" class="form-control" th:field="*{soldeCloture}" required /></div>
+                    <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+                </form>
+            </details>
+            <form th:action="@{/rapprochements/{id}/supprimer(id=${releve.id})}" method="post" class="rap-suppression">
+                <button type="submit" class="btn btn-outline-danger btn-sm" data-confirmer="Supprimer ce relevé, ses lignes et ses rapprochements ? Les opérations déjà enregistrées dans l'appli restent dans le journal.">Supprimer le relevé</button>
+            </form>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapHistoTitre" th:unless="${#lists.isEmpty(historique)}">
+            <div class="record-panel-heading"><h2 id="rapHistoTitre">Historique des validations</h2></div>
+            <ul class="fin-historique">
+                <li th:each="h : ${historique}">
+                    <strong th:text="${h.type.libelle}">Validation</strong>
+                    <span th:text="${@formatsVue.dateHeure(h.dateEvenement) + ' · ' + h.utilisateur.nom + (h.motif != null ? ' · motif : ' + h.motif : '')}">…</span>
+                </li>
+            </ul>
+        </section>
+        <script th:src="@{/js/rapprochement.js}"></script>
+    </section>
+</div>

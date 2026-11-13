@@ -182,6 +182,10 @@
     <th:block th:if="${retardsEmprunts != null and !retardsEmprunts.aucun()}">
         <th:block th:replace="~{fragments/tableau-de-bord :: empruntsRetards(${retardsEmprunts})}"></th:block>
     </th:block>
+    <!--/* Dernier rapprochement validé de chaque compte Banque et Orange Money, avec alerte au-delà de 45 jours : gérant seulement (étape 3c). */-->
+    <th:block th:if="${suiviRapprochement != null}">
+        <th:block th:replace="~{fragments/tableau-de-bord :: suiviRapprochement(${suiviRapprochement}, ${alerteRapprochementJours})}"></th:block>
+    </th:block>
     <!--/* Comptages de caisse en attente de décision : réservé au gérant (étape 3b2). */-->
     <p class="alert alert-warning py-2 d-flex flex-wrap align-items-center justify-content-between gap-2" role="status" id="comptagesEnAttenteAlerte"
        th:if="${comptagesEnAttente != null and comptagesEnAttente > 0}">
@@ -335,5 +339,32 @@
         <p class="app-metric-foot">Bénéfice brut moins dépenses, plus produits et charges hors exploitation</p>
     </article>
 </th:block>
+<!--/* Suivi du rapprochement bancaire : un compte sans rapprochement validé depuis plus de 45 jours est signalé. */-->
+<section class="app-panel tdb-panel" th:fragment="suiviRapprochement(suivi, jours)" aria-labelledby="tdbRapprochementTitre" data-bloc="rapprochement">
+    <div class="app-panel-heading">
+        <div>
+            <h2 id="tdbRapprochementTitre"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Rapprochement bancaire</h2>
+            <p th:text="${'Date du dernier rapprochement validé de chaque compte Banque et Orange Money ; alerte au-delà de ' + jours + ' jours.'}">Suivi.</p>
+        </div>
+        <a class="btn btn-outline-secondary btn-sm" th:href="@{/rapprochements}">Ouvrir</a>
+    </div>
+    <div class="table-responsive tdb-table-wrap" tabindex="0" role="region" aria-labelledby="tdbRapprochementTitre">
+        <table class="table tdb-table tdb-table--retards mb-0">
+            <caption class="visually-hidden">Dernier rapprochement validé par compte</caption>
+            <thead>
+            <tr><th scope="col">Compte</th><th scope="col">Dernier rapprochement validé</th><th scope="col" class="text-end">Jours</th><th scope="col">État</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${suivi}" th:attr="data-rapprochement-compte=${s.compte().id}">
+                <th scope="row" th:text="${s.compte().nom}">Ecobank</th>
+                <td th:text="${s.dernier() != null ? #temporals.format(s.dernier(), 'dd/MM/yyyy') : 'Jamais'}">31/10/2026</td>
+                <td class="text-end" th:text="${s.jours() != null ? s.jours() : '—'}">12</td>
+                <td><span th:if="${s.alerte()}" class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> À rapprocher</span>
+                    <span th:unless="${s.alerte()}" class="text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> À jour</span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 </body>
 </html>

@@ -1,0 +1,34 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapImportTitre">
+        <header class="record-header">
+            <div><p class="record-kicker" th:text="${releve.numero + ' · ' + releve.compte.nom}">RB-202610-3</p><h1 id="rapImportTitre">Importer un fichier</h1>
+                <p class="record-intro">Un fichier CSV ou Excel (.xlsx) exporté de votre banque ou de l'opérateur. Vous choisirez ensuite les colonnes, puis vous verrez un aperçu avant d'enregistrer quoi que ce soit.</p></div>
+            <a th:href="@{/rapprochements/{id}(id=${releve.id})}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+        <p class="alert alert-info" th:if="${releve.estValide()}">Ce relevé est validé : il est figé, l'import n'est pas possible.</p>
+        <form th:unless="${releve.estValide()}" th:action="@{/rapprochements/{id}/import(id=${releve.id})}" method="post" enctype="multipart/form-data" id="formImport">
+            <section class="record-panel" aria-labelledby="rapFichierTitre">
+                <div class="record-panel-heading"><h2 id="rapFichierTitre">Fichier</h2></div>
+                <div class="record-field">
+                    <label for="importFichier">Fichier du relevé (.csv ou .xlsx, 2 Mo au plus)</label>
+                    <input id="importFichier" type="file" name="fichier" class="form-control" accept=".csv,.txt,.xlsx" required />
+                </div>
+                <ul class="record-help rap-regles">
+                    <li>5 000 lignes au plus par fichier. Le format Excel ancien (.xls) et le PDF ne sont pas pris en charge.</li>
+                    <li>CSV : séparateur <code>;</code>, virgule ou tabulation, encodage UTF-8 ou Windows-1252, reconnus automatiquement.</li>
+                    <li>Dates : jj/mm/aaaa, aaaa-mm-jj ou jj-mm-aaaa. Montants : virgule ou point décimal ; les espaces, « GNF » et « FG » sont ignorés.</li>
+                    <li>Le fichier n'est pas conservé : il est lu en mémoire, puis oublié après l'import ou au bout de 30 minutes.</li>
+                    <li>Une ligne déjà importée sur ce compte (même date, montant, libellé et référence) est signalée comme doublon et ignorée par défaut.</li>
+                </ul>
+            </section>
+            <div class="record-actions">
+                <a th:href="@{/rapprochements/{id}(id=${releve.id})}" class="btn btn-outline-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Lire le fichier</button>
+            </div>
+        </form>
+    </section>
+</div>

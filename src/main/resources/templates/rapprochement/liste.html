@@ -1,0 +1,48 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/formulaires.css}">
+    <link rel="stylesheet" th:href="@{/css/financements.css}">
+    <link rel="stylesheet" th:href="@{/css/rapprochement.css}">
+    <section class="record-page fin-page rap-page" aria-labelledby="rapListeTitre">
+        <header class="record-header">
+            <div><p class="record-kicker">Trésorerie</p><h1 id="rapListeTitre">Rapprochement bancaire</h1>
+                <p class="record-intro">Comparez les relevés de vos comptes Banque et Orange Money avec les mouvements de l'application. Pour la caisse en espèces, utilisez le <a th:href="@{/controles/comptages}">comptage de caisse</a>.</p></div>
+            <div class="fin-actions"><a th:href="@{/rapprochements/nouveau}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouveau relevé</a></div>
+        </header>
+        <div th:replace="~{rapprochement/commun :: alertes}"></div>
+
+        <section class="record-panel" aria-labelledby="rapSuiviTitre">
+            <div class="record-panel-heading"><h2 id="rapSuiviTitre">Dernier rapprochement validé par compte</h2>
+                <p th:text="${'Un compte est signalé quand son dernier rapprochement validé date de plus de ' + alerteJours + ' jours.'}">Alerte au-delà de 45 jours.</p></div>
+            <p class="record-help" th:if="${#lists.isEmpty(suivi)}">Aucun compte Banque ou Orange Money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
+            <div class="rap-comptes" th:unless="${#lists.isEmpty(suivi)}">
+                <article class="rap-compte" th:each="s : ${suivi}" th:classappend="${s.alerte ? 'rap-compte--alerte' : ''}" th:attr="data-compte=${s.compte.id}">
+                    <header><strong th:text="${s.compte.nom}">Ecobank</strong><small th:text="${s.compte.type.libelle}">Banque</small></header>
+                    <p th:if="${s.dernier != null}" th:text="${'Rapproché jusqu’au ' + @formatsVue.date(s.dernier) + ' (il y a ' + s.jours + (s.jours > 1 ? ' jours)' : ' jour)')}">Rapproché jusqu'au 31/10/2026</p>
+                    <p th:if="${s.dernier == null}" th:text="${s.alerte ? 'Jamais rapproché alors que le compte a servi.' : 'Aucun rapprochement validé.'}">Jamais rapproché</p>
+                    <p class="rap-alerte" th:if="${s.alerte}" role="status"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> À rapprocher</p>
+                    <a th:href="@{/rapprochements/nouveau(compte=${s.compte.id})}" class="btn btn-sm btn-outline-primary">Nouveau relevé</a>
+                </article>
+            </div>
+        </section>
+
+        <section class="record-panel" aria-labelledby="rapRelevesTitre">
+            <div class="record-panel-heading"><h2 id="rapRelevesTitre" th:text="${#lists.size(releves) + (#lists.size(releves) == 1 ? ' relevé' : ' relevés')}">0 relevé</h2></div>
+            <p class="record-help" th:if="${#lists.isEmpty(releves)}">Aucun relevé. Créez-en un pour commencer le pointage.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(releves)}">
+                <table class="table fin-table fin-empilee">
+                    <thead><tr><th>Numéro</th><th>Compte</th><th>Période</th><th class="text-end">Ouverture</th><th class="text-end">Clôture</th><th>Statut</th></tr></thead>
+                    <tbody>
+                    <tr th:each="r : ${releves}">
+                        <td data-label="Numéro"><a th:href="@{/rapprochements/{id}(id=${r.id})}" th:text="${r.numero}">RB-202610-3</a></td>
+                        <td data-label="Compte" th:text="${r.compte.nom}">Ecobank</td>
+                        <td data-label="Période" class="text-nowrap" th:text="${@formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin)}">01/10/2026 au 31/10/2026</td>
+                        <td data-label="Ouverture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeOuverture)}">0 GNF</td>
+                        <td data-label="Clôture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeCloture)}">0 GNF</td>
+                        <td data-label="Statut"><span th:replace="~{rapprochement/commun :: statut(${r})}"></span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </section>
+</div>

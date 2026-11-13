@@ -21,10 +21,10 @@ import java.util.Set;
  * candidat que d'une ligne), puis la date la plus proche l'emporte ; à égalité de distance, l'ordre des dates puis des identifiants rend le
  * résultat déterministe. Une paire déjà refusée n'est pas reproposée. Classe pure : aucun accès à la base.</p>
  */
-final class Appariement {
+public final class Appariement {
     static final int TOLERANCE_JOURS = 3;
 
-    record Proposition(LigneReleve ligne, MouvementCaisse mouvement, int ecartJours, boolean unique) { }
+    public record Proposition(LigneReleve ligne, MouvementCaisse mouvement, int ecartJours, boolean unique) { }
 
     private record Paire(LigneReleve ligne, MouvementCaisse mouvement, int distance) { }
 

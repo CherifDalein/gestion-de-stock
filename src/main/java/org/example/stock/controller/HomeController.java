@@ -36,6 +36,7 @@ public class HomeController {
     @Autowired EssaiBoutiqueService essais;
     @Autowired TableauDeBordService tableauDeBord;
     @Autowired EmpruntService emprunts;
+    @Autowired org.example.stock.service.SuiviRapprochementService suiviRapprochementService;
 
     private static final DateTimeFormatter MOIS_EN_COURS = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRENCH);
 
@@ -87,6 +88,12 @@ public class HomeController {
         }
         // Emprunts et prêts en retard : alerte du gérant seulement.
         model.addAttribute("retardsEmprunts", emprunts.retards(5));
+        // Dernier rapprochement validé de chaque compte Banque et Orange Money, avec alerte au-delà de 45 jours (étape 3c).
+        var suiviRapprochement = suiviRapprochementService.suivi();
+        if (!suiviRapprochement.isEmpty()) {
+            model.addAttribute("suiviRapprochement", suiviRapprochement);
+            model.addAttribute("alerteRapprochementJours", org.example.stock.service.SuiviRapprochementService.ALERTE_JOURS);
+        }
         TableauDeBordService.AnneeChoisie choix = TableauDeBordService.choisirAnnee(annee, aujourdHui);
         model.addAttribute("anneeCorrigee", choix.corrigee());
         model.addAttribute("evolution", tableauDeBord.evolutionMensuelle(choix.annee(), aujourdHui));
