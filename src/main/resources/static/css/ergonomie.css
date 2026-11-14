@@ -207,3 +207,24 @@ body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px;
   body.stock-app .journal-cartes .ligne-actions > .btn { justify-content: center; padding-inline: 8px; }
   body.stock-app .journal-cartes .ligne-actions .plus-menu-bouton { width: 100%; justify-content: center; }
 }
+
+/* ===== Écrans de règlement : historique en fiches sur téléphone, barre d'actions qui ne masque rien ===== */
+@media (max-width: 767.98px) {
+    body.stock-app .operation-panel .table-responsive:has(table.historique-cartes) { overflow: visible; }
+    body.stock-app table.historique-cartes { min-width: 0; width: 100%; }
+    /* En-têtes masqués proprement : lus par les lecteurs d'écran, sans largeur. */
+    body.stock-app table.historique-cartes thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; white-space: nowrap; }
+    body.stock-app table.historique-cartes, body.stock-app table.historique-cartes tbody { display: block; }
+    body.stock-app table.historique-cartes tr { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 2px 12px; margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--app-border, #dfe8e2); border-radius: 12px; background: #fff; }
+    body.stock-app table.historique-cartes td { display: contents; }
+    body.stock-app table.historique-cartes td[data-label]::before { content: attr(data-label); color: var(--app-muted, #687b70); font-size: .75rem; font-weight: 600; align-self: baseline; text-align: left; }
+    body.stock-app table.historique-cartes td.historique-action:not(:has(a, button)) { display: none; }
+    body.stock-app table.historique-cartes td[data-label] > *, body.stock-app table.historique-cartes td[data-label] { overflow-wrap: anywhere; }
+    body.stock-app table.historique-cartes td[data-label]:not([data-label="Date"]) { text-align: right; }
+    body.stock-app table.historique-cartes td.historique-action { display: block; grid-column: 1 / -1; margin-top: 6px; text-align: left; }
+    body.stock-app table.historique-cartes td.historique-action .btn { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; }
+    /* Place sous le dernier champ pour que la barre collante ne le recouvre pas. */
+    body.stock-app .operation-form, body.stock-app form:has(> .operation-actions) { padding-bottom: 8px; }
+    body.stock-app .operation-actions { margin-bottom: 8px; }
+    body.stock-app .operation-layout { padding-bottom: 96px; }
+}
