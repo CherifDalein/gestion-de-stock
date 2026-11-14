@@ -283,3 +283,11 @@ body.stock-app .products-toolbar .filtres-champs-bureau > div { min-width: 0; }
 @media screen and (min-width: 768px) and (max-width: 1599.98px) {
   body.stock-app #stockCaisse .caisse-table > :is(thead, tbody) > tr > :is(:nth-child(3), :nth-child(5)) { display: none; }
 }
+
+/* ===== « Saisi par » sous 1600 px : la colonne est masquée, l'auteur passe en seconde ligne grise (jamais les deux à la fois) ===== */
+body.stock-app .journal-cartes .jt-par,
+body.stock-app #stockCaisse .caisse-par { display: none; }
+@media screen and (min-width: 768px) and (max-width: 1599.98px) {
+  body.stock-app .journal-cartes .jt-par,
+  body.stock-app #stockCaisse .caisse-par { display: block; margin-top: 2px; color: var(--app-muted); font-size: .72rem; font-weight: 400; line-height: 1.3; }
+}
