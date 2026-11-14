@@ -1,13 +1,13 @@
 /* Shared by the sign-in and administrator account creation pages. */
 body.stock-auth {
-    --auth-bg: #f4f7f6;
-    --auth-paper: #ffffff;
-    --auth-text: #152c25;
-    --auth-muted: #5b6f65;
-    --auth-navy: #0B2540;
-    --auth-green: #15805d;
-    --auth-green-dark: #106447;
-    --auth-border: #dfe8e3;
+    --auth-bg: var(--rfc-bg);
+    --auth-paper: var(--rfc-surface);
+    --auth-text: var(--app-ink);
+    --auth-muted: var(--app-muted);
+    --auth-navy: var(--rfc-heading);
+    --auth-green: var(--app-green);
+    --auth-green-dark: var(--rfc-green-text);
+    --auth-border: var(--app-border);
     min-width: 0;
     min-height: 100vh;
     margin: 0;
@@ -24,7 +24,7 @@ body.stock-auth {
     width: min(1160px, calc(100% - 96px));
     min-height: min(760px, calc(100vh - 96px));
     margin: 48px auto;
-    background: #eaf3ed;
+    background: var(--rfc-tint);
     border: 1px solid var(--auth-border);
     border-radius: 28px;
     overflow: hidden;
@@ -54,7 +54,7 @@ body.stock-auth {
     height: 48px;
     flex-shrink: 0;
     place-items: center;
-    color: #fff;
+    color: var(--rfc-on-accent);
     background: var(--auth-green);
     border-radius: 14px;
 }
@@ -127,8 +127,8 @@ body.stock-auth {
     height: 40px;
     flex-shrink: 0;
     place-items: center;
-    background: rgba(255, 255, 255, .7);
-    border: 1px solid #d8e5dc;
+    background: rgb(var(--rfc-surface-rgb) / 70%);
+    border: 1px solid var(--app-border);
     border-radius: 12px;
     color: var(--auth-green-dark);
 }
@@ -210,7 +210,7 @@ body.stock-auth {
 .stock-auth .auth-field .form-control {
     min-height: 50px;
     padding: 12px 15px;
-    border: 1px solid #cbdad1;
+    border: 1px solid var(--rfc-border-strong);
     border-radius: 10px;
     background: var(--auth-paper);
     color: var(--auth-text);
@@ -220,7 +220,7 @@ body.stock-auth {
 }
 
 .stock-auth .auth-field .form-control::placeholder {
-    color: #738479;
+    color: var(--app-muted);
     opacity: 1;
 }
 
@@ -247,7 +247,7 @@ body.stock-auth {
     border: 1px solid var(--auth-green);
     border-radius: 10px;
     background: var(--auth-green);
-    color: #fff;
+    color: var(--rfc-on-accent);
     font: inherit;
     font-size: .88rem;
     font-weight: 650;
@@ -256,8 +256,8 @@ body.stock-auth {
 }
 
 .stock-auth .auth-submit:hover {
-    border-color: var(--auth-green-dark);
-    background: var(--auth-green-dark);
+    border-color: var(--rfc-green-hover);
+    background: var(--rfc-green-hover);
 }
 
 .stock-auth .auth-submit span {
@@ -309,15 +309,15 @@ body.stock-auth {
 }
 
 .stock-auth .alert-danger {
-    color: #842b34;
-    background: #fff2f1;
-    border-color: #f1c9cc;
+    color: var(--rfc-danger-fg);
+    background: var(--rfc-danger-bg);
+    border-color: var(--rfc-danger-border);
 }
 
 .stock-auth .alert-success {
-    color: #135a40;
-    background: #eaf5ef;
-    border-color: #c8e3d3;
+    color: var(--rfc-green-text);
+    background: var(--rfc-tint);
+    border-color: var(--app-border);
 }
 
 .stock-auth .alert ul {
@@ -397,3 +397,7 @@ body.stock-auth {
 
 .stock-auth .auth-brand-logo { display: block; height: 72px; width: auto; max-width: 100%; }
 @media (max-width: 575.98px) { .stock-auth .auth-brand-logo { height: 56px; } }
+
+/* Bascule lune/soleil (theme.css) : coin supérieur droit de la carte. */
+.stock-auth .auth-layout { position: relative; }
+.stock-auth .auth-theme { position: absolute; z-index: 2; top: 16px; right: 16px; }

@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <th:block th:replace="~{fragments/theme :: tete}"></th:block>
     <th:block th:replace="~{fragments/marque :: icones}"></th:block>
     <meta name="description" content="Gérez le stock, les achats, les ventes et la caisse de votre boutique avec RFC-COMPTA. Créez votre espace et commencez votre essai gratuit.">
     <title>RFC-COMPTA · Votre boutique, en toute clarté</title>
+    <link th:href="@{/css/theme.css}" rel="stylesheet" />
     <link th:href="@{/css/accueil.css}" rel="stylesheet">
 </head>
 <body class="stock-landing">
@@ -13,11 +15,12 @@
 <header class="landing-header">
     <div class="landing-container landing-nav">
         <a class="landing-brand" th:href="@{/accueil}" aria-label="RFC-COMPTA, accueil">
-            <img class="landing-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="140" height="56">
+            <th:block th:replace="~{fragments/theme :: logo('landing-brand-logo', '140', '56')}"></th:block>
         </a>
         <nav class="landing-nav-links" aria-label="Navigation principale">
             <a class="landing-nav-section" href="#fonctionnalites">Fonctionnalités</a>
             <a class="landing-nav-section" href="#comment-commencer">Comment commencer</a>
+            <th:block th:replace="~{fragments/theme :: bascule}"></th:block>
             <a class="landing-login" th:href="@{/login}">Se connecter<span aria-hidden="true">↗</span></a>
         </nav>
     </div>
@@ -93,6 +96,6 @@
     </section>
 </main>
 
-<footer class="landing-footer"><div class="landing-container"><a class="landing-brand" th:href="@{/accueil}"><img class="landing-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="140" height="56"></a><p>Votre boutique, en toute clarté.</p><a th:href="@{/login}">Accéder à mon espace<span aria-hidden="true">↗</span></a></div></footer>
+<footer class="landing-footer"><div class="landing-container"><a class="landing-brand" th:href="@{/accueil}"><th:block th:replace="~{fragments/theme :: logo('landing-brand-logo', '140', '56')}"></th:block></a><p>Votre boutique, en toute clarté.</p><a th:href="@{/login}">Accéder à mon espace<span aria-hidden="true">↗</span></a></div></footer>
 </body>
 </html>

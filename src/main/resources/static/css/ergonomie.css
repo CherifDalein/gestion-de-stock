@@ -10,10 +10,10 @@ body.stock-app .plus-menu-bouton { display: inline-flex; align-items: center; ga
 body.stock-app .plus-menu-bouton::-webkit-details-marker { display: none; }
 body.stock-app .plus-menu-icone { font-size: 1.15rem; line-height: 1; font-weight: 700; letter-spacing: -.05em; }
 body.stock-app .plus-menu-bouton[aria-expanded=true],
-body.stock-app .plus-menu-details[open] > .plus-menu-bouton { background: var(--app-tint); border-color: #97cbb1; color: var(--app-green-dark); }
+body.stock-app .plus-menu-details[open] > .plus-menu-bouton { background: var(--app-tint); border-color: var(--rfc-green-border); color: var(--app-green-dark); }
 body.stock-app .plus-menu-panel {
   z-index: 1080; min-width: 230px; max-width: min(320px, calc(100vw - 16px)); overflow-y: auto;
-  padding: 6px; background: #fff; border: 1px solid var(--app-border); border-radius: 12px; box-shadow: 0 12px 36px rgb(21 44 37 / 16%);
+  padding: 6px; background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 12px; box-shadow: 0 12px 36px rgb(var(--rfc-shadow-rgb) / 16%);
   text-align: left; white-space: normal;
 }
 body.stock-app .plus-menu-panel[hidden] { display: none; }
@@ -29,9 +29,9 @@ body.stock-app .plus-menu-item:focus-visible { background: var(--app-tint); colo
 body.stock-app .plus-menu-panel form { margin: 0; }
 body.stock-app .plus-menu-separateur { height: 1px; margin: 6px 4px; border: 0; background: var(--app-border); opacity: 1; }
 body.stock-app .plus-menu-item--danger,
-body.stock-app .plus-menu-item--danger > :is(i, svg) { color: #a32c39; }
+body.stock-app .plus-menu-item--danger > :is(i, svg) { color: var(--rfc-danger-fg); }
 body.stock-app .plus-menu-item--danger:hover,
-body.stock-app .plus-menu-item--danger:focus-visible { background: #fff0f0; color: #8c1f2b; }
+body.stock-app .plus-menu-item--danger:focus-visible { background: var(--rfc-danger-bg); color: var(--rfc-danger-fg); }
 body.stock-app .plus-menu-groupe { padding: 8px 12px 2px; color: var(--app-muted); font-size: .7rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
 
 /* Rangée d'actions d'une ligne : les 2 ou 3 actions principales puis « Plus », sans défilement horizontal. */
@@ -43,15 +43,15 @@ body.stock-app td.cellule-actions { white-space: normal; }
 /* ---- Fenêtre de confirmation -------------------------------------------------------------------------------------- */
 body.stock-app dialog.confirm-dialog,
 dialog.confirm-dialog {
-  width: min(440px, calc(100vw - 32px)); max-width: none; margin: auto; padding: 0; border: 1px solid var(--app-border, #dfe8e3);
-  border-radius: 16px; background: #fff; color: var(--app-ink, #152c25); box-shadow: 0 24px 70px rgb(21 44 37 / 28%);
+  width: min(440px, calc(100vw - 32px)); max-width: none; margin: auto; padding: 0; border: 1px solid var(--app-border, var(--app-border));
+  border-radius: 16px; background: var(--rfc-surface); color: var(--app-ink, var(--app-ink)); box-shadow: 0 24px 70px rgb(var(--rfc-shadow-rgb) / 28%);
 }
-dialog.confirm-dialog::backdrop { background: rgb(21 44 37 / 45%); }
+dialog.confirm-dialog::backdrop { background: rgb(var(--rfc-shadow-rgb) / 45%); }
 .confirm-dialog-corps { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; row-gap: 6px; padding: 24px; }
-.confirm-dialog-icone { grid-row: 1 / span 2; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #fff0f0; color: #a32c39; font-weight: 800; font-size: 1.2rem; }
+.confirm-dialog-icone { grid-row: 1 / span 2; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--rfc-danger-bg); color: var(--rfc-danger-fg); font-weight: 800; font-size: 1.2rem; }
 .confirm-dialog-titre { margin: 0; align-self: center; font-size: 1.08rem; font-weight: 700; line-height: 1.35; }
-.confirm-dialog-texte { grid-column: 2; margin: 0; color: var(--app-muted, #64776e); font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
-.confirm-dialog-sujet { color: var(--app-ink, #152c25); }
+.confirm-dialog-texte { grid-column: 2; margin: 0; color: var(--app-muted, var(--app-muted)); font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
+.confirm-dialog-sujet { color: var(--app-ink, var(--app-ink)); }
 .confirm-dialog-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 .confirm-dialog-actions .btn { min-height: 46px; padding-inline: 18px; border-radius: 10px; font-weight: 650; }
 @media (max-width: 479.98px) {
@@ -75,7 +75,7 @@ body.stock-app .partners-contact-mobile { display: none; }
 body.stock-app .partners-sort-mobile { display: none; }
 body.stock-app .partners-metrics--compact { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 body.stock-app .partners-metric-montant { font-size: 1.25rem; }
-body.stock-app .partners-metric--du > strong { color: #8c5a0b; }
+body.stock-app .partners-metric--du > strong { color: var(--rfc-warn-fg); }
 body.stock-app .partners-metric--avance > strong { color: var(--app-green-dark); }
 body.stock-app .solde-badge { display: none; }
 body.stock-app .solde-montant { display: none; }
@@ -84,13 +84,13 @@ body.stock-app .partner-detail-vide { margin: 0; color: var(--app-muted); font-s
 
 /* Étiquettes de solde (téléphone) : couleur ET texte, jamais la couleur seule. */
 body.stock-app .solde-badge { align-items: center; padding: 2px 8px; border-radius: 999px; font-size: .68rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
-body.stock-app .solde-badge--doit { background: #fff4de; color: #7a4d00; }
-body.stock-app .solde-badge--dois { background: #fdeaea; color: #a32c39; }
-body.stock-app .solde-badge--avance { background: #e3f4ea; color: #106448; }
-body.stock-app .solde-badge--solde { background: #eef2f0; color: #52685d; }
-body.stock-app .solde-montant--doit { color: #7a4d00; }
-body.stock-app .solde-montant--dois { color: #a32c39; }
-body.stock-app .solde-montant--avance { color: #106448; }
+body.stock-app .solde-badge--doit { background: var(--rfc-warn-bg); color: var(--rfc-warn-fg); }
+body.stock-app .solde-badge--dois { background: var(--rfc-danger-bg); color: var(--rfc-danger-fg); }
+body.stock-app .solde-badge--avance { background: var(--rfc-tint); color: var(--rfc-green-text); }
+body.stock-app .solde-badge--solde { background: var(--rfc-surface-3); color: var(--rfc-ink-2); }
+body.stock-app .solde-montant--doit { color: var(--rfc-warn-fg); }
+body.stock-app .solde-montant--dois { color: var(--rfc-danger-fg); }
+body.stock-app .solde-montant--avance { color: var(--rfc-green-text); }
 body.stock-app .solde-montant--solde { color: var(--app-muted); }
 
 /* Téléphone : fiches compactes. Nom et solde en haut, une ligne de contact, puis les actions. */
@@ -145,7 +145,7 @@ body.stock-app .filtres-etiquettes,
 body.stock-app .tri-mobile { display: none; }
 /* Bootstrap impose d-flex en !important : l'attribut hidden doit gagner pour que le repli fonctionne. */
 body.stock-app [data-filtres-contenu][hidden] { display: none !important; }
-body.stock-app .filtres-compteur { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--app-green); color: #fff; font-size: .72rem; font-weight: 700; }
+body.stock-app .filtres-compteur { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--app-green); color: var(--rfc-on-accent); font-size: .72rem; font-weight: 700; }
 body.stock-app .filtres-compteur[hidden] { display: none; }
 body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px; background: var(--app-tint); color: var(--app-green-dark); font-size: .75rem; font-weight: 600; overflow-wrap: anywhere; }
 @media (max-width: 767.98px) {
@@ -155,7 +155,7 @@ body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px;
   body.stock-app .filtres-effacer[hidden] { display: none; }
   body.stock-app .filtres-etiquettes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; padding: 0; list-style: none; }
   body.stock-app .filtres-etiquettes[hidden] { display: none; }
-  body.stock-app [data-filtres-contenu]:not([hidden]) { padding: 12px; border: 1px solid var(--app-border); border-radius: 12px; background: #fff; }
+  body.stock-app [data-filtres-contenu]:not([hidden]) { padding: 12px; border: 1px solid var(--app-border); border-radius: 12px; background: var(--rfc-surface); }
   body.stock-app form[data-filtres-contenu]:not([hidden]) { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end !important; gap: 10px !important; }
   body.stock-app form[data-filtres-contenu] > div:has(select) { grid-column: 1 / -1; }
   body.stock-app form[data-filtres-contenu] > :is(button, a) { justify-self: start; }
@@ -233,9 +233,9 @@ body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px;
     /* En-têtes masqués proprement : lus par les lecteurs d'écran, sans largeur. */
     body.stock-app table.historique-cartes thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; white-space: nowrap; }
     body.stock-app table.historique-cartes, body.stock-app table.historique-cartes tbody { display: block; }
-    body.stock-app table.historique-cartes tr { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 2px 12px; margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--app-border, #dfe8e2); border-radius: 12px; background: #fff; }
+    body.stock-app table.historique-cartes tr { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 2px 12px; margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--app-border, var(--app-border)); border-radius: 12px; background: var(--rfc-surface); }
     body.stock-app table.historique-cartes td { display: contents; }
-    body.stock-app table.historique-cartes td[data-label]::before { content: attr(data-label); color: var(--app-muted, #687b70); font-size: .75rem; font-weight: 600; align-self: baseline; text-align: left; }
+    body.stock-app table.historique-cartes td[data-label]::before { content: attr(data-label); color: var(--app-muted, var(--app-muted)); font-size: .75rem; font-weight: 600; align-self: baseline; text-align: left; }
     body.stock-app table.historique-cartes td.historique-action:not(:has(a, button)) { display: none; }
     body.stock-app table.historique-cartes td[data-label] > *, body.stock-app table.historique-cartes td[data-label] { overflow-wrap: anywhere; }
     body.stock-app table.historique-cartes td[data-label]:not([data-label="Date"]) { text-align: right; }

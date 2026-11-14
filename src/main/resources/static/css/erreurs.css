@@ -1,19 +1,19 @@
-body.stock-error { margin: 0; background: #f4f7f6; color: #152c25; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; }
+body.stock-error { margin: 0; background: var(--rfc-surface-3); color: var(--app-ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; }
 body.stock-error * { box-sizing: border-box; }
 body.stock-error .error-shell { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
-body.stock-error .error-brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 36px; color: #152c25; text-decoration: none; font-size: 1.15rem; font-weight: 750; }
+body.stock-error .error-brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 36px; color: var(--app-ink); text-decoration: none; font-size: 1.15rem; font-weight: 750; }
 body.stock-error .error-brand-logo { display: block; height: 60px; width: auto; max-width: 100%; }
-body.stock-error .error-card { padding: 40px; background: #fff; border: 1px solid #dfe8e3; border-radius: 18px; box-shadow: 0 6px 24px rgb(21 44 37 / 4%); }
-body.stock-error .error-code { margin: 0 0 12px; color: #106448; font-size: .8rem; font-weight: 650; }
+body.stock-error .error-card { padding: 40px; background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 18px; box-shadow: 0 6px 24px rgb(var(--rfc-shadow-rgb) / 4%); }
+body.stock-error .error-code { margin: 0 0 12px; color: var(--rfc-green-text); font-size: .8rem; font-weight: 650; }
 body.stock-error h1 { margin: 0 0 18px; font-size: clamp(1.6rem, 5vw, 2.25rem); line-height: 1.2; letter-spacing: -.04em; }
-body.stock-error .error-description { margin: 0 0 28px; color: #52685d; }
+body.stock-error .error-description { margin: 0 0 28px; color: var(--rfc-ink-2); }
 body.stock-error .error-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-body.stock-error .error-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 17px; color: #106448; background: #fff; border: 1px solid #c6dacf; border-radius: 9px; font-size: .85rem; font-weight: 600; text-decoration: none; text-align: center; }
-body.stock-error .error-button:hover { background: #eaf5ee; }
-body.stock-error .error-button--primary { color: #fff; background: #15805d; border-color: #15805d; }
-body.stock-error .error-button--primary:hover { background: #106448; }
-body.stock-error a:focus-visible { outline: 3px solid #15805d; outline-offset: 3px; }
-body.stock-error .error-help { margin: 28px 0 0; font-size: .8rem; color: #64776e; }
+body.stock-error .error-button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 11px 17px; color: var(--rfc-green-text); background: var(--rfc-surface); border: 1px solid var(--rfc-border-strong); border-radius: 9px; font-size: .85rem; font-weight: 600; text-decoration: none; text-align: center; }
+body.stock-error .error-button:hover { background: var(--rfc-tint); }
+body.stock-error .error-button--primary { color: var(--rfc-on-accent); background: var(--app-green); border-color: var(--app-green); }
+body.stock-error .error-button--primary:hover { background: var(--rfc-green-hover); }
+body.stock-error a:focus-visible { outline: 3px solid var(--app-green); outline-offset: 3px; }
+body.stock-error .error-help { margin: 28px 0 0; font-size: .8rem; color: var(--app-muted); }
 @media (max-width: 575.98px) {
     body.stock-error .error-shell { padding: 28px 16px; }
     body.stock-error .error-card { padding: 25px; }

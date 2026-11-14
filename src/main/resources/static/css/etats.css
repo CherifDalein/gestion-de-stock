@@ -17,7 +17,7 @@
     /* styles.css masque toute l'application pour l'impression d'une fenêtre modale : on rétablit l'état. */
     body.stock-app, body.stock-app #layoutSidenav, body.stock-app #layoutSidenav_content, body.stock-app #mainContent,
     #stockEtat, #stockEtat * { visibility: visible !important; }
-    body.stock-app { background: #fff !important; color: #152c25; margin: 0 !important; font-size: 9pt; line-height: 1.35; }
+    body.stock-app { background: var(--rfc-surface) !important; color: var(--app-ink); margin: 0 !important; font-size: 9pt; line-height: 1.35; }
     body.stock-app :is(.app-topbar, .app-skip-link, #layoutSidenav_nav, .app-mobile-backdrop, .app-footer) { display: none !important; }
     body.stock-app #layoutSidenav { display: block !important; }
     body.stock-app #layoutSidenav #layoutSidenav_content, body.stock-app #mainContent { display: block !important; position: static !important; margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 0 !important; overflow: visible !important; transform: none !important; }
@@ -33,7 +33,7 @@
     #stockEtat .etat-table { width: 100%; min-width: 0; font-size: 8.5pt; border-collapse: collapse; }
     #stockEtat .etat-table thead { display: table-header-group; }
     #stockEtat .etat-table tr { break-inside: avoid; page-break-inside: avoid; }
-    #stockEtat .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding: 2mm 1.5mm; border-bottom: 1px solid #dfe8e3; background: transparent; box-shadow: none; }
+    #stockEtat .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding: 2mm 1.5mm; border-bottom: 1px solid var(--app-border); background: transparent; box-shadow: none; }
 }
 
 /* États du gérant (section « États ») : lignes de sous-total, nombres alignés, cartes de l'accueil. */
@@ -43,6 +43,6 @@
 #stockEtat .etat-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 #stockEtat a.card:hover, #stockEtat a.card:focus-visible { border-color: var(--app-green); }
 @media print {
-    #stockEtat .etat-table > tbody > tr.etat-soustotal > * { background: #eef4f0; }
-    #stockEtat .etat-table > tfoot > tr > td { font-weight: 700; border-top: 2px solid #1f2933; }
+    #stockEtat .etat-table > tbody > tr.etat-soustotal > * { background: var(--rfc-surface-3); }
+    #stockEtat .etat-table > tfoot > tr > td { font-weight: 700; border-top: 2px solid var(--app-ink); }
 }

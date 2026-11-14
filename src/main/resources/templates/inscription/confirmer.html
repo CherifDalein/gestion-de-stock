@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <th:block th:replace="~{fragments/theme :: tete}"></th:block>
     <th:block th:replace="~{fragments/marque :: icones}"></th:block>
     <meta name="referrer" content="no-referrer">
     <title>Votre nouvelle boutique · RFC-COMPTA</title>
     <link th:href="@{/css/styles.css}" rel="stylesheet">
+    <link th:href="@{/css/theme.css}" rel="stylesheet" />
     <link th:href="@{/css/auth.css}" rel="stylesheet">
     <link th:href="@{/css/inscription.css}" rel="stylesheet">
 </head>
 <body class="stock-auth stock-signup">
 <main class="auth-layout">
+    <div class="auth-theme"><th:block th:replace="~{fragments/theme :: bascule}"></th:block></div>
     <section class="auth-intro" aria-labelledby="auth-intro-title">
-        <a class="auth-brand" th:href="@{/accueil}" aria-label="RFC-COMPTA, accueil"><img class="auth-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="180" height="72"></a>
+        <a class="auth-brand" th:href="@{/accueil}" aria-label="RFC-COMPTA, accueil"><th:block th:replace="~{fragments/theme :: logo('auth-brand-logo', '180', '72')}"></th:block></a>
         <div class="auth-intro-content">
             <p class="auth-eyebrow">Votre boutique, votre espace</p>
             <h1 id="auth-intro-title">Prêt à gérer<br>votre boutique ?</h1>
