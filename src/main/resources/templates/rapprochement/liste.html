@@ -17,7 +17,7 @@
             <div class="rap-comptes" th:unless="${#lists.isEmpty(suivi)}">
                 <article class="rap-compte" th:each="s : ${suivi}" th:classappend="${s.alerte ? 'rap-compte--alerte' : ''}" th:attr="data-compte=${s.compte.id}">
                     <header><strong th:text="${s.compte.nom}">Ecobank</strong><small th:text="${s.compte.type.libelle}">Banque</small></header>
-                    <p th:if="${s.dernier != null}" th:text="${'Rapproché jusqu’au ' + @formatsVue.date(s.dernier) + ' (il y a ' + s.jours + (s.jours > 1 ? ' jours)' : ' jour)')}">Rapproché jusqu'au 31/10/2026</p>
+                    <p th:if="${s.dernier != null}" th:text="${'Rapproché jusqu’au ' + @formatsVue.date(s.dernier) + ' (' + (s.jours <= 0 ? 'aujourd’hui' : (s.jours == 1 ? 'hier' : 'il y a ' + s.jours + ' jours')) + ')'}">Rapproché jusqu'au 31/10/2026</p>
                     <p th:if="${s.dernier == null}" th:text="${s.alerte ? 'Jamais rapproché alors que le compte a servi.' : 'Aucun rapprochement validé.'}">Jamais rapproché</p>
                     <p class="rap-alerte" th:if="${s.alerte}" role="status"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> À rapprocher</p>
                     <a th:href="@{/rapprochements/nouveau(compte=${s.compte.id})}" class="btn btn-sm btn-outline-primary">Nouveau relevé</a>

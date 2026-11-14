@@ -360,7 +360,8 @@
                 <td th:text="${s.dernier() != null ? #temporals.format(s.dernier(), 'dd/MM/yyyy') : 'Jamais'}">31/10/2026</td>
                 <td class="text-end" th:text="${s.jours() != null ? s.jours() : '—'}">12</td>
                 <td><span th:if="${s.alerte()}" class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> À rapprocher</span>
-                    <span th:unless="${s.alerte()}" class="text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> À jour</span></td>
+                    <span th:if="${!s.alerte() and s.dernier() == null}" class="text-muted"><i class="fa-regular fa-circle" aria-hidden="true"></i> Pas encore utilisé</span>
+                    <span th:if="${!s.alerte() and s.dernier() != null}" class="text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> À jour</span></td>
             </tr>
             </tbody>
         </table>
