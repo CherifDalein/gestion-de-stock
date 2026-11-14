@@ -65,6 +65,11 @@ dialog.confirm-dialog::backdrop { background: rgb(21 44 37 / 45%); }
 body.stock-app .partners-table > thead > tr > th:last-child,
 body.stock-app .partners-table > tbody > tr > td.cellule-actions { text-align: left; }
 body.stock-app .partners-table > tbody > tr > td.cellule-actions { min-width: 300px; }
+/* Ordinateur et tablette : Consulter, Modifier (Régler le solde) et ⋯ Plus restent sur une seule ligne. */
+@media (min-width: 768px) {
+  body.stock-app .partners-table .ligne-actions { flex-wrap: nowrap; }
+  body.stock-app .partners-table > tbody > tr > td.cellule-actions { min-width: 0; width: 1%; white-space: nowrap; }
+}
 body.stock-app .partners-table > tbody > tr > td.partners-solde { min-width: 130px; text-align: right; }
 body.stock-app .partners-contact-mobile { display: none; }
 body.stock-app .partners-sort-mobile { display: none; }
