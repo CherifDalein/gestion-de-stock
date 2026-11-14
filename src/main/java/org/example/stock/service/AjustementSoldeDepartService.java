@@ -109,7 +109,7 @@ public class AjustementSoldeDepartService {
     // ---- Règles ---------------------------------------------------------------------------------------------
 
     private BigDecimal controler(Partenaire type, Long id, BigDecimal soldeActuel, BigDecimal montantSaisi, SensAjustement sens, String motif, String jeton) {
-        if (sens == null) throw new IllegalArgumentException("Choisissez le sens du nouveau solde : « il me doit », « je lui dois » ou « avance ».");
+        if (sens == null) throw new IllegalArgumentException("Choisissez le sens du nouveau solde : « il me doit » ou « je lui dois ».");
         if (jeton == null || jeton.isBlank() || jeton.length() > 36) throw new IllegalArgumentException("Rechargez le formulaire d'ajustement.");
         motifValide(motif);
         BigDecimal montant = Montants.positifOuNul(montantSaisi, "Le nouveau solde");

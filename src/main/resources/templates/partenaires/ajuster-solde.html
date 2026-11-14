@@ -74,8 +74,7 @@
                         <select id="sensAjustement" class="form-select" th:field="*{sens}" required>
                             <option value="">Choisir</option>
                             <option value="IL_ME_DOIT" th:text="${estClient ? 'Il me doit' : 'Il me doit (avance chez lui)'}">Il me doit</option>
-                            <option value="JE_LUI_DOIS" th:text="${estClient ? 'Je lui dois (avance du client)' : 'Je lui dois'}">Je lui dois</option>
-                            <option value="AVANCE" th:text="${estClient ? 'Avance (le client a versé en avance)' : 'Avance (versée en avance au fournisseur)'}">Avance</option>
+                            <option value="JE_LUI_DOIS" th:text="${estClient ? 'Je lui dois (avance)' : 'Je lui dois'}">Je lui dois</option>
                         </select>
                     </div>
                     <div class="operation-field mb-3">
