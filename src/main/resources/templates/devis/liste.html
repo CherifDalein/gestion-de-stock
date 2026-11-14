@@ -51,7 +51,7 @@
                             <td th:text="${#temporals.format(d.dateDevis, 'dd/MM/yyyy HH:mm')}"></td>
                             <td class="text-nowrap" th:text="${#temporals.format(d.dateValidite, 'dd/MM/yyyy')}"></td>
                             <td th:text="${d.client != null ? d.client.nom : 'Sans client'}"></td>
-                            <td class="fw-bold" th:text="${#numbers.formatDecimal(d.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="fw-bold" th:text="${#numbers.formatDecimal(d.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-sort=${#numbers.formatDecimal(d.montantTotal ?: 0, 1, 'NONE', 2, 'POINT')}"></td>
                             <td>
                                 <span class="badge" th:text="${etat.libelle}"
                                       th:classappend="${etat.code == 'en-cours' ? 'bg-primary' : (etat.code == 'expire' ? 'bg-warning text-dark' : (etat.code == 'transforme' ? 'bg-success' : 'bg-secondary'))}"></span>

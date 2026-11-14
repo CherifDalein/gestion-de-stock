@@ -166,37 +166,37 @@
                         <article class="app-metric-card app-metric-card--primary">
                             <span class="app-metric-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Solde total de la boutique</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <a class="app-metric-foot" th:href="@{/caisse/journal}">Consulter le journal <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon text-success"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Entrées du jour</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Encaissements enregistrés aujourd’hui</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon text-danger"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Sorties du jour</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Décaissements enregistrés aujourd’hui</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-regular fa-sun" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Solde à l’ouverture</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Solde au début de la journée</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Variation de trésorerie du jour</h2>
-                            <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Entrées moins sorties du jour</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Ventes du jour · réglé</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                             <p class="app-metric-foot">Montants réglés sur les ventes créées aujourd’hui</p>
                         </article>
                     </div>

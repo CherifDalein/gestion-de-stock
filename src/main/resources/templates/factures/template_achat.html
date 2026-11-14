@@ -56,8 +56,8 @@
                 <tr th:each="ligne : ${achat.lignes}" data-document-row>
                     <td class="document-product" th:text="${ligne.produit.nom}"></td>
                     <td class="document-quantity" th:text="${ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
-                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
-                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixAchatUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(achat.lignes)}"><td colspan="4" class="document-empty">Aucun produit sur ce document.</td></tr>
                 </tbody>
@@ -66,13 +66,13 @@
 
         <section class="document-summary" aria-label="Récapitulatif des montants">
             <dl>
-                <div class="document-summary-total"><dt>Total de la achat</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(total, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${retours.signum() > 0}"><dt>Retours</dt><dd data-document-amount="retours" th:text="${'− ' + #numbers.formatDecimal(retours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${retours.signum() > 0}" class="document-summary-total"><dt>Total net</dt><dd data-document-amount="total-net" th:text="${#numbers.formatDecimal(totalNet, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div><dt>Montant versé</dt><dd data-document-amount="verse" th:text="${#numbers.formatDecimal(verseTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${avance.signum() > 0}"><dt>Avance utilisée</dt><dd data-document-amount="avance" th:text="${#numbers.formatDecimal(avance, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${surplus.signum() > 0}"><dt th:text="${'Surplus versé (avance chez le fournisseur)'}"></dt><dd data-document-amount="surplus" th:text="${#numbers.formatDecimal(surplus, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div class="document-summary-rest"><dt>Reste à payer</dt><dd data-document-amount="reste" th:text="${#numbers.formatDecimal(resteTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div class="document-summary-total"><dt>Total de la achat</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${retours.signum() > 0}"><dt>Retours</dt><dd data-document-amount="retours" th:text="${'− ' + #numbers.formatDecimal(retours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${retours.signum() > 0}" class="document-summary-total"><dt>Total net</dt><dd data-document-amount="total-net" th:text="${#numbers.formatDecimal(totalNet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div><dt>Montant versé</dt><dd data-document-amount="verse" th:text="${#numbers.formatDecimal(verseTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${avance.signum() > 0}"><dt>Avance utilisée</dt><dd data-document-amount="avance" th:text="${#numbers.formatDecimal(avance, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${surplus.signum() > 0}"><dt th:text="${'Surplus versé (avance chez le fournisseur)'}"></dt><dd data-document-amount="surplus" th:text="${#numbers.formatDecimal(surplus, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div class="document-summary-rest"><dt>Reste à payer</dt><dd data-document-amount="reste" th:text="${#numbers.formatDecimal(resteTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
             </dl>
         </section>
         <p th:unless="${#lists.isEmpty(achat.retours)}" class="document-note" data-document-retours>Retours au fournisseur enregistrés sur cette facture :

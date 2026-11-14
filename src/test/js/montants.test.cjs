@@ -56,7 +56,7 @@ test('les montants conservent les centimes au-delà de la précision de Number',
     const { context } = environnement();
     assert.equal(vm.runInContext("Montants.formater(Montants.lire('0.10') + Montants.lire('0.20'))", context), '0.30');
     assert.equal(vm.runInContext("Montants.formater(Montants.lire('999999999999999.99'))", context), '999999999999999.99');
-    assert.equal(vm.runInContext("Montants.afficher(Montants.lire('-1000000.01'))", context), '-1 000 000.01');
+    assert.equal(vm.runInContext("Montants.afficher(Montants.lire('-1000000.01'))", context), '-1 000 000,01');
     for (const invalid of ['NaN', 'Infinity', '1.001', '1000000000000000', '', 'abc']) {
         assert.equal(vm.runInContext(`Montants.lire(${JSON.stringify(invalid)})`, context), null);
     }
@@ -84,7 +84,7 @@ test('le panier vente conserve le versement manuel après suppression', () => {
         elements.selectProduit.value = '1'; elements.inputQuantite.value = quantite;
         vm.runInContext('ajouterAuPanier()', context);
     }
-    assert.equal(elements.totalVente.innerText, '0.50');
+    assert.equal(elements.totalVente.innerText, '0,50');
     elements.montantVerse.value = '0.10'; elements.montantVerse.dataset.saisieManuelle = 'true';
     vm.runInContext('calculerReste(); supprimerLigne(0, 30n, "1", 3)', context);
     assert.equal(elements.inputTotalTotal.value, '0.20');

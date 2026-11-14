@@ -6,7 +6,7 @@
             <h2 th:text="${s.compte.nom + (s.compte.actif ? '' : ' (archivé)')}"></h2>
             <span class="tresorerie-account-icon"><i class="fa-solid" th:classappend="${s.compte.type.name() == 'ESPECES' ? 'fa-money-bill-wave' : (s.compte.type.name() == 'ORANGE_MONEY' ? 'fa-mobile-screen-button' : 'fa-building-columns')}" aria-hidden="true"></i></span>
         </div>
-        <p class="tresorerie-account-value" th:classappend="${s.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(s.solde, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</p>
+        <p class="tresorerie-account-value" th:classappend="${s.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(s.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
         <p class="tresorerie-account-caption" th:text="${'Solde actuel · ' + s.compte.type.libelle}">Solde actuel du compte</p>
     </article>
 </section>

@@ -54,8 +54,8 @@
                 <tr th:each="ligne : ${retour.lignes}" data-document-row>
                     <td class="document-product" th:text="${ligne.produit.nom}"></td>
                     <td class="document-quantity" th:text="${ligne.quantite + (ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
-                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
-                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                    <td class="document-amount" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                    <td class="document-amount document-line-total" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
                 </tr>
                 </tbody>
             </table>
@@ -63,10 +63,10 @@
 
         <section class="document-summary" aria-label="Récapitulatif du retour">
             <dl>
-                <div class="document-summary-total"><dt>Montant du retour</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(retour.montantTotal, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${retour.montantImpute.signum() > 0}"><dt>Déduit de ce que vous deviez au fournisseur</dt><dd data-document-amount="impute" th:text="${#numbers.formatDecimal(retour.montantImpute, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${retour.montantRembourse.signum() > 0}"><dt th:text="${'Remboursé par le fournisseur (' + (retour.compteTresorerie != null ? retour.compteTresorerie.nom : '') + ')'}"></dt><dd data-document-amount="rembourse" th:text="${#numbers.formatDecimal(retour.montantRembourse, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
-                <div th:if="${retour.montantAvoir.signum() > 0}"><dt>Avoir gardé chez le fournisseur (avance de la boutique)</dt><dd data-document-amount="avoir" th:text="${#numbers.formatDecimal(retour.montantAvoir, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></dd></div>
+                <div class="document-summary-total"><dt>Montant du retour</dt><dd data-document-amount="total" th:text="${#numbers.formatDecimal(retour.montantTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantImpute.signum() > 0}"><dt>Déduit de ce que vous deviez au fournisseur</dt><dd data-document-amount="impute" th:text="${#numbers.formatDecimal(retour.montantImpute, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantRembourse.signum() > 0}"><dt th:text="${'Remboursé par le fournisseur (' + (retour.compteTresorerie != null ? retour.compteTresorerie.nom : '') + ')'}"></dt><dd data-document-amount="rembourse" th:text="${#numbers.formatDecimal(retour.montantRembourse, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
+                <div th:if="${retour.montantAvoir.signum() > 0}"><dt>Avoir gardé chez le fournisseur (avance de la boutique)</dt><dd data-document-amount="avoir" th:text="${#numbers.formatDecimal(retour.montantAvoir, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd></div>
             </dl>
         </section>
         <p th:if="${retour.motif != null}" class="document-note" th:text="${'Motif : ' + retour.motif}"></p>
