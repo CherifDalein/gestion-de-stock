@@ -47,7 +47,7 @@ class VendeurDesVentesTests {
     private static final String ANCIEN_A = "vendeur-ancien-a@example.test";
     private static final String GERANT_B = "vendeur-gerant-b@example.test";
     private static final String CAISSIER_B = "vendeur-caissier-b@example.test";
-    private static final Pattern CELLULE_VENDEUR = Pattern.compile("<td data-vendeur(?:=\"\")?>([^<]*)</td>");
+    private static final Pattern CELLULE_VENDEUR = Pattern.compile("<td class=\"[^\"]*\" data-label=\"Saisi par\" data-vendeur(?:=\"\")?>([^<]*)</td>");
 
     @Autowired MockMvc mvc;
     @Autowired BoutiqueRepository boutiques;
@@ -179,7 +179,7 @@ class VendeurDesVentesTests {
         String liste = mvc.perform(avec(get("/achats"), GERANT_A, "ADMIN")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(liste).contains("<th scope=\"col\">Saisi par</th>");
-        Matcher cellules = Pattern.compile("<td data-saisi-par(?:=\"\")?>([^<]*)</td>").matcher(liste);
+        Matcher cellules = Pattern.compile("<td class=\"[^\"]*\" data-label=\"Saisi par\" data-saisi-par(?:=\"\")?>([^<]*)</td>").matcher(liste);
         List<String> noms = new java.util.ArrayList<>();
         while (cellules.find()) noms.add(cellules.group(1));
         assertThat(noms).containsExactlyInAnyOrder("Alpha Adjoint", "Non renseigné", "Cellou Ancien");
@@ -266,7 +266,7 @@ class VendeurDesVentesTests {
     }
 
     private static List<String> numeros(String page) {
-        Matcher m = Pattern.compile("<td class=\"text-nowrap\">(VT-[A-Z0-9-]+)</td>").matcher(page);
+        Matcher m = Pattern.compile("<td class=\"text-nowrap[^\"]*\"(?: data-label=\"Numéro\")?>(VT-[A-Z0-9-]+)</td>").matcher(page);
         List<String> numeros = new java.util.ArrayList<>();
         while (m.find()) numeros.add(m.group(1));
         return numeros;

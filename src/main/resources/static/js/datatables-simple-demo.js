@@ -3,7 +3,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!table) return;
     const journalRegion = table.closest('.journal-table-wrap');
     if (window.simpleDatatables?.DataTable) {
-        new window.simpleDatatables.DataTable(table, {
+        // Exposé pour le « Trier par » du téléphone (tri-mobile.js), qui déclenche le même tri que l'en-tête.
+        window.stockDataTable = new window.simpleDatatables.DataTable(table, {
             labels: {
                 placeholder: 'Rechercher dans la liste…',
                 searchTitle: 'Rechercher dans le tableau',

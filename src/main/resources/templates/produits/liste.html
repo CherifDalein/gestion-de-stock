@@ -57,7 +57,7 @@
                 <span class="products-catalogue-count" th:text="${totalProduits + (totalProduits == 1 ? ' produit' : ' produits')}">0 produit</span>
             </div>
 
-            <div id="produitsToolbar" class="products-toolbar" hidden>
+            <div id="produitsToolbar" class="products-toolbar" data-filtres hidden>
                 <div class="products-search">
                     <label for="produitsSearch" class="form-label">Rechercher</label>
                     <div class="products-search-input">
@@ -65,27 +65,29 @@
                         <input id="produitsSearch" class="form-control" type="search" placeholder="Nom, référence ou catégorie…" autocomplete="off" aria-controls="produitsTable">
                     </div>
                 </div>
-                <div>
-                    <label for="produitsCategory" class="form-label">Catégorie</label>
-                    <select id="produitsCategory" class="form-select" aria-controls="produitsTable">
-                        <option value="">Toutes les catégories</option>
-                    </select>
+                <div class="filtres-champs-bureau" data-filtres-contenu>
+                    <div>
+                        <label for="produitsCategory" class="form-label">Catégorie</label>
+                        <select id="produitsCategory" class="form-select" aria-controls="produitsTable">
+                            <option value="">Toutes les catégories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="produitsStock" class="form-label">État du stock</label>
+                        <select id="produitsStock" class="form-select" aria-controls="produitsTable">
+                            <option value="">Tous les stocks</option>
+                            <option value="en-stock">En stock</option>
+                            <option value="disponible">Disponible (au-dessus du seuil)</option>
+                            <option value="faible">Stock faible (seuil atteint)</option>
+                            <option value="rupture">En rupture</option>
+                            <option value="a-surveiller">À surveiller (rupture ou seuil atteint)</option>
+                            <option value="service">Services</option>
+                        </select>
+                    </div>
+                    <button id="produitsReset" data-filtres-effacer class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser les filtres et le tri des produits">
+                        <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                    </button>
                 </div>
-                <div>
-                    <label for="produitsStock" class="form-label">État du stock</label>
-                    <select id="produitsStock" class="form-select" aria-controls="produitsTable">
-                        <option value="">Tous les stocks</option>
-                        <option value="en-stock">En stock</option>
-                        <option value="disponible">Disponible (au-dessus du seuil)</option>
-                        <option value="faible">Stock faible (seuil atteint)</option>
-                        <option value="rupture">En rupture</option>
-                        <option value="a-surveiller">À surveiller (rupture ou seuil atteint)</option>
-                        <option value="service">Services</option>
-                    </select>
-                </div>
-                <button id="produitsReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser les filtres et le tri des produits">
-                    <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
-                </button>
             </div>
 
             <div id="produitsEmptyCatalogue" class="products-empty" th:if="${#lists.isEmpty(produits)}">
@@ -139,16 +141,19 @@
                                 <button type="button" class="btn btn-outline-primary btn-sm app-row-action" data-product-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
                                     <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
-                                <a th:unless="${service}" th:href="@{/produits/{id}/stock(id=${p.id})}" class="btn btn-outline-primary btn-sm app-row-action" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Consulter le stock de ' + p.nom}"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span></a>
                                 <a th:href="@{/produits/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm app-row-action" sec:authorize="hasRole('ADMIN')" th:attr="aria-label=${'Modifier ' + p.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>
-                                <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" data-product-delete
-                                      sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce produit ?')">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm app-row-action" th:attr="aria-label=${'Supprimer ' + p.nom}">
-                                        <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
-                                    </button>
-                                </form>
+                                <details class="plus-menu-details" data-plus-menu sec:authorize="hasRole('ADMIN')">
+                                    <summary class="btn btn-outline-secondary btn-sm app-row-action plus-menu-bouton" title="Plus d’actions" th:attr="aria-label=${'Plus d’actions pour ' + p.nom}"><span class="plus-menu-icone" aria-hidden="true">⋯</span><span>Plus</span></summary>
+                                    <div class="plus-menu-panel" data-plus-panneau>
+                                        <a th:unless="${service}" th:href="@{/produits/{id}/stock(id=${p.id})}" class="plus-menu-item" th:attr="aria-label=${'Consulter le stock de ' + p.nom}"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><span>Stock</span></a>
+                                        <hr class="plus-menu-separateur">
+                                        <form th:action="@{/produits/supprimer/{id}(id=${p.id})}" method="post" data-product-delete>
+                                            <button type="submit" class="plus-menu-item plus-menu-item--danger" th:attr="aria-label=${'Supprimer ' + p.nom}"><i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span></button>
+                                        </form>
+                                    </div>
+                                </details>
                             </div>
                         </td>
                     </tr>

@@ -46,10 +46,6 @@
                 if (select.value) window.location.assign(`${select.dataset.recharger}?compte=${encodeURIComponent(select.value)}`);
             });
         });
-        // Confirmation avant une suppression.
-        document.querySelectorAll('[data-confirmer]').forEach(bouton => {
-            bouton.addEventListener('click', evenement => { if (!window.confirm(bouton.dataset.confirmer)) evenement.preventDefault(); });
-        });
         // Import : seuls les champs du mode de montant choisi sont montrés.
         const modes = document.querySelectorAll('input[name="modeMontant"]');
         if (modes.length) {

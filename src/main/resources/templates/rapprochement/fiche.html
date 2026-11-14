@@ -92,8 +92,11 @@
                     <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
                 </form>
             </details>
-            <form th:action="@{/rapprochements/{id}/supprimer(id=${releve.id})}" method="post" class="rap-suppression">
-                <button type="submit" class="btn btn-outline-danger btn-sm" data-confirmer="Supprimer ce relevé, ses lignes et ses rapprochements ? Les opérations déjà enregistrées dans l'appli restent dans le journal.">Supprimer le relevé</button>
+            <form th:action="@{/rapprochements/{id}/supprimer(id=${releve.id})}" method="post" class="rap-suppression" data-confirmer
+                  data-confirmer-titre="Supprimer ce relevé ?" th:attr="data-confirmer-sujet=${releve.numero}"
+                  data-confirmer-texte="Ses lignes et ses rapprochements seront supprimés. Les opérations déjà enregistrées dans l'appli restent dans le journal."
+                  data-confirmer-oui="Supprimer le relevé" data-confirmer-non="Garder">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer le relevé</button>
             </form>
         </section>
 

@@ -1,7 +1,7 @@
 <div th:fragment="content">
     <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="fournisseur" data-partner-label="fournisseur"
-         th:with="totalPartenaires=${#lists.size(fournisseurs)}, avecTelephone=${#lists.size(fournisseurs.?[telephone != null and !#strings.isEmpty(#strings.trim(telephone))])}, avecEmail=${#lists.size(fournisseurs.?[email != null and !#strings.isEmpty(#strings.trim(email))])}, sansContact=${#lists.size(fournisseurs.?[(telephone == null or #strings.isEmpty(#strings.trim(telephone))) and (email == null or #strings.isEmpty(#strings.trim(email)))])}">
+         th:with="totalPartenaires=${#lists.size(fournisseurs)}">
         <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
         <header class="partners-header">
             <div>
@@ -24,27 +24,29 @@
             </div>
         </header>
 
-        <section class="partners-metrics" aria-label="Coordonnées des fournisseurs">
-            <button class="partners-metric" type="button" data-contact-filter="" aria-pressed="true" disabled>
+        <section class="partners-metrics" aria-label="Situation des fournisseurs">
+            <div class="partners-metric">
                 <span class="partners-metric-heading"><span>Tous les fournisseurs</span><i class="fas fa-address-book" aria-hidden="true"></i></span>
-                <strong data-contact-count th:text="${totalPartenaires}">0</strong>
+                <strong data-synthese="tous" th:text="${totalPartenaires}">0</strong>
                 <span class="partners-metric-caption">Dans le répertoire</span>
-            </button>
-            <button class="partners-metric" type="button" data-contact-filter="telephone" aria-pressed="false" disabled>
-                <span class="partners-metric-heading"><span>Avec téléphone</span><i class="fas fa-phone" aria-hidden="true"></i></span>
-                <strong data-contact-count th:text="${avecTelephone}">0</strong>
-                <span class="partners-metric-caption">Numéro renseigné</span>
-            </button>
-            <button class="partners-metric" type="button" data-contact-filter="email" aria-pressed="false" disabled>
-                <span class="partners-metric-heading"><span>Avec email</span><i class="fas fa-envelope" aria-hidden="true"></i></span>
-                <strong data-contact-count th:text="${avecEmail}">0</strong>
-                <span class="partners-metric-caption">Email renseigné</span>
-            </button>
-            <button class="partners-metric partners-metric--missing" type="button" data-contact-filter="sans-contact" aria-pressed="false" disabled>
-                <span class="partners-metric-heading"><span>Sans contact</span><i class="fas fa-address-card" aria-hidden="true"></i></span>
-                <strong data-contact-count th:text="${sansContact}">0</strong>
-                <span class="partners-metric-caption">Ni téléphone ni email</span>
-            </button>
+            </div>
+            <th:block sec:authorize="hasRole('ADMIN')">
+            <div class="partners-metric partners-metric--du">
+                <span class="partners-metric-heading"><span>Je leur dois</span><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i></span>
+                <strong data-synthese="nombre" th:text="${synthese.nombre}">0</strong>
+                <span class="partners-metric-caption">Fournisseurs avec un solde à payer</span>
+            </div>
+            <div class="partners-metric partners-metric--du">
+                <span class="partners-metric-heading"><span>Total à payer</span><i class="fas fa-coins" aria-hidden="true"></i></span>
+                <strong class="partners-metric-montant" data-synthese="total" th:attr="data-valeur=${synthese.total.toPlainString()}" th:text="${#numbers.formatDecimal(synthese.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <span class="partners-metric-caption">Hors avances</span>
+            </div>
+            <div class="partners-metric partners-metric--avance">
+                <span class="partners-metric-heading"><span>Avances versées</span><i class="fas fa-piggy-bank" aria-hidden="true"></i></span>
+                <strong class="partners-metric-montant" data-synthese="avances" th:attr="data-valeur=${synthese.avances.toPlainString()}" th:text="${#numbers.formatDecimal(synthese.avances, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <span class="partners-metric-caption">Argent versé d’avance à vos fournisseurs</span>
+            </div>
+            </th:block>
         </section>
 
         <section class="partners-panel" aria-labelledby="partenairesCatalogueTitle">
@@ -73,6 +75,16 @@
                         <option value="sans-contact">Sans téléphone ni email</option>
                     </select>
                 </div>
+                <div class="partners-sort-mobile" data-partner-sort-mobile hidden>
+                    <label for="partenairesSortSelect" class="form-label">Trier par</label>
+                    <select id="partenairesSortSelect" class="form-select" aria-controls="partenairesTable">
+                        <option value="nom:asc">Nom (A à Z)</option>
+                        <option value="nom:desc">Nom (Z à A)</option>
+                        <option value="telephone:asc">Téléphone</option>
+                        <option value="email:asc">Email</option>
+                        <option value="adresse:asc">Adresse</option>
+                    </select>
+                </div>
                 <button id="partenairesReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche, les filtres et le tri">
                     <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
                 </button>
@@ -85,7 +97,6 @@
                 <a th:href="@{/fournisseurs/nouveau}" class="btn btn-primary" sec:authorize="hasRole('ADMIN')">Ajouter un premier fournisseur</a>
             </div>
 
-            <p id="partenairesTableHint" class="small text-muted px-4 mb-2" th:unless="${#lists.isEmpty(fournisseurs)}">Faites défiler la ligne des actions horizontalement pour les voir toutes.</p>
             <div id="partenairesTableWrap" class="table-responsive partners-table-wrap" th:attr="hidden=${#lists.isEmpty(fournisseurs) ? 'hidden' : null}">
                 <table id="partenairesTable" class="table table-hover partners-table mb-0">
                     <caption class="visually-hidden">Fournisseurs, coordonnées et documents associés</caption>
@@ -96,48 +107,62 @@
                         <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="email" disabled>Email</button></th>
                         <th scope="col" aria-sort="none"><button type="button" class="partners-sort" data-partner-sort="adresse" disabled>Adresse</button></th>
                         <th scope="col" class="text-end">Solde</th>
-                        <th scope="col" class="text-end">Actions</th>
+                        <th scope="col">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="p : ${fournisseurs}" data-partner-row
+                        th:with="tel=${p.telephone != null and !#strings.isEmpty(#strings.trim(p.telephone))}, mail=${p.email != null and !#strings.isEmpty(#strings.trim(p.email))}, adr=${p.adresse != null and !#strings.isEmpty(#strings.trim(p.adresse))}, s=${soldes.get(p.id)}"
                         th:attr="data-id=${p.id},data-name=${p.nom},data-telephone=${p.telephone ?: ''},data-email=${p.email ?: ''},data-adresse=${p.adresse ?: ''}">
-                        <td class="partners-name" data-label="Nom" th:text="${p.nom}"></td>
-                        <td class="partners-coordinate" data-label="Téléphone" th:classappend="${#strings.isEmpty(#strings.trim(p.telephone)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.telephone)) ? 'Non renseigné' : p.telephone}"></td>
-                        <td class="partners-coordinate partners-email" data-label="Email" th:classappend="${#strings.isEmpty(#strings.trim(p.email)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.email)) ? 'Non renseigné' : p.email}"></td>
-                        <td class="partners-coordinate partners-address" data-label="Adresse" th:classappend="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'partners-coordinate--missing' : ''}" th:text="${#strings.isEmpty(#strings.trim(p.adresse)) ? 'Non renseigné' : p.adresse}"></td>
-                        <td class="text-end text-nowrap" data-label="Solde" th:with="s=${soldes.get(p.id)}">
-                            <th:block th:if="${s != null}">
-                            <span th:if="${s.soldeNet.signum() == 0}">Soldé</span>
-                            <span th:if="${s.soldeNet.signum() > 0}" th:text="${'Il me doit ' + #numbers.formatDecimal(s.soldeNet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
-                            <span th:if="${s.soldeNet.signum() < 0}" th:text="${'Je lui dois ' + #numbers.formatDecimal(s.soldeNet.negate(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
-                            <small th:if="${s.avanceDisponible.signum() > 0}" class="d-block text-muted" th:text="${'Avance : ' + #numbers.formatDecimal(s.avanceDisponible, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
-                            <small th:if="${s.resteSoldeDepart.signum() > 0}" class="d-block text-muted" th:text="${'dont solde de départ : ' + #numbers.formatDecimal(s.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
+                        <td class="partners-name" data-label="Nom">
+                            <span class="partners-name-texte" th:text="${p.nom}"></span>
+                            <a th:if="${tel}" class="partners-contact-mobile" th:href="${'tel:' + p.telephone.replaceAll('[^0-9+]', '')}" th:text="${#strings.trim(p.telephone)}" th:attr="aria-label=${'Appeler ' + p.nom}"></a>
+                            <a th:if="${!tel and mail}" class="partners-contact-mobile" th:href="${'mailto:' + #strings.trim(p.email)}" th:text="${#strings.trim(p.email)}" th:attr="aria-label=${'Écrire à ' + p.nom}"></a>
+                        </td>
+                        <td class="partners-coordinate partners-telephone" data-label="Téléphone"><th:block th:if="${tel}" th:text="${#strings.trim(p.telephone)}"></th:block><th:block th:unless="${tel}"><span aria-hidden="true">—</span><span class="visually-hidden">Aucun</span></th:block></td>
+                        <td class="partners-coordinate partners-email" data-label="Email"><th:block th:if="${mail}" th:text="${#strings.trim(p.email)}"></th:block><th:block th:unless="${mail}"><span aria-hidden="true">—</span><span class="visually-hidden">Aucun</span></th:block></td>
+                        <td class="partners-coordinate partners-address" data-label="Adresse"><th:block th:if="${adr}" th:text="${#strings.trim(p.adresse)}"></th:block><th:block th:unless="${adr}"><span aria-hidden="true">—</span><span class="visually-hidden">Aucune</span></th:block></td>
+                        <td class="partners-solde" data-label="Solde">
+                            <th:block th:if="${s != null}" th:with="etat=${s.soldeNet.signum() < 0 ? 'dois' : (s.soldeNet.signum() > 0 ? 'avance' : 'solde')}">
+                            <span class="solde-badge" th:classappend="${'solde-badge--' + etat}" th:text="${etat == 'doit' ? 'Me doit' : (etat == 'dois' ? 'Je lui dois' : (etat == 'avance' ? 'Avance' : 'Soldé'))}"></span>
+                            <span class="solde-montant" th:classappend="${'solde-montant--' + etat}" th:text="${#numbers.formatDecimal(s.soldeNet.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                            <span class="solde-phrase">
+                                <span th:if="${s.soldeNet.signum() == 0}">Soldé</span>
+                                <span th:if="${s.soldeNet.signum() > 0}" th:text="${'Il me doit ' + #numbers.formatDecimal(s.soldeNet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                                <span th:if="${s.soldeNet.signum() < 0}" th:text="${'Je lui dois ' + #numbers.formatDecimal(s.soldeNet.negate(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                            </span>
+                            <small th:if="${s.avanceDisponible.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'Avance : ' + #numbers.formatDecimal(s.avanceDisponible, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
+                            <small th:if="${s.resteSoldeDepart.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'dont solde de départ : ' + #numbers.formatDecimal(s.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
                             </th:block>
                         </td>
-                        <td>
-                            <div class="partners-row-actions app-row-actions">
+                        <td class="cellule-actions">
+                            <div class="ligne-actions">
                                 <button type="button" class="btn btn-outline-primary btn-sm app-row-action" data-partner-details hidden th:attr="aria-label=${'Consulter ' + p.nom}">
                                     <i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span>
                                 </button>
                                 <a th:href="@{/fournisseurs/modifier/{id}(id=${p.id})}" class="btn btn-outline-secondary btn-sm app-row-action" th:attr="aria-label=${'Modifier ' + p.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span>
                                 </a>
-                                <a th:if="${soldes.get(p.id) != null and soldes.get(p.id).resteSoldeDepart.signum() > 0}" th:href="@{/fournisseurs/solde/regler/{id}(id=${p.id})}" class="btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Régler le solde de départ de ' + p.nom}">
-                                    <i class="fas fa-hand-holding-dollar" aria-hidden="true"></i><span>Solde de départ</span>
+                                <a th:if="${s != null and s.resteSoldeDepart.signum() > 0}" th:href="@{/fournisseurs/solde/regler/{id}(id=${p.id})}" class="btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Régler le solde de départ de ' + p.nom}">
+                                    <i class="fas fa-hand-holding-dollar" aria-hidden="true"></i><span>Régler le solde</span>
                                 </a>
-                                <form th:action="@{/fournisseurs/supprimer/{id}(id=${p.id})}" method="post" data-partner-delete
-                                      sec:authorize="hasRole('ADMIN')" onsubmit="return confirm('Supprimer ce fournisseur ?')">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm app-row-action" th:attr="aria-label=${'Supprimer ' + p.nom}">
-                                        <i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span>
-                                    </button>
-                                </form>
-                            </div>
-                            <div class="partners-document-actions app-row-actions">
-                                <a th:href="@{/factures/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Achats de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Achats</span></a>
-                                <a th:href="@{/factures/fournisseur/{id}/cumule(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
-                                <a th:href="@{/etats/releve/fournisseur/{id}(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Relevé des dettes de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des dettes</span></a>
-                                <a sec:authorize="hasRole('ADMIN')" th:href="@{/etats/justificatifs/fournisseur/pdf(id=${p.id})}" class="partners-document-link btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Justificatif de solde de ' + p.nom}"><i class="fas fa-file-signature" aria-hidden="true"></i><span>Justificatif de solde</span></a>
+                                <details class="plus-menu-details" data-plus-menu>
+                                    <summary class="btn btn-outline-secondary btn-sm app-row-action plus-menu-bouton" title="Plus d’actions" th:attr="aria-label=${'Plus d’actions pour ' + p.nom}"><span class="plus-menu-icone" aria-hidden="true">⋯</span><span>Plus</span></summary>
+                                    <div class="plus-menu-panel" data-plus-panneau>
+                                        <a th:href="@{/factures/fournisseur/{id}(id=${p.id})}" class="plus-menu-item" th:attr="aria-label=${'Achats de ' + p.nom}"><i class="fas fa-file-invoice" aria-hidden="true"></i><span>Achats</span></a>
+                                        <a th:href="@{/factures/fournisseur/{id}/cumule(id=${p.id})}" class="plus-menu-item" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}"><i class="fas fa-print" aria-hidden="true"></i><span>Relevé cumulé</span></a>
+                                        <a th:href="@{/etats/releve/fournisseur/{id}(id=${p.id})}" class="plus-menu-item" th:attr="aria-label=${'Relevé des dettes de ' + p.nom}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><span>Relevé des dettes</span></a>
+                                        <a th:href="@{/etats/justificatifs/fournisseur/pdf(id=${p.id})}" class="plus-menu-item" th:attr="aria-label=${'Justificatif de solde de ' + p.nom}" sec:authorize="hasRole('ADMIN')"><i class="fas fa-file-signature" aria-hidden="true"></i><span>Justificatif de solde</span></a>
+                                        <div sec:authorize="hasRole('ADMIN')">
+                                            <hr class="plus-menu-separateur">
+                                            <form th:action="@{/fournisseurs/supprimer/{id}(id=${p.id})}" method="post" data-confirmer
+                                                  data-confirmer-titre="Supprimer ce fournisseur ?" th:attr="data-confirmer-sujet=${p.nom}"
+                                                  data-confirmer-texte="sera supprimé du répertoire des fournisseurs." data-confirmer-oui="Supprimer le fournisseur" data-confirmer-non="Garder">
+                                                <button type="submit" class="plus-menu-item plus-menu-item--danger" th:attr="aria-label=${'Supprimer ' + p.nom}"><i class="fas fa-trash" aria-hidden="true"></i><span>Supprimer</span></button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </details>
                             </div>
                         </td>
                     </tr>
@@ -178,23 +203,12 @@
                 <button type="button" class="partner-dialog-close" data-close-partner-dialog aria-label="Fermer la fiche fournisseur"><span aria-hidden="true">×</span></button>
             </div>
             <dl class="partner-detail-grid">
-                <div><dt>Téléphone</dt><dd data-partner-detail="telephone"></dd></div>
-                <div><dt>Email</dt><dd data-partner-detail="email"></dd></div>
-                <div class="partner-detail-address"><dt>Adresse</dt><dd data-partner-detail="adresse"></dd></div>
+                <div data-partner-detail-bloc><dt>Téléphone</dt><dd data-partner-detail="telephone"></dd></div>
+                <div data-partner-detail-bloc><dt>Email</dt><dd data-partner-detail="email"></dd></div>
+                <div class="partner-detail-address" data-partner-detail-bloc><dt>Adresse</dt><dd data-partner-detail="adresse"></dd></div>
             </dl>
+            <p class="partner-detail-vide" data-partner-detail-vide hidden>Aucune coordonnée enregistrée pour ce fournisseur.</p>
             <div class="partner-dialog-footer"><button type="button" class="btn btn-primary" data-close-partner-dialog>Fermer</button></div>
-        </dialog>
-
-        <dialog id="partenaireDeleteDialog" class="partner-dialog partner-dialog--delete" aria-labelledby="partenaireDeleteTitle" aria-describedby="partenaireDeleteDescription" sec:authorize="hasRole('ADMIN')">
-            <div class="partner-dialog-header">
-                <h2 id="partenaireDeleteTitle">Supprimer ce fournisseur ?</h2>
-                <button type="button" class="partner-dialog-close" data-close-partner-dialog aria-label="Annuler la suppression"><span aria-hidden="true">×</span></button>
-            </div>
-            <p id="partenaireDeleteDescription" class="partner-delete-description">Confirmez la suppression de <strong id="partenaireDeleteName"></strong> du répertoire.</p>
-            <div class="partner-dialog-footer">
-                <button type="button" class="btn btn-outline-secondary" data-close-partner-dialog>Annuler</button>
-                <button id="partenaireDeleteConfirm" type="button" class="btn btn-danger"><i class="fas fa-trash" aria-hidden="true"></i> Supprimer le fournisseur</button>
-            </div>
         </dialog>
     </div>
     <script th:src="@{/js/partenaires.js}"></script>

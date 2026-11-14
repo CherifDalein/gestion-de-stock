@@ -31,10 +31,9 @@
 
         <div class="card mb-4 shadow-sm">
             <div class="card-body">
-                <p id="achatsTableHint" class="small text-muted mb-3">Sur écran étroit, faites défiler le tableau horizontalement pour accéder aux actions.</p>
                 <div class="table-responsive journal-table-wrap" role="region" tabindex="0"
-                     aria-label="Journal des achats" aria-describedby="achatsTableHint">
-                <table id="datatablesSimple" class="table table-striped table-hover journal-table">
+                     aria-label="Journal des achats">
+                <table id="datatablesSimple" class="table table-striped table-hover journal-table journal-cartes">
                     <thead>
                     <tr>
                         <th scope="col">Numéro</th>
@@ -46,44 +45,50 @@
                         <th scope="col">Versé</th>
                         <th scope="col">Reste</th>
                         <th scope="col">Statut</th>
-                        <th scope="col" class="text-center">Actions</th>
+                        <th scope="col" class="journal-colonne-actions">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="a : ${achats}">
-                        <td class="text-nowrap" th:text="${a.numero ?: '#' + a.id}"></td>
-                        <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
-                        <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
-                        <td th:text="${a.fournisseur.nom}"></td>
-                        <td data-saisi-par th:text="${a.utilisateur != null and !#strings.isEmpty(#strings.trim(a.utilisateur.nom)) ? a.utilisateur.nom : 'Non renseigné'}"></td>
-                        <td class="fw-bold"><span th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-achat th:text="${'− retours ' + #numbers.formatDecimal(a.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
-                        <td class="text-success" ><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
-                        <td class="text-danger fw-bold"
+                        <td class="text-nowrap jt-numero" data-label="Numéro" th:text="${a.numero ?: '#' + a.id}"></td>
+                        <td class="jt-date" data-label="Date" th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
+                        <td class="text-nowrap jt-echeance" data-label="Échéance" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
+                        <td class="jt-partenaire" data-label="Fournisseur" th:text="${a.fournisseur != null ? a.fournisseur.nom : 'Sans fournisseur'}"></td>
+                        <td class="jt-saisi" data-label="Saisi par" data-saisi-par th:text="${a.utilisateur != null and !#strings.isEmpty(#strings.trim(a.utilisateur.nom)) ? a.utilisateur.nom : 'Non renseigné'}"></td>
+                        <td class="fw-bold jt-total" data-label="Total"><span th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-achat th:text="${'− retours ' + #numbers.formatDecimal(a.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
+                        <td class="text-success jt-verse" data-label="Versé"><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
+                        <td class="text-danger fw-bold jt-reste" data-label="Reste"
                             th:text="${#numbers.formatDecimal(a.resteAPayer, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
                         </td>
-                        <td>
+                        <td class="jt-statut" data-label="Statut">
                             <span th:if="${a.resteAPayer <= 0}" class="badge bg-success">Réglé</span>
                             <span th:if="${a.resteAPayer > 0}" class="badge bg-warning text-dark">À régler</span>
                             <span th:if="${a.estEnRetard(aujourdHui)}" class="badge bg-dark"><i class="fa-regular fa-clock" aria-hidden="true"></i> En retard</span>
                         </td>
-                        <td class="text-center">
-                            <div class="journal-row-actions app-row-actions">
+                        <td class="cellule-actions jt-actions">
+                            <div class="ligne-actions">
                                 <a th:href="@{/achats/regler/{id}(id=${a.id})}" class="btn btn-sm app-row-action"
                                    th:classappend="${a.resteAPayer > 0 ? 'btn-primary' : 'btn-outline-primary'}"
                                    th:attr="aria-label=${(a.resteAPayer > 0 ? 'Régler l’achat n° ' : 'Voir les règlements de l’achat n° ') + a.id}"
                                    th:text="${a.resteAPayer > 0 ? 'Régler' : 'Règlements'}"></a>
-                                <a th:if="${(a.montantRetours ?: 0) == 0 and #lists.isEmpty(a.retours)}" th:href="@{/achats/modifier/{id}(id=${a.id})}" class="btn btn-outline-secondary btn-sm app-row-action"
-                                   th:attr="aria-label=${'Modifier les produits de l’achat n° ' + a.id}"
-                                   title="Modifier les produits de cet achat">Modifier</a>
-                                <a sec:authorize="hasRole('ADMIN')" th:href="@{/achats/{id}/retour(id=${a.id})}" class="btn btn-outline-primary btn-sm app-row-action" data-bouton-retour
-                                   th:attr="aria-label=${'Retour au fournisseur sur l’achat n° ' + (a.numero ?: a.id)}"
-                                   title="Rendre de la marchandise de cet achat au fournisseur">Retour au fournisseur</a>
                                 <a th:href="@{/factures/achat/{id}(id=${a.id})}"
                                    class="btn btn-outline-primary btn-sm app-row-action"
                                    th:attr="aria-label=${'Voir la facture de l’achat n° ' + a.id}"
                                    title="Voir et imprimer la facture d'achat">
-                                    <i class="fas fa-eye" aria-hidden="true"></i> Facture
+                                    <i class="fas fa-eye" aria-hidden="true"></i> Consulter
                                 </a>
+                                <details class="plus-menu-details" data-plus-menu th:if="${((a.montantRetours ?: 0) == 0 and #lists.isEmpty(a.retours)) or #authorization.expression('hasRole(''ADMIN'')')}">
+                                    <summary class="btn btn-outline-secondary btn-sm app-row-action plus-menu-bouton" title="Plus d’actions"
+                                             th:attr="aria-label=${'Plus d’actions pour l’achat n° ' + (a.numero ?: a.id)}"><span class="plus-menu-icone" aria-hidden="true">⋯</span><span>Plus</span></summary>
+                                    <div class="plus-menu-panel" data-plus-panneau>
+                                        <a th:if="${(a.montantRetours ?: 0) == 0 and #lists.isEmpty(a.retours)}" th:href="@{/achats/modifier/{id}(id=${a.id})}" class="plus-menu-item"
+                                           th:attr="aria-label=${'Modifier les produits de l’achat n° ' + a.id}"
+                                           title="Modifier les produits de cet achat"><i class="fas fa-pen" aria-hidden="true"></i><span>Modifier</span></a>
+                                        <a sec:authorize="hasRole('ADMIN')" th:href="@{/achats/{id}/retour(id=${a.id})}" class="plus-menu-item" data-bouton-retour
+                                           th:attr="aria-label=${'Retour au fournisseur sur l’achat n° ' + (a.numero ?: a.id)}"
+                                           title="Rendre de la marchandise de cet achat au fournisseur"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i><span>Retour au fournisseur</span></a>
+                                    </div>
+                                </details>
                             </div>
                         </td>
                     </tr>

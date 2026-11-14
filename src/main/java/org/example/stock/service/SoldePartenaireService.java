@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -101,6 +102,28 @@ public class SoldePartenaireService {
                     reglements.getOrDefault(fournisseur.getId(), Reglements.AUCUN), factures.getOrDefault(fournisseur.getId(), Factures.VIDE)));
         }
         return resultat;
+    }
+
+    /**
+     * Compteurs affichés en tête des listes clients et fournisseurs, calculés avec les soldes déjà construits pour la liste.
+     * Mêmes définitions que les états de créances et de dettes : le montant d'un partenaire est le reste de son solde de
+     * départ plus les restes de ses factures (jamais diminué de son avance), et l'avance est son avance disponible.
+     *
+     * @param nombre  partenaires qui doivent encore de l'argent (clients : « me doivent » ; fournisseurs : « je leur dois »)
+     * @param total   somme de ces montants, hors avances (« total à encaisser » ; « total à payer »)
+     * @param avances somme des avances disponibles (« avances détenues » ; « avances versées »)
+     */
+    public record Synthese(int nombre, BigDecimal total, BigDecimal avances) {
+        public static Synthese de(Collection<SoldePartenaire> soldes) {
+            int nombre = 0;
+            BigDecimal total = BigDecimal.ZERO, avances = BigDecimal.ZERO;
+            for (SoldePartenaire s : soldes) {
+                BigDecimal du = s.resteSoldeDepart().add(s.resteFactures());
+                if (du.signum() > 0) { nombre++; total = total.add(du); }
+                avances = avances.add(s.avanceDisponible());
+            }
+            return new Synthese(nombre, total, avances);
+        }
     }
 
     /** Avance disponible d'un client de la boutique courante (404 pour un client d'une autre boutique). */

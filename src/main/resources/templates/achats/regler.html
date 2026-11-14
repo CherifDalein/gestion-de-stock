@@ -64,7 +64,7 @@
                         <p>Aucun versement dans cet historique.</p>
                     </div>
                     <div th:unless="${#lists.isEmpty(reglements)}" class="table-responsive">
-                        <table class="table operation-history mb-0">
+                        <table class="table operation-history historique-cartes mb-0">
                             <thead>
                             <tr>
                                 <th scope="col">Date</th>
@@ -76,13 +76,13 @@
                             </thead>
                             <tbody>
                             <tr th:each="r : ${reglements}">
-                                <td><span th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></span>
+                                <td data-label="Date"><span th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></span>
                                     <th:block th:replace="~{fragments/annulation-reglement :: mention(${r}, ${annulations.get(r.id)})}"></th:block>
                                     <th:block th:replace="~{fragments/recu :: lien(${r}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/recu/' + r.id})}"></th:block></td>
-                                <td class="text-end text-nowrap fw-semibold" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
-                                <td class="text-nowrap" th:text="${r.compte.nom}"></td>
-                                <td th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
-                                <td class="text-end" sec:authorize="hasRole('ADMIN')">
+                                <td class="text-end text-nowrap fw-semibold" data-label="Montant payé" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-nowrap" data-label="Compte débité" th:text="${r.compte.nom}"></td>
+                                <td data-label="Saisi par" th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
+                                <td class="text-end historique-action" sec:authorize="hasRole('ADMIN')">
                                     <th:block th:replace="~{fragments/annulation-reglement :: bouton(${r}, ${annulations.get(r.id)}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/annuler/' + r.id})}"></th:block></td>
                             </tr>
                             </tbody>
