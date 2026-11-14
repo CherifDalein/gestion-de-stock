@@ -21,7 +21,8 @@
             <article><span>Capital restant à rembourser</span><strong th:text="${#numbers.formatDecimal(restantEmprunts, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Emprunts</small></article>
             <article><span>Capital restant à recevoir</span><strong th:text="${#numbers.formatDecimal(restantPrets, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Prêts accordés</small></article>
         </section>
-        <form method="get" th:action="@{/financements/emprunts}" class="fin-filtres" aria-label="Filtrer les dossiers">
+        <div data-filtres class="mb-3">
+        <form method="get" th:action="@{/financements/emprunts}" class="fin-filtres" aria-label="Filtrer les dossiers" data-filtres-contenu>
             <div><label for="filtreSens" class="form-label">Nature</label>
                 <select id="filtreSens" name="sens" class="form-select"><option value="">Tous</option>
                     <option value="EMPRUNT" th:selected="${filtreSens == 'EMPRUNT'}">Emprunts</option><option value="PRET" th:selected="${filtreSens == 'PRET'}">Prêts</option></select></div>
@@ -31,7 +32,9 @@
                     <option value="retard" th:selected="${filtreStatut == 'retard'}">En retard</option>
                     <option value="clos" th:selected="${filtreStatut == 'clos'}">Clos</option></select></div>
             <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+            <a th:if="${filtreSens != null and filtreSens != '' or filtreStatut != null and filtreStatut != ''}" th:href="@{/financements/emprunts}" class="btn btn-link" data-filtres-effacer>Effacer les filtres</a>
         </form>
+        </div>
         <section class="record-panel" aria-labelledby="empruntsListeTitre">
             <div class="record-panel-heading"><h2 id="empruntsListeTitre" th:text="${#lists.size(vues) + (#lists.size(vues) == 1 ? ' dossier affiché' : ' dossiers affichés') + ' sur ' + total}">0 dossier</h2></div>
             <p class="record-help" th:if="${#lists.isEmpty(vues)}">Aucun emprunt ni prêt à afficher.</p>

@@ -167,8 +167,10 @@
                     <a class="btn btn-outline-primary" th:href="@{/caisse/ouverture}"><i class="fas fa-wallet" aria-hidden="true"></i> Renseigner les soldes initiaux</a>
                 </div>
                 <p class="record-note" id="boutiqueDemarrageAide">Vérifiez tous vos stocks initiaux et vos soldes de trésorerie avant de terminer. La première opération d’achat, de vente ou de trésorerie termine également le démarrage. Ensuite, les quantités évoluent uniquement avec les achats et les ventes ; les nouvelles fiches produit restent créables avec un stock à zéro.</p>
-                <form th:action="@{/boutique/demarrage/terminer}" method="post" class="record-actions" aria-describedby="boutiqueDemarrageAide"
-                      onsubmit="return confirm('Terminer le démarrage de la boutique ? Vous ne pourrez plus ajouter de stock initial ni de solde initial de trésorerie. Cette action est définitive.');">
+                <form th:action="@{/boutique/demarrage/terminer}" method="post" class="record-actions" aria-describedby="boutiqueDemarrageAide" data-confirmer
+                      data-confirmer-titre="Terminer le démarrage de la boutique ?"
+                      data-confirmer-texte="Vous ne pourrez plus ajouter de stock initial ni de solde initial de trésorerie. Cette action est définitive."
+                      data-confirmer-oui="Terminer le démarrage" data-confirmer-non="Pas encore">
                     <button class="btn btn-primary" type="submit"><i class="fas fa-check" aria-hidden="true"></i> Terminer le démarrage</button>
                 </form>
             </div>

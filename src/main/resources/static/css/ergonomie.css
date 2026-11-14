@@ -228,3 +228,28 @@ body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px;
     body.stock-app .operation-actions { margin-bottom: 8px; }
     body.stock-app .operation-layout { padding-bottom: 96px; }
 }
+
+/* ===== Journal de caisse : les filtres se replient sur téléphone, la grille de bureau est inchangée ===== */
+body.stock-app #stockCaisse .caisse-filtres-champs { display: contents; }
+body.stock-app #stockCaisse .caisse-filtres-champs > div { min-width: 0; }
+@media (max-width: 767.98px) {
+    body.stock-app #stockCaisse .caisse-toolbar > :is(.filtres-barre, .filtres-etiquettes, .caisse-filtres-champs) { grid-column: 1 / -1; }
+    body.stock-app #stockCaisse .caisse-filtres-champs:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
+    body.stock-app #stockCaisse .caisse-filtres-champs[hidden] { display: none !important; }
+    body.stock-app #stockCaisse .caisse-filtres-champs > :is(.btn, p) { grid-column: 1 / -1; }
+}
+@media (max-width: 420px) {
+    body.stock-app #stockCaisse .caisse-filtres-champs:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ===== Produits : mêmes règles que le journal (grille de bureau inchangée, filtres repliés sur téléphone) ===== */
+body.stock-app .filtres-champs-bureau { display: contents; }
+body.stock-app .products-toolbar .filtres-champs-bureau > div { min-width: 0; }
+@media (max-width: 767.98px) {
+    body.stock-app .products-toolbar > :is(.filtres-barre, .filtres-etiquettes, .filtres-champs-bureau) { grid-column: 1 / -1; }
+    body.stock-app .products-toolbar .filtres-champs-bureau:not([hidden]) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
+    body.stock-app .products-toolbar .filtres-champs-bureau[hidden] { display: none !important; }
+}
+@media (max-width: 420px) {
+    body.stock-app .products-toolbar .filtres-champs-bureau:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+}

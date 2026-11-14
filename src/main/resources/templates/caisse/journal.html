@@ -95,20 +95,22 @@
                 <div><h2 id="caisseHistoryTitle">Historique des mouvements</h2><p>Retrouvez chaque opération et son origine.</p></div>
                 <span class="caisse-count" th:text="${#lists.size(mouvements) + (#lists.size(mouvements) == 1 ? ' mouvement' : ' mouvements')}">0 mouvements</span>
             </div>
-            <div id="caisseToolbar" class="caisse-toolbar" hidden>
+            <div id="caisseToolbar" class="caisse-toolbar" data-filtres hidden>
                 <div class="caisse-search">
                     <label for="caisseSearch" class="form-label">Rechercher un mouvement</label>
                     <div class="caisse-search-input"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input id="caisseSearch" class="form-control" type="search" placeholder="Motif, auteur, compte, source ou date…" autocomplete="off" aria-controls="caisseTable"></div>
                 </div>
-                <div><label for="caisseCompte" class="form-label">Compte</label><select id="caisseCompte" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><th:block th:replace="~{fragments/comptes :: optionsDe(${comptesJournal}, '')}"></th:block></select></div>
-                <div><label for="caisseAuteur" class="form-label">Saisi par</label><select id="caisseAuteur" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><option th:each="u : ${auteursJournal}" th:value="${u.id}" th:text="${(#strings.isEmpty(#strings.trim(u.nom)) ? 'Compte sans nom' : u.nom) + (u.actif ? '' : ' (compte désactivé)')}"></option></select></div>
-                <div><label for="caisseSource" class="form-label">Source</label><select id="caisseSource" class="form-select" aria-controls="caisseTable"><option value="">Toutes les sources</option></select></div>
-                <div><label for="caisseDirection" class="form-label">Sens</label><select id="caisseDirection" class="form-select" aria-controls="caisseTable"><option value="">Tous les mouvements</option><option value="entree">Entrées</option><option value="sortie">Sorties</option><option value="neutre">Sans variation</option><option value="inconnu">Montant non renseigné</option></select></div>
-                <div><label for="caisseDateFrom" class="form-label">Du</label><input id="caisseDateFrom" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
-                <div><label for="caisseDateTo" class="form-label">Au</label><input id="caisseDateTo" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
-                <button id="caisseReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche, les filtres et le tri"><i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser</button>
-                <p id="caissePeriodHelp" class="caisse-filter-help">Les deux dates sont incluses. Sans date, tout l’historique est affiché. Les mouvements sans date sont exclus lorsqu’une période est choisie.</p>
-                <p id="caisseDateError" class="caisse-date-error" role="status" aria-live="polite" hidden>La date de début doit précéder ou égaler la date de fin.</p>
+                <div class="caisse-filtres-champs" data-filtres-contenu>
+                    <div><label for="caisseCompte" class="form-label">Compte</label><select id="caisseCompte" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><th:block th:replace="~{fragments/comptes :: optionsDe(${comptesJournal}, '')}"></th:block></select></div>
+                    <div><label for="caisseAuteur" class="form-label">Saisi par</label><select id="caisseAuteur" class="form-select" aria-controls="caisseTable"><option value="">Tous les comptes</option><option th:each="u : ${auteursJournal}" th:value="${u.id}" th:text="${(#strings.isEmpty(#strings.trim(u.nom)) ? 'Compte sans nom' : u.nom) + (u.actif ? '' : ' (compte désactivé)')}"></option></select></div>
+                    <div><label for="caisseSource" class="form-label">Source</label><select id="caisseSource" class="form-select" aria-controls="caisseTable"><option value="">Toutes les sources</option></select></div>
+                    <div><label for="caisseDirection" class="form-label">Sens</label><select id="caisseDirection" class="form-select" aria-controls="caisseTable"><option value="">Tous les mouvements</option><option value="entree">Entrées</option><option value="sortie">Sorties</option><option value="neutre">Sans variation</option><option value="inconnu">Montant non renseigné</option></select></div>
+                    <div><label for="caisseDateFrom" class="form-label">Du</label><input id="caisseDateFrom" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
+                    <div><label for="caisseDateTo" class="form-label">Au</label><input id="caisseDateTo" class="form-control" type="date" aria-controls="caisseTable" aria-describedby="caissePeriodHelp caisseDateError"></div>
+                    <button id="caisseReset" class="btn btn-outline-secondary" type="button" data-filtres-effacer aria-label="Réinitialiser la recherche, les filtres et le tri"><i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser</button>
+                    <p id="caissePeriodHelp" class="caisse-filter-help">Les deux dates sont incluses. Sans date, tout l’historique est affiché. Les mouvements sans date sont exclus lorsqu’une période est choisie.</p>
+                    <p id="caisseDateError" class="caisse-date-error" role="status" aria-live="polite" hidden>La date de début doit précéder ou égaler la date de fin.</p>
+                </div>
             </div>
             <p id="caissePrintHelp" class="caisse-print-help" hidden>« Imprimer le journal » inclut tous les mouvements correspondant aux filtres, sur toutes les pages. Ctrl / ⌘ + P imprime le journal complet.</p>
             <div id="caissePrintMetadata" class="caisse-print-only">

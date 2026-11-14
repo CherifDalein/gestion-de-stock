@@ -1,5 +1,6 @@
 package org.example.stock.controller;
 
+import org.example.stock.enums.NatureProduit;
 import org.example.stock.enums.Role;
 import org.example.stock.export.TableauExport;
 import org.example.stock.model.*;
@@ -59,6 +60,8 @@ class ErgonomieListesTests {
     @Autowired ClientRepository clients;
     @Autowired FournisseurRepository fournisseurs;
     @Autowired VenteRepository ventes;
+    @Autowired ProduitRepository produits;
+    @Autowired CategorieRepository categories;
     @Autowired AchatRepository achats;
     @Autowired SoldePartenaireService soldes;
     @Autowired TableauDeBordService tableau;
@@ -91,6 +94,10 @@ class ErgonomieListesTests {
         sidi = fournisseur(a, "Sidi Import", "0"); sidi.setTelephone("620 00 11 22"); fournisseurs.saveAndFlush(sidi);
         kaba = fournisseur(a, "Kaba Grossiste", "-90000");
         diallo = fournisseur(a, "Diallo Distribution", "30000");
+        Categorie rayon = new Categorie(); rayon.setBoutique(a); rayon.setNom("Rayon ergonomie"); categories.saveAndFlush(rayon);
+        Produit p = new Produit(); p.setBoutique(a); p.setNom("Savon ergonomie"); p.setReference("ERGO-1"); p.setQuantite(0L); p.setNature(NatureProduit.STOCK);
+        p.setCategorie(rayon); p.setFournisseur(sidi);
+        p.setPrixAchat(new BigDecimal("1000")); p.setPrixVente(new BigDecimal("1500")); p.setPrixDefinis(true); p.setCoutMoyen(new BigDecimal("1000")); produits.saveAndFlush(p);
         venteAminata = vente(a, aminata, "100000", "30000");
         venteBoubacar = vente(a, boubacar, "20000", "0");
         vente(a, null, "15000", "0");
@@ -298,6 +305,39 @@ class ErgonomieListesTests {
         assertThat(dehors).doesNotContain("/achats/modifier/", "/retour");
         assertThat(menu).contains("/achats/modifier/" + achatSidi.getId(), "/achats/" + achatSidi.getId() + "/retour", "Retour au fournisseur");
         assertThat(html).doesNotContain("Sur écran étroit, faites défiler");
+    }
+
+    // ==== Filtres repliables et confirmations ============================================================================
+
+    @Test
+    void lesFiltresDuJournalEtDesProduitsSontReplisablesSansChangerLesChamps() throws Exception {
+        String journal = page("/caisse/journal", GERANT, "ADMIN");
+        assertThat(journal).contains("id=\"caisseToolbar\" class=\"caisse-toolbar\" data-filtres", "caisse-filtres-champs\" data-filtres-contenu", "id=\"caisseReset\"", "data-filtres-effacer");
+        for (String champ : List.of("caisseSearch", "caisseCompte", "caisseAuteur", "caisseSource", "caisseDirection", "caisseDateFrom", "caisseDateTo"))
+            assertThat(journal).contains("id=\"" + champ + "\"");
+        String produits = page("/produits", GERANT, "ADMIN");
+        assertThat(produits).contains("id=\"produitsToolbar\" class=\"products-toolbar\" data-filtres", "data-filtres-contenu", "id=\"produitsCategory\"", "id=\"produitsStock\"");
+    }
+
+    @Test
+    void plusAucuneConfirmationNativeDansLesModelesNiLesScripts() throws Exception {
+        java.nio.file.Path racine = java.nio.file.Path.of("src/main/resources");
+        try (var fichiers = java.nio.file.Files.walk(racine)) {
+            List<String> fautifs = fichiers.filter(p -> p.toString().matches(".*/(templates/.*\\.html|static/js/(?!confirmation\\.js).*\\.js)"))
+                    .filter(p -> !p.toString().contains("/static/js/vendor/") && !p.toString().endsWith(".min.js"))
+                    .filter(p -> { try { return java.nio.file.Files.readString(p).matches("(?s).*(?<![A-Za-z.])confirm\\(.*|(?s).*window\\.confirm\\(.*"); } catch (java.io.IOException e) { throw new RuntimeException(e); } })
+                    .map(java.nio.file.Path::toString).toList();
+            // Les replis sans <dialog> des écrans qui ont leur propre fenêtre (catégories, produits) restent tolérés dans leur script.
+            assertThat(fautifs).allMatch(p -> p.endsWith("/static/js/categories.js") || p.endsWith("/static/js/produits.js"));
+        }
+    }
+
+    @Test
+    void produits_leGerantAUnMenuPlusSansLaSuppressionVisibleEtLeCaissierNenAPas() throws Exception {
+        String gerant = page("/produits", GERANT, "ADMIN");
+        assertThat(gerant).contains("plus-menu-details", "plus-menu-item--danger", "/produits/supprimer/").doesNotContain("onsubmit=");
+        String caissier = page("/produits", CAISSIER, "CAISSIER");
+        assertThat(caissier).doesNotContain("plus-menu-details", "/produits/supprimer/", "/produits/modifier/");
     }
 
     // ---- Outils -------------------------------------------------------------------------------------------------------

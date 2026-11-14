@@ -82,8 +82,7 @@
                                 <a th:href="@{/categories/modifier/{id}(id=${cat.id})}" class="btn btn-outline-secondary btn-sm app-row-action" th:attr="aria-label=${'Modifier ' + cat.nom}">
                                     <i class="fas fa-pen" aria-hidden="true"></i> Modifier
                                 </a>
-                                <form th:action="@{/categories/supprimer/{id}(id=${cat.id})}" method="post" data-category-delete th:attr="data-category-name=${cat.nom}"
-                                      onsubmit="return confirm('Supprimer la catégorie « ' + this.dataset.categoryName + ' » ?')">
+                                <form th:action="@{/categories/supprimer/{id}(id=${cat.id})}" method="post" data-category-delete th:attr="data-category-name=${cat.nom}">
                                     <button type="submit" class="btn btn-outline-danger btn-sm app-row-action" th:attr="aria-label=${'Supprimer ' + cat.nom}">
                                         <i class="fas fa-trash" aria-hidden="true"></i> Supprimer
                                     </button>

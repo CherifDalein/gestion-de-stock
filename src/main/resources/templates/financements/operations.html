@@ -9,13 +9,16 @@
         </header>
         <div th:replace="~{financements/navigation :: onglets('operations')}"></div>
         <div th:replace="~{financements/navigation :: alertes}"></div>
-        <form method="get" th:action="@{/financements/operations}" class="fin-filtres" aria-label="Filtrer les opérations">
+        <div data-filtres class="mb-3">
+        <form method="get" th:action="@{/financements/operations}" class="fin-filtres" aria-label="Filtrer les opérations" data-filtres-contenu>
             <div><label for="groupe" class="form-label">Groupe</label>
                 <select id="groupe" name="groupe" class="form-select"><option value="">Toutes</option>
                     <option value="associes" th:selected="${filtreGroupe == 'associes'}">Apports et retraits des associés</option>
                     <option value="autres" th:selected="${filtreGroupe == 'autres'}">Produits et charges hors activité</option></select></div>
             <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
+            <a th:if="${filtreGroupe != null and filtreGroupe != ''}" th:href="@{/financements/operations}" class="btn btn-link" data-filtres-effacer>Effacer les filtres</a>
         </form>
+        </div>
         <section class="record-panel" aria-labelledby="opsListeTitre">
             <div class="record-panel-heading"><h2 id="opsListeTitre" th:text="${#lists.size(operations) + (#lists.size(operations) == 1 ? ' opération' : ' opérations')}">0 opération</h2></div>
             <p class="record-help" th:if="${#lists.isEmpty(operations)}">Aucune opération.</p>

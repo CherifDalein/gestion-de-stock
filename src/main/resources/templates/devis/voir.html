@@ -87,7 +87,10 @@
                 </form>
 
                 <form th:if="${devis.statut.name() == 'EN_COURS'}" th:action="@{/devis/{id}/annuler(id=${devis.id})}" method="post"
-                      class="operation-field" onsubmit="return confirm('Annuler ce devis ? Un devis annulé ne peut plus être modifié ni transformé en vente.');">
+                      class="operation-field" data-confirmer
+                      data-confirmer-titre="Annuler ce devis ?" th:attr="data-confirmer-sujet=${'Devis ' + devis.numero}"
+                      data-confirmer-texte="Un devis annulé ne peut plus être modifié ni transformé en vente."
+                      data-confirmer-oui="Annuler le devis" data-confirmer-non="Garder">
                     <button type="submit" class="btn btn-outline-danger" id="boutonAnnulerDevis">Annuler le devis</button>
                 </form>
                 <p th:if="${devis.statut.name() != 'EN_COURS'}" class="operation-field-help mb-0">Ce devis est définitif : il ne se modifie plus.</p>
