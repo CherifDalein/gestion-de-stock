@@ -63,6 +63,7 @@
         panneau.id = id;
         panneau.setAttribute('role', 'menu');
         panneau.hidden = true;
+        panneau.style.position = 'fixed';
         Array.from(panneau.querySelectorAll(ENTREES)).forEach(e => e.setAttribute('role', 'menuitem'));
         const menu = doc.createElement('div');
         menu.className = 'plus-menu';
@@ -80,12 +81,13 @@
     function positionner(menu, vue) {
         const { bouton, panneau } = parties(menu);
         if (!bouton || !panneau) return;
-        const r = bouton.getBoundingClientRect();
+        // Le panneau sort du flux avant toute mesure : resté dans la cellule, il agrandirait la ligne et déplacerait le bouton.
         const style = panneau.style;
         style.position = 'fixed';
         style.maxHeight = '';
         style.left = '0px';
         style.top = '0px';
+        const r = bouton.getBoundingClientRect();
         const largeur = panneau.offsetWidth;
         const hauteur = panneau.offsetHeight;
         const vw = vue.innerWidth;

@@ -27,7 +27,9 @@ public class FournisseurController {
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
-        model.addAttribute("soldes", soldes.soldesFournisseurs());
+        var soldesListe = soldes.soldesFournisseurs();
+        model.addAttribute("soldes", soldesListe);
+        model.addAttribute("synthese", SoldePartenaireService.Synthese.de(soldesListe.values()));
         model.addAttribute("view", "fournisseurs/liste");
         return "dashboard";
     }

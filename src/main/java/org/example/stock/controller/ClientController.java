@@ -30,7 +30,9 @@ public class ClientController {
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("clients", clientService.listerTous());
-        model.addAttribute("soldes", soldes.soldesClients());
+        var soldesListe = soldes.soldesClients();
+        model.addAttribute("soldes", soldesListe);
+        model.addAttribute("synthese", SoldePartenaireService.Synthese.de(soldesListe.values()));
         model.addAttribute("view", "clients/liste");
         return "dashboard";
     }

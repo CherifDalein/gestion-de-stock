@@ -46,6 +46,13 @@ class Element {
     hasAttribute(nom) { return nom === 'hidden' ? this._hidden : this.attributs.has(nom) || (nom === 'id' && !!this.id); }
     removeAttribute(nom) { this.attributs.delete(nom); if (nom === 'hidden') this._hidden = false; }
     append(...noeuds) { noeuds.forEach(n => { if (n.parentNode) n.parentNode.retirer(n); n.parentNode = this; this.enfants.push(n); }); }
+    insertBefore(n, ref) {
+        if (n.parentNode) n.parentNode.retirer(n);
+        const i = this.enfants.indexOf(ref);
+        n.parentNode = this; this.enfants.splice(i < 0 ? this.enfants.length : i, 0, n);
+    }
+    removeChild(n) { this.retirer(n); }
+    get firstChild() { return this.enfants[0] || null; }
     retirer(n) { this.enfants = this.enfants.filter(e => e !== n); n.parentNode = null; }
     replaceWith(autre) {
         const parent = this.parentNode; const i = parent.enfants.indexOf(this);
@@ -102,6 +109,7 @@ function creerDocument({ largeur = 1280, hauteur = 900 } = {}) {
     const doc = new Element(null, '#document');
     doc.ownerDocument = doc;
     doc.createElement = balise => balise === 'dialog' ? new Dialogue(doc) : balise === 'form' ? new Formulaire(doc) : new Element(doc, balise);
+    doc.getElementById = id => { const tous = doc.querySelectorAll('[id]'); return tous.find(e => e.id === id) || null; };
     doc.body = doc.createElement('body'); doc.append(doc.body);
     doc.activeElement = doc.body; doc.journalFocus = []; doc.readyState = 'complete';
     const ecouteursFenetre = {};

@@ -26,6 +26,8 @@
         const aucunResultat = document.getElementById('partenairesNoResults');
         const boutonsContact = Array.from(page.querySelectorAll('[data-contact-filter]'));
         const boutonsTri = Array.from(page.querySelectorAll('[data-partner-sort]'));
+        const triMobile = document.getElementById('partenairesSortSelect');
+        const blocTriMobile = page.querySelector('[data-partner-sort-mobile]');
         const trisAutorises = new Set(['nom', 'telephone', 'email', 'adresse']);
         const contactsAutorises = new Set(['', 'telephone', 'email', 'sans-contact']);
         const taillesAutorisees = new Set(['10', '25', '50', 'all']);
@@ -94,6 +96,10 @@
                     + `Affichage de ${nombres.format(debut + 1)} à ${nombres.format(Math.min(debut + taille, filtres.length))}`;
             }
             boutonsContact.forEach(bouton => bouton.setAttribute('aria-pressed', String(bouton.dataset.contactFilter === contactChoisi)));
+            if (triMobile) {
+                const valeurTri = `${cleTri}:${sensTri === 1 ? 'asc' : 'desc'}`;
+                if (Array.from(triMobile.options).some(option => option.value === valeurTri)) triMobile.value = valeurTri;
+            }
             boutonsTri.forEach(bouton => {
                 const actif = bouton.dataset.partnerSort === cleTri;
                 bouton.closest('th')?.setAttribute('aria-sort', actif ? (sensTri === 1 ? 'ascending' : 'descending') : 'none');
@@ -123,6 +129,16 @@
                 filtrer();
             });
         });
+        if (triMobile) {
+            if (blocTriMobile) blocTriMobile.hidden = false;
+            triMobile.addEventListener('change', () => {
+                const [cle, sens] = triMobile.value.split(':');
+                if (!trisAutorises.has(cle)) return;
+                cleTri = cle;
+                sensTri = sens === 'desc' ? -1 : 1;
+                filtrer();
+            });
+        }
         precedent?.addEventListener('click', () => {
             if (numeroPage > 1) { numeroPage--; afficher(); }
         });
@@ -149,58 +165,23 @@
                 if (!partenaire || details.open) return;
                 const titre = document.getElementById('partenaireDetailsTitle');
                 if (titre) titre.textContent = partenaire.nom;
+                let renseignes = 0;
                 details.querySelectorAll('[data-partner-detail]').forEach(champ => {
                     const cle = champ.dataset.partnerDetail;
-                    if (['telephone', 'email', 'adresse'].includes(cle)) {
-                        champ.textContent = partenaire[cle].trim() ? partenaire[cle] : 'Non renseigné';
-                    }
+                    if (!['telephone', 'email', 'adresse'].includes(cle)) return;
+                    const valeur = partenaire[cle].trim();
+                    champ.textContent = valeur;
+                    const bloc = champ.closest('[data-partner-detail-bloc]');
+                    if (bloc) bloc.hidden = !valeur;
+                    if (valeur) renseignes++;
                 });
+                const vide = details.querySelector('[data-partner-detail-vide]');
+                if (vide) vide.hidden = renseignes > 0;
                 details.showModal();
             });
         });
 
-        const suppression = document.getElementById('partenaireDeleteDialog');
-        const confirmer = document.getElementById('partenaireDeleteConfirm');
-        let formulaireEnAttente = null;
-        let suppressionEnvoyee = false;
-        const dialogueSuppression = suppression && confirmer && typeof suppression.showModal === 'function';
-        page.querySelectorAll('form[data-partner-delete]').forEach(formulaire => {
-            formulaire.addEventListener('submit', event => {
-                if (suppressionEnvoyee) {
-                    event.preventDefault();
-                    return;
-                }
-                const partenaire = parLigne.get(formulaire.closest('tr[data-partner-row]'));
-                if (!dialogueSuppression) {
-                    if (!window.confirm(`Supprimer ${partenaire?.nom || `ce ${libellePartenaire}`} ?`)) event.preventDefault();
-                    else suppressionEnvoyee = true;
-                    return;
-                }
-                event.preventDefault();
-                if (suppression.open) return;
-                formulaireEnAttente = formulaire;
-                const nom = document.getElementById('partenaireDeleteName');
-                if (nom) nom.textContent = partenaire?.nom || `ce ${libellePartenaire}`;
-                confirmer.disabled = false;
-                suppression.showModal();
-            });
-            formulaire.removeAttribute('onsubmit');
-        });
-        if (dialogueSuppression) {
-            confirmer.addEventListener('click', () => {
-                const formulaire = formulaireEnAttente;
-                if (!formulaire || suppressionEnvoyee || !formulaire.reportValidity()) return;
-                suppressionEnvoyee = true;
-                confirmer.disabled = true;
-                formulaireEnAttente = null;
-                suppression.close();
-                HTMLFormElement.prototype.submit.call(formulaire);
-            });
-            suppression.addEventListener('close', () => {
-                formulaireEnAttente = null;
-                if (!suppressionEnvoyee) confirmer.disabled = false;
-            });
-        }
+        // La suppression passe par confirmation.js (data-confirmer sur chaque formulaire, voir docs/ergonomie.md).
         page.querySelectorAll('[data-close-partner-dialog]').forEach(bouton => {
             bouton.addEventListener('click', () => bouton.closest('dialog')?.close());
         });
