@@ -3,10 +3,12 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <th:block th:replace="~{fragments/theme :: tete}"></th:block>
     <th:block th:replace="~{fragments/marque :: icones}"></th:block>
     <title>RFC-COMPTA — Gestion de stock</title>
     <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet" />
     <link th:href="@{/css/styles.css}" rel="stylesheet" />
+    <link th:href="@{/css/theme.css}" rel="stylesheet" />
     <link th:href="@{/css/stock-pro.css}" rel="stylesheet" />
     <link th:href="@{/css/ergonomie.css}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
@@ -15,7 +17,8 @@
 <a class="visually-hidden-focusable app-skip-link" href="#mainContent">Aller au contenu</a>
 <nav class="sb-topnav navbar navbar-expand app-topbar" aria-label="Navigation principale">
     <a class="navbar-brand app-brand" th:href="@{/}">
-        <picture><source media="(max-width: 575.98px)" srcset="/img/marque/rfc-compta-marque.svg" th:srcset="@{/img/marque/rfc-compta-marque.svg}"><img class="app-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="110" height="44"></picture>
+        <picture class="logo-clair"><source media="(max-width: 575.98px)" srcset="/img/marque/rfc-compta-marque.svg" th:srcset="@{/img/marque/rfc-compta-marque.svg}"><img class="app-brand-logo" th:src="@{/img/marque/rfc-compta-logo.svg}" src="/img/marque/rfc-compta-logo.svg" alt="RFC-COMPTA" width="110" height="44"></picture>
+        <picture class="logo-sombre"><source media="(max-width: 575.98px)" srcset="/img/marque/rfc-compta-marque-fond-sombre.svg" th:srcset="@{/img/marque/rfc-compta-marque-fond-sombre.svg}"><img class="app-brand-logo" th:src="@{/img/marque/rfc-compta-logo-fond-sombre.svg}" src="/img/marque/rfc-compta-logo-fond-sombre.svg" alt="RFC-COMPTA" width="110" height="44"></picture>
     </a>
     <button class="btn app-menu-toggle" id="sidebarToggle" type="button" aria-controls="layoutSidenav_nav" aria-expanded="false" aria-label="Afficher le menu">
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
@@ -25,7 +28,7 @@
             <i class="fa-solid fa-plus" aria-hidden="true"></i> Nouvelle vente
         </a>
         <div class="dropdown">
-            <button class="app-account dropdown-toggle" id="navbarDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu du compte">
+            <button class="app-account dropdown-toggle" id="navbarDropdown" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Menu du compte">
                 <span class="app-account-avatar" th:text="${utilisateur != null and utilisateur.nom != null and utilisateur.nom != '' ? #strings.toUpperCase(#strings.substring(utilisateur.nom, 0, 1)) : 'U'}">U</span>
                 <span class="app-account-info">
                     <strong th:text="${utilisateur != null ? utilisateur.nom : 'Utilisateur'}">Utilisateur</strong>
@@ -42,6 +45,9 @@
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/utilisateurs}"><i class="fa-solid fa-users-gear me-2" aria-hidden="true"></i>Utilisateurs</a></li>
                 <li sec:authorize="hasRole('ADMIN')"><a class="dropdown-item" th:href="@{/register}"><i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Créer un compte caissier</a></li>
                 <li sec:authorize="hasAnyRole('ADMIN', 'PLATEFORME_ADMIN')"><hr class="dropdown-divider" /></li>
+                <li sec:authorize="!hasAnyRole('ADMIN', 'PLATEFORME_ADMIN')"><hr class="dropdown-divider" /></li>
+                <li><th:block th:replace="~{fragments/theme :: selecteur}"></th:block></li>
+                <li><hr class="dropdown-divider" /></li>
                 <li><form th:action="@{/logout}" method="post"><button type="submit" class="dropdown-item"><i class="fa-solid fa-arrow-right-from-bracket me-2" aria-hidden="true"></i>Se déconnecter</button></form></li>
             </ul>
         </div>

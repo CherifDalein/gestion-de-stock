@@ -1,12 +1,12 @@
 /* Tableau de bord : activité, produits à surveiller et évolution mensuelle.
-   Les trois couleurs des barres gardent un contraste d'au moins 3:1 sur fond blanc comme sur fond
-   sombre (#1e1e1e) ; le résultat et la perte sont hachurés pour ne pas dépendre de la seule couleur.
+   Les trois couleurs des barres (--rfc-chart-*, theme.css) gardent un contraste d'au moins 3:1 sur la carte, en clair comme en
+   sombre ; le résultat et la perte sont hachurés pour ne pas dépendre de la seule couleur.
    Les textes du graphique suivent les variables du thème. Les hauteurs viennent du serveur. */
 body.stock-app .tdb {
-  --tdb-ventes: #2f8f6b;
-  --tdb-resultat: #3a6db0;
-  --tdb-perte: #c4473a;
-  --tdb-axe: var(--app-border, #dfe8e3);
+  --tdb-ventes: var(--rfc-chart-ventes);
+  --tdb-resultat: var(--rfc-chart-resultat);
+  --tdb-perte: var(--rfc-chart-perte);
+  --tdb-axe: var(--app-border);
 }
 body.stock-app .tdb-section { margin-bottom: 8px; }
 body.stock-app .tdb-section-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 14px; }
@@ -14,7 +14,7 @@ body.stock-app .tdb-section-heading h2 { font-size: 1.05rem; font-weight: 700; m
 body.stock-app .tdb-section-heading p { margin: 0; color: var(--app-muted); font-size: .8rem; }
 body.stock-app .tdb-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 body.stock-app .tdb-grid .app-metric-value { font-size: clamp(1.35rem, 1.7vw, 1.9rem); }
-body.stock-app .tdb-sans-cout { display: block; margin-top: 4px; color: #8a5a00; font-weight: 600; }
+body.stock-app .tdb-sans-cout { display: block; margin-top: 4px; color: var(--rfc-warn-fg); font-weight: 600; }
 body.stock-app .tdb-columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 18px; align-items: start; }
 body.stock-app .tdb-columns > .tdb-panel:only-child { grid-column: 1 / -1; }
 body.stock-app .tdb-panel { min-width: 0; }

@@ -1,0 +1,438 @@
+/*
+ * Thème clair / sombre de RFC-COMPTA.
+ *
+ * Chargé sur TOUTES les pages de l'application, juste après styles.css (Bootstrap 5.2.3 compilé + SB Admin) et avant les feuilles
+ * de l'application. Il contient :
+ *   1. les variables de couleur (« jetons ») sur :root, en clair ;
+ *   2. leur redéfinition sous [data-bs-theme="dark"] (posé sur <html> par theme.js avant la première peinture) ;
+ *   3. les réglages des composants Bootstrap 5.2.3 qui ne suivent pas ces variables (la 5.2 ne connaît pas data-bs-theme) ;
+ *   4. le sélecteur de thème, la bascule lune/soleil et les deux variantes du logo.
+ *
+ * Le sombre est enveloppé dans « @media not print » : une impression (reçus, factures, états) reste TOUJOURS en clair, même si
+ * l'écran est en sombre. Les PDF n'utilisent pas ces feuilles.
+ *
+ * Règle d'or : une feuille de l'application n'écrit jamais #fff, #152c25 ou une autre couleur en dur pour un fond, un texte ou une
+ * bordure ; elle prend un jeton de ce fichier. Voir docs/ergonomie.md, section « Thème sombre ».
+ */
+
+/* ---- 1. Jetons, thème clair (valeurs historiques de l'application) ---------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --rfc-bg: #f4f7f6;               /* fond de page */
+  --rfc-surface: #fff;             /* cartes, panneaux, barre latérale, champs */
+  --rfc-surface-rgb: 255 255 255;
+  --rfc-surface-2: #f8fbf9;        /* panneau discret, pied de carte, survol de ligne */
+  --rfc-surface-3: #f2f6f4;        /* puce neutre, en-tête de tableau, champ en lecture seule */
+  --rfc-input-bg: #fff;            /* fond des champs de saisie */
+  --rfc-tint: #eaf5ee;             /* fond vert très pâle (actif, sélection, badge « Réglée ») */
+
+  /* Bordures */
+  --app-border: #dfe8e3;
+  --rfc-border-strong: #cadbd1;    /* contour des champs et des boutons secondaires */
+  --rfc-green-border: #97cbb1;
+
+  /* Textes */
+  --app-ink: #152c25;              /* texte courant */
+  --rfc-heading: #0B2540;          /* grands titres des pages publiques (marine) */
+  --rfc-ink-2: #52685d;            /* texte secondaire fort */
+  --app-muted: #64776e;            /* texte secondaire, petites lignes « par Awa » */
+  --rfc-faint: #759783;            /* icônes et accessoires (jamais du texte de lecture) */
+
+  /* Marque */
+  --app-green: #15805d;            /* remplissage : boutons, pastilles (texte blanc dessus) */
+  --rfc-green-hover: #106448;      /* remplissage au survol */
+  --rfc-green-text: #106448;       /* texte et icônes verts sur fond de page ou de carte */
+  --app-green-dark: var(--rfc-green-text);
+  --app-tint: var(--rfc-tint);
+  --rfc-link: #106448;
+  --rfc-link-hover: #0c523b;
+  --rfc-on-accent: #fff;           /* texte sur un remplissage vert, rouge ou bleu */
+  --rfc-on-accent-soft: #d5ece0;   /* texte secondaire sur la carte verte du tableau de bord */
+  --rfc-band: #116d4f;             /* bande verte « essai gratuit » de l'accueil */
+  --rfc-band-border: #106448;
+  --rfc-bg-sombre: #233e33;        /* en-tête de carte sombre (.bg-dark) */
+
+  /* États : Me doit / dois (avertissement), Avance / Réglée (succès), En retard (danger), info */
+  --rfc-danger-bg: #fceceb;  --rfc-danger-fg: #a43a37;  --rfc-danger-border: #f1c9cc;  --rfc-danger-solid: #dc3545;
+  --rfc-warn-bg: #fff3d9;    --rfc-warn-fg: #805810;    --rfc-warn-border: #ecd9b9;
+  --rfc-info-bg: #e9f1f9;    --rfc-info-fg: #24507a;    --rfc-info-solid: #0d6efd;
+  --rfc-neutral-bg: #e2e3e5;
+
+  /* Ombres */
+  --rfc-shadow-rgb: 21 44 37;
+
+  /* Tableau de bord : barres du graphique (≥ 3:1 sur la carte) */
+  --rfc-chart-ventes: #2f8f6b;
+  --rfc-chart-resultat: #3a6db0;
+  --rfc-chart-perte: #c4473a;
+}
+
+/* ---- 2 et 3. Thème sombre ---------------------------------------------------------------------------------------------- */
+@media not print {
+  [data-bs-theme="dark"] {
+    color-scheme: dark;
+
+    --rfc-bg: #0f1720;
+    --rfc-surface: #16212c;
+    --rfc-surface-rgb: 22 33 44;
+    --rfc-surface-2: #1a2733;
+    --rfc-surface-3: #202e3b;
+    --rfc-input-bg: #111b25;
+    --rfc-tint: #173a2f;
+
+    --app-border: #2b3b49;
+    --rfc-border-strong: #43576a;
+    --rfc-green-border: #2f8a68;
+
+    --app-ink: #e8eef3;
+    --rfc-heading: #e8eef3;
+    --rfc-ink-2: #bccad5;
+    --app-muted: #9db0bf;
+    --rfc-faint: #8da0b0;
+
+    --app-green: #15805d;
+    --rfc-green-hover: #0f6b4e;
+    --rfc-green-text: #5fd0a4;
+    --rfc-link: #5fd0a4;
+    --rfc-link-hover: #8be3c0;
+    --rfc-on-accent-soft: #d5ece0;
+    --rfc-band: #0e5a42;
+    --rfc-band-border: #137a59;
+    --rfc-bg-sombre: #0b121a;
+
+    --rfc-danger-bg: #3a1d22;  --rfc-danger-fg: #ff9a97;  --rfc-danger-border: #6b2f35;  --rfc-danger-solid: #c9303f;
+    --rfc-warn-bg: #392d12;    --rfc-warn-fg: #f1c46a;    --rfc-warn-border: #6b5420;
+    --rfc-info-bg: #172f48;    --rfc-info-fg: #8fbdf0;    --rfc-info-solid: #2563c7;
+    --rfc-neutral-bg: #263441;
+
+    --rfc-shadow-rgb: 0 0 0;
+
+    --rfc-chart-ventes: #3fae85;
+    --rfc-chart-resultat: #6a9be0;
+    --rfc-chart-perte: #e8685a;
+
+    /* Bootstrap 5.2.3 : variables de base */
+    --bs-body-color: var(--app-ink);
+    --bs-body-color-rgb: 232, 238, 243;
+    --bs-body-bg: var(--rfc-bg);
+    --bs-body-bg-rgb: 15, 23, 32;
+    --bs-border-color: var(--app-border);
+    --bs-border-color-translucent: rgba(255, 255, 255, .14);
+    --bs-link-color: var(--rfc-link);
+    --bs-link-hover-color: var(--rfc-link-hover);
+    --bs-code-color: #f2a6cb;
+    --bs-highlight-bg: #4a3b12;
+    --bs-light-rgb: 26, 39, 51;
+    --bs-gray-100: #1a2733;
+    --bs-gray-200: #202e3b;
+    --bs-gray-300: #2b3b49;
+    --bs-gray-600: #9db0bf;
+  }
+
+  /* Texte et utilitaires qui écrivent une couleur en dur (!important dans Bootstrap) */
+  [data-bs-theme="dark"] .text-muted { color: var(--app-muted) !important; }
+  [data-bs-theme="dark"] .text-danger { color: var(--rfc-danger-fg) !important; }
+  [data-bs-theme="dark"] .text-success { color: var(--rfc-green-text) !important; }
+  [data-bs-theme="dark"] .text-warning { color: var(--rfc-warn-fg) !important; }
+  [data-bs-theme="dark"] .text-info { color: var(--rfc-info-fg) !important; }
+  [data-bs-theme="dark"] .text-primary { color: var(--rfc-green-text) !important; }
+  [data-bs-theme="dark"] .text-secondary { color: var(--app-muted) !important; }
+  [data-bs-theme="dark"] .text-body { color: var(--app-ink) !important; }
+  [data-bs-theme="dark"] .bg-white { background-color: var(--rfc-surface) !important; }
+  [data-bs-theme="dark"] .bg-light { background-color: var(--rfc-surface-2) !important; }
+  [data-bs-theme="dark"] .border, [data-bs-theme="dark"] .border-top, [data-bs-theme="dark"] .border-bottom { border-color: var(--app-border) !important; }
+  [data-bs-theme="dark"] hr { border-color: var(--app-border); opacity: 1; }
+  [data-bs-theme="dark"] .shadow-sm { box-shadow: 0 .125rem .25rem rgb(0 0 0 / 35%) !important; }
+  [data-bs-theme="dark"] ::placeholder { color: var(--rfc-faint); opacity: 1; }
+  [data-bs-theme="dark"] .form-control::placeholder { color: var(--rfc-faint); }
+  [data-bs-theme="dark"] code { color: var(--bs-code-color); }
+  [data-bs-theme="dark"] mark, [data-bs-theme="dark"] .mark { color: var(--app-ink); background-color: var(--bs-highlight-bg); }
+
+  /* Cartes, tableaux */
+  [data-bs-theme="dark"] .card {
+    --bs-card-bg: var(--rfc-surface);
+    --bs-card-color: var(--app-ink);
+    --bs-card-border-color: var(--app-border);
+    --bs-card-cap-bg: var(--rfc-surface-2);
+    --bs-card-cap-color: var(--app-ink);
+  }
+  [data-bs-theme="dark"] .table {
+    --bs-table-color: var(--app-ink);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--app-border);
+    --bs-table-striped-color: var(--app-ink);
+    --bs-table-striped-bg: rgb(255 255 255 / 3%);
+    --bs-table-active-color: var(--app-ink);
+    --bs-table-active-bg: rgb(255 255 255 / 6%);
+    --bs-table-hover-color: var(--app-ink);
+    --bs-table-hover-bg: var(--rfc-surface-2);
+  }
+  [data-bs-theme="dark"] .table-light {
+    --bs-table-color: var(--app-ink);
+    --bs-table-bg: var(--rfc-surface-3);
+    --bs-table-border-color: var(--app-border);
+  }
+  [data-bs-theme="dark"] .datatable-table > tbody > tr:hover > * { background-color: var(--rfc-surface-2); color: var(--app-ink); }
+
+  /* Champs de formulaire */
+  [data-bs-theme="dark"] :is(.form-control, .form-select, .datatable-input, .datatable-selector) {
+    color: var(--app-ink);
+    background-color: var(--rfc-input-bg);
+    border-color: var(--rfc-border-strong);
+  }
+  [data-bs-theme="dark"] :is(.form-control, .form-select, .datatable-input, .datatable-selector):focus {
+    color: var(--app-ink);
+    background-color: var(--rfc-input-bg);
+    border-color: var(--rfc-green-text);
+    box-shadow: 0 0 0 3px rgb(95 208 164 / 22%);
+  }
+  [data-bs-theme="dark"] :is(.form-control, .form-select, .datatable-input, .datatable-selector):disabled,
+  [data-bs-theme="dark"] .form-control[readonly] { color: var(--rfc-ink-2); background-color: var(--rfc-surface-3); }
+  [data-bs-theme="dark"] :is(.form-select, .datatable-selector) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23bccad5' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  }
+  [data-bs-theme="dark"] .form-control::file-selector-button { color: var(--app-ink); background-color: var(--rfc-surface-3); border-color: var(--rfc-border-strong); }
+  [data-bs-theme="dark"] .form-control:hover:not(:disabled):not([readonly])::file-selector-button { background-color: var(--rfc-surface-2); }
+  [data-bs-theme="dark"] .form-control:-webkit-autofill { -webkit-text-fill-color: var(--app-ink); box-shadow: 0 0 0 1000px var(--rfc-input-bg) inset; }
+  [data-bs-theme="dark"] .form-check-input { background-color: var(--rfc-input-bg); border-color: var(--rfc-border-strong); }
+  [data-bs-theme="dark"] .form-check-input:checked { background-color: var(--app-green); border-color: var(--app-green); }
+  [data-bs-theme="dark"] .form-check-input:focus { border-color: var(--rfc-green-text); box-shadow: 0 0 0 3px rgb(95 208 164 / 22%); }
+  [data-bs-theme="dark"] .form-text, [data-bs-theme="dark"] .form-label { color: var(--app-muted); }
+  [data-bs-theme="dark"] .form-label { color: var(--app-ink); }
+  [data-bs-theme="dark"] .input-group-text { color: var(--rfc-ink-2); background-color: var(--rfc-surface-3); border-color: var(--rfc-border-strong); }
+  [data-bs-theme="dark"] .invalid-feedback { color: var(--rfc-danger-fg); }
+  [data-bs-theme="dark"] .valid-feedback { color: var(--rfc-green-text); }
+  [data-bs-theme="dark"] .form-control.is-invalid, [data-bs-theme="dark"] .form-select.is-invalid { border-color: var(--rfc-danger-fg); }
+
+  /* Boutons */
+  [data-bs-theme="dark"] .btn-outline-secondary {
+    --bs-btn-color: var(--rfc-ink-2);
+    --bs-btn-border-color: var(--rfc-border-strong);
+    --bs-btn-hover-color: var(--app-ink);
+    --bs-btn-hover-bg: var(--rfc-surface-3);
+    --bs-btn-hover-border-color: #5a7186;
+    --bs-btn-active-color: var(--app-ink);
+    --bs-btn-active-bg: var(--rfc-surface-3);
+    --bs-btn-active-border-color: #5a7186;
+    --bs-btn-disabled-color: var(--rfc-faint);
+    --bs-btn-disabled-border-color: var(--app-border);
+  }
+  [data-bs-theme="dark"] body.stock-app .btn-outline-primary,
+  [data-bs-theme="dark"] .btn-outline-primary {
+    --bs-btn-color: var(--rfc-green-text);
+    --bs-btn-border-color: var(--rfc-green-border);
+    --bs-btn-hover-color: var(--rfc-on-accent);
+    --bs-btn-hover-bg: var(--app-green);
+    --bs-btn-hover-border-color: var(--app-green);
+    --bs-btn-active-color: var(--rfc-on-accent);
+    --bs-btn-active-bg: var(--rfc-green-hover);
+    --bs-btn-active-border-color: var(--rfc-green-hover);
+    --bs-btn-disabled-color: var(--rfc-faint);
+  }
+  [data-bs-theme="dark"] .btn-outline-danger {
+    --bs-btn-color: var(--rfc-danger-fg);
+    --bs-btn-border-color: var(--rfc-danger-border);
+    --bs-btn-hover-color: var(--rfc-on-accent);
+    --bs-btn-hover-bg: var(--rfc-danger-solid);
+    --bs-btn-hover-border-color: var(--rfc-danger-solid);
+    --bs-btn-active-color: var(--rfc-on-accent);
+    --bs-btn-active-bg: var(--rfc-danger-solid);
+    --bs-btn-active-border-color: var(--rfc-danger-solid);
+    --bs-btn-disabled-color: var(--rfc-faint);
+  }
+  [data-bs-theme="dark"] .btn-outline-success {
+    --bs-btn-color: var(--rfc-green-text);
+    --bs-btn-border-color: var(--rfc-green-border);
+    --bs-btn-hover-color: var(--rfc-on-accent);
+    --bs-btn-hover-bg: var(--app-green);
+    --bs-btn-hover-border-color: var(--app-green);
+    --bs-btn-active-color: var(--rfc-on-accent);
+    --bs-btn-active-bg: var(--rfc-green-hover);
+    --bs-btn-active-border-color: var(--rfc-green-hover);
+    --bs-btn-disabled-color: var(--rfc-faint);
+  }
+  [data-bs-theme="dark"] .btn-outline-info, [data-bs-theme="dark"] .btn-outline-warning {
+    --bs-btn-color: var(--rfc-warn-fg);
+    --bs-btn-border-color: var(--rfc-warn-border);
+    --bs-btn-hover-color: #1b1500;
+    --bs-btn-hover-bg: var(--rfc-warn-fg);
+    --bs-btn-hover-border-color: var(--rfc-warn-fg);
+  }
+  [data-bs-theme="dark"] .btn-outline-info { --bs-btn-color: var(--rfc-info-fg); --bs-btn-border-color: var(--rfc-info-solid); --bs-btn-hover-bg: var(--rfc-info-fg); --bs-btn-hover-border-color: var(--rfc-info-fg); }
+  [data-bs-theme="dark"] .btn-danger {
+    --bs-btn-bg: var(--rfc-danger-solid); --bs-btn-border-color: var(--rfc-danger-solid);
+    --bs-btn-hover-bg: #b02a37; --bs-btn-hover-border-color: #b02a37;
+    --bs-btn-active-bg: #a02632; --bs-btn-active-border-color: #a02632;
+    --bs-btn-disabled-bg: var(--rfc-danger-solid); --bs-btn-disabled-border-color: var(--rfc-danger-solid);
+  }
+  [data-bs-theme="dark"] .btn-secondary {
+    --bs-btn-bg: #3d4f60; --bs-btn-border-color: #3d4f60;
+    --bs-btn-hover-bg: #4a5f72; --bs-btn-hover-border-color: #4a5f72;
+    --bs-btn-active-bg: #4a5f72; --bs-btn-active-border-color: #4a5f72;
+    --bs-btn-disabled-bg: #3d4f60; --bs-btn-disabled-border-color: #3d4f60;
+  }
+  [data-bs-theme="dark"] .btn-light {
+    --bs-btn-color: var(--app-ink); --bs-btn-bg: var(--rfc-surface-3); --bs-btn-border-color: var(--rfc-border-strong);
+    --bs-btn-hover-color: var(--app-ink); --bs-btn-hover-bg: #2a3b4a; --bs-btn-hover-border-color: #5a7186;
+    --bs-btn-active-color: var(--app-ink); --bs-btn-active-bg: #2a3b4a; --bs-btn-active-border-color: #5a7186;
+  }
+  [data-bs-theme="dark"] .btn-link { --bs-btn-color: var(--rfc-link); --bs-btn-hover-color: var(--rfc-link-hover); }
+  [data-bs-theme="dark"] .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+  /* Menus déroulants, fenêtres, listes, onglets, pagination */
+  [data-bs-theme="dark"] .dropdown-menu {
+    --bs-dropdown-color: var(--app-ink);
+    --bs-dropdown-bg: var(--rfc-surface);
+    --bs-dropdown-border-color: var(--app-border);
+    --bs-dropdown-divider-bg: var(--app-border);
+    --bs-dropdown-link-color: var(--app-ink);
+    --bs-dropdown-link-hover-color: var(--app-ink);
+    --bs-dropdown-link-hover-bg: var(--rfc-surface-3);
+    --bs-dropdown-link-disabled-color: var(--rfc-faint);
+    --bs-dropdown-header-color: var(--app-muted);
+    --bs-dropdown-box-shadow: 0 .5rem 1rem rgb(0 0 0 / 45%);
+  }
+  [data-bs-theme="dark"] .modal {
+    --bs-modal-bg: var(--rfc-surface);
+    --bs-modal-color: var(--app-ink);
+    --bs-modal-border-color: var(--app-border);
+    --bs-modal-header-border-color: var(--app-border);
+    --bs-modal-footer-border-color: var(--app-border);
+  }
+  [data-bs-theme="dark"] .modal-backdrop { --bs-backdrop-bg: #000; --bs-backdrop-opacity: .65; }
+  [data-bs-theme="dark"] .list-group {
+    --bs-list-group-color: var(--app-ink);
+    --bs-list-group-bg: var(--rfc-surface);
+    --bs-list-group-border-color: var(--app-border);
+    --bs-list-group-action-color: var(--rfc-ink-2);
+    --bs-list-group-action-hover-color: var(--app-ink);
+    --bs-list-group-action-hover-bg: var(--rfc-surface-2);
+    --bs-list-group-action-active-color: var(--app-ink);
+    --bs-list-group-action-active-bg: var(--rfc-surface-3);
+    --bs-list-group-disabled-color: var(--rfc-faint);
+    --bs-list-group-disabled-bg: var(--rfc-surface);
+    --bs-list-group-active-bg: var(--app-green);
+    --bs-list-group-active-border-color: var(--app-green);
+  }
+  [data-bs-theme="dark"] .nav-tabs {
+    --bs-nav-tabs-border-color: var(--app-border);
+    --bs-nav-tabs-link-hover-border-color: var(--app-border) var(--app-border) var(--app-border);
+    --bs-nav-tabs-link-active-color: var(--app-ink);
+    --bs-nav-tabs-link-active-bg: var(--rfc-surface);
+    --bs-nav-tabs-link-active-border-color: var(--app-border) var(--app-border) var(--rfc-surface);
+  }
+  [data-bs-theme="dark"] .nav { --bs-nav-link-color: var(--rfc-link); --bs-nav-link-hover-color: var(--rfc-link-hover); --bs-nav-link-disabled-color: var(--rfc-faint); }
+  [data-bs-theme="dark"] .pagination,
+  [data-bs-theme="dark"] .datatable-pagination ul {
+    --bs-pagination-color: var(--rfc-ink-2);
+    --bs-pagination-bg: var(--rfc-surface);
+    --bs-pagination-border-color: var(--app-border);
+    --bs-pagination-hover-color: var(--app-ink);
+    --bs-pagination-hover-bg: var(--rfc-surface-3);
+    --bs-pagination-hover-border-color: var(--rfc-border-strong);
+    --bs-pagination-focus-color: var(--app-ink);
+    --bs-pagination-focus-bg: var(--rfc-surface-3);
+    --bs-pagination-focus-box-shadow: 0 0 0 3px rgb(95 208 164 / 22%);
+    --bs-pagination-active-color: var(--rfc-on-accent);
+    --bs-pagination-active-bg: var(--app-green);
+    --bs-pagination-active-border-color: var(--app-green);
+    --bs-pagination-disabled-color: var(--rfc-faint);
+    --bs-pagination-disabled-bg: var(--rfc-surface);
+    --bs-pagination-disabled-border-color: var(--app-border);
+  }
+  /* simple-datatables (feuille du CDN : fonds #d9d9d9, texte #333) */
+  [data-bs-theme="dark"] .datatable-pagination a, [data-bs-theme="dark"] .datatable-pagination button { color: var(--rfc-ink-2); }
+  [data-bs-theme="dark"] .datatable-pagination .datatable-active a,
+  [data-bs-theme="dark"] .datatable-pagination .datatable-active a:hover,
+  [data-bs-theme="dark"] .datatable-pagination .datatable-active a:focus { color: var(--rfc-on-accent); background-color: var(--app-green); border-color: var(--app-green); }
+  [data-bs-theme="dark"] .datatable-pagination .datatable-disabled a, [data-bs-theme="dark"] .datatable-pagination .datatable-disabled a:hover { color: var(--rfc-faint); background-color: transparent; }
+  [data-bs-theme="dark"] .datatable-wrapper.no-header .datatable-container,
+  [data-bs-theme="dark"] .datatable-wrapper.no-footer .datatable-container,
+  [data-bs-theme="dark"] .datatable-table > thead > tr > th,
+  [data-bs-theme="dark"] .datatable-table > tfoot > tr > th { border-color: var(--app-border); }
+  [data-bs-theme="dark"] .datatable-sorter::before { border-top-color: var(--app-muted); }
+  [data-bs-theme="dark"] .datatable-sorter::after { border-bottom-color: var(--app-muted); }
+  [data-bs-theme="dark"] .datatable-ascending .datatable-sorter::after,
+  [data-bs-theme="dark"] .datatable-descending .datatable-sorter::before { border-top-color: var(--app-ink); border-bottom-color: var(--app-ink); }
+  [data-bs-theme="dark"] .datatable-empty { color: var(--app-muted); }
+
+  /* Alertes : fond teinté, texte clair, contour visible */
+  [data-bs-theme="dark"] .alert-success { --bs-alert-color: #8fe0bd; --bs-alert-bg: #14382c; --bs-alert-border-color: #1f6a50; }
+  [data-bs-theme="dark"] .alert-danger { --bs-alert-color: var(--rfc-danger-fg); --bs-alert-bg: var(--rfc-danger-bg); --bs-alert-border-color: var(--rfc-danger-border); }
+  [data-bs-theme="dark"] .alert-warning { --bs-alert-color: var(--rfc-warn-fg); --bs-alert-bg: var(--rfc-warn-bg); --bs-alert-border-color: var(--rfc-warn-border); }
+  [data-bs-theme="dark"] .alert-info { --bs-alert-color: var(--rfc-info-fg); --bs-alert-bg: var(--rfc-info-bg); --bs-alert-border-color: #2a4f78; }
+  [data-bs-theme="dark"] .alert-secondary, [data-bs-theme="dark"] .alert-light, [data-bs-theme="dark"] .alert-dark { --bs-alert-color: var(--rfc-ink-2); --bs-alert-bg: var(--rfc-surface-3); --bs-alert-border-color: var(--app-border); }
+  [data-bs-theme="dark"] .alert-success .alert-link { color: #b9f0d8; }
+  [data-bs-theme="dark"] .alert-danger .alert-link { color: #ffc2c0; }
+  [data-bs-theme="dark"] .alert-warning .alert-link { color: #ffe0a3; }
+  [data-bs-theme="dark"] .alert-info .alert-link { color: #bcd9f7; }
+
+  /* Pastilles Bootstrap (.badge bg-*) : couleurs franches, texte lisible */
+  [data-bs-theme="dark"] .badge.bg-success, [data-bs-theme="dark"] .text-bg-success { background-color: #1a7a57 !important; color: #fff !important; }
+  [data-bs-theme="dark"] .badge.bg-danger, [data-bs-theme="dark"] .text-bg-danger { background-color: var(--rfc-danger-solid) !important; color: #fff !important; }
+  [data-bs-theme="dark"] .badge.bg-secondary, [data-bs-theme="dark"] .text-bg-secondary { background-color: #475a6c !important; color: #fff !important; }
+  [data-bs-theme="dark"] .badge.bg-primary, [data-bs-theme="dark"] .text-bg-primary { background-color: var(--app-green) !important; color: #fff !important; }
+  [data-bs-theme="dark"] .badge.bg-warning, [data-bs-theme="dark"] .text-bg-warning { background-color: #e8b64a !important; color: #1b1500 !important; }
+  [data-bs-theme="dark"] .badge.bg-warning.text-dark, [data-bs-theme="dark"] .badge.text-dark { color: #1b1500 !important; }
+  [data-bs-theme="dark"] .badge.bg-info, [data-bs-theme="dark"] .text-bg-info { background-color: #5aa2e6 !important; color: #06121f !important; }
+  [data-bs-theme="dark"] .badge.bg-light, [data-bs-theme="dark"] .text-bg-light { background-color: var(--rfc-surface-3) !important; color: var(--app-ink) !important; }
+  [data-bs-theme="dark"] .badge.bg-dark, [data-bs-theme="dark"] .text-bg-dark { background-color: #0b121a !important; color: var(--app-ink) !important; }
+  [data-bs-theme="dark"] .bg-success:not(.badge) { background-color: #1a7a57 !important; }
+  [data-bs-theme="dark"] .bg-warning:not(.badge) { background-color: #e8b64a !important; color: #1b1500; }
+  [data-bs-theme="dark"] .bg-danger:not(.badge) { background-color: var(--rfc-danger-solid) !important; }
+  [data-bs-theme="dark"] .bg-secondary:not(.badge) { background-color: #475a6c !important; }
+  [data-bs-theme="dark"] .bg-dark:not(.badge) { background-color: var(--rfc-bg-sombre) !important; }
+
+  [data-bs-theme="dark"] .progress { background-color: var(--rfc-surface-3); }
+  [data-bs-theme="dark"] .breadcrumb-item.active { color: var(--app-muted); }
+  [data-bs-theme="dark"] a:not(.btn):not(.nav-link):not(.dropdown-item):not(.page-link):hover { color: var(--rfc-link-hover); }
+
+  /* Barres de défilement discrètes (Chrome, Edge, Safari ; Firefox suit color-scheme) */
+  [data-bs-theme="dark"] { scrollbar-color: #3a4d5e transparent; }
+}
+
+/* ---- 4. Sélecteur de thème (menu du compte), bascule lune/soleil, logo ---------------------------------------------------- */
+
+/* radiogroup « Thème » : trois choix en segments, accessibles au clavier (flèches) et au lecteur d'écran */
+.theme-selecteur { margin: 0; padding: 8px 12px 10px; border: 0; min-width: 0; }
+.theme-selecteur-titre { float: none; width: auto; margin: 0 0 6px; padding: 0; font-size: .7rem; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--app-muted); }
+.theme-selecteur-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 3px; border: 1px solid var(--app-border); border-radius: 10px; background: var(--rfc-surface-3); }
+.theme-option { position: relative; display: block; margin: 0; cursor: pointer; }
+.theme-option > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.theme-option > span { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 52px; padding: 6px 4px; border-radius: 8px; color: var(--rfc-ink-2); font-size: .74rem; font-weight: 600; line-height: 1.2; text-align: center; }
+.theme-option > span > i { font-size: 1rem; }
+.theme-option:hover > span { background: var(--rfc-surface); color: var(--app-ink); }
+.theme-option > input:checked + span { background: var(--rfc-surface); color: var(--rfc-green-text); box-shadow: 0 0 0 1px var(--rfc-green-border), 0 1px 3px rgb(var(--rfc-shadow-rgb) / 12%); }
+.theme-option > input:focus-visible + span { outline: 3px solid var(--app-green); outline-offset: 1px; }
+.dropdown-menu .theme-selecteur { min-width: 230px; }
+
+/* bouton lune/soleil des pages publiques : 44 px de côté, icône selon le thème affiché */
+.theme-bascule { display: inline-grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; padding: 0; border: 1px solid var(--app-border); border-radius: 10px; background: var(--rfc-surface); color: var(--app-ink); cursor: pointer; }
+.theme-bascule:hover { background: var(--rfc-surface-3); }
+.theme-bascule:focus-visible { outline: 3px solid var(--app-green); outline-offset: 3px; }
+.theme-bascule svg { grid-area: 1 / 1; width: 20px; height: 20px; }
+.theme-bascule-soleil { display: none; }
+[data-bs-theme="dark"] .theme-bascule-lune { display: none; }
+[data-bs-theme="dark"] .theme-bascule-soleil { display: block; }
+@media print { .theme-bascule, .theme-selecteur { display: none !important; } }
+
+/* Logo : deux variantes dans le HTML (fragments/theme :: logo). Le fichier fond-sombre est blanc et vert, pour les fonds sombres.
+   - sans JavaScript (pas de data-bs-theme sur <html>) : prefers-color-scheme choisit ;
+   - avec JavaScript : data-bs-theme choisit, donc le choix manuel l'emporte sur le réglage du téléphone. */
+.logo-sombre { display: none; }
+[data-bs-theme="dark"] .logo-clair { display: none; }
+[data-bs-theme="dark"] .logo-sombre { display: inline; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bs-theme]) .logo-clair { display: none; }
+  :root:not([data-bs-theme]) .logo-sombre { display: inline; }
+}
+@media print {
+  .logo-clair { display: inline !important; }
+  .logo-sombre { display: none !important; }
+}
+
+@media not print {
+  [data-bs-theme="dark"] .badge.bg-dark, [data-bs-theme="dark"] .text-bg-dark { box-shadow: inset 0 0 0 1px var(--rfc-border-strong); }
+}
