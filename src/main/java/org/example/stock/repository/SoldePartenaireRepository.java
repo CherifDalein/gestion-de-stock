@@ -206,7 +206,7 @@ public class SoldePartenaireRepository {
         String reste = "GREATEST(" + du + " - COALESCE((SELECT SUM(" + NET_REGLEMENT_M + ") FROM mouvement_caisse m WHERE m." + type.colonne
                 + " = p.id AND m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')),0), 0)";
         Object[] ligne = (Object[]) entityManager.createNativeQuery("SELECT COALESCE(SUM(" + reste + "),0), COALESCE(SUM(CASE WHEN p.echeance_solde_initial < :jour THEN " + reste
-                        + " ELSE 0 END),0) FROM " + type.table + " p WHERE p.boutique_id = :boutique")
+                        + " ELSE 0 END),0) FROM " + type.table + " p WHERE p.boutique_id = :boutique AND p.supprime_le IS NULL")
                 .setParameter("jour", aujourdHui).setParameter("boutique", boutiqueId).setParameter("source", type.source).getSingleResult();
         return new Totaux(montant(ligne[0]), montant(ligne[1]));
     }
@@ -221,7 +221,7 @@ public class SoldePartenaireRepository {
         Map<Long, BigDecimal> montants = new LinkedHashMap<>();
         Map<Long, LocalDate> echeances = new LinkedHashMap<>();
         for (Object ligne : entityManager.createNativeQuery("SELECT f." + type.colonne + ", p.nom, SUM(" + RESTE_F + "), MIN(f.date_echeance) FROM " + type.factures
-                        + " f JOIN " + type.table + " p ON p.id = f." + type.colonne + " WHERE f.boutique_id = :boutique AND p.boutique_id = :boutique AND f.date_echeance < :jour AND "
+                        + " f JOIN " + type.table + " p ON p.id = f." + type.colonne + " WHERE f.boutique_id = :boutique AND p.boutique_id = :boutique AND p.supprime_le IS NULL AND f.date_echeance < :jour AND "
                         + RESTE_F + " > 0 GROUP BY f." + type.colonne + ", p.nom")
                 .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).getResultList()) {
             Object[] c = (Object[]) ligne;
@@ -231,7 +231,7 @@ public class SoldePartenaireRepository {
         String du = type == Partenaire.CLIENT ? "GREATEST(p.solde_initial, 0)" : "GREATEST(-p.solde_initial, 0)";
         for (Object ligne : entityManager.createNativeQuery("SELECT p.id, p.nom, " + du + " - COALESCE(SUM(" + NET_REGLEMENT_M + "),0), p.echeance_solde_initial FROM " + type.table
                         + " p LEFT JOIN mouvement_caisse m ON m." + type.colonne + " = p.id AND m.boutique_id = :boutique AND m.source IN (:source, 'ANNULATION')"
-                        + " WHERE p.boutique_id = :boutique AND p.echeance_solde_initial < :jour AND " + du + " > 0"
+                        + " WHERE p.boutique_id = :boutique AND p.supprime_le IS NULL AND p.echeance_solde_initial < :jour AND " + du + " > 0"
                         + " GROUP BY p.id, p.nom, p.solde_initial, p.echeance_solde_initial")
                 .setParameter("boutique", boutiqueId).setParameter("jour", aujourdHui).setParameter("source", type.source).getResultList()) {
             Object[] c = (Object[]) ligne;

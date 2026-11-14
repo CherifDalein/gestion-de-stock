@@ -4,18 +4,21 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
+import org.hibernate.annotations.SQLRestriction;
 import org.example.stock.enums.SensSolde;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@SQLRestriction("supprime_le is null")
 @Getter
 @Setter
-public class Fournisseur {
+public class Fournisseur implements ElementSupprimable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,6 +48,20 @@ public class Fournisseur {
      * Saisie du solde de départ (jamais persistée telle quelle) : un montant positif ou nul et un sens, que le service
      * convertit en {@code soldeInitial} signé. Le champ signé brut n'est jamais lié depuis un formulaire.
      */
+    /** Corbeille (lot 6) : date de mise à la corbeille ; vide tant que la fiche est active. Jamais liée depuis un formulaire. */
+    @Column(name = "supprime_le")
+    private LocalDateTime supprimeLe;
+
+    /** Corbeille (lot 6) : identifiant du compte qui a supprimé la fiche (sans clé étrangère : le compte peut disparaître). */
+    @Column(name = "supprime_par")
+    private Long supprimePar;
+
+    @Override
+    public void mettreALaCorbeille(LocalDateTime quand, Long par) {
+        this.supprimeLe = quand;
+        this.supprimePar = par;
+    }
+
     @Transient
     private BigDecimal montantSoldeDepart;
 

@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/acces-boutique", "/produits").hasAnyRole("ADMIN", "CAISSIER")
                         // Export de la liste des produits : mêmes droits que la liste (le caissier n'y reçoit aucun coût). À placer avant « /produits/** ».
                         .requestMatchers(HttpMethod.GET, "/produits/export/excel", "/produits/export/pdf").hasAnyRole("ADMIN", "CAISSIER")
+                        // La corbeille (lot 6) est réservée au gérant : voir, restaurer, effacer définitivement, vider.
+                        .requestMatchers("/corbeille", "/corbeille/**").hasRole("ADMIN")
                         .requestMatchers("/clients/supprimer/**").hasRole("ADMIN")
                         // Le retour d'achat (/achats/{id}/retour) est couvert par la règle « /achats/** » réservée au gérant, plus bas.
                         // Le retour de vente et ses documents sont réservés au gérant : à placer avant les règles larges des ventes.

@@ -19,6 +19,12 @@ public class CategorieService {
     @Autowired
     private BoutiqueService boutiqueService;
 
+    @Autowired
+    private org.example.stock.repository.StockLockRepository verrous;
+
+    @Autowired
+    private CorbeilleService corbeille;
+
     public List<Categorie> listerToutes() {
         return categorieRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
@@ -46,8 +52,18 @@ public class CategorieService {
         return categorieRepository.findByNomAndBoutiqueId(nom, boutiqueService.idBoutiqueCourante()).isPresent();
     }
 
+    /**
+     * Place la catégorie dans la corbeille (lot 6). Comportement d'avant la corbeille : une catégorie qui contient encore des produits
+     * est refusée ({@link IllegalArgumentException}) ; les produits ne sont jamais détachés ni déplacés.
+     */
     @Transactional
-    public void supprimer(Long id) {
-        categorieRepository.delete(trouverParId(id));
+    public CorbeilleService.ElementSupprime supprimer(Long id) {
+        // La boutique d'abord : le contrôle des produits ne doit pas croiser la création d'un produit de cette catégorie.
+        verrous.verrouillerBoutiqueCourante();
+        Categorie categorie = trouverParId(id);
+        corbeille.exigerSansLien(TypeCorbeille.CATEGORIE, id);
+        var supprime = corbeille.placer(TypeCorbeille.CATEGORIE, categorie);
+        categorieRepository.saveAndFlush(categorie);
+        return supprime;
     }
 }

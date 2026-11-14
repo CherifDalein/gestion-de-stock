@@ -2,6 +2,7 @@ package org.example.stock.service;
 
 import org.example.stock.model.Boutique;
 import org.example.stock.model.Emails;
+import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.UtilisateurRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -23,6 +24,15 @@ public class BoutiqueService {
     }
 
     public Boutique boutiqueCourante() {
+        return verifierBoutique(compteCourant());
+    }
+
+    /** Identifiant du compte authentifié (actif, de sa boutique), par exemple pour savoir qui a mis une fiche à la corbeille. */
+    public Long idUtilisateurCourant() {
+        return compteCourant().getId();
+    }
+
+    private Utilisateur compteCourant() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
@@ -33,6 +43,10 @@ public class BoutiqueService {
         if (!utilisateur.isActif()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'accès à ce compte est désactivé");
         }
+        return utilisateur;
+    }
+
+    private Boutique verifierBoutique(Utilisateur utilisateur) {
         Boutique boutique = utilisateur.getBoutique();
         if (boutique == null || boutique.getId() == null) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Boutique inaccessible");

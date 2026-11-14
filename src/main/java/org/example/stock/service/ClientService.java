@@ -27,6 +27,9 @@ public class ClientService {
     @Autowired
     private StockLockRepository verrous;
 
+    @Autowired
+    private CorbeilleService corbeille;
+
     public List<Client> listerTous() {
         return clientRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
@@ -63,10 +66,18 @@ public class ClientService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable"));
     }
 
+    /**
+     * Place le client dans la corbeille (lot 6). Les règles de suppression sont celles d'avant la corbeille : un client qui a des
+     * ventes, devis, retours, règlements ou ajustements de solde est refusé ({@link IllegalArgumentException}).
+     */
     @Transactional
-    public void supprimerClient(Long id) {
-        // La suppression contrôle les factures du client : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »).
+    public CorbeilleService.ElementSupprime supprimerClient(Long id) {
+        // La suppression contrôle les factures du client : la boutique d'abord, puis la fiche (docs/lot-2.md, « Ordre des verrous »).
         verrous.verrouillerBoutiqueCourante();
-        clientRepository.delete(trouverParId(id));
+        Client client = verrous.verrouillerClient(id);
+        corbeille.exigerSansLien(TypeCorbeille.CLIENT, id);
+        var supprime = corbeille.placer(TypeCorbeille.CLIENT, client);
+        clientRepository.saveAndFlush(client);
+        return supprime;
     }
 }

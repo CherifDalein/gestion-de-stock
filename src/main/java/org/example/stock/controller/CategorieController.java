@@ -3,6 +3,7 @@ package org.example.stock.controller;
 import jakarta.validation.Valid;
 import org.example.stock.model.Categorie;
 import org.example.stock.service.CategorieService;
+import org.example.stock.service.CorbeilleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,6 +17,9 @@ public class CategorieController {
 
     @Autowired
     private CategorieService categorieService;
+
+    @Autowired
+    private CorbeilleService corbeille;
 
     @GetMapping
     public String afficherListe(Model model) {
@@ -53,8 +57,11 @@ public class CategorieController {
 
     @PostMapping("/supprimer/{id}")
     public String supprimerCategorie(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-        categorieService.supprimer(id);
-        redirectAttributes.addFlashAttribute("success", "Catégorie supprimée avec succès.");
+        try {
+            corbeille.annoncer(redirectAttributes, categorieService.supprimer(id));
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/categories";
     }
 

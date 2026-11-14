@@ -35,13 +35,25 @@ public final class SchemaHistorique {
             """;
     private SchemaHistorique() {}
 
+    private static final List<String> LIGNES_LOT6 = List.of("supprime_le DATETIME(6) NULL,", "supprime_par BIGINT NULL,", "nom_cle VARCHAR(255) NULL,");
+
+    /**
+     * Schéma antérieur au lot 6 (corbeille) : sans {@code supprime_le} ni {@code supprime_par} sur client, fournisseur, produit et catégorie,
+     * sans {@code categorie.nom_cle}, et avec l'ancienne unicité du nom de catégorie par boutique.
+     */
+    public static String sansLot6(String schema) {
+        String resultat = schema.replaceAll("(?m)^-- Lot 6 \\(corbeille\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        for (String ligne : LIGNES_LOT6) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
+        return resultat.replace("CONSTRAINT uk_categorie_boutique_nom_cle UNIQUE (boutique_id, nom_cle)", "CONSTRAINT uk_categorie_boutique_nom UNIQUE (boutique_id, nom)");
+    }
+
     /**
      * Schéma antérieur au lot 3 (comptes de trésorerie multiples) : un compte par type désigné par une valeur d'énumération
      * ({@code CAISSE}, {@code ORANGE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
      * et {@code retour.compte_tresorerie}, sans table des comptes autorisés aux caissiers.
      */
     public static String sansLot3(String schema) {
-        String resultat = sansFinancements(schema).replaceAll("(?m)^-- Lot 3 : [^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        String resultat = sansFinancements(sansLot6(schema)).replaceAll("(?m)^-- Lot 3 : [^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
         resultat = resultat.replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", Matcher.quoteReplacement(COMPTES_AVANT_LOT3))
                 .replaceAll("(?s)CREATE TABLE IF NOT EXISTS compte_tresorerie_autorise \\(.*?;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
         resultat = resultat.replace("    compte_source_id BIGINT NOT NULL,\n    compte_destination_id BIGINT NULL,\n", "    compte_source VARCHAR(32) NOT NULL,\n    compte_destination VARCHAR(32) NULL,\n")

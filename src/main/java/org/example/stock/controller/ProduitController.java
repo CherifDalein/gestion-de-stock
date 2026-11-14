@@ -12,6 +12,7 @@ import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.ui.Model;
 import org.example.stock.service.CategorieService;
+import org.example.stock.service.CorbeilleService;
 import org.example.stock.service.ProduitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,6 +27,7 @@ public class ProduitController {
     @Autowired private CategorieService categorieService;
     @Autowired private FournisseurService fournisseurService;
     @Autowired private UtilisateurService utilisateurService;
+    @Autowired private CorbeilleService corbeille;
 
     @GetMapping
     public String liste(Model model) {
@@ -70,9 +72,8 @@ public class ProduitController {
 
     @PostMapping("/supprimer/{id}")
     public String supprimerProduit(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-        try { produitService.supprimerProduit(id); }
-        catch (IllegalArgumentException e) { redirectAttributes.addFlashAttribute("error", e.getMessage()); return "redirect:/produits"; }
-        redirectAttributes.addFlashAttribute("success", "Produit supprimé avec succès.");
+        try { corbeille.annoncer(redirectAttributes, produitService.supprimerProduit(id)); }
+        catch (IllegalArgumentException e) { redirectAttributes.addFlashAttribute("error", e.getMessage()); }
         return "redirect:/produits";
     }
 

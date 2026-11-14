@@ -306,3 +306,10 @@ body.stock-app .partners-filtres-champs > div { min-width: 0; }
   body.stock-app .partners-toolbar .filtres-barre { margin-bottom: 0; }
   body.stock-app .partners-toolbar .filtres-etiquettes { margin-bottom: 0; }
 }
+
+/* Corbeille (lot 6) : le lien « Annuler » qui suit une suppression, dans le message de succès de la liste. */
+.corbeille-message { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem 1rem; }
+.corbeille-annuler { margin: 0; }
+.corbeille-annuler-bouton { border: 0; background: transparent; padding: .35rem .25rem; min-height: 32px; font: inherit; font-weight: 700; color: inherit;
+    text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.corbeille-annuler-bouton:hover, .corbeille-annuler-bouton:focus-visible { text-decoration-thickness: 2px; }

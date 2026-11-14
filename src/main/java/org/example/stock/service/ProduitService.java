@@ -26,6 +26,7 @@ public class ProduitService {
     @Autowired private BoutiqueService boutiqueService;
     @Autowired private org.example.stock.repository.MouvementStockRepository mouvementsStock;
     @Autowired private EntityManager entityManager;
+    @Autowired private CorbeilleService corbeille;
 
     public List<Produit> listerTous() {
         return produitRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
@@ -170,8 +171,9 @@ public class ProduitService {
         }
     }
 
+    /** Place le produit dans la corbeille (lot 6) ; les cas refusés avant la corbeille le sont toujours, avec les mêmes messages. */
     @Transactional
-    public void supprimerProduit(Long id) {
+    public CorbeilleService.ElementSupprime supprimerProduit(Long id) {
         stockLockRepository.verrouillerBoutiqueCourante();
         Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
         if (produit.getQuantite() != null && produit.getQuantite() != 0) {
@@ -184,7 +186,11 @@ public class ProduitService {
         if (possedeLigne("DetailDevis", id)) {
             throw new IllegalArgumentException("Ce produit figure dans un devis et doit être conservé pour préserver l’historique.");
         }
-        produitRepository.delete(produit);
+        // Filet : toute autre ligne qui référence encore le produit (la clé étrangère l'aurait refusé).
+        corbeille.exigerSansLien(TypeCorbeille.PRODUIT, id);
+        var supprime = corbeille.placer(TypeCorbeille.PRODUIT, produit);
+        produitRepository.saveAndFlush(produit);
+        return supprime;
     }
 
     private boolean possedeLigne(String entite, Long produitId) {

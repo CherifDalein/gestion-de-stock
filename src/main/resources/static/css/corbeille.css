@@ -1,0 +1,57 @@
+/* Page « Corbeille » du gérant (lot 6). Couleurs : jetons de theme.css uniquement (clair et sombre). */
+.corbeille-page { max-width: 1180px; }
+.corbeille-entete { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+.corbeille-entete h1 { margin-bottom: .25rem; }
+.corbeille-entete .app-page-subtitle { max-width: 46rem; }
+
+.corbeille-filtres { display: grid; grid-template-columns: minmax(220px, 2fr) minmax(180px, 1fr) auto; align-items: end; gap: .75rem 1rem; margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem; background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 14px; }
+.corbeille-filtres .form-label { margin-bottom: .35rem; font-size: .78rem; }
+.corbeille-filtre-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.corbeille-tableau { background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 14px; overflow: hidden; }
+.corbeille-table { min-width: 860px; color: var(--app-ink); }
+.corbeille-table th { white-space: nowrap; font-size: .78rem; }
+.corbeille-table td { vertical-align: middle; }
+.corbeille-cellule-nom { max-width: 22rem; overflow-wrap: anywhere; }
+.corbeille-cellule-nom small { display: block; color: var(--app-muted); font-size: .76rem; }
+
+.corbeille-type { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .76rem; font-weight: 650; white-space: nowrap;
+    background: var(--rfc-surface-3); color: var(--rfc-ink-2); border: 1px solid var(--app-border); }
+.corbeille-type--client { background: var(--rfc-info-bg); color: var(--rfc-info-fg); border-color: var(--app-border); }
+.corbeille-type--fournisseur { background: var(--rfc-tint); color: var(--rfc-green-text); border-color: var(--rfc-green-border); }
+.corbeille-type--produit { background: var(--rfc-warn-bg); color: var(--rfc-warn-fg); border-color: var(--rfc-warn-border); }
+
+.corbeille-delai { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--rfc-ink-2); }
+.corbeille-delai--urgent { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-weight: 650; background: var(--rfc-danger-bg); color: var(--rfc-danger-fg); border: 1px solid var(--rfc-danger-border); }
+
+.corbeille-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
+.corbeille-actions form { margin: 0; }
+
+.corbeille-vide { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .5rem; padding: 2.5rem 1.5rem;
+    border: 1px dashed var(--rfc-border-strong); border-radius: 14px; background: var(--rfc-surface-2); color: var(--app-muted); }
+.corbeille-vide h2 { margin: 0; font-size: 1.05rem; font-weight: 650; color: var(--app-ink); }
+.corbeille-vide p { margin: 0; font-size: .85rem; }
+.corbeille-vide-icone { font-size: 1.7rem; color: var(--rfc-faint); }
+
+/* Téléphone : une carte par fiche, comme les listes de clients. */
+@media (max-width: 767.98px) {
+    .corbeille-filtres { grid-template-columns: 1fr; padding: .9rem; }
+    .corbeille-filtre-actions .btn { flex: 1 1 auto; }
+    .corbeille-entete > form, .corbeille-entete > form .btn { width: 100%; }
+    .corbeille-tableau { background: transparent; border: 0; border-radius: 0; overflow: visible; }
+    .corbeille-table { min-width: 0; background: transparent; }
+    .corbeille-table thead { display: none; }
+    .corbeille-table, .corbeille-table tbody, .corbeille-table tr, .corbeille-table td { display: block; width: 100%; }
+    .corbeille-table tr { background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 14px; margin-bottom: .75rem; padding: .35rem .9rem .75rem;
+        box-shadow: 0 3px 14px rgb(var(--rfc-shadow-rgb) / 3%); }
+    .corbeille-table td { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; border: 0; padding: .3rem 0; text-align: right; background: transparent; }
+    .corbeille-table td::before { content: attr(data-label); flex: 0 0 38%; text-align: left; color: var(--app-muted); font-size: .76rem; font-weight: 600; }
+    .corbeille-cellule-nom { max-width: none; flex-direction: row; }
+    .corbeille-cellule-nom strong { font-size: 1rem; }
+    .corbeille-cellule-nom small { display: block; }
+    .corbeille-cellule-actions { display: block; padding-top: .6rem; border-top: 1px solid var(--app-border); margin-top: .4rem; }
+    .corbeille-cellule-actions::before { display: none; }
+    .corbeille-actions { flex-direction: column; align-items: stretch; }
+    .corbeille-actions .btn { width: 100%; min-height: 44px; }
+}

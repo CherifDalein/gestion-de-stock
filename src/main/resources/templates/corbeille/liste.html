@@ -1,0 +1,90 @@
+<div th:fragment="content">
+    <link rel="stylesheet" th:href="@{/css/corbeille.css}">
+    <section class="corbeille-page container-fluid" aria-labelledby="corbeilleTitre">
+        <header class="corbeille-entete">
+            <div>
+                <p class="app-page-kicker">Votre boutique</p>
+                <h1 id="corbeilleTitre">Corbeille</h1>
+                <p class="app-page-subtitle" th:text="${'Les clients, fournisseurs, produits et catégories supprimés restent ici ' + retentionJours + (retentionJours == 1 ? ' jour' : ' jours') + ', puis sont effacés définitivement. Vous pouvez les restaurer jusque-là.'}">Les fiches supprimées restent ici 30 jours.</p>
+            </div>
+            <form th:if="${total > 0}" th:action="@{/corbeille/vider}" method="post" data-confirmer
+                  data-confirmer-titre="Vider la corbeille ?"
+                  th:attr="data-confirmer-sujet=${total + (total == 1 ? ' fiche' : ' fiches')}"
+                  data-confirmer-texte="seront effacées définitivement. Cette action est irréversible."
+                  data-confirmer-oui="Vider la corbeille" data-confirmer-non="Garder">
+                <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash-can" aria-hidden="true"></i> Vider la corbeille</button>
+            </form>
+        </header>
+
+        <th:block th:replace="~{fragments/corbeille :: message}"></th:block>
+
+        <form class="corbeille-filtres" method="get" th:action="@{/corbeille}" role="search" aria-label="Filtrer la corbeille">
+            <div class="corbeille-filtre-recherche">
+                <label for="corbeilleRecherche" class="form-label">Rechercher</label>
+                <input id="corbeilleRecherche" name="q" type="search" class="form-control" maxlength="100" autocomplete="off"
+                       placeholder="Nom, référence ou auteur…" th:value="${recherche}">
+            </div>
+            <div class="corbeille-filtre-type">
+                <label for="corbeilleType" class="form-label">Type</label>
+                <select id="corbeilleType" name="type" class="form-select">
+                    <option value="" th:selected="${typeFiltre == ''}" th:text="${'Tous les types (' + total + ')'}">Tous les types</option>
+                    <option th:each="t : ${types}" th:value="${t.code()}" th:selected="${typeFiltre == t.code()}"
+                            th:text="${t.libellePluriel() + ' (' + compteurs.get(t) + ')'}">Clients</option>
+                </select>
+            </div>
+            <div class="corbeille-filtre-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Filtrer</button>
+                <a th:if="${typeFiltre != '' or !#strings.isEmpty(recherche)}" th:href="@{/corbeille}" class="btn btn-outline-secondary">Réinitialiser</a>
+            </div>
+        </form>
+
+        <div class="corbeille-vide" th:if="${#lists.isEmpty(lignes)}">
+            <span class="corbeille-vide-icone"><i class="fas fa-trash-can" aria-hidden="true"></i></span>
+            <h2 th:text="${total == 0 ? 'La corbeille est vide' : 'Aucune fiche ne correspond'}">La corbeille est vide</h2>
+            <p th:text="${total == 0 ? 'Ce que vous supprimez (client, fournisseur, produit, catégorie) arrive ici avant d’être effacé.' : 'Essayez un autre mot ou un autre type.'}">Texte</p>
+        </div>
+
+        <div class="corbeille-tableau table-responsive" th:unless="${#lists.isEmpty(lignes)}">
+            <table class="table corbeille-table mb-0">
+                <caption class="visually-hidden">Fiches supprimées, à restaurer ou à effacer définitivement</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">Nom</th>
+                    <th scope="col">Supprimé le</th>
+                    <th scope="col">Supprimé par</th>
+                    <th scope="col">Effacement dans</th>
+                    <th scope="col" class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${lignes}" th:attr="data-type=${l.type().code()},data-id=${l.id()}">
+                    <td class="corbeille-cellule-type" data-label="Type"><span class="corbeille-type" th:classappend="${'corbeille-type--' + l.type().code()}" th:text="${l.type().libelle()}">Client</span></td>
+                    <td class="corbeille-cellule-nom" data-label="Nom">
+                        <strong th:text="${l.nom()}">Nom</strong>
+                        <small th:if="${l.detail() != null and !#strings.isEmpty(l.detail())}" th:text="${'Réf. ' + l.detail()}">Réf. X</small>
+                    </td>
+                    <td data-label="Supprimé le" th:text="${l.supprimeLe() != null ? #temporals.format(l.supprimeLe(), 'dd/MM/yyyy HH:mm') : '—'}">01/01/2026 10:00</td>
+                    <td data-label="Supprimé par" th:text="${l.supprimeParNom() != null ? l.supprimeParNom() : '—'}">Gérant</td>
+                    <td data-label="Effacement dans">
+                        <span class="corbeille-delai" th:classappend="${l.joursRestants() <= 3 ? 'corbeille-delai--urgent' : ''}"
+                              th:text="${l.joursRestants() == 0 ? 'Aujourd’hui' : l.joursRestants() + (l.joursRestants() == 1 ? ' jour' : ' jours')}">30 jours</span>
+                    </td>
+                    <td class="corbeille-cellule-actions" data-label="Actions">
+                        <div class="corbeille-actions">
+                            <form th:action="@{/corbeille/restaurer/{type}/{id}(type=${l.type().code()},id=${l.id()})}" method="post">
+                                <button type="submit" class="btn btn-outline-primary btn-sm" th:attr="aria-label=${'Restaurer ' + l.nom()}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restaurer</button>
+                            </form>
+                            <form th:action="@{/corbeille/supprimer/{type}/{id}(type=${l.type().code()},id=${l.id()})}" method="post" data-confirmer
+                                  th:attr="data-confirmer-titre=${'Supprimer définitivement ' + (l.type().feminin() ? 'cette ' : 'ce ') + l.type().libelle().toLowerCase() + ' ?'},data-confirmer-sujet=${l.nom()}"
+                                  data-confirmer-texte="sera effacé définitivement. Cette action est irréversible." data-confirmer-oui="Supprimer définitivement" data-confirmer-non="Garder">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" th:attr="aria-label=${'Supprimer définitivement ' + l.nom()}"><i class="fas fa-xmark" aria-hidden="true"></i> Supprimer définitivement</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

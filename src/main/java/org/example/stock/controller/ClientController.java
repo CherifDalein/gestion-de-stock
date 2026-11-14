@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.model.Client;
 import org.example.stock.service.ClientService;
+import org.example.stock.service.CorbeilleService;
 import org.example.stock.service.IncoherenceAvanceException;
 import org.example.stock.service.SoldePartenaireService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ public class ClientController {
 
     @Autowired
     private SoldePartenaireService soldes;
+
+    @Autowired
+    private CorbeilleService corbeille;
 
     @GetMapping
     public String liste(Model model) {
@@ -94,8 +98,11 @@ public class ClientController {
 
     @PostMapping("/supprimer/{id}")
     public String supprimer(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        clientService.supprimerClient(id);
-        redirectAttributes.addFlashAttribute("success", "Client supprimé avec succès.");
+        try {
+            corbeille.annoncer(redirectAttributes, clientService.supprimerClient(id));
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/clients";
     }
 }
