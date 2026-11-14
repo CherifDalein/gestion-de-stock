@@ -54,7 +54,7 @@
                         <td class="text-nowrap" th:text="${a.numero ?: '#' + a.id}"></td>
                         <td th:text="${#temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm')}"></td>
                         <td class="text-nowrap" th:text="${a.dateEcheance != null ? #temporals.format(a.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
-                        <td th:text="${a.fournisseur.nom}"></td>
+                        <td th:text="${a.fournisseur != null ? a.fournisseur.nom : 'Sans fournisseur'}"></td>
                         <td data-saisi-par th:text="${a.utilisateur != null and !#strings.isEmpty(#strings.trim(a.utilisateur.nom)) ? a.utilisateur.nom : 'Non renseigné'}"></td>
                         <td class="fw-bold"><span th:text="${#numbers.formatDecimal(a.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-achat th:text="${'− retours ' + #numbers.formatDecimal(a.montantRetours, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
                         <td class="text-success" ><span th:text="${#numbers.formatDecimal((a.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></span><small th:if="${(a.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(a.avanceUtilisee, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></small></td>
