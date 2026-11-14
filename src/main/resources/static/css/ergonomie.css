@@ -1,0 +1,61 @@
+/*
+ * Ergonomie (novembre 2026) : menu « Plus », fenêtre de confirmation, fiches compactes, filtres et tri sur téléphone.
+ * Chargé après stock-pro.css par le gabarit dashboard.html. Les modules JS associés sont décrits dans docs/ergonomie.md.
+ */
+
+/* ---- Menu « Plus » ------------------------------------------------------------------------------------------------ */
+body.stock-app .plus-menu,
+body.stock-app .plus-menu-details { position: relative; display: inline-block; vertical-align: middle; }
+body.stock-app .plus-menu-bouton { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; list-style: none; }
+body.stock-app .plus-menu-bouton::-webkit-details-marker { display: none; }
+body.stock-app .plus-menu-icone { font-size: 1.15rem; line-height: 1; font-weight: 700; letter-spacing: -.05em; }
+body.stock-app .plus-menu-bouton[aria-expanded=true],
+body.stock-app .plus-menu-details[open] > .plus-menu-bouton { background: var(--app-tint); border-color: #97cbb1; color: var(--app-green-dark); }
+body.stock-app .plus-menu-panel {
+  z-index: 1080; min-width: 230px; max-width: min(320px, calc(100vw - 16px)); overflow-y: auto;
+  padding: 6px; background: #fff; border: 1px solid var(--app-border); border-radius: 12px; box-shadow: 0 12px 36px rgb(21 44 37 / 16%);
+  text-align: left; white-space: normal;
+}
+body.stock-app .plus-menu-panel[hidden] { display: none; }
+/* Sans JavaScript, le panneau s'ouvre dans la ligne : rien n'est coupé par le tableau. */
+body.stock-app .plus-menu-details:not([data-plus-menu-pret]) > .plus-menu-panel { position: static; margin-top: 6px; box-shadow: none; }
+body.stock-app .plus-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 9px 12px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--app-ink); font: inherit; font-size: .85rem; font-weight: 500; text-align: left; text-decoration: none; cursor: pointer;
+}
+body.stock-app .plus-menu-item > :is(i, svg) { width: 1.1em; flex-shrink: 0; color: var(--app-muted); }
+body.stock-app .plus-menu-item:hover,
+body.stock-app .plus-menu-item:focus-visible { background: var(--app-tint); color: var(--app-green-dark); }
+body.stock-app .plus-menu-panel form { margin: 0; }
+body.stock-app .plus-menu-separateur { height: 1px; margin: 6px 4px; border: 0; background: var(--app-border); opacity: 1; }
+body.stock-app .plus-menu-item--danger,
+body.stock-app .plus-menu-item--danger > :is(i, svg) { color: #a32c39; }
+body.stock-app .plus-menu-item--danger:hover,
+body.stock-app .plus-menu-item--danger:focus-visible { background: #fff0f0; color: #8c1f2b; }
+body.stock-app .plus-menu-groupe { padding: 8px 12px 2px; color: var(--app-muted); font-size: .7rem; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+
+/* Rangée d'actions d'une ligne : les 2 ou 3 actions principales puis « Plus », sans défilement horizontal. */
+body.stock-app .ligne-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+body.stock-app .ligne-actions > form { margin: 0; }
+body.stock-app .ligne-actions > * { flex: 0 0 auto; }
+body.stock-app td.cellule-actions { white-space: normal; }
+
+/* ---- Fenêtre de confirmation -------------------------------------------------------------------------------------- */
+body.stock-app dialog.confirm-dialog,
+dialog.confirm-dialog {
+  width: min(440px, calc(100vw - 32px)); max-width: none; margin: auto; padding: 0; border: 1px solid var(--app-border, #dfe8e3);
+  border-radius: 16px; background: #fff; color: var(--app-ink, #152c25); box-shadow: 0 24px 70px rgb(21 44 37 / 28%);
+}
+dialog.confirm-dialog::backdrop { background: rgb(21 44 37 / 45%); }
+.confirm-dialog-corps { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; row-gap: 6px; padding: 24px; }
+.confirm-dialog-icone { grid-row: 1 / span 2; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: #fff0f0; color: #a32c39; font-weight: 800; font-size: 1.2rem; }
+.confirm-dialog-titre { margin: 0; align-self: center; font-size: 1.08rem; font-weight: 700; line-height: 1.35; }
+.confirm-dialog-texte { grid-column: 2; margin: 0; color: var(--app-muted, #64776e); font-size: .9rem; line-height: 1.55; overflow-wrap: anywhere; }
+.confirm-dialog-sujet { color: var(--app-ink, #152c25); }
+.confirm-dialog-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.confirm-dialog-actions .btn { min-height: 46px; padding-inline: 18px; border-radius: 10px; font-weight: 650; }
+@media (max-width: 479.98px) {
+  .confirm-dialog-corps { padding: 20px; }
+  .confirm-dialog-actions { flex-direction: column-reverse; }
+  .confirm-dialog-actions .btn { width: 100%; }
+}
