@@ -11,6 +11,8 @@
  * Sur téléphone, le contenu est replié derrière un bouton « Filtres » (aria-expanded) ; quand des filtres sont actifs le bouton
  * affiche leur nombre, ils sont rappelés en petites étiquettes (« Du : 01/06/2026 ») et un lien « Effacer » apparaît.
  * Un champ est actif quand sa valeur diffère de celle de sa première option (select) ou n'est pas vide (autres champs).
+ * Un champ marqué data-filtre-initial est présélectionné par le serveur (le compte du journal de trésorerie) : sa valeur au
+ * chargement de la page est sa valeur par défaut, elle n'est pas comptée comme un filtre choisi.
  * Sans JavaScript, les filtres restent affichés. Les textes sont posés avec textContent.
  */
 (function (racine, fabrique) {
@@ -26,6 +28,13 @@
 
     const MOBILE = '(max-width: 767.98px)';
     let sequence = 0;
+    /** Valeur au chargement des champs marqués data-filtre-initial (relevée la première fois que le champ est lu). */
+    const initiales = new Map();
+
+    function valeurInitiale(champ) {
+        if (!initiales.has(champ)) initiales.set(champ, champ.value);
+        return initiales.get(champ);
+    }
 
     /** 2026-06-01 devient 01/06/2026 ; toute autre valeur est rendue telle quelle. */
     function formaterValeur(valeur) {
@@ -63,7 +72,8 @@
             if (champ.tagName.toLowerCase() === 'select') {
                 const options = Array.from(champ.options || []);
                 const choisie = options.find(o => o.value === champ.value) || null;
-                decrits.push({ libelle: libelleDe(champ, contenu), valeur: champ.value, defaut: options.length ? options[0].value : '',
+                const defaut = champ.hasAttribute('data-filtre-initial') ? valeurInitiale(champ) : (options.length ? options[0].value : '');
+                decrits.push({ libelle: libelleDe(champ, contenu), valeur: champ.value, defaut,
                     texte: choisie ? choisie.textContent : champ.value });
             } else decrits.push({ libelle: libelleDe(champ, contenu), valeur: champ.value, defaut: '', texte: champ.value });
         });
