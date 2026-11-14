@@ -436,7 +436,7 @@ class RetourVenteTests {
         envoyer(vente, ADMIN, "3", ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES);
         String facture = mvc.perform(get("/factures/vente/" + vente.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(facture).contains("Retours", "Total net", "RV-000001", "70 000.00");
+        assertThat(facture).contains("Retours", "Total net", "RV-000001", "70 000,00");
     }
 
     // ---- Outils -----------------------------------------------------------------------------------------------

@@ -16,7 +16,7 @@
         <p class="alert alert-info" role="status" th:if="${etape.origine() == 'proposee'}">Les colonnes sont proposées d'après les titres du fichier : vérifiez-les.</p>
 
         <section class="record-panel" aria-labelledby="rapContenuTitre">
-            <div class="record-panel-heading"><h2 id="rapContenuTitre">Contenu du fichier</h2><p>Les premières lignes, avec leur numéro et la lettre de chaque colonne.</p></div>
+            <div class="record-panel-heading"><h2 id="rapContenuTitre">Contenu du fichier</h2><p>Les premières lignes, avec leur numéro et le numéro de chaque colonne.</p></div>
             <div class="rap-defile" tabindex="0" role="region" aria-labelledby="rapContenuTitre">
                 <table class="table table-sm rap-brut">
                     <thead><tr><th scope="col">Ligne</th><th scope="col" th:each="j : ${#numbers.sequence(1, colonnes)}" th:text="${'Col. ' + j}">Col. 1</th></tr></thead>

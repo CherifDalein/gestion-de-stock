@@ -126,3 +126,32 @@ test('installer deux fois ne monte rien de plus', () => {
     assert.equal(F.installer(doc, environnement(true)).length, 1);
     assert.equal(F.installer(doc, environnement(true)).length, 0);
 });
+
+test('un champ présélectionné par le serveur (compte du journal de trésorerie) n’est pas compté comme un filtre choisi', () => {
+    const doc = creerDocument();
+    const compte = el(doc, 'select', { id: 'caisseCompte', 'data-filtre-initial': '' });
+    compte.options = [{ value: '', textContent: 'Tous les comptes' }, { value: '1', textContent: 'Caisse' }, { value: '2', textContent: 'Banque' }];
+    compte.value = '1';
+    const auteur = el(doc, 'select', { id: 'caisseAuteur' });
+    auteur.options = [{ value: '', textContent: 'Tous les auteurs' }, { value: '7', textContent: 'Awa Gérante' }];
+    auteur.value = '';
+    const contenu = el(doc, 'div', { 'data-filtres-contenu': '' },
+        el(doc, 'label', { for: 'caisseCompte', texte: 'Compte' }), compte, el(doc, 'label', { for: 'caisseAuteur', texte: 'Saisi par' }), auteur);
+    doc.body.append(el(doc, 'div', { 'data-filtres': '' }, contenu));
+    const [m] = F.installer(doc, environnement(true));
+    // Aucun filtre choisi : pas de « 1 », pas d’étiquette, pas d’« Effacer ».
+    assert.equal(m.compteur.hidden, true);
+    assert.equal(m.liste.hidden, true);
+    assert.equal(m.effacer.hidden, true);
+    assert.equal(m.bouton.getAttribute('aria-label'), 'Filtres');
+    // Un autre compte est bien un filtre ; revenir au compte de départ n’en est plus un.
+    compte.value = '2'; compte.dispatch('change');
+    assert.equal(m.compteur.textContent, '1');
+    assert.deepEqual(m.liste.enfants.map(li => li.textContent), ['Compte : Banque']);
+    compte.value = '1'; compte.dispatch('change');
+    assert.equal(m.compteur.hidden, true);
+    // Les autres champs gardent la règle habituelle : valeur différente de la première option.
+    auteur.value = '7'; auteur.dispatch('change');
+    assert.equal(m.compteur.textContent, '1');
+    assert.deepEqual(m.liste.enfants.map(li => li.textContent), ['Saisi par : Awa Gérante']);
+});

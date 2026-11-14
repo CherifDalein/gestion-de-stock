@@ -842,7 +842,7 @@ class AvancesSoldesPartenairesTests {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Il me doit")));
         String factureSurplus = mvc.perform(get("/factures/vente/" + tropPayee.getId()).with(user(CAISSIER).roles("CAISSIER")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(factureSurplus).contains("Surplus versé").contains("20 000.00");
+        assertThat(factureSurplus).contains("Surplus versé").contains("20 000,00");
         String factureAvance = mvc.perform(get("/factures/vente/" + creditAvecAvance.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(factureAvance).contains("Avance utilisée");

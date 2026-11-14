@@ -52,9 +52,9 @@
                         <tbody>
                         <tr th:each="ligne : ${devis.lignes}">
                             <td th:text="${ligne.produit.nom}"></td>
-                            <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
                             <td class="text-end" th:text="${ligne.quantite + (ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
-                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}"></td>
+                            <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
                         </tr>
                         </tbody>
                     </table>
@@ -67,7 +67,7 @@
                 <div class="operation-panel-header"><div><h2 id="devisActionsTitre">Actions</h2></div></div>
                 <div class="operation-summary-total">
                     <span>Total du devis</span>
-                    <div class="operation-total-value"><strong th:text="${#numbers.formatDecimal(devis.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'POINT')}"></strong> <span class="operation-currency">GNF</span></div>
+                    <div class="operation-total-value"><strong th:text="${#numbers.formatDecimal(devis.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA')}"></strong> <span class="operation-currency">GNF</span></div>
                 </div>
                 <div class="d-grid gap-2 mb-3">
                     <a th:if="${devis.estTransformable(aujourdHui)}" id="boutonTransformer" th:href="@{/ventes/nouveau(devis=${devis.id})}" class="btn btn-primary">

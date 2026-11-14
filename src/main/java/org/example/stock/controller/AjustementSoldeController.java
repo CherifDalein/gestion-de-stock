@@ -2,7 +2,6 @@ package org.example.stock.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.example.stock.enums.SensAjustement;
 import org.example.stock.form.AjustementSoldeForm;
 import org.example.stock.service.AjustementSoldeDepartService;
 import org.example.stock.service.ClientService;
@@ -100,7 +99,6 @@ public class AjustementSoldeController {
         model.addAttribute("typePartenaire", client ? "client" : "fournisseur");
         model.addAttribute("actionUrl", (client ? "/clients" : "/fournisseurs") + "/solde/ajuster/" + id);
         model.addAttribute("retourUrl", client ? "/clients/modifier/" + id : "/fournisseurs/modifier/" + id);
-        model.addAttribute("sensOptions", SensAjustement.values());
         model.addAttribute("view", "partenaires/ajuster-solde");
     }
 }

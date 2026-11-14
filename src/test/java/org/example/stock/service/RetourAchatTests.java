@@ -409,7 +409,7 @@ class RetourAchatTests {
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(109L);
         // La liste n'offre plus le bouton Modifier de cet achat et montre le retour.
         String liste = mvc.perform(get("/achats").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(liste).contains("Retour au fournisseur", "retours 10 000.00").doesNotContain("/achats/modifier/" + achat.getId());
+        assertThat(liste).contains("Retour au fournisseur", "retours 10 000,00").doesNotContain("/achats/modifier/" + achat.getId());
     }
 
     @Test
@@ -561,7 +561,7 @@ class RetourAchatTests {
         envoyer(achat, ADMIN, "1", ModeRemboursement.AVOIR, null);
         String facture = mvc.perform(get("/factures/achat/" + achat.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(facture).contains("Retours", "Total net", "RA-000001", "RA-000002", "60 000.00");
+        assertThat(facture).contains("Retours", "Total net", "RA-000001", "RA-000002", "60 000,00");
 
         Vente vente = vente(2, "20000");
         authentifierGerant();
@@ -580,7 +580,7 @@ class RetourAchatTests {
         Retour remboursement = retours.findAll().stream().filter(r -> "RA-000001".equals(r.getNumero())).findFirst().orElseThrow();
         Retour avoir = retours.findAll().stream().filter(r -> "RA-000002".equals(r.getNumero())).findFirst().orElseThrow();
         String bon = mvc.perform(get("/retours/" + remboursement.getId() + "/imprimer").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(bon).contains("Bon de retour fournisseur RA-000001", "Fournisseur retours", "Remboursé par le fournisseur", "30 000.00");
+        assertThat(bon).contains("Bon de retour fournisseur RA-000001", "Fournisseur retours", "Remboursé par le fournisseur", "30 000,00");
         String bonAvoir = mvc.perform(get("/retours/" + avoir.getId() + "/imprimer").with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(bonAvoir).contains("Avoir fournisseur RA-000002", "Avoir gardé chez le fournisseur");
     }

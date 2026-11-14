@@ -20,6 +20,6 @@ const Montants = Object.freeze({
     },
     afficher(centimes) {
         const [entier, fraction] = this.formater(centimes).split('.');
-        return `${entier.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')}.${fraction}`;
+        return `${entier.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')},${fraction}`;
     }
 });

@@ -17,7 +17,7 @@
             <article class="app-metric-card">
                 <span class="app-metric-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Chiffre d’affaires du jour</h3>
-                <p class="app-metric-value" data-indicateur="chiffre-affaires-jour"><span th:text="${#numbers.formatDecimal(chiffreAffairesJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" data-indicateur="chiffre-affaires-jour"><span th:text="${#numbers.formatDecimal(chiffreAffairesJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">Total des ventes du jour, réglées ou non</p>
             </article>
             <th:block th:if="${indicateursJour != null}">
@@ -26,7 +26,7 @@
             <article class="app-metric-card" th:if="${indicateursJour == null}">
                 <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Encaissé sur les ventes du jour</h3>
-                <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">Montants réglés sur les ventes créées aujourd’hui</p>
             </article>
         </div>
@@ -41,7 +41,7 @@
             <article class="app-metric-card">
                 <span class="app-metric-icon"><i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Chiffre d’affaires du mois</h3>
-                <p class="app-metric-value" data-indicateur="chiffre-affaires-mois"><span th:text="${#numbers.formatDecimal(indicateursMois.chiffreAffaires, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" data-indicateur="chiffre-affaires-mois"><span th:text="${#numbers.formatDecimal(indicateursMois.chiffreAffaires, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">Total des ventes du mois, réglées ou non</p>
             </article>
             <th:block th:replace="~{fragments/tableau-de-bord :: marges(${indicateursMois}, 'mois', 'du mois')}"></th:block>
@@ -85,7 +85,7 @@
                     <p>Quantités en stock × coût moyen pondéré, services exclus.</p>
                 </div>
             </div>
-            <p class="app-metric-value tdb-stock-value" data-indicateur="valeur-stock"><span th:text="${#numbers.formatDecimal(valeurStock.valeur, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+            <p class="app-metric-value tdb-stock-value" data-indicateur="valeur-stock"><span th:text="${#numbers.formatDecimal(valeurStock.valeur, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
             <p class="tdb-note" th:text="${valeurStock.nombreProduits + (valeurStock.nombreProduits > 1 ? ' articles en stock dans le catalogue' : ' article en stock dans le catalogue')}">0 article</p>
         </section>
     </div>
@@ -121,7 +121,7 @@
             </div>
             <div class="tdb-chart">
                 <div class="tdb-chart-col" th:each="m : ${evolution.mois}"
-                     th:title="${m.libelle + ' : ventes ' + #numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'POINT') + ' GNF, résultat ' + #numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">
+                     th:title="${m.libelle + ' : ventes ' + #numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF, résultat ' + #numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">
                     <div class="tdb-chart-area">
                         <div class="tdb-chart-up" th:style="${'flex-basis: ' + evolution.partPositive + '%'}">
                             <span class="tdb-bar tdb-bar--ventes" th:style="${'height: ' + m.hauteurVentes + '%'}"></span>
@@ -152,21 +152,21 @@
                 <tbody>
                 <tr th:each="m : ${evolution.mois}" th:attr="data-mois=${m.numero}">
                     <th scope="row" th:text="${m.libelle}">Janvier</th>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(m.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(m.depenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(m.horsExploitation, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:classappend="${m.resultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.ventes, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.beneficeBrut, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.depenses, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(m.horsExploitation, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:classappend="${m.resultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(m.resultat, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
                     <th scope="row">Total</th>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalVentes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalBeneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalDepenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalHorsExploitation, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
-                    <td class="text-end" th:classappend="${evolution.totalResultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(evolution.totalResultat, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalVentes, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalBeneficeBrut, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalDepenses, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:text="${#numbers.formatDecimal(evolution.totalHorsExploitation, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
+                    <td class="text-end" th:classappend="${evolution.totalResultat < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(evolution.totalResultat, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
                 </tr>
                 </tfoot>
             </table>
@@ -205,34 +205,34 @@
             <article class="app-metric-card">
                 <span class="app-metric-icon"><i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Créances clients</h3>
-                <p class="app-metric-value" data-indicateur="creances"><span th:text="${#numbers.formatDecimal(cd.creances, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" data-indicateur="creances"><span th:text="${#numbers.formatDecimal(cd.creances, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">
                     <span>Total à recevoir des clients</span>
-                    <span class="tdb-retard" data-indicateur="creances-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.creancesEnRetard, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                    <span class="tdb-retard" data-indicateur="creances-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.creancesEnRetard, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong></span>
                 </p>
             </article>
             <article class="app-metric-card">
                 <span class="app-metric-icon text-danger"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Dettes fournisseurs</h3>
-                <p class="app-metric-value" data-indicateur="dettes"><span th:text="${#numbers.formatDecimal(cd.dettes, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" data-indicateur="dettes"><span th:text="${#numbers.formatDecimal(cd.dettes, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">
                     <span>Total à payer aux fournisseurs</span>
-                    <span class="tdb-retard" data-indicateur="dettes-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.dettesEnRetard, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                    <span class="tdb-retard" data-indicateur="dettes-retard">dont en retard : <strong th:text="${#numbers.formatDecimal(cd.dettesEnRetard, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong></span>
                 </p>
             </article>
             <article class="app-metric-card">
                 <span class="app-metric-icon"><i class="fa-solid fa-piggy-bank" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Avances</h3>
-                <p class="app-metric-value" data-indicateur="avances-clients"><span th:text="${#numbers.formatDecimal(cd.avancesClients, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" data-indicateur="avances-clients"><span th:text="${#numbers.formatDecimal(cd.avancesClients, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">
                     <span>Argent reçu d’avance des clients, disponible pour leurs prochains achats</span>
-                    <span class="tdb-retard" data-indicateur="avances-fournisseurs">Avances chez les fournisseurs : <strong th:text="${#numbers.formatDecimal(cd.avancesFournisseurs, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong></span>
+                    <span class="tdb-retard" data-indicateur="avances-fournisseurs">Avances chez les fournisseurs : <strong th:text="${#numbers.formatDecimal(cd.avancesFournisseurs, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong></span>
                 </p>
             </article>
             <article class="app-metric-card">
                 <span class="app-metric-icon"><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i></span>
                 <h3 class="app-metric-label">Position nette</h3>
-                <p class="app-metric-value" th:classappend="${cd.positionNette.signum() < 0 ? 'text-danger' : ''}" data-indicateur="position-nette"><span th:text="${#numbers.formatDecimal(cd.positionNette, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+                <p class="app-metric-value" th:classappend="${cd.positionNette.signum() < 0 ? 'text-danger' : ''}" data-indicateur="position-nette"><span th:text="${#numbers.formatDecimal(cd.positionNette, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
                 <p class="app-metric-foot">Créances − dettes − avances des clients + avances chez les fournisseurs</p>
             </article>
         </div>
@@ -301,7 +301,7 @@
             <tbody>
             <tr th:each="p : ${retards.partenaires}" th:attr="data-retard-id=${p.id}">
                 <th scope="row" class="tdb-retard-nom" th:text="${p.nom}">Nom</th>
-                <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(p.montant, 1, 'WHITESPACE', 2, 'POINT')}">0.00</td>
+                <td class="text-end text-danger fw-bold" th:text="${#numbers.formatDecimal(p.montant, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</td>
                 <td th:text="${#temporals.format(p.plusAncienneEcheance, 'dd/MM/yyyy')}">01/01/2026</td>
                 <td class="text-end"><a class="tdb-releve" th:href="@{|/factures/${chemin}/${p.id}/cumule|}" th:attr="aria-label=${'Relevé cumulé de ' + p.nom}">Relevé</a></td>
             </tr>
@@ -310,7 +310,7 @@
     </div>
     <p class="tdb-note mt-2 mb-0" th:if="${retards.autres() > 0}" th:text="${retards.autres() + (retards.autres() > 1 ? ' autres en retard, non listés' : ' autre en retard, non listé')}">1 autre</p>
     <p class="tdb-note tdb-sans-partenaire mt-2 mb-0" th:if="${retards.sansPartenaire.signum() > 0}" th:attr="data-sans-partenaire=${cle}">
-        <span th:text="${libelleSans}">Ventes sans client en retard</span> : <strong th:text="${#numbers.formatDecimal(retards.sansPartenaire, 1, 'WHITESPACE', 2, 'POINT') + ' GNF'}">0.00 GNF</strong>
+        <span th:text="${libelleSans}">Ventes sans client en retard</span> : <strong th:text="${#numbers.formatDecimal(retards.sansPartenaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
     </p>
 </section>
 
@@ -319,7 +319,7 @@
     <article class="app-metric-card">
         <span class="app-metric-icon"><i class="fa-solid fa-coins" aria-hidden="true"></i></span>
         <h3 class="app-metric-label" th:text="${'Bénéfice brut ' + suffixe}">Bénéfice brut</h3>
-        <p class="app-metric-value" th:classappend="${indicateurs.beneficeBrut < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-brut-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeBrut, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-value" th:classappend="${indicateurs.beneficeBrut < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-brut-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeBrut, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
         <p class="app-metric-foot">
             <span>Prix de vente moins coût moyen figé à la vente</span>
             <span class="tdb-sans-cout" th:if="${indicateurs.lignesSansCout > 0}" th:attr="data-lignes-sans-cout=${indicateurs.lignesSansCout}"
@@ -329,13 +329,13 @@
     <article class="app-metric-card">
         <span class="app-metric-icon text-danger"><i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i></span>
         <h3 class="app-metric-label" th:text="${'Dépenses ' + suffixe}">Dépenses</h3>
-        <p class="app-metric-value" th:attr="data-indicateur=${'depenses-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.depenses, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-value" th:attr="data-indicateur=${'depenses-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.depenses, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
         <p class="app-metric-foot">Dépenses de trésorerie (loyer, transport, frais…), hors achats</p>
     </article>
     <article class="app-metric-card">
         <span class="app-metric-icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></span>
         <h3 class="app-metric-label" th:text="${'Bénéfice net ' + suffixe}">Bénéfice net</h3>
-        <p class="app-metric-value" th:classappend="${indicateurs.beneficeNet < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-net-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeNet, 1, 'WHITESPACE', 2, 'POINT')}">0.00</span> <small>GNF</small></p>
+        <p class="app-metric-value" th:classappend="${indicateurs.beneficeNet < 0 ? 'text-danger' : ''}" th:attr="data-indicateur=${'benefice-net-' + cle}"><span th:text="${#numbers.formatDecimal(indicateurs.beneficeNet, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
         <p class="app-metric-foot">Bénéfice brut moins dépenses, plus produits et charges hors exploitation</p>
     </article>
 </th:block>
@@ -360,7 +360,8 @@
                 <td th:text="${s.dernier() != null ? #temporals.format(s.dernier(), 'dd/MM/yyyy') : 'Jamais'}">31/10/2026</td>
                 <td class="text-end" th:text="${s.jours() != null ? s.jours() : '—'}">12</td>
                 <td><span th:if="${s.alerte()}" class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> À rapprocher</span>
-                    <span th:unless="${s.alerte()}" class="text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> À jour</span></td>
+                    <span th:if="${!s.alerte() and s.dernier() == null}" class="text-muted"><i class="fa-regular fa-circle" aria-hidden="true"></i> Pas encore utilisé</span>
+                    <span th:if="${!s.alerte() and s.dernier() != null}" class="text-success"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> À jour</span></td>
             </tr>
             </tbody>
         </table>

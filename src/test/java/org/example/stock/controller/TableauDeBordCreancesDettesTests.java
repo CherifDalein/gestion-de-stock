@@ -164,18 +164,18 @@ class TableauDeBordCreancesDettesTests {
         String page = mvc.perform(get("/").with(user(GERANT_A).roles("ADMIN"))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("Créances clients", "Dettes fournisseurs", "Avances", "Position nette",
-                        "300 000.00", "250 000.00", "142 000.00", "117 000.00", "65 000.00", "35 000.00", "128 000.00",
+                        "300 000,00", "250 000,00", "142 000,00", "117 000,00", "65 000,00", "35 000,00", "128 000,00",
                         "Créances − dettes − avances des clients + avances chez les fournisseurs",
                         "Clients en retard", "Fournisseurs à payer en retard",
-                        "Boubacar Bah", "Aminata Camara", "150 000.00", "70 000.00", "10/04/2026", "01/05/2026",
-                        "Sidi Import", "Kaba Grossiste", "60 000.00", "50 000.00", "10/05/2026", "01/06/2026",
-                        "Ventes sans client en retard", "30 000.00", "Achats sans fournisseur en retard", "7 000.00",
+                        "Boubacar Bah", "Aminata Camara", "150 000,00", "70 000,00", "10/04/2026", "01/05/2026",
+                        "Sidi Import", "Kaba Grossiste", "60 000,00", "50 000,00", "10/05/2026", "01/06/2026",
+                        "Ventes sans client en retard", "30 000,00", "Achats sans fournisseur en retard", "7 000,00",
                         "href=\"/factures/client/" + boubacar.getId() + "/cumule\"",
                         "href=\"/factures/client/" + aminata.getId() + "/cumule\"",
                         "href=\"/factures/fournisseur/" + sidi.getId() + "/cumule\"",
                         "href=\"/factures/fournisseur/" + kaba.getId() + "/cumule\"")
                 .doesNotContain("Aucun client en retard", "Aucun fournisseur à payer en retard", "CLIENT_SECRET_B",
-                        "FOURNISSEUR_SECRET_B", "Mariama Sow", "Diallo Distribution", "888 000.00", "555 000.00");
+                        "FOURNISSEUR_SECRET_B", "Mariama Sow", "Diallo Distribution", "888 000,00", "555 000,00");
         // Boubacar (150 000) précède Aminata (70 000), Sidi précède Kaba.
         assertThat(page.indexOf("Boubacar Bah")).isLessThan(page.indexOf("Aminata Camara"));
         assertThat(page.indexOf("Sidi Import")).isLessThan(page.indexOf("Kaba Grossiste"));
@@ -233,7 +233,7 @@ class TableauDeBordCreancesDettesTests {
         assertThat(cd.clientsEnRetard().partenaires()).isEmpty();
         assertThat(cd.fournisseursEnRetard().partenaires()).isEmpty();
         assertThat(resultat.getResponse().getContentAsString()).contains("Aucun client en retard", "Aucun fournisseur à payer en retard")
-                .doesNotContain("Ventes sans client en retard", "Achats sans fournisseur en retard", "CLIENT_SECRET_B", "999 000.00");
+                .doesNotContain("Ventes sans client en retard", "Achats sans fournisseur en retard", "CLIENT_SECRET_B", "999 000,00");
     }
 
     @Test
@@ -252,7 +252,7 @@ class TableauDeBordCreancesDettesTests {
         assertThat(cd.clientsEnRetard().partenaires().get(0).montant()).isEqualByComparingTo("1887000");
         assertThat(cd.clientsEnRetard().sansPartenaire()).isEqualByComparingTo("777000");
         assertThat(cd.fournisseursEnRetard().partenaires()).extracting(p -> p.nom()).containsExactly("FOURNISSEUR_SECRET_B");
-        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Boubacar", "Sidi Import", "300 000.00", "128 000.00");
+        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Boubacar", "Sidi Import", "300 000,00", "128 000,00");
     }
 
     @Test
@@ -270,7 +270,7 @@ class TableauDeBordCreancesDettesTests {
         }
         assertThat(resultat.getResponse().getContentAsString())
                 .doesNotContain("Créances", "Dettes fournisseurs", "Position nette", "Clients en retard", "Fournisseurs à payer en retard",
-                        "300 000.00", "250 000.00", "142 000.00", "117 000.00", "65 000.00", "35 000.00", "128 000.00",
+                        "300 000,00", "250 000,00", "142 000,00", "117 000,00", "65 000,00", "35 000,00", "128 000,00",
                         "Boubacar", "Aminata", "Sidi Import", "Kaba", "/cumule", "Aucun client en retard");
     }
 
