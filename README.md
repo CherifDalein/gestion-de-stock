@@ -57,6 +57,11 @@ colonnes à `boutique` ; stocks, montants et mouvements restent inchangés.
 Un bouton « Envoyer » partage ensuite le reçu PDF par le menu de partage natif de l'appareil
 (WhatsApp, etc.), sans migration : voir `docs/lot-4.md`, section « Reçus ».
 
+Pour la corbeille du lot 6 (suppressions restaurables pendant 30 jours, effacement automatique
+chaque nuit), appliquer la [migration du lot 6](docs/migrations/lot-6.md) après les lots 3 et 4 et une
+sauvegarde : `./gradlew lot6Check`, puis `LOT6_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot6Migrate`.
+Règles, unicité des noms et limites : [docs/lot-6.md](docs/lot-6.md).
+
 Pour les comptes de trésorerie multiples du lot 3 (jusqu'à 12 comptes par boutique, par
 exemple deux comptes Orange Money ou deux banques), appliquer la
 [migration du lot 3](docs/migrations/lot-3.md) après le lot 4 et une sauvegarde :
@@ -97,6 +102,7 @@ node --test src/test/js/montants.test.cjs
 - [Préparation du schéma du lot 1](docs/migrations/lot-1.md)
 - [Préparation du schéma du lot 2](docs/migrations/lot-2.md)
 - [Réglages des reçus du lot 4](docs/migrations/lot-4.md)
+- [Corbeille du lot 6](docs/lot-6.md) et sa [migration](docs/migrations/lot-6.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
