@@ -47,12 +47,12 @@
                         <tr th:each="r : ${retours}" th:attr="data-type-retour=${r.type.name()}">
                             <td class="text-nowrap" th:text="${r.type.name() == 'ACHAT' ? 'Achat' : 'Vente'}"></td>
                             <td class="text-nowrap" th:text="${r.numero}"></td>
-                            <td th:text="${#temporals.format(r.dateRetour, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${#temporals.format(r.dateRetour, 'dd/MM/yyyy HH:mm')}" th:attr="data-order=${#temporals.format(r.dateRetour, 'yyyyMMddHHmm')}"></td>
                             <td class="text-nowrap" th:text="${r.type.name() == 'ACHAT' ? (r.achat != null ? (r.achat.numero ?: '#' + r.achat.id) : '—') : (r.vente != null ? (r.vente.numero ?: '#' + r.vente.id) : '—')}"></td>
                             <td th:text="${r.type.name() == 'ACHAT' ? (r.fournisseur != null ? r.fournisseur.nom : 'Non renseigné') : (r.client != null ? r.client.nom : 'Client de passage')}"></td>
-                            <td class="fw-bold text-nowrap" th:text="${#numbers.formatDecimal(r.montantTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-sort=${#numbers.formatDecimal(r.montantTotal, 1, 'NONE', 2, 'POINT')}"></td>
-                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantRembourse, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-sort=${#numbers.formatDecimal(r.montantRembourse, 1, 'NONE', 2, 'POINT')}"></td>
-                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantAvoir, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-sort=${#numbers.formatDecimal(r.montantAvoir, 1, 'NONE', 2, 'POINT')}"></td>
+                            <td class="fw-bold text-nowrap" th:text="${#numbers.formatDecimal(r.montantTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-order=${#numbers.formatDecimal(r.montantTotal, 1, 'NONE', 2, 'POINT')}"></td>
+                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantRembourse, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-order=${#numbers.formatDecimal(r.montantRembourse, 1, 'NONE', 2, 'POINT')}"></td>
+                            <td class="text-nowrap" th:text="${#numbers.formatDecimal(r.montantAvoir, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}" th:attr="data-order=${#numbers.formatDecimal(r.montantAvoir, 1, 'NONE', 2, 'POINT')}"></td>
                             <td th:text="${r.utilisateur != null and !#strings.isEmpty(#strings.trim(r.utilisateur.nom)) ? r.utilisateur.nom : '—'}"></td>
                             <td class="text-center">
                                 <div class="journal-row-actions app-row-actions">
