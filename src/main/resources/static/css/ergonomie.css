@@ -161,15 +161,28 @@ body.stock-app .filtres-etiquettes li { padding: 3px 10px; border-radius: 999px;
 }
 
 /* ---- Journaux des ventes et des achats ---------------------------------------------------------------------------- */
-/* Ordinateur : la colonne des actions reste visible quand le tableau défile ; plus rien ne se perd à droite. */
+/* Ordinateur : toutes les colonnes utiles tiennent sans défilement (Numéro, Date, Client, Total, Reste, Statut, Actions).
+   Échéance, « Saisi par » et Versé sont masquées sous 1600 px : elles restent dans le HTML, les exports, le filtre « Saisi par »
+   et le détail (le reste à payer donne déjà la différence).
+   Aucune colonne collante : rien ne peut en recouvrir une autre. Si l'écran est trop étroit, le tableau défile entier. */
 @media (min-width: 768px) {
-  body.stock-app .journal-cartes > thead > tr > th.journal-colonne-actions,
-  body.stock-app .journal-cartes > tbody > tr > td.jt-actions { position: sticky; right: 0; z-index: 2; background: #fff; box-shadow: -12px 0 10px -10px rgb(21 44 37 / 22%); }
-  body.stock-app .journal-cartes > thead > tr > th.journal-colonne-actions { background: #f4f7f6; }
-  body.stock-app .journal-cartes > tbody > tr:hover > td.jt-actions { background: #f7faf8; }
-  body.stock-app .journal-cartes > tbody > tr > td.jt-actions { min-width: 300px; white-space: normal; }
-  /* Une cellule collante forme son propre empilement : celle du menu ouvert passe au-dessus des lignes suivantes. */
-  body.stock-app .journal-cartes > tbody > tr > td.jt-actions:has(.plus-menu[data-ouvert]) { z-index: 1080; }
+  body.stock-app table.journal-table.journal-cartes { min-width: 0; }
+  body.stock-app .card-body:has(> .journal-table-wrap) { padding: 12px; }
+  body.stock-app .journal-cartes > tbody > tr > td.jt-partenaire { white-space: normal; overflow-wrap: anywhere; }
+  body.stock-app .journal-cartes > :is(thead, tbody) > tr > :is(th, td) { padding-inline: .3rem; font-size: .8rem; }
+  body.stock-app .journal-cartes > tbody > tr > td:is(.jt-reste, .jt-numero) { white-space: nowrap; }
+  body.stock-app .journal-cartes > tbody > tr > td:is(.jt-total, .jt-verse) > span:first-child { white-space: nowrap; }
+  body.stock-app .journal-cartes > tbody > tr > td.jt-date { white-space: normal; width: 1%; min-width: 74px; }
+  body.stock-app .journal-cartes > tbody > tr > td.jt-actions { white-space: nowrap; width: 1%; }
+  body.stock-app .journal-cartes > thead > tr > th.journal-colonne-actions { text-align: left; width: 1%; }
+  body.stock-app .journal-cartes .ligne-actions { flex-wrap: nowrap; gap: 4px; }
+  body.stock-app .journal-cartes .ligne-actions .app-row-action { padding-inline: .5rem; white-space: nowrap; }
+  body.stock-app .journal-cartes > tbody > tr > td.jt-actions:has(.plus-menu[data-ouvert]) { position: relative; z-index: 1080; }
+}
+@media (min-width: 768px) and (max-width: 1599.98px) {
+  body.stock-app .journal-cartes .ligne-actions .plus-menu-bouton > span:last-child, body.stock-app .journal-cartes .ligne-actions .plus-menu-toggle > span:last-child { display: none; }
+  body.stock-app .journal-cartes .ligne-actions .app-row-action { font-size: .78rem; padding-inline: .4rem; }
+  body.stock-app .journal-cartes > :is(thead, tbody) > tr > :is(:nth-child(3), :nth-child(5), :nth-child(7)) { display: none; }
 }
 /* Téléphone : une fiche par ligne (numéro et statut, partenaire, trois montants, dates, actions). */
 @media (max-width: 767.98px) {
@@ -252,4 +265,16 @@ body.stock-app .products-toolbar .filtres-champs-bureau > div { min-width: 0; }
 }
 @media (max-width: 420px) {
     body.stock-app .products-toolbar .filtres-champs-bureau:not([hidden]) { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ===== Journal de caisse : les sept colonnes tiennent à 1280 px ; Saisi par et Source passent sous 1600 px (filtres et impression gardent tout) ===== */
+@media screen and (min-width: 768px) {
+  body.stock-app #stockCaisse .caisse-table { min-width: 0; }
+  body.stock-app #stockCaisse .caisse-table > :is(thead, tbody) > tr > :is(th, td) { padding-inline: .5rem; }
+  body.stock-app #stockCaisse .caisse-table .caisse-row-amount, body.stock-app #stockCaisse .caisse-table .caisse-row-date, body.stock-app #stockCaisse .caisse-table .caisse-direction { white-space: nowrap; }
+  body.stock-app #stockCaisse .caisse-table .caisse-row-motif { min-width: 150px; }
+  body.stock-app #stockCaisse .caisse-table .caisse-row-account { min-width: 0; }
+}
+@media screen and (min-width: 768px) and (max-width: 1599.98px) {
+  body.stock-app #stockCaisse .caisse-table > :is(thead, tbody) > tr > :is(:nth-child(3), :nth-child(5)) { display: none; }
 }
