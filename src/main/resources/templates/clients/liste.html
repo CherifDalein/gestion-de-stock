@@ -58,7 +58,7 @@
                 <span class="partners-catalogue-count" th:text="${totalPartenaires + (totalPartenaires == 1 ? ' client' : ' clients')}">0 client</span>
             </div>
 
-            <div id="partenairesToolbar" class="partners-toolbar" hidden>
+            <div id="partenairesToolbar" class="partners-toolbar" data-filtres hidden>
                 <div class="partners-search">
                     <label for="partenairesSearch" class="form-label">Rechercher</label>
                     <div class="partners-search-input">
@@ -66,28 +66,30 @@
                         <input id="partenairesSearch" class="form-control" type="search" placeholder="Nom, téléphone, email ou adresse…" autocomplete="off" aria-controls="partenairesTable">
                     </div>
                 </div>
-                <div>
-                    <label for="partenairesContact" class="form-label">Coordonnées</label>
-                    <select id="partenairesContact" class="form-select" aria-controls="partenairesTable">
-                        <option value="">Tous les contacts</option>
-                        <option value="telephone">Avec téléphone</option>
-                        <option value="email">Avec email</option>
-                        <option value="sans-contact">Sans téléphone ni email</option>
-                    </select>
+                <div class="partners-filtres-champs" data-filtres-contenu>
+                    <div>
+                        <label for="partenairesContact" class="form-label">Coordonnées</label>
+                        <select id="partenairesContact" class="form-select" aria-controls="partenairesTable">
+                            <option value="">Tous les contacts</option>
+                            <option value="telephone">Avec téléphone</option>
+                            <option value="email">Avec email</option>
+                            <option value="sans-contact">Sans téléphone ni email</option>
+                        </select>
+                    </div>
+                    <div class="partners-sort-mobile" data-partner-sort-mobile hidden>
+                        <label for="partenairesSortSelect" class="form-label">Trier par</label>
+                        <select id="partenairesSortSelect" class="form-select" aria-controls="partenairesTable">
+                            <option value="nom:asc">Nom (A à Z)</option>
+                            <option value="nom:desc">Nom (Z à A)</option>
+                            <option value="telephone:asc">Téléphone</option>
+                            <option value="email:asc">Email</option>
+                            <option value="adresse:asc">Adresse</option>
+                        </select>
+                    </div>
+                    <button id="partenairesReset" class="btn btn-outline-secondary" type="button" data-filtres-effacer aria-label="Réinitialiser la recherche, les filtres et le tri">
+                        <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
+                    </button>
                 </div>
-                <div class="partners-sort-mobile" data-partner-sort-mobile hidden>
-                    <label for="partenairesSortSelect" class="form-label">Trier par</label>
-                    <select id="partenairesSortSelect" class="form-select" aria-controls="partenairesTable">
-                        <option value="nom:asc">Nom (A à Z)</option>
-                        <option value="nom:desc">Nom (Z à A)</option>
-                        <option value="telephone:asc">Téléphone</option>
-                        <option value="email:asc">Email</option>
-                        <option value="adresse:asc">Adresse</option>
-                    </select>
-                </div>
-                <button id="partenairesReset" class="btn btn-outline-secondary" type="button" aria-label="Réinitialiser la recherche, les filtres et le tri">
-                    <i class="fas fa-rotate-left" aria-hidden="true"></i> Réinitialiser
-                </button>
             </div>
 
             <div id="partenairesEmptyCatalogue" class="partners-empty" th:if="${#lists.isEmpty(clients)}">
