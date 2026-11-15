@@ -36,6 +36,15 @@ public class DonneesComptablesService {
     /** Données jusqu'à {@code fin} (comprise) ; le stock est régularisé à cette date si {@code regulariser}. */
     @Transactional(readOnly = true)
     public DonneesComptables charger(Long boutiqueId, LocalDateTime fin, LocalDateTime maintenant, boolean regulariser) {
+        return charger(boutiqueId, fin, maintenant, regulariser, null, null);
+    }
+
+    /**
+     * Comme {@link #charger(Long, LocalDateTime, LocalDateTime, boolean)}, avec le report à nouveau d'un exercice clôturé ({@code reprise}, ou {@code null}) et la
+     * valeur du stock figée à la fin d'un exercice clôturé ({@code stockFige}, ou {@code null} : le stock est alors valorisé comme avant).
+     */
+    @Transactional(readOnly = true)
+    public DonneesComptables charger(Long boutiqueId, LocalDateTime fin, LocalDateTime maintenant, boolean regulariser, Reprise reprise, BigDecimal stockFige) {
         Map<Long, Partenaire> clients = partenaires("client", boutiqueId);
         Map<Long, Partenaire> fournisseurs = partenaires("fournisseur", boutiqueId);
         Map<Long, BigDecimal> servicesVentes = servicesParDocument("DetailVente d join d.vente x join d.produit p", "x", boutiqueId, "x.dateVente", fin, "d.prixUnitaire");
@@ -86,9 +95,9 @@ public class DonneesComptablesService {
 
         LocalDateTime ouverture = ouverture(ventes, achats, retours, mouvements, ajustements);
         BigDecimal stockDepart = stockDepart(boutiqueId, fin);
-        List<ValeurStock> valeurs = regulariser ? List.of(new ValeurStock(fin, valeurStock(boutiqueId, fin, maintenant))) : List.of();
+        List<ValeurStock> valeurs = regulariser ? List.of(new ValeurStock(fin, stockFige != null ? stockFige : valeurStock(boutiqueId, fin, maintenant))) : List.of();
         Map<Long, Operation> ops = operations;
-        return new DonneesComptables(ouverture, ventes, achats, retours, mouvements, ops, listeClients, listeFournisseurs, ajustements, stockDepart, valeurs);
+        return new DonneesComptables(ouverture, ventes, achats, retours, mouvements, ops, listeClients, listeFournisseurs, ajustements, stockDepart, valeurs, reprise);
     }
 
     /** Solde de départ des partenaires ajustés après la date : le solde enregistré est postérieur à l'ajustement, on revient à l'ancien. */

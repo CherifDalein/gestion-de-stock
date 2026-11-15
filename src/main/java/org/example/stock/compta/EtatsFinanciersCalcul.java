@@ -169,6 +169,11 @@ public final class EtatsFinanciersCalcul {
     /** Bilan avec le résultat de l'exercice (CJ) et les résultats antérieurs non clôturés (ajoutés au report à nouveau, CH), puis les totaux. */
     static Bilan bilan(SoldesComptables soldesBilan, BigDecimal resultatAnterieur, BigDecimal resultatPeriode) {
         Bilan b = classer(soldesBilan);
+        // Résultat d'exercices clôturés en attente d'affectation (compte 13, issu du report à nouveau) : il reste dans les capitaux propres avec le report à nouveau.
+        // CJ ne porte que le résultat de l'exercice en cours.
+        BigDecimal enInstance = b.passif.getOrDefault("CJ", ZERO);
+        b.passif.put("CJ", ZERO);
+        b.passif.merge("CH", enInstance, BigDecimal::add);
         b.passif.merge("CH", resultatAnterieur, BigDecimal::add);
         b.passif.merge("CJ", resultatPeriode, BigDecimal::add);
         for (String total : ORDRE_TOTAUX_ACTIF) {
@@ -243,7 +248,8 @@ public final class EtatsFinanciersCalcul {
         BigDecimal zd = fk.add(fl).add(fm).add(fn);
         // Financement par les capitaux étrangers : emprunts, autres dettes financières (apporteurs et comptes courants d'associés, location-acquisition).
         BigDecimal emprunts = delta(fin.solde("16", "181", "182", "183", "184").negate(), base.solde("16", "181", "182", "183", "184").negate());
-        BigDecimal autres = delta(fin.solde("46", "17").negate(), base.solde("46", "17").negate());
+        // Les dividendes à payer (465), issus de l'affectation du résultat, ne sont pas un flux : seul leur paiement en sera un.
+        BigDecimal autres = delta(autresDettesFinancieres(fin), autresDettesFinancieres(base));
         BigDecimal fo = positif(emprunts);
         BigDecimal fp = positif(autres);
         BigDecimal fq = negatif(emprunts).add(negatif(autres));
@@ -258,6 +264,8 @@ public final class EtatsFinanciersCalcul {
         f.put("ZG", zg); f.put("ZH", za.add(zg));
         return f;
     }
+
+    private static BigDecimal autresDettesFinancieres(SoldesComptables s) { return s.solde("46").subtract(s.solde("465")).add(s.solde("17")).negate(); }
 
     private static BigDecimal passifCirculant(Bilan b) {
         return b.passif("DH").add(b.passif("DI")).add(b.passif("DJ")).add(b.passif("DK")).add(b.passif("DM"));
