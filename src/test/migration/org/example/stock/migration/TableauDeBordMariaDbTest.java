@@ -358,6 +358,7 @@ public final class TableauDeBordMariaDbTest {
         mouvement.setDateMouvement(LocalDateTime.now().minusDays(10)); mouvement.setMontant(new BigDecimal(montant));
         mouvement.setType(montant.startsWith("-") ? "SORTIE" : "ENTREE"); mouvement.setSource(source); mouvement.setMotif("Règlement du solde de départ");
         mouvement.setUtilisateur(e.gerant());
+        mouvement.setCompte(compte(e, TypeCompteTresorerie.ESPECES)); // lot 3 : compte_id est obligatoire
         mouvements.saveAndFlush(mouvement);
     }
 
