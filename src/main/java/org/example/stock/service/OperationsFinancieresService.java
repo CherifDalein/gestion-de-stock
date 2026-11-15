@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import jakarta.validation.Validator;
 import org.example.stock.enums.TypeOperationTresorerie;
 import org.example.stock.enums.TypePartenaireFinancier;
@@ -34,6 +35,7 @@ import java.util.Set;
  */
 @Service
 public class OperationsFinancieresService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final Set<TypeOperationTresorerie> TYPES_SAISISSABLES = EnumSet.of(
             TypeOperationTresorerie.APPORT_CAPITAL, TypeOperationTresorerie.APPORT_COMPTE_COURANT,
             TypeOperationTresorerie.RETRAIT_CAPITAL, TypeOperationTresorerie.RETRAIT_COMPTE_COURANT,
@@ -82,6 +84,7 @@ public class OperationsFinancieresService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean enregistrer(OperationFinanciereForm formulaire) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = caisse.gerantPourEcriture();
         if (formulaire == null || !validator.validate(formulaire).isEmpty()) {
             throw new IllegalArgumentException("La nature, le compte, le montant et le motif de l'opération doivent être valides.");
@@ -124,6 +127,7 @@ public class OperationsFinancieresService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void annuler(Long operationId, String motifSaisi) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = caisse.gerantPourEcriture();
         String motif = motifSaisi == null ? "" : motifSaisi.strip();
         if (motif.length() < AnnulationReglementService.MOTIF_MINIMUM || motif.length() > AnnulationReglementService.MOTIF_MAXIMUM) {

@@ -39,6 +39,7 @@ import java.util.TreeSet;
  */
 @Service
 public class ValidationReleveService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final StockLockRepository verrous;
     private final CaisseService caisse;
     private final ComptesTresorerieService comptes;
@@ -62,6 +63,7 @@ public class ValidationReleveService {
         verrous.verrouillerBoutiqueCourante();
         Utilisateur gerant = caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         if (r.getStatut() != StatutReleve.BROUILLON) throw new ReleveDejaTraiteException(r.getNumero(), r.getStatut().getLibelle());
         Long boutiqueId = boutiques.idBoutiqueCourante(), compteId = r.getCompte().getId();
         comptes.verrouiller(boutiqueId, gerant, false, false, List.of(compteId));
@@ -92,6 +94,7 @@ public class ValidationReleveService {
         verrous.verrouillerBoutiqueCourante();
         Utilisateur gerant = caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         if (r.getStatut() != StatutReleve.VALIDE) throw new ReleveDejaTraiteException(r.getNumero(), r.getStatut().getLibelle());
         comptes.verrouiller(boutiques.idBoutiqueCourante(), gerant, false, false, List.of(r.getCompte().getId()));
         ReleveBancaire dernier = releves.parStatut(r.getCompte().getId(), StatutReleve.VALIDE).stream().findFirst().orElse(r);

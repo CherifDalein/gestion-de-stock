@@ -45,6 +45,7 @@ import java.util.Objects;
  */
 @Service
 public class ComptageCaisseService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final int MOTIF_MINIMUM = 3, MOTIF_MAXIMUM = 255, COMMENTAIRE_MAXIMUM = 255;
 
     private final StockLockRepository verrous;
@@ -77,6 +78,7 @@ public class ComptageCaisseService {
         }
         Billetage.controler(quantites);
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = utilisateurCourant();
         Long boutiqueId = boutiques.idBoutiqueCourante();
         ComptageCaisse deja = comptages.findByBoutiqueIdAndJeton(boutiqueId, jeton).orElse(null);
@@ -137,6 +139,7 @@ public class ComptageCaisseService {
         exigerGerantSession();
         String motif = motifValide(motifSaisi, "de la validation");
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur gerant = caisse.gerantPourEcriture();
         ComptageCaisse comptage = verrous.verrouillerComptage(id);
         if (comptage.getStatut() != StatutComptage.EN_ATTENTE) throw new ComptageDejaTraiteException(comptage.getStatut(), "en attente de validation");
@@ -152,6 +155,7 @@ public class ComptageCaisseService {
         exigerGerantSession();
         String motif = motifValide(motifSaisi, "du refus");
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur gerant = caisse.gerantPourEcriture();
         ComptageCaisse comptage = verrous.verrouillerComptage(id);
         if (comptage.getStatut() != StatutComptage.EN_ATTENTE) throw new ComptageDejaTraiteException(comptage.getStatut(), "en attente de validation");
@@ -165,6 +169,7 @@ public class ComptageCaisseService {
         exigerGerantSession();
         String motif = motifValide(motifSaisi, "de l'annulation");
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur gerant = caisse.gerantPourEcriture();
         ComptageCaisse comptage = verrous.verrouillerComptage(id);
         if (comptage.getStatut() != StatutComptage.VALIDE) throw new ComptageDejaTraiteException(comptage.getStatut(), "validé");

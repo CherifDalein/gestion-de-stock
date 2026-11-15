@@ -34,6 +34,7 @@ import java.util.Objects;
  */
 @Service
 public class AjustementSoldeDepartService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final StockLockRepository verrous;
     private final SoldePartenaireService soldes;
     private final AjustementSoldeDepartRepository ajustements;
@@ -53,6 +54,7 @@ public class AjustementSoldeDepartService {
     public AjustementSoldeDepart ajusterClient(Long clientId, BigDecimal montant, SensAjustement sens, String motif, String jeton) {
         SoldeDepartService.exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Client client = verrous.verrouillerClient(clientId);
         AjustementSoldeDepart deja = dejaEnregistre(jeton, client.getId(), true);
         if (deja != null) return deja;
@@ -68,6 +70,7 @@ public class AjustementSoldeDepartService {
     public AjustementSoldeDepart ajusterFournisseur(Long fournisseurId, BigDecimal montant, SensAjustement sens, String motif, String jeton) {
         SoldeDepartService.exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Fournisseur fournisseur = verrous.verrouillerFournisseur(fournisseurId);
         AjustementSoldeDepart deja = dejaEnregistre(jeton, fournisseur.getId(), false);
         if (deja != null) return deja;

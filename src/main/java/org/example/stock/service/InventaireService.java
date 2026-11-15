@@ -24,6 +24,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class InventaireService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final ProduitService produits;
     private final BoutiqueService boutiques;
     private final UtilisateurRepository utilisateurs;
@@ -55,6 +56,7 @@ public class InventaireService {
     public void initialiser(Long id, StockInitialForm formulaire) {
         // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis le produit.
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur=verrouillerAdministrateur(); valider(formulaire);
         initialisation.verrouillerEtExigerOuverte();
         Produit produit=verrous.verrouillerProduits(List.of(id)).get(id);

@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import org.example.stock.enums.Role;
 import org.example.stock.model.Achat;
 import org.example.stock.model.Emails;
@@ -45,6 +46,7 @@ import java.util.Objects;
  */
 @Service
 public class AnnulationReglementService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final int MOTIF_MINIMUM = 3;
     public static final int MOTIF_MAXIMUM = 255;
 
@@ -137,6 +139,7 @@ public class AnnulationReglementService {
         String motif = motifValide(motifSaisi);
         // Ordre global des verrous : la boutique d'abord, avant toute lecture du mouvement ou du document.
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = gerant();
         MouvementCaisse origine = lire(mouvementId);
         String refus = refusDeSource(origine);

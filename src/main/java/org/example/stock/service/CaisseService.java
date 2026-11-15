@@ -52,6 +52,7 @@ import java.time.ZoneId;
 
 @Service
 public class CaisseService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
 
     @Autowired
     private MouvementCaisseRepository mouvementRepo;
@@ -143,6 +144,7 @@ public class CaisseService {
     public CompteTresorerieBoutique initialiser(OuvertureCaisseForm formulaire) {
         // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now(clock.withZone(ZoneId.systemDefault())));
         Utilisateur acteur=gerant();
         entityManager.refresh(acteur,LockModeType.PESSIMISTIC_READ);
         if(!acteur.isActif()||acteur.getRole()!=Role.ADMIN) throw interdit();
@@ -314,6 +316,7 @@ public class CaisseService {
                                    Retour retour, Long compteId) {
         // Idempotent : déjà tenu quand l'appel vient d'une vente, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         verifierSourceOperationnelle(source);
         exigerCompte(compteId);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -394,6 +397,7 @@ public class CaisseService {
                                    Retour retour, Long compteId) {
         // Idempotent : déjà tenu quand l'appel vient d'un achat, d'un règlement ou d'un retour (ordre global des verrous).
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         verifierSourceOperationnelle(source);
         exigerCompte(compteId);
         utilisateur = utilisateurDeLaBoutique(utilisateur);
@@ -445,6 +449,7 @@ public class CaisseService {
     @Transactional
     public MouvementCaisse enregistrerAnnulation(MouvementCaisse origine, String motif, Utilisateur acteur) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
         if (origine == null || origine.getId() == null || origine.getBoutique() == null || !Objects.equals(origine.getBoutique().getId(), boutiqueId)) {
             throw new IllegalArgumentException("Mouvement introuvable");
@@ -454,6 +459,7 @@ public class CaisseService {
             throw new IllegalArgumentException("Annulation impossible : mouvement rapproché sur le relevé " + releve.getNumero() + " validé. "
                     + "Dévalidez ce relevé (dernier relevé validé du compte) pour pouvoir annuler le mouvement.");
         });
+        verrouExercice.exigerOuvert(origine.getDateMouvement());
         BigDecimal montant = Montants.valider(origine.getMontant(), "Le montant de caisse");
         if (montant.signum() == 0) throw new IllegalArgumentException("Un mouvement sans montant ne s'annule pas.");
         acteur = utilisateurDeLaBoutique(acteur);
@@ -498,6 +504,7 @@ public class CaisseService {
     @Transactional
     public MouvementCaisse enregistrerEcartCaisse(ComptageCaisse comptage, String motif, Utilisateur gerant) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Long boutiqueId = boutiqueService.idBoutiqueCourante();
         if (comptage == null || comptage.getId() == null || comptage.getBoutique() == null || !Objects.equals(comptage.getBoutique().getId(), boutiqueId)) {
             throw new IllegalArgumentException("Comptage introuvable");
@@ -536,6 +543,7 @@ public class CaisseService {
     private boolean executerOperation(OperationTresorerieForm formulaire, TypeOperationTresorerie type, String saisieDestination) {
         // Ordre global des verrous : la boutique d'abord, puis le compte du gérant (lecture partagée), puis les comptes.
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = gerant();
         entityManager.refresh(acteur, LockModeType.PESSIMISTIC_READ);
         if (!acteur.isActif() || acteur.getRole() != Role.ADMIN) throw interdit();

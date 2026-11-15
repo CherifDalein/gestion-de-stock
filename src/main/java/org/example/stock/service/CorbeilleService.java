@@ -38,6 +38,7 @@ import java.util.*;
  */
 @Service
 public class CorbeilleService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private static final Logger JOURNAL = LoggerFactory.getLogger(CorbeilleService.class);
     /** Les produits d'abord : ils référencent les catégories et les fournisseurs, qui ne peuvent partir qu'ensuite. */
     static final List<TypeCorbeille> ORDRE_EFFACEMENT = List.of(TypeCorbeille.PRODUIT, TypeCorbeille.CLIENT, TypeCorbeille.FOURNISSEUR, TypeCorbeille.CATEGORIE);
@@ -141,6 +142,7 @@ public class CorbeilleService {
     public ElementSupprime restaurer(TypeCorbeille type, Long id) {
         exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         String nom = verrous.verrouillerElementDeLaCorbeille(type, id);
         Long boutiqueId = boutiques.idBoutiqueCourante();
         if (type == TypeCorbeille.CATEGORIE) {
@@ -183,6 +185,7 @@ public class CorbeilleService {
     public ElementSupprime supprimerDefinitivement(TypeCorbeille type, Long id) {
         exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         String nom = verrous.verrouillerElementDeLaCorbeille(type, id);
         if (aDesLiens(type, id, true)) throw new IllegalArgumentException(type.libelle() + " « " + nom + " » est encore utilisé" + (type.feminin() ? "e" : "")
                 + " par d’autres fiches, par exemple des produits de la corbeille : effacez-les d’abord.");
@@ -195,6 +198,7 @@ public class CorbeilleService {
     public Bilan vider() {
         exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Long boutiqueId = boutiques.idBoutiqueCourante();
         int effaces = 0, conserves = 0;
         for (TypeCorbeille type : ORDRE_EFFACEMENT) {
