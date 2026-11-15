@@ -35,6 +35,15 @@ public final class SchemaHistorique {
             """;
     private SchemaHistorique() {}
 
+    /**
+     * Schéma antérieur au lot 5a (comptabilité) : sans {@code sous_compte_boutique} ni {@code correspondance_compta}. Le lot 5a s'applique
+     * après le lot 6 : tous les schémas plus anciens passent par ici.
+     */
+    public static String sansLot5(String schema) {
+        return schema.replaceAll("(?m)^-- Lot 5a \\(comptabilité\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "")
+                .replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:sous_compte_boutique|correspondance_compta) \\(.*?\\) ENGINE=InnoDB[^;]*;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
+    }
+
     private static final List<String> LIGNES_LOT6 = List.of("supprime_le DATETIME(6) NULL,", "supprime_par BIGINT NULL,", "nom_cle VARCHAR(255) NULL,");
 
     /**
@@ -42,7 +51,7 @@ public final class SchemaHistorique {
      * sans {@code categorie.nom_cle}, et avec l'ancienne unicité du nom de catégorie par boutique.
      */
     public static String sansLot6(String schema) {
-        String resultat = schema.replaceAll("(?m)^-- Lot 6 \\(corbeille\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        String resultat = sansLot5(schema).replaceAll("(?m)^-- Lot 6 \\(corbeille\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
         for (String ligne : LIGNES_LOT6) resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
         return resultat.replace("CONSTRAINT uk_categorie_boutique_nom_cle UNIQUE (boutique_id, nom_cle)", "CONSTRAINT uk_categorie_boutique_nom UNIQUE (boutique_id, nom)");
     }

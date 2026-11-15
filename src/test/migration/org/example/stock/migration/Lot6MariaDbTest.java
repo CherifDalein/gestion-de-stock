@@ -71,6 +71,7 @@ public final class Lot6MariaDbTest {
         Lot4Migration.migrer(c, true);
         Lot3Migration.migrer(c, true);
         Lot6Migration.migrer(c, true);
+        Lot5Migration.migrer(c, true);
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);
         var source = new DriverManagerDataSource(url, utilisateur, motDePasse); source.setDriverClassName("org.mariadb.jdbc.Driver");

@@ -817,3 +817,30 @@ CREATE TABLE IF NOT EXISTS mouvement_stock (
     CONSTRAINT fk_mouvement_stock_produit FOREIGN KEY (produit_id) REFERENCES produit(id),
     INDEX idx_mouvement_stock_produit_date (boutique_id,produit_id,cree_le,id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Lot 5a (comptabilité) : les écritures ne sont jamais stockées, elles se calculent à partir des opérations. Deux petites tables seulement :
+-- sous_compte_boutique (les sous-comptes d'une boutique, dont celui de chaque compte de trésorerie) et correspondance_compta (les valeurs de
+-- la table de correspondance que le gérant a changées ; une ligne absente veut dire « valeur par défaut »).
+CREATE TABLE IF NOT EXISTS sous_compte_boutique (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    numero VARCHAR(8) NOT NULL,
+    parent_numero VARCHAR(4) NOT NULL,
+    intitule VARCHAR(120) NOT NULL,
+    compte_tresorerie_id BIGINT NULL,
+    date_creation DATETIME(6) NOT NULL,
+    CONSTRAINT uk_sous_compte_boutique_numero UNIQUE (boutique_id, numero),
+    CONSTRAINT uk_sous_compte_compte_tresorerie UNIQUE (compte_tresorerie_id),
+    CONSTRAINT fk_sous_compte_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_sous_compte_compte_tresorerie FOREIGN KEY (compte_tresorerie_id) REFERENCES compte_tresorerie_boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS correspondance_compta (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    cle VARCHAR(40) NOT NULL,
+    compte_numero VARCHAR(8) NOT NULL,
+    mots_cles VARCHAR(255) NULL,
+    CONSTRAINT uk_correspondance_compta_cle UNIQUE (boutique_id, cle),
+    CONSTRAINT fk_correspondance_compta_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

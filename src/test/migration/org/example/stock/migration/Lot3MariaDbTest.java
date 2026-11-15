@@ -69,6 +69,7 @@ public final class Lot3MariaDbTest {
         Lot3Migration.migrer(c, true);
         // Les entités décrivent aussi la corbeille du lot 6 : Hibernate en mode validate exige ses colonnes.
         Lot6Migration.migrer(c, true);
+        Lot5Migration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);

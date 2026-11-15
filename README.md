@@ -62,6 +62,11 @@ chaque nuit), appliquer la [migration du lot 6](docs/migrations/lot-6.md) après
 sauvegarde : `./gradlew lot6Check`, puis `LOT6_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot6Migrate`.
 Règles, unicité des noms et limites : [docs/lot-6.md](docs/lot-6.md).
 
+Pour la comptabilité SYSCOHADA du lot 5a (journal, grand livre, balance et contrôles calculés à partir des opérations,
+« en cours de validation par un expert-comptable »), appliquer la [migration du lot 5](docs/migrations/lot-5.md) **après le lot 6**
+et une sauvegarde : `./gradlew lot5Check`, puis `LOT5_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot5Migrate`.
+Plan de comptes, table de correspondance, écritures par opération, contrôles et limites : [docs/lot-5.md](docs/lot-5.md).
+
 Pour les comptes de trésorerie multiples du lot 3 (jusqu'à 12 comptes par boutique, par
 exemple deux comptes Orange Money ou deux banques), appliquer la
 [migration du lot 3](docs/migrations/lot-3.md) après le lot 4 et une sauvegarde :
@@ -103,6 +108,7 @@ node --test src/test/js/montants.test.cjs
 - [Préparation du schéma du lot 2](docs/migrations/lot-2.md)
 - [Réglages des reçus du lot 4](docs/migrations/lot-4.md)
 - [Corbeille du lot 6](docs/lot-6.md) et sa [migration](docs/migrations/lot-6.md)
+- [Comptabilité du lot 5a](docs/lot-5.md) et sa [migration](docs/migrations/lot-5.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)
