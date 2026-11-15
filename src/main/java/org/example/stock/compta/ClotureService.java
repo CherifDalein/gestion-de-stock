@@ -322,7 +322,8 @@ public class ClotureService {
         BigDecimal resultat = ligne.getResultat() == null ? BigDecimal.ZERO : ligne.getResultat();
         if (resultat.signum() == 0) throw new IllegalArgumentException("Le résultat de l'exercice " + ex.libelle() + " est nul : il n'y a rien à affecter.");
         if (destination == null || !DESTINATIONS.contains(destination.strip())) throw new IllegalArgumentException("Choisissez où affecter le résultat : report à nouveau (12), réserves (11) ou associés, dividendes à payer (465).");
-        String compte = destination.strip();
+        String choix = destination.strip();
+        String compte = choix.equals("11") ? "118" : choix;   // les réserves se portent au compte 118 (réserves libres) : un compte du plan, rattaché au bilan
         if (resultat.signum() < 0 && compte.equals("465")) throw new IllegalArgumentException("Une perte ne se verse pas en dividendes : affectez-la au report à nouveau (12) ou aux réserves (11).");
         LocalDate date = dateAffectation == null ? suivant.debut() : dateAffectation;
         if (!suivant.contient(date)) throw new IllegalArgumentException("La date d'affectation doit être dans l'exercice " + suivant.libelle() + " (du " + ExercicesService.jour(suivant.debut()) + " au " + ExercicesService.jour(suivant.fin()) + ").");
@@ -351,7 +352,7 @@ public class ClotureService {
     }
 
     static String libelleDestination(String compte, BigDecimal resultat) {
-        return switch (compte) { case "11" -> "réserves"; case "465" -> "associés, dividendes à payer"; default -> "report à nouveau" + (resultat.signum() < 0 ? " (perte reportée)" : ""); };
+        return switch (compte) { case "118" -> "réserves libres"; case "465" -> "associés, dividendes à payer"; default -> "report à nouveau" + (resultat.signum() < 0 ? " (perte reportée)" : ""); };
     }
 
     // ---- Outils ---------------------------------------------------------------------------------------------------------------------

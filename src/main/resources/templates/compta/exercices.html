@@ -52,7 +52,8 @@
                             </div>
                             <button type="submit" class="btn btn-outline-primary" th:disabled="${!premierModifiable}">Enregistrer</button>
                         </form>
-                        <p class="small text-muted mt-2 mb-0" th:text="${premierModifiable ? 'Le premier exercice dure douze mois à partir de cette date, puis les suivants s\'enchaînent. Il ne peut pas commencer après la première opération.' : 'Un exercice est clôturé : cette date ne change plus.'}"></p>
+                        <p th:if="${premierModifiable}" class="small text-muted mt-2 mb-0">Le premier exercice dure douze mois à partir de cette date, puis les suivants s'enchaînent. Il ne peut pas commencer après la première opération.</p>
+                        <p th:unless="${premierModifiable}" class="small text-muted mt-2 mb-0">Un exercice est clôturé : cette date ne change plus.</p>
                     </div>
                 </section>
             </div>

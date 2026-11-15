@@ -29,7 +29,7 @@
             </div>
             <button type="submit" class="btn btn-outline-primary">Afficher l'exercice</button>
         </form>
-        <div th:if="${fige != null}" class="alert alert-info" role="note" data-etat-fige th:text="${'Exercice clôturé : ces montants sont ceux de l\'instantané figé le ' + #temporals.format(fige.clotureLe, 'dd/MM/yyyy') + ' (version ' + fige.version + '), pas un nouveau calcul.'}"></div>
+        <div th:if="${fige != null}" class="alert alert-info" role="note" data-etat-fige th:text="|Exercice clôturé : ces montants sont ceux de l'instantané figé le ${#temporals.format(fige.clotureLe, 'dd/MM/yyyy')} (version ${fige.version}), pas un nouveau calcul.|"></div>
 
         <form th:if="${avecPeriode}" method="get" th:action="@{__${chemin}__}" class="etat-periode" aria-label="Choisir la période">
             <div>
