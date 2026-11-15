@@ -20,7 +20,7 @@
 .compta-page .compta-corr-champs { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
 .compta-page .compta-corr-champs .compta-mots { flex: 1 1 14rem; min-width: 0; }
 .compta-page .compta-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.compta-page .etat-table > tbody > tr > td { overflow-wrap: anywhere; }
+.compta-page .etat-table > tbody > tr > td { overflow-wrap: break-word; }
 @media (max-width: 767px) {
     .compta-page .compta-corr-form { grid-template-columns: minmax(0, 1fr); }
     .compta-page .compta-compte { max-width: none; flex: 1 1 8rem; }
