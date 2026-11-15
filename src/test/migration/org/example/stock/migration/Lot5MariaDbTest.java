@@ -104,12 +104,41 @@ public final class Lot5MariaDbTest {
             try { em.persist(new CorrespondanceCompta(em.find(Boutique.class, b.getId()), "VENTES_SERVICES", "706", null)); em.flush(); } catch (RuntimeException e) { refuse = true; }
             if (em.getTransaction().isActive()) em.getTransaction().rollback();
             Lot5MigrationScenarios.exiger(refuse, "Deux lignes de correspondance de même clé acceptées");
+            verifierCloture(c, em, b.getId());
         }
         Lot5Migration.migrer(c, true);   // complète les sous-comptes des autres comptes de trésorerie de la boutique JPA
         var avant = Lot5MigrationScenarios.etatComplet(c);
         Lot5Migration.migrer(c, true);
         Lot5MigrationScenarios.exiger(avant.equals(Lot5MigrationScenarios.etatComplet(c)), "La relance a modifié ce que le code actuel a créé");
         System.out.println("Hibernate validate accepte le schéma migré ; sous-comptes et correspondance relus.");
+    }
+
+    /** Lot 5c : un exercice clôturé avec ses soldes, son instantané (contenu de plus de 64 Ko : LONGBLOB), ses documents et son affectation, écrits et relus par JPA. */
+    private static void verifierCloture(Connection c, jakarta.persistence.EntityManager em, Long boutiqueId) throws Exception {
+        byte[] gros = new byte[300_000]; for (int i = 0; i < gros.length; i++) gros[i] = (byte) (i * 31 + 7);
+        em.getTransaction().begin();
+        var boutique = em.find(Boutique.class, boutiqueId);
+        var exercice = new ExerciceComptable(boutique, java.time.LocalDate.of(2025, 1, 1), java.time.LocalDate.of(2025, 12, 31));
+        em.persist(exercice);
+        exercice.cloturer(LocalDateTime.of(2026, 1, 10, 9, 0), "Gérant JPA", "Clôture d'essai", new java.math.BigDecimal("1500.50"), new java.math.BigDecimal("450000.00"), 12L, 7L);
+        em.persist(new SoldeOuverture(exercice, "571", "", 0L, null, new java.math.BigDecimal("100.00")));
+        em.persist(new SoldeOuverture(exercice, "4111", "CLIENT", 5L, "Aminata", new java.math.BigDecimal("-100.00")));
+        var instantane = new InstantaneExercice(boutique, exercice, 1, "NORMAL", new java.math.BigDecimal("1500.50"), "a".repeat(64), gros, LocalDateTime.of(2026, 1, 10, 9, 0), "Gérant JPA", null);
+        em.persist(instantane);
+        em.persist(new InstantaneDocument(instantane, "bilan", "Bilan", "bilan.pdf", gros, new byte[] {1, 2, 3}));
+        em.persist(new AffectationResultat(boutique, exercice, java.time.LocalDate.of(2026, 1, 2), "12", new java.math.BigDecimal("1500.50"), "Affectation", LocalDateTime.of(2026, 1, 2, 9, 0), "Gérant JPA"));
+        em.getTransaction().commit();
+        em.clear();
+        var relu = em.find(InstantaneExercice.class, instantane.getId());
+        Lot5MigrationScenarios.exiger(Arrays.equals(relu.getContenu(), gros), "Contenu de l'instantané altéré par la base");
+        Lot5MigrationScenarios.exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM instantane_document WHERE code='bilan' AND LENGTH(pdf)=300000") == 1, "PDF tronqué par la base");
+        Lot5MigrationScenarios.exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM exercice_comptable WHERE statut='CLOTURE' AND resultat=1500.50 AND plafond_client_id=12") == 1, "Exercice clôturé non relu");
+        Lot5MigrationScenarios.exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM solde_ouverture WHERE (compte='571' AND tiers_type='' AND tiers_id=0) OR (compte='4111' AND tiers_nom='Aminata')") == 2, "Soldes d'ouverture non relus");
+        em.getTransaction().begin();
+        em.createQuery("delete from AffectationResultat").executeUpdate(); em.createQuery("delete from InstantaneDocument").executeUpdate();
+        em.createQuery("delete from InstantaneExercice").executeUpdate(); em.createQuery("delete from SoldeOuverture").executeUpdate(); em.createQuery("delete from ExerciceComptable").executeUpdate();
+        em.getTransaction().commit();
+        em.clear();
     }
 
     /**
