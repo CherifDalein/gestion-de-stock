@@ -608,6 +608,8 @@ puis produits »…) qui se contredisaient et produisaient de vrais interblocage
 
 ### La règle
 
+La corbeille du lot 6 suit la même règle : restaurer ou effacer une fiche verrouille la boutique, puis la fiche ([lot 6](lot-6.md)).
+
 Toute opération d'écriture métier qui modifie l'argent, le stock, les factures, les retours, les avances ou les soldes verrouille
 **d'abord la ligne `boutique` de la boutique courante** (`StockLockRepository.verrouillerBoutiqueCourante()`, `PESSIMISTIC_WRITE`),
 en première instruction de sa transaction, puis, dans cet ordre et seulement ceux dont elle a besoin :

@@ -121,6 +121,9 @@
                     <a class="nav-link" th:href="@{/utilisateurs}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'utilisateurs/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'utilisateurs/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-users-gear" aria-hidden="true"></i></span>Utilisateurs
                     </a>
+                    <a class="nav-link" th:href="@{/corbeille}" sec:authorize="hasRole('ADMIN')" th:classappend="${#strings.startsWith(page, 'corbeille/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'corbeille/') ? 'page' : null}">
+                        <span class="app-nav-icon"><i class="fa-solid fa-trash-can-arrow-up" aria-hidden="true"></i></span>Corbeille
+                    </a>
                     <div class="sb-sidenav-menu-heading app-sidebar-heading" sec:authorize="hasRole('PLATEFORME_ADMIN')">Plateforme</div>
                     <a class="nav-link" th:href="@{/plateforme/boutiques}" sec:authorize="hasRole('PLATEFORME_ADMIN')" th:classappend="${#strings.startsWith(page, 'plateforme/boutiques/') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(page, 'plateforme/boutiques/') ? 'page' : null}">
                         <span class="app-nav-icon"><i class="fa-solid fa-store" aria-hidden="true"></i></span>Administration plateforme

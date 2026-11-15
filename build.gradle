@@ -422,6 +422,31 @@ tasks.register('lot3MariaDbTest', JavaExec) {
     mainClass = 'org.example.stock.migration.Lot3MariaDbTest'
 }
 
+['lot6Check': '--check', 'lot6Migrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute la corbeille du lot 6 (supprime_le, supprime_par, clé d’unicité des catégories) sans supprimer ni modifier aucune donnée'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.Lot6Migration'
+        args mode
+    }
+}
+
+tasks.register('lot6MariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration du lot 6 et la validation Hibernate dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.Lot6MariaDbTest'
+    finalizedBy 'corbeilleMariaDbTest'
+}
+
+tasks.register('corbeilleMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la corbeille (SQL natif de CorbeilleService : lister, restaurer, conflit de nom, effacement, vidage, purge) sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.CorbeilleMariaDbTest'
+}
+
 tasks.register('coutMoyenServiceMariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie le coût moyen pondéré, les corrections d’achat et les opérations concurrentes avec les vrais services sur MariaDB temporaire'

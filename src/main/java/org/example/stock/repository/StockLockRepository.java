@@ -14,6 +14,7 @@ import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Vente;
 import org.example.stock.model.Produit;
 import org.example.stock.service.BoutiqueService;
+import org.example.stock.service.TypeCorbeille;
 import org.springframework.stereotype.Repository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -175,6 +176,20 @@ public class StockLockRepository {
         entityManager.refresh(partenaire, LockModeType.PESSIMISTIC_WRITE);
         boutiques.exigerAppartenance(partenaire.getBoutique());
         return partenaire;
+    }
+
+    /**
+     * Verrou en écriture d'une fiche <b>de la corbeille</b> de la boutique courante (404 sinon, y compris pour une fiche active ou d'une
+     * autre boutique), après le verrou de la boutique. Les fiches de la corbeille sont invisibles pour JPA (restriction SQL de l'entité) :
+     * la ligne est donc verrouillée par une requête SQL directe. Rend le nom de la fiche.
+     */
+    public String verrouillerElementDeLaCorbeille(TypeCorbeille type, Long id) {
+        var lignes = entityManager.createNativeQuery("select nom from " + type.table()
+                        + " where id = :id and boutique_id = :boutique and supprime_le is not null for update")
+                .setParameter("id", id).setParameter("boutique", boutiques.idBoutiqueCourante()).getResultList();
+        if (lignes.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, type.libelle() + " introuvable dans la corbeille");
+        Object nom = lignes.get(0);
+        return nom == null ? "" : nom.toString();
     }
 
     private void verifierIdentifiant(String entite, Long id, Long boutiqueId) {

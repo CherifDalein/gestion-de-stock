@@ -26,6 +26,9 @@ public class FournisseurService {
     @Autowired
     private StockLockRepository verrous;
 
+    @Autowired
+    private CorbeilleService corbeille;
+
     public List<Fournisseur> listerTous() {
         return fournisseurRepository.findAllByBoutiqueId(boutiqueService.idBoutiqueCourante());
     }
@@ -62,10 +65,18 @@ public class FournisseurService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Fournisseur introuvable"));
     }
 
+    /**
+     * Place le fournisseur dans la corbeille (lot 6). Refusé comme avant s'il a des achats, retours, règlements, ajustements de solde
+     * ou des produits ({@link IllegalArgumentException}).
+     */
     @Transactional
-    public void supprimerFournisseur(Long id) {
-        // La suppression contrôle les factures du fournisseur : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »).
+    public CorbeilleService.ElementSupprime supprimerFournisseur(Long id) {
+        // La suppression contrôle les factures du fournisseur : la boutique d'abord, puis la fiche (docs/lot-2.md, « Ordre des verrous »).
         verrous.verrouillerBoutiqueCourante();
-        fournisseurRepository.delete(trouverParId(id));
+        Fournisseur fournisseur = verrous.verrouillerFournisseur(id);
+        corbeille.exigerSansLien(TypeCorbeille.FOURNISSEUR, id);
+        var supprime = corbeille.placer(TypeCorbeille.FOURNISSEUR, fournisseur);
+        fournisseurRepository.saveAndFlush(fournisseur);
+        return supprime;
     }
 }

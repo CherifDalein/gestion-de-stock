@@ -2,7 +2,7 @@
     <script th:src="@{/js/export-liste.js}" defer="defer"></script>
     <div id="stockPartenaires" class="container-fluid stock-partners" data-partner-type="fournisseur" data-partner-label="fournisseur"
          th:with="totalPartenaires=${#lists.size(fournisseurs)}">
-        <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+        <th:block th:replace="~{fragments/corbeille :: message}"></th:block>
         <header class="partners-header">
             <div>
                 <p class="app-page-kicker">Contacts</p>

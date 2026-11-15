@@ -203,8 +203,10 @@ public final class BoutiquesMigration {
         if (!colonnes(c, "categorie").containsKey("nom")) throw new IllegalStateException("Nom de catégorie absent du schéma.");
         // GROUP BY utilise la collation de la base, sans remplacer la règle SQL par une normalisation Java.
         String groupe = boutiques ? "boutique_id,nom" : "nom";
+        // Depuis le lot 6, une catégorie de la corbeille peut porter le nom d'une catégorie active : seules les actives comptent.
+        String actives = colonnes(c, "categorie").containsKey("supprime_le") ? " AND supprime_le IS NULL" : "";
         if (compter(c, "SELECT COUNT(*) FROM (SELECT " + groupe + " FROM " + table(c, "categorie")
-                + " WHERE nom IS NOT NULL GROUP BY " + groupe + " HAVING COUNT(*)>1) doublons") > 0) {
+                + " WHERE nom IS NOT NULL" + actives + " GROUP BY " + groupe + " HAVING COUNT(*)>1) doublons") > 0) {
             throw new IllegalStateException("Catégories en doublon dans une même boutique selon la collation SQL. Corriger sans supprimer leurs historiques.");
         }
     }
@@ -221,7 +223,9 @@ public final class BoutiquesMigration {
             }
         }
         Collection<List<String>> indexes = indexesUniques(c, "categorie").values();
-        if (indexes.stream().noneMatch(colonnes -> colonnes.size() == 2 && new HashSet<>(colonnes).equals(Set.of("boutique_id", "nom")))
+        // Depuis le lot 6, l'unicité du nom porte sur boutique_id et nom_cle (le nom d'une catégorie active, vide à la corbeille).
+        boolean avecCle = colonnes(c, "categorie").containsKey("nom_cle");
+        if (indexes.stream().noneMatch(colonnes -> colonnes.size() == 2 && new HashSet<>(colonnes).equals(Set.of("boutique_id", avecCle ? "nom_cle" : "nom")))
                 || indexes.stream().anyMatch(colonnes -> colonnes.equals(List.of("nom")))) {
             throw new IllegalStateException("Unicité des catégories non conforme : seul le couple boutique_id/nom doit limiter les noms.");
         }

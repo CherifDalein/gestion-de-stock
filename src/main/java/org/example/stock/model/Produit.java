@@ -11,15 +11,18 @@ import lombok.Getter;
 import lombok.Setter;
 import org.example.stock.enums.NatureProduit;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 
 @Entity
+@SQLRestriction("supprime_le is null")
 @Getter
 @Setter
-public class Produit {
+public class Produit implements ElementSupprimable {
     public static final long SEUIL_ALERTE_PAR_DEFAUT = 5L;
 
     @Id
@@ -96,6 +99,20 @@ public class Produit {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "fournisseur_id")
     private Fournisseur fournisseur;
+
+    /** Corbeille (lot 6) : date de mise à la corbeille ; vide tant que la fiche est active. Jamais liée depuis un formulaire. */
+    @Column(name = "supprime_le")
+    private LocalDateTime supprimeLe;
+
+    /** Corbeille (lot 6) : identifiant du compte qui a supprimé la fiche (sans clé étrangère : le compte peut disparaître). */
+    @Column(name = "supprime_par")
+    private Long supprimePar;
+
+    @Override
+    public void mettreALaCorbeille(LocalDateTime quand, Long par) {
+        this.supprimeLe = quand;
+        this.supprimePar = par;
+    }
 
     /** Un service se vend sans stock : ni verrou, ni quantité, ni mouvement. */
     public boolean estService() {

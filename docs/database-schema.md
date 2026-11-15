@@ -6,7 +6,7 @@ Base cible : `stock_pro`
 
 ## Création d'une base neuve
 
-Le fichier [database-schema.sql](database-schema.sql) crée les vingt-cinq tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)), puis les réglages des reçus du lot 4 (voir la [migration du lot 4](migrations/lot-4.md)) et les comptes de trésorerie multiples du lot 3 (voir la [migration du lot 3](migrations/lot-3.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
+Le fichier [database-schema.sql](database-schema.sql) crée les vingt-cinq tables du schéma actuel, dont `boutique`, le stockage des liens de réinitialisation et des inscriptions publiques, le journal des abonnements, celui de l’inventaire et les comptes et opérations de trésorerie, ainsi que les colonnes préparées pour le lot 1 (voir la [migration du lot 1](migrations/lot-1.md)) et les devis et retours du lot 2 (voir la [migration du lot 2](migrations/lot-2.md)), puis les réglages des reçus du lot 4 (voir la [migration du lot 4](migrations/lot-4.md)) et les comptes de trésorerie multiples du lot 3 (voir la [migration du lot 3](migrations/lot-3.md)). puis la corbeille du lot 6 (colonnes `supprime_le`, `supprime_par` et `categorie.nom_cle` ; voir la [migration du lot 6](migrations/lot-6.md)). Il conserve les règles métier existantes et rend les noms de catégories uniques par boutique.
 
 Exécuter ce fichier uniquement pour initialiser une base neuve, puis lancer `./gradlew initialAdmin` : cette commande crée la boutique principale si elle est absente et y rattache le premier administrateur de boutique. Le script SQL ne crée aucun compte ni ne stocke de mot de passe. Le droit d'administration de la plateforme reste désactivé par défaut ; il est attribué séparément à un compte ADMIN existant par la [migration des accès plateforme](migrations/plateforme.md).
 
@@ -86,7 +86,9 @@ par le navigateur. Voir [migration des boutiques](migrations/boutiques.md).
 
 ### `categorie`
 - `id` PK
-- `nom` : UNIQUE (`boutique_id`, `nom`)
+- `nom` : nom de la catégorie
+- `nom_cle` : le nom tant que la catégorie est active, NULL dans la corbeille ; UNIQUE (`boutique_id`, `nom_cle`) remplace l'unicité sur `nom` (lot 6 ; voir [lot 6](lot-6.md))
+- `supprime_le`, `supprime_par` : date et auteur de la mise à la corbeille, vides tant que la fiche est active (lot 6, aussi sur `client`, `fournisseur` et `produit`)
 
 ### `client`
 - `id` PK

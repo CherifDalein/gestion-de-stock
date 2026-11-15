@@ -1,0 +1,12 @@
+<!--/* Message de succès ou d'erreur d'une liste, avec le lien « Annuler » qui suit une mise à la corbeille (lot 6). */-->
+<th:block th:fragment="message">
+    <div th:if="${success}" class="alert alert-success corbeille-message" role="status">
+        <span th:text="${success}"></span>
+        <form th:if="${annulerCorbeille != null}" class="corbeille-annuler" method="post"
+              th:action="@{/corbeille/restaurer/{type}/{id}(type=${annulerCorbeille['type']},id=${annulerCorbeille['id']})}">
+            <input type="hidden" name="depuis" value="liste">
+            <button type="submit" class="corbeille-annuler-bouton" aria-label="Annuler la suppression et restaurer la fiche">Annuler</button>
+        </form>
+    </div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
+</th:block>

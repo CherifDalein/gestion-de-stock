@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.model.Fournisseur;
+import org.example.stock.service.CorbeilleService;
 import org.example.stock.service.IncoherenceAvanceException;
 import org.example.stock.service.SoldePartenaireService;
 import org.example.stock.service.FournisseurService;
@@ -23,6 +24,9 @@ public class FournisseurController {
 
     @Autowired
     private SoldePartenaireService soldes;
+
+    @Autowired
+    private CorbeilleService corbeille;
 
     @GetMapping
     public String liste(Model model) {
@@ -65,8 +69,11 @@ public class FournisseurController {
 
     @PostMapping("/supprimer/{id}")
     public String supprimerFournisseur(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
-        fournisseurService.supprimerFournisseur(id);
-        redirectAttributes.addFlashAttribute("success", "Fournisseur supprimé avec succès.");
+        try {
+            corbeille.annoncer(redirectAttributes, fournisseurService.supprimerFournisseur(id));
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/fournisseurs";
     }
 

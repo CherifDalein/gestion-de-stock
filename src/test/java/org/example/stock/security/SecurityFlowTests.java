@@ -96,6 +96,11 @@ class SecurityFlowTests {
         when(clientService.listerTous()).thenReturn(List.of(client));
         when(categorieService.listerToutes()).thenReturn(List.of(categorie));
         when(fournisseurService.listerTous()).thenReturn(List.of(fournisseur));
+        // Les suppressions renvoient la fiche placée à la corbeille (lot 6), dont le contrôleur annonce le message.
+        when(produitService.supprimerProduit(1L)).thenReturn(new org.example.stock.service.CorbeilleService.ElementSupprime(org.example.stock.service.TypeCorbeille.PRODUIT, 1L, "Produit"));
+        when(clientService.supprimerClient(1L)).thenReturn(new org.example.stock.service.CorbeilleService.ElementSupprime(org.example.stock.service.TypeCorbeille.CLIENT, 1L, "Client"));
+        when(categorieService.supprimer(1L)).thenReturn(new org.example.stock.service.CorbeilleService.ElementSupprime(org.example.stock.service.TypeCorbeille.CATEGORIE, 1L, "Catégorie"));
+        when(fournisseurService.supprimerFournisseur(1L)).thenReturn(new org.example.stock.service.CorbeilleService.ElementSupprime(org.example.stock.service.TypeCorbeille.FOURNISSEUR, 1L, "Fournisseur"));
     }
 
     @ParameterizedTest

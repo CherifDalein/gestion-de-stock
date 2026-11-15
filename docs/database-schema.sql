@@ -1,5 +1,7 @@
 -- Création d'une base neuve uniquement : ne pas utiliser ce script pour migrer des tables existantes.
 -- Pour une ancienne base, utiliser boutiquesCheck puis boutiquesMigrate après sauvegarde.
+-- Lot 6 (corbeille) : supprime_le et supprime_par sur client, fournisseur, produit et categorie ; categorie.nom_cle porte l'unicité du nom
+-- (le nom d'une catégorie active, vide dans la corbeille). Voir docs/lot-6.md et docs/migrations/lot-6.md.
 CREATE DATABASE IF NOT EXISTS stock_pro
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -48,10 +50,13 @@ CREATE TABLE IF NOT EXISTS categorie (
     id BIGINT NOT NULL AUTO_INCREMENT,
     boutique_id BIGINT NOT NULL,
     nom VARCHAR(255),
+    nom_cle VARCHAR(255) NULL,
+    supprime_le DATETIME(6) NULL,
+    supprime_par BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_categorie_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
-    CONSTRAINT uk_categorie_boutique_nom UNIQUE (boutique_id, nom)
+    CONSTRAINT uk_categorie_boutique_nom_cle UNIQUE (boutique_id, nom_cle)
 );
 
 CREATE TABLE IF NOT EXISTS client (
@@ -63,6 +68,8 @@ CREATE TABLE IF NOT EXISTS client (
     adresse VARCHAR(255),
     solde_initial DECIMAL(17,2) NOT NULL DEFAULT 0,
     echeance_solde_initial DATE NULL,
+    supprime_le DATETIME(6) NULL,
+    supprime_par BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_client_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id)
@@ -77,6 +84,8 @@ CREATE TABLE IF NOT EXISTS fournisseur (
     adresse VARCHAR(255),
     solde_initial DECIMAL(17,2) NOT NULL DEFAULT 0,
     echeance_solde_initial DATE NULL,
+    supprime_le DATETIME(6) NULL,
+    supprime_par BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_fournisseur_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id)
@@ -114,6 +123,8 @@ CREATE TABLE IF NOT EXISTS produit (
     cout_moyen DECIMAL(17,2) NOT NULL DEFAULT 0,
     categorie_id BIGINT,
     fournisseur_id BIGINT,
+    supprime_le DATETIME(6) NULL,
+    supprime_par BIGINT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_produit_boutique
         FOREIGN KEY (boutique_id) REFERENCES boutique (id),
