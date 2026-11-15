@@ -57,7 +57,7 @@ public final class Lot5MariaDbTest {
             System.out.println(reussis + " scénarios lot 5 MariaDB réussis ; bases temporaires supprimées.");
         } catch (Exception e) {
             System.err.println("Vérification MariaDB lot 5 interrompue : " + (e instanceof IllegalStateException ? e.getMessage()
-                    : "Opération impossible pour " + courant + (e instanceof SQLException sql ? " (SQLState=" + sql.getSQLState() + ", code=" + sql.getErrorCode() + ")" : "") + " ; aucune donnée privée publiée."));
+                    : "Opération impossible pour " + courant + (e instanceof SQLException sql ? " (SQLState=" + sql.getSQLState() + ", code=" + sql.getErrorCode() + ")" : "") + " ; " + e.getClass().getSimpleName() + (e instanceof SQLException ? "" : " : " + String.valueOf(e.getMessage()).lines().findFirst().orElse("")) + " (base jetable, données de test)."));
             System.exit(1);
         }
     }
@@ -91,7 +91,7 @@ public final class Lot5MariaDbTest {
             var b = new Boutique(); b.setNom("Boutique JPA lot 5"); em.persist(b);
             em.flush();
             var compte = b.getComptesTresorerie().getFirst();
-            em.persist(new SousCompteBoutique(b, "571", "5711", "Caisse", compte, LocalDateTime.of(2026, 11, 14, 9, 30, 15)));
+            em.persist(new SousCompteBoutique(b, "571", "5713", "Caisse", compte, LocalDateTime.of(2026, 11, 14, 9, 30, 15)));
             em.persist(new SousCompteBoutique(b, "658", "6589001", "Pertes diverses", null, LocalDateTime.of(2026, 11, 14, 9, 31, 15)));
             em.persist(new CorrespondanceCompta(b, "VENTES_SERVICES", "707", null));
             em.persist(new CorrespondanceCompta(b, "DEPENSE_LOYER", "623", "loyer, bail"));
@@ -105,6 +105,7 @@ public final class Lot5MariaDbTest {
             if (em.getTransaction().isActive()) em.getTransaction().rollback();
             Lot5MigrationScenarios.exiger(refuse, "Deux lignes de correspondance de même clé acceptées");
         }
+        Lot5Migration.migrer(c, true);   // complète les sous-comptes des autres comptes de trésorerie de la boutique JPA
         var avant = Lot5MigrationScenarios.etatComplet(c);
         Lot5Migration.migrer(c, true);
         Lot5MigrationScenarios.exiger(avant.equals(Lot5MigrationScenarios.etatComplet(c)), "La relance a modifié ce que le code actuel a créé");
@@ -123,9 +124,10 @@ public final class Lot5MariaDbTest {
             var caisse = b.getComptesTresorerie().stream().filter(x -> x.getType() == TypeCompteTresorerie.ESPECES).findFirst().orElseThrow();
             var client = new Client(); client.setBoutique(b); client.setNom("Client requêtes"); client.setSoldeInitial(new java.math.BigDecimal("5000")); em.persist(client);
             var fournisseur = new Fournisseur(); fournisseur.setBoutique(b); fournisseur.setNom("Fournisseur requêtes"); em.persist(fournisseur);
-            var produit = new Produit(); produit.setBoutique(b); produit.setNom("Produit requêtes"); produit.setReference("RQ-1"); produit.setPrixAchat(new java.math.BigDecimal("100"));
+            var categorie = new Categorie(); categorie.setBoutique(b); categorie.setNom("Catégorie requêtes"); em.persist(categorie);
+            var produit = new Produit(); produit.setCategorie(categorie); produit.setBoutique(b); produit.setNom("Produit requêtes"); produit.setReference("RQ-1"); produit.setPrixAchat(new java.math.BigDecimal("100"));
             produit.setPrixVente(new java.math.BigDecimal("200")); produit.setQuantite(7L); produit.setCoutMoyen(new java.math.BigDecimal("100")); em.persist(produit);
-            var service = new Produit(); service.setBoutique(b); service.setNom("Service requêtes"); service.setReference("RQ-S"); service.setNature(org.example.stock.enums.NatureProduit.SERVICE);
+            var service = new Produit(); service.setCategorie(categorie); service.setBoutique(b); service.setNom("Service requêtes"); service.setReference("RQ-S"); service.setNature(org.example.stock.enums.NatureProduit.SERVICE);
             service.setPrixVente(new java.math.BigDecimal("50")); service.setQuantite(0L); em.persist(service);
             var jour = LocalDateTime.of(2026, 3, 10, 9, 0);
             var vente = new Vente(); vente.setBoutique(b); vente.setNumero("V-RQ-1"); vente.setDateVente(jour); vente.setMontantTotal(new java.math.BigDecimal("450")); vente.setMontantVerse(new java.math.BigDecimal("450")); vente.setClient(client); em.persist(vente);
@@ -148,7 +150,7 @@ public final class Lot5MariaDbTest {
             // Stock : 7 aujourd'hui + 2 vendus (10/03) - 3 achetés (11/03) = 6 avant la vente ; après la vente du 10/03 mais avant l'achat : 4.
             Lot5MigrationScenarios.exiger(avantAchat.valeursStock().getFirst().valeur().compareTo(new java.math.BigDecimal("400")) == 0, "Valeur du stock à la date de la vente : " + avantAchat.valeursStock().getFirst().valeur());
             Lot5MigrationScenarios.exiger(apresTout.valeursStock().getFirst().valeur().compareTo(new java.math.BigDecimal("700")) == 0, "Valeur du stock en fin de période : " + apresTout.valeursStock().getFirst().valeur());
-            var ecritures = new ConstructeurEcritures(apresTout, Correspondance.parDefaut(Map.of(caisse.getId(), "5711"))).construire();
+            var ecritures = new ConstructeurEcritures(apresTout, Correspondance.parDefaut(Map.of(caisse.getId(), "5713"))).construire();
             Lot5MigrationScenarios.exiger(!ecritures.isEmpty() && ecritures.stream().allMatch(Ecriture::estEquilibree), "Écritures déséquilibrées sur MariaDB");
             Lot5MigrationScenarios.exiger(ecritures.stream().anyMatch(e -> e.origine().startsWith("REPORT:OUV-C")), "Solde de départ du client absent");
             Lot5MigrationScenarios.exiger(donnees.valeurStockAppli(b.getId()).compareTo(new java.math.BigDecimal("700")) == 0, "Valeur du stock de l'application");
