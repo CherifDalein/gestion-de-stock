@@ -93,6 +93,14 @@
 .compta-page .cloture-table th[scope="row"] { font-weight: 700; }
 @media (max-width: 767px) {
     .compta-page .cloture-form > .btn { width: 100%; }
-    .compta-page .cloture-table { min-width: 0; }
     .compta-page .cloture-actions { justify-content: flex-start; }
+    /* Petit écran : chaque exercice devient une fiche (le tableau de 640 px ne tient pas) ; l'en-tête reste lu par les lecteurs d'écran. */
+    #stockEtat.compta-page .cloture-table, #stockEtat.compta-page .cloture-table tbody, #stockEtat.compta-page .cloture-table tr,
+    #stockEtat.compta-page .cloture-table th, #stockEtat.compta-page .cloture-table td { display: block; min-width: 0; width: auto; }
+    #stockEtat.compta-page .cloture-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    #stockEtat.compta-page .cloture-table tr { padding: 12px 0; border-top: 1px solid var(--app-border); }
+    #stockEtat.compta-page .cloture-table tbody tr:first-child { border-top: 0; }
+    #stockEtat.compta-page .cloture-table th, #stockEtat.compta-page .cloture-table td { padding: 2px 0; border: 0; text-align: left !important; }
+    #stockEtat.compta-page .cloture-table td[data-label]::before { content: attr(data-label) " : "; font-weight: 600; color: var(--app-muted); }
+    #stockEtat.compta-page .cloture-table td.cloture-actions { display: flex; padding-top: 8px; }
 }

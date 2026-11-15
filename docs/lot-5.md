@@ -6,7 +6,7 @@
 
 Cette étape (5a) calcule les écritures comptables en partie double à partir des opérations déjà enregistrées par l'application (ventes,
 achats, retours, règlements, dépenses, transferts, financements, comptages de caisse, soldes de départ, stock). L'étape 5b (états financiers) est décrite
-plus bas ; l'étape 5c (clôture) n'est pas faite.
+plus bas ; l'étape 5c (clôture d'exercice) l'est à la fin de ce document.
 
 ## Principe : rien n'est stocké, tout est recalculé
 
@@ -163,7 +163,7 @@ Les montants viennent de la balance de l'étape 5a **après la régularisation d
 calcule les écritures arrêtées à la fin de la période et à la veille de son début ; le compte de résultat est la différence des comptes de
 gestion (classes 6 à 8), le bilan est la situation à la fin. Les soldes de départ (écritures contre le report à nouveau 12) sont traités comme
 l'ouverture : ils n'entrent pas dans le résultat ni dans les flux de la période. Un résultat d'une période antérieure non clôturé s'ajoute au
-report à nouveau (CH) ; la clôture est l'étape 5c et n'est pas faite ici.
+report à nouveau (CH) ; la clôture est l'étape 5c (voir « Clôture d'exercice »).
 
 ### Règles de classement du bilan
 
@@ -353,7 +353,7 @@ Ils portent sur la période choisie à la page Contrôles (mois en cours par dé
   période se compensent. Les comptes courants d'associés (46) sont présentés en financement par les capitaux étrangers (FP) et les emprunts reçus en FO.
 - **Pas de TVA, de provisions, d'impôt sur le résultat ni d'immobilisations créées par l'application** : les lignes correspondantes restent à zéro
   tant que des écritures manuelles n'existent pas.
-- **Clôture** (écritures de clôture, report du résultat dans le compte 12, ouverture de l'exercice suivant) : étape 5c, non faite.
+- **Clôture** : voir la section « Clôture d'exercice » (étape 5c).
 
 ## Tests
 
@@ -378,3 +378,75 @@ main, N-1, PDF, Excel, caissier 403, isolation, réglage du système).
 - **Dates** : l'application date les mouvements d'un document à l'enregistrement ; un document daté après son règlement (rare) apparaît dans
   l'ordre des dates, sans effet sur les soldes.
 - Un client ou fournisseur envoyé à la corbeille garde ses écritures ; le contrôle 3 ou 4 le signale « hors liste » s'il garde un solde.
+
+## Clôture d'exercice (étape 5c)
+
+Réservée au **gérant** (403 pour le caissier), par boutique. Page : **Comptabilité > Exercices et clôture** (`/comptabilite/exercices`).
+
+### Exercices
+- Par défaut, l'exercice est l'**année civile**. Chaque boutique peut régler le début de son **premier** exercice (puis douze mois) ; ce réglage n'est possible que
+  tant qu'aucun exercice n'est clôturé et ne peut pas dépasser la date de la première opération.
+- Un exercice sans ligne en base est ouvert. Une ligne n'existe que pour un exercice clôturé (ou rouvert depuis). Les exercices se clôturent **dans l'ordre**.
+- La page liste chaque exercice avec son statut (ouvert, clôturé) et son résultat. Les pages des états (compte de résultat, bilan, flux, SMT) ont un **sélecteur
+  d'exercice** ; pour un exercice clôturé, ce sont les montants de l'instantané, jamais un nouveau calcul.
+
+### Pré-clôture
+Une liste de points, chacun marqué **Bloquant** ou **Recommandé**, avec un lien pour le corriger. Bloquants : exercice terminé ; exercice précédent clôturé ;
+contrôles de la comptabilité (5a) et des états (5b) conformes (sans écart) ; aucun comptage de caisse en attente ; aucun relevé bancaire en brouillon sur la
+période ; stock valorisé (tout produit en stock a un coût). Recommandés : inventaire récent (une entrée de stock dans les 90 derniers jours) ; résultat de
+l'exercice précédent affecté ; états validés par un expert-comptable. Le bouton de clôture est désactivé tant qu'un point bloquant reste.
+
+### Clôture
+Bouton avec la fenêtre de confirmation de l'application et un motif facultatif. Sous le verrou de la boutique puis de l'exercice, le service :
+1. revoit les points bloquants ;
+2. calcule les états et les **fige** dans un **instantané** : balance, compte de résultat, bilan, flux (ou SMT), montants (JSON) et **PDF + Excel** de chaque document,
+   avec une empreinte **SHA-256** du contenu et des documents (la page indique si elle est toujours conforme) ;
+3. enregistre les **soldes d'ouverture** : soldes des comptes de bilan (classes 1 à 5, par tiers pour clients et fournisseurs), le résultat net allant en **131**
+   (bénéfice) ou **139** (perte) ; la somme est nulle (sinon la clôture est annulée) ;
+4. enregistre la valeur du stock figée et les identifiants de clients et fournisseurs existants (pour les tiers créés plus tard) ;
+5. verrouille l'exercice.
+
+Les écritures ne sont toujours pas stockées. Après la clôture, les écritures des exercices suivants se calculent à partir des soldes d'ouverture **plus** les
+opérations de l'exercice, sans recalcul depuis l'origine : une écriture d'ouverture unique (OD) remplace tout ce qui est daté jusqu'à la fin de l'exercice clôturé.
+Les états de l'exercice suivant sont **identiques** à ceux calculés avant la clôture (testé : résultat, bilan, flux, trésorerie). À l'ouverture, le compte 13 est
+présenté avec le report à nouveau (CH) du bilan ; le 465 n'entre pas dans les flux.
+
+### Verrou serveur
+Un service central, `VerrouExercice`, est appelé par **tous** les services d'écriture, sous le verrou de la boutique, avec la date de l'opération (ou de
+l'opération annulée) : vente, achat (création, modification), règlement de vente et d'achat, retours de vente et d'achat, dépense, transfert, financement
+(opérations, emprunts, remboursements), comptage de caisse, ajustement de solde de départ, rapprochement bancaire (relevés : création, modification, lignes,
+validation et dévalidation, d'après la date de fin du relevé), annulation d'un mouvement (d'après sa date), stock initial, créances, corbeille (suppression et
+restauration). Une date est figée si elle n'est pas postérieure à la fin du dernier exercice clôturé. Message :
+« L'exercice 2026 est clôturé : cette opération ne peut plus être enregistrée à cette date. » Ordre des verrous : boutique, puis exercice (lecture
+partagée pour une écriture, écriture pour la clôture, son annulation et l'affectation), puis le reste (voir [lot 2](lot-2.md#ordre-des-verrous)). Testé : un test
+par parcours (`ClotureExerciceIntegrationTests`) et une concurrence sur MariaDB (`clotureMariaDbTest`).
+
+### Affectation du résultat
+Après la clôture, le gérant saisit une écriture simple : le compte 13 est soldé vers le report à nouveau (**12**), les réserves libres (**11**, porté au compte
+118) ou les associés, dividendes à payer (**465**, pour un bénéfice seulement). C'est une **OD** de l'exercice suivant, à la date choisie dans cet exercice. Une seule
+affectation par exercice ; elle se supprime tant que l'exercice suivant n'est pas clôturé.
+
+### Annulation de la clôture
+Seulement pour le **dernier** exercice clôturé, sans affectation, avec un **motif obligatoire** et une confirmation. Elle supprime les soldes d'ouverture et le verrou,
+mais **conserve l'instantané**, marqué « annulé » avec la date, l'auteur et le motif ; une nouvelle clôture crée une version suivante.
+
+### Documents et validation
+Le PDF et l'Excel de l'instantané se téléchargent depuis la page de l'exercice. Le PDF porte « Exercice clôturé le … par … » au lieu de la seule mention
+« en cours de validation » ; cette dernière reste tant que le réglage **États validés par un expert-comptable** (cabinet et date, par boutique) n'est pas rempli.
+Une fois rempli, la mention de validation la remplace sur les pages et les documents.
+
+### Références
+Acte uniforme révisé (texte fourni, `ohada/full.txt`) : report à nouveau et affectation du résultat, comptes 12, 13 (131, 139), 11, 465 ; états de synthèse
+(bilan, compte de résultat, flux) du système normal ; l'ouverture reprend les soldes du bilan de clôture (principe d'intangibilité du bilan d'ouverture).
+
+### Limites et questions pour l'expert-comptable
+- **Inventaire physique** : l'application ne tient pas d'inventaire comptable ; « stock compté » est approché par « chaque produit en stock a un coût », et
+  « inventaire récent » par une entrée de stock récente. Faut-il exiger un inventaire daté ?
+- Les **contrôles 3 à 5** (soldes de l'application à une date) ne sont pas comparables pour une période passée (l'application ne conserve pas ses soldes) : ils ne
+  bloquent pas la clôture.
+- **Réserves** : le choix « 11 » se porte au 118 (réserves libres) ; faut-il distinguer légale (111) et statutaire (112) ?
+- Les **dividendes** affectés au 465 ne sont pas payés par l'application (pas de règlement du 465 aux associés autre que par les opérations de financement).
+- Un relevé bancaire à cheval sur deux exercices est rattaché à l'exercice de sa date de fin.
+- Pas de **déclaration fiscale**, de provisions, d'amortissements ni d'écritures de régularisation (charges constatées d'avance) : à saisir hors application.
+- Le verrou se fonde sur la date des opérations : le solde de départ d'un client ou fournisseur (sans date propre) est refusé en modification seulement
+  par la date du jour de la modification.

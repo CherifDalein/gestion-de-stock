@@ -66,6 +66,7 @@ Pour la comptabilité SYSCOHADA du lot 5a (journal, grand livre, balance et cont
 « en cours de validation par un expert-comptable »), appliquer la [migration du lot 5](docs/migrations/lot-5.md) **après le lot 6**
 et une sauvegarde : `./gradlew lot5Check`, puis `LOT5_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot5Migrate`.
 Plan de comptes, table de correspondance, écritures par opération, contrôles et limites : [docs/lot-5.md](docs/lot-5.md).
+Le lot 5c (clôture d'exercice du gérant : instantané, report à nouveau, verrou, affectation, annulation) ajoute cinq tables par la même commande `lot5Migrate` ; vérification de concurrence : `./gradlew clotureMariaDbTest`.
 L'étape 5b ajoute les états financiers (compte de résultat, bilan, tableau des flux ou système minimal de trésorerie, PDF et Excel) et la table
 `reglage_comptable_boutique`, créée par la même commande `lot5Migrate` (sûre sur une base où le 5a est déjà posé) ; voir la section « États financiers » de [docs/lot-5.md](docs/lot-5.md).
 
@@ -110,7 +111,7 @@ node --test src/test/js/montants.test.cjs
 - [Préparation du schéma du lot 2](docs/migrations/lot-2.md)
 - [Réglages des reçus du lot 4](docs/migrations/lot-4.md)
 - [Corbeille du lot 6](docs/lot-6.md) et sa [migration](docs/migrations/lot-6.md)
-- [Comptabilité des lots 5a et 5b](docs/lot-5.md) et sa [migration](docs/migrations/lot-5.md)
+- [Comptabilité des lots 5a, 5b et 5c (clôture d'exercice)](docs/lot-5.md) et sa [migration](docs/migrations/lot-5.md)
 - [Accès, CSRF et règlements clients/fournisseurs](docs/acces-et-csrf.md)
 - [Comptes utilisateurs, migration des emails et premier administrateur](docs/comptes-et-migration.md)
 - [Dépendances de sécurité et limite des mots de passe](docs/securite-dependances.md)

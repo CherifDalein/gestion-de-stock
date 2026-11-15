@@ -343,6 +343,32 @@ Lot 5b. Le système dans lequel la boutique présente ses états financiers ; un
 
 - `id` PK ; `boutique_id` BIGINT NOT NULL UNIQUE (`uk_reglage_comptable_boutique`), FK `fk_reglage_comptable_boutique` -> `boutique.id`
 - `systeme` VARCHAR(10) NOT NULL : `NORMAL` (compte de résultat, bilan, tableau des flux) ou `MINIMAL` (système minimal de trésorerie)
+- Lot 5c : `debut_premier_exercice` DATE NULL (début du premier exercice, sinon le 1er janvier de la première opération) ; `valide_cabinet` VARCHAR(120) NULL et `valide_le` DATE NULL (états validés par un expert-comptable)
+
+### `exercice_comptable`
+
+Lot 5c. Un exercice clôturé (ou rouvert depuis) ; un exercice sans ligne est ouvert.
+
+- `id` PK ; `boutique_id` BIGINT NOT NULL FK `fk_exercice_boutique` ; `date_debut`, `date_fin` DATE NOT NULL ; unique `(boutique_id, date_debut)` (`uk_exercice_boutique_debut`)
+- `statut` VARCHAR(10) NOT NULL (`OUVERT`, `CLOTURE`) ; `cloture_le` DATETIME(6), `cloture_par` VARCHAR(120), `motif` VARCHAR(255) NULL
+- `resultat` DECIMAL(19,2) NULL ; `valeur_stock` DECIMAL(19,2) NULL ; `plafond_client_id`, `plafond_fournisseur_id` BIGINT NULL (dernier identifiant existant à la clôture)
+
+### `solde_ouverture`
+
+Lot 5c. Soldes des comptes de bilan à la clôture d'un exercice (débit moins crédit), qui ouvrent le suivant.
+
+- `id` PK ; `exercice_id` BIGINT NOT NULL FK `fk_solde_ouverture_exercice` ; `compte` VARCHAR(8) ; `tiers_type` VARCHAR(12) (vide si aucun) ; `tiers_id` BIGINT (0 si aucun) ; `tiers_nom` VARCHAR(160) NULL ; `solde` DECIMAL(19,2)
+- unique `(exercice_id, compte, tiers_type, tiers_id)` (`uk_solde_ouverture`)
+
+### `instantane_exercice` et `instantane_document`
+
+Lot 5c. États figés à la clôture. `instantane_exercice` : `boutique_id`, `exercice_id` (FK), `version` INT, `statut` (`ACTIF`, `ANNULE`), `date_debut`, `date_fin`, `systeme`, `resultat`,
+`empreinte` VARCHAR(64) (SHA-256), `contenu` LONGBLOB (montants en JSON), `cree_le`, `cree_par`, `motif`, `annule_le`, `annule_par`, `motif_annulation` ; unique `(exercice_id, version)`.
+`instantane_document` : `instantane_id` (FK), `code`, `titre`, `nom_fichier`, `pdf` LONGBLOB, `excel` LONGBLOB ; unique `(instantane_id, code)`.
+
+### `affectation_resultat`
+
+Lot 5c. Affectation du résultat d'un exercice clôturé : `boutique_id`, `exercice_id` (FK, unique `uk_affectation_exercice`), `date_affectation`, `compte_destination` VARCHAR(8) (12, 118 ou 465), `montant` DECIMAL(19,2) (signé : négatif pour une perte), `libelle`, `cree_le`, `cree_par`.
 
 ## Diagramme relationnel
 
