@@ -320,7 +320,8 @@ public final class PostesOhada {
             cr("RL", "68,69", false, "Dotations hors 681, 691, 697 (687, 689, 698, 699) : rangées avec les dotations d'exploitation."),
             cr("TI", "78", false, "Transferts de charges autres que 781 et 787 : rangés avec ceux d'exploitation."),
             cr("TJ", "79", false, "Reprises autres que 791, 797, 798, 799 : rangées avec celles d'exploitation."),
-            cr("TA", "70", false, "Ventes autres que 701 à 707 : rangées avec les ventes de marchandises."));
+            cr("TA", "70", false, "Ventes autres que 701 à 707 : rangées avec les ventes de marchandises."),
+            cr("RE", "60", false, "Achats non cités au tableau (le compte 60 lui-même, 609 rabais) : rangés avec les autres achats."));
 
     // ---- Tableau des flux de trésorerie (modèle, page 997) ----------------------------------------------------------------------------
 

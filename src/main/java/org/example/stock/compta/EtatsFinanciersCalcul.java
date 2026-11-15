@@ -90,7 +90,7 @@ public final class EtatsFinanciersCalcul {
         Bilan bilan = bilan(bilanFin, resultatAnterieur, resultatPeriode);
         Map<String, BigDecimal> flux = flux(bilanBase, bilanFin, gestionPeriode, cr);
         BigDecimal tresorerie = bilanFin.filtrer(c -> c.startsWith("5") && !c.startsWith("59")).parCompte().values().stream().reduce(ZERO, BigDecimal::add);
-        Smt smt = smt(bilanBase, bilanFin, periode, resultatAnterieur);
+        Smt smt = smt(bilanBase, bilanFin, periode, resultatAnterieur, gestionPeriode.solde("68"));
         return new Exercice(du, au, cr, bilan, flux, tresorerie, smt, !fin.isEmpty());
     }
 
@@ -300,7 +300,7 @@ public final class EtatsFinanciersCalcul {
      * Bilan et compte de résultat du SMT (p. 1056). Les recettes et dépenses sont les flux de trésorerie de la période, rangés d'après le compte de
      * contrepartie ; le résultat ajoute les variations de stocks, de créances et de dettes d'exploitation (effet sur le résultat).
      */
-    static Smt smt(SoldesComptables base, SoldesComptables fin, List<Ecriture> periode, BigDecimal resultatAnterieur) {
+    static Smt smt(SoldesComptables base, SoldesComptables fin, List<Ecriture> periode, BigDecimal resultatAnterieur, BigDecimal dotations) {
         Map<Categorie, BigDecimal> flux = new java.util.EnumMap<>(Categorie.class);
         for (Categorie c : Categorie.values()) flux.put(c, ZERO);
         for (Ecriture e : periode) {
@@ -320,7 +320,6 @@ public final class EtatsFinanciersCalcul {
         Bilan tBase = classer(baseT), tFin = classer(finT);
         BigDecimal creances = delta(tFin.brut("BH").add(tFin.brut("BI")).add(tFin.brut("BJ")), tBase.brut("BH").add(tBase.brut("BI")).add(tBase.brut("BJ")));
         BigDecimal dettes = delta(tFin.passif("DI").add(tFin.passif("DJ")).add(tFin.passif("DK")), tBase.passif("DI").add(tBase.passif("DJ")).add(tBase.passif("DK")));
-        BigDecimal dotations = ZERO;
         BigDecimal g = c.add(stocks).add(creances).subtract(dettes).subtract(dotations);
         r.put("VENTES", ventes); r.put("AUTRES_RECETTES", autresRecettes); r.put("A", a);
         r.put("ACHATS", achats); r.put("LOYERS", loyers); r.put("SALAIRES", salaires); r.put("IMPOTS", impots); r.put("INTERETS", interets);
