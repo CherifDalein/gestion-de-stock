@@ -311,8 +311,7 @@ n'est pas modifiable par le gérant. Pour chaque poste : colonne, préfixes de c
 Produits en positif, charges en négatif ; formules du texte : marge commerciale XA = TA + RA + RB ; chiffre d'affaires XB = TA + TB + TC + TD ;
 valeur ajoutée XC = XB + RA + RB + (TE à RJ) ; EBE XD = XC + RK ; résultat d'exploitation XE = XD + TJ + RL ; résultat financier XF = TK à RN ;
 résultat des activités ordinaires XG = XE + XF ; résultat HAO XH = TN à RP ; résultat net XI = XG + XH + RQ + RS.
-Le coût d'achat des marchandises vendues ressort de la variation de stock (RB) : la marge commerciale est correcte, la ligne « Achats » (RA) est
-brute des retours.
+Le coût d'achat des marchandises vendues ressort des achats (RA, nets des retours) et de la variation de stock (RB).
 
 ### Tableau des flux de trésorerie (méthode indirecte)
 
@@ -361,7 +360,7 @@ Ils portent sur la période choisie à la page Contrôles (mois en cours par dé
 `ConstructeurEcrituresTests` (une écriture écrite à la main par type d'opération), `PlanEtCorrespondanceTests` (plan, normalisation,
 mots-clés), `ComptabiliteIntegrationTests` (jeu de données réel : 5 contrôles conformes, comptes calculés à la main, correspondance
 modifiée puis rétablie, sous-comptes, deux boutiques, caissier 403, exports, champs inconnus), `ComptabiliteChargeTests` (10 000
-opérations), `Lot5MigrationTests` (H2, 23 cas) et `lot5MariaDbTest` (MariaDB : migration, Hibernate validate, requêtes groupées). Étape 5b : `EtatsFinanciersCalculTests` (jeux équilibrés,
+opérations), `Lot5MigrationTests` (H2, 25 cas) et `lot5MariaDbTest` (MariaDB : migration, Hibernate validate, requêtes groupées). Étape 5b : `EtatsFinanciersCalculTests` (jeux équilibrés,
 tiers à double sens, découvert, immobilisations, cession, couverture des 1 401 comptes du plan), `EtatsFinanciersIntegrationTests` (jeu réel avec
 ventes, achats, retours, avances, emprunt avec intérêts, dépenses, écart de caisse et apport ; compte de résultat, bilan, flux et SMT calculés à la
 main, N-1, PDF, Excel, caissier 403, isolation, réglage du système).
