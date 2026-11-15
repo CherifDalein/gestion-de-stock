@@ -31,6 +31,18 @@
             </div>
         </section>
 
+        <section class="card shadow-sm mb-4" aria-labelledby="titreExerciceEtats">
+            <div class="card-body">
+                <h2 id="titreExerciceEtats" class="h5">États d'un exercice</h2>
+                <ul class="compta-liste" data-etats-exercices>
+                    <li th:each="x : ${exercicesChoix}">
+                        <a th:href="@{/comptabilite/etats-financiers/{c}(c=${systeme.name() == 'NORMAL' ? 'bilan' : 'smt'},exercice=${x.debut})}" th:text="${'Exercice ' + x.libelle + (x.estCloture ? ' (clôturé)' : ' (ouvert)')}">Exercice 2026</a>
+                    </li>
+                </ul>
+                <p class="small text-muted mb-0">Les états d'un exercice clôturé sont ceux de son instantané. <a th:href="@{/comptabilite/exercices}">Exercices et clôture</a></p>
+            </div>
+        </section>
+
         <div class="row g-3">
             <div class="col-12 col-md-6 col-xl-4" th:each="c : ${cartes}">
                 <a class="card shadow-sm h-100 text-decoration-none" th:href="@{__${c.chemin}__}" th:attr="data-compta-lien=${c.chemin}">

@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import jakarta.persistence.EntityManager;
 import org.example.stock.enums.NatureProduit;
 import org.example.stock.model.Produit;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 public class ProduitService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     @Autowired private ProduitRepository produitRepository;
     @Autowired private CategorieRepository categorieRepository;
     @Autowired private FournisseurRepository fournisseurRepository;
@@ -82,6 +84,7 @@ public class ProduitService {
         }
         // Ordre global des verrous : la boutique avant le produit (docs/lot-2.md, « Ordre des verrous »).
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         if (!produitRepository.existsByIdAndBoutiqueId(id, boutiqueService.idBoutiqueCourante())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Produit introuvable");
         }
@@ -175,6 +178,7 @@ public class ProduitService {
     @Transactional
     public CorbeilleService.ElementSupprime supprimerProduit(Long id) {
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Produit produit = stockLockRepository.verrouillerProduits(List.of(id)).get(id);
         if (produit.getQuantite() != null && produit.getQuantite() != 0) {
             throw new IllegalArgumentException("Ce produit possède encore du stock et doit être conservé. Seuls les achats et les ventes peuvent faire varier les quantités.");

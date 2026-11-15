@@ -1,0 +1,96 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="exercices">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1 th:text="${titre}">Exercices et clôture</h1>
+                <p class="app-page-subtitle" th:text="${sousTitre}"></p>
+            </div>
+            <div class="etat-actions"><a th:href="@{/comptabilite}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Comptabilité</a></div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <section class="card shadow-sm mb-4" aria-labelledby="titreExercices">
+            <div class="card-body">
+                <h2 id="titreExercices" class="h5">Les exercices</h2>
+                <div class="table-responsive etat-table-wrap" role="region" tabindex="0" aria-label="Les exercices">
+                    <table class="table etat-table cloture-table" data-exercices>
+                        <caption class="visually-hidden">Exercices, statut et résultat</caption>
+                        <thead><tr><th scope="col">Exercice</th><th scope="col">Statut</th><th scope="col" class="text-end">Résultat</th><th scope="col">Clôture</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                        <tbody>
+                        <tr th:each="l : ${lignes}" th:attr="data-exercice=${l.exercice.debut}">
+                            <th scope="row">
+                                <span th:text="${l.exercice.libelle}">2026</span>
+                                <span class="d-block small text-muted" th:text="${'Du ' + T(org.example.stock.compta.ExercicesService).jour(l.exercice.debut) + ' au ' + T(org.example.stock.compta.ExercicesService).jour(l.exercice.fin)}"></span>
+                            </th>
+                            <td data-label="Statut"><span class="cloture-statut" th:classappend="${l.exercice.estCloture ? 'cloture-statut-ferme' : 'cloture-statut-ouvert'}" th:text="${l.statut}">Ouvert</span></td>
+                            <td class="text-end etat-nombre" data-label="Résultat" th:text="${l.resultat != null ? #numbers.formatInteger(l.resultat, 1, 'WHITESPACE') + ' GNF' : '—'}">—</td>
+                            <td data-label="Clôture" th:text="${l.cloture != null ? l.cloture : '—'}">—</td>
+                            <td class="cloture-actions">
+                                <a class="btn btn-sm btn-outline-primary" th:href="@{__${l.lien}__}" th:text="${l.exercice.estCloture ? 'Voir' : 'Clôturer'}">Voir</a>
+                                <a class="btn btn-sm btn-outline-secondary" th:href="@{__${l.etats}__}">États</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted mt-3 mb-0">Par défaut, l'exercice est l'année civile. On clôture les exercices dans l'ordre, du plus ancien au plus récent.</p>
+            </div>
+        </section>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-lg-6">
+                <section class="card shadow-sm h-100" aria-labelledby="titrePremier">
+                    <div class="card-body">
+                        <h2 id="titrePremier" class="h5">Début du premier exercice</h2>
+                        <form method="post" th:action="@{/comptabilite/exercices/premier-exercice}" class="cloture-form" data-premier-exercice>
+                            <div>
+                                <label for="debutPremier" class="form-label small mb-1">Premier jour</label>
+                                <input id="debutPremier" name="debut" type="date" class="form-control" required min="2000-01-01" max="9000-12-31" th:value="${debutPremier}" th:disabled="${!premierModifiable}">
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary" th:disabled="${!premierModifiable}">Enregistrer</button>
+                        </form>
+                        <p th:if="${premierModifiable}" class="small text-muted mt-2 mb-0">Le premier exercice dure douze mois à partir de cette date, puis les suivants s'enchaînent. Il ne peut pas commencer après la première opération.</p>
+                        <p th:unless="${premierModifiable}" class="small text-muted mt-2 mb-0">Un exercice est clôturé : cette date ne change plus.</p>
+                    </div>
+                </section>
+            </div>
+            <div class="col-12 col-lg-6">
+                <section class="card shadow-sm h-100" id="validation" aria-labelledby="titreValidation">
+                    <div class="card-body">
+                        <h2 id="titreValidation" class="h5">États validés par un expert-comptable</h2>
+                        <form method="post" th:action="@{/comptabilite/exercices/validation}" class="cloture-form" data-validation>
+                            <div class="cloture-champ-large">
+                                <label for="cabinet" class="form-label small mb-1">Cabinet</label>
+                                <input id="cabinet" name="cabinet" type="text" class="form-control" maxlength="120" th:value="${cabinet}" autocomplete="off">
+                            </div>
+                            <div>
+                                <label for="valideLe" class="form-label small mb-1">Date de validation</label>
+                                <input id="valideLe" name="le" type="date" class="form-control" min="2000-01-01" th:max="${aujourdhui}" th:value="${valideLe}">
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">Enregistrer</button>
+                        </form>
+                        <p class="small text-muted mt-2 mb-0">Une fois rempli, le cabinet remplace la mention « en cours de validation » sur les pages et les documents. Laissez les deux champs vides pour la retirer.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="card shadow-sm mb-4" aria-labelledby="titreHistorique" th:if="${!#lists.isEmpty(historique)}">
+            <div class="card-body">
+                <h2 id="titreHistorique" class="h5">Instantanés conservés</h2>
+                <ul class="compta-liste" data-instantanes>
+                    <li th:each="i : ${historique}" th:attr="data-instantane=${i.id}">
+                        <strong th:text="${'Exercice ' + T(org.example.stock.compta.ExercicesService).libelle(i.dateDebut, i.dateFin) + ', version ' + i.version}">Exercice 2025, version 1</strong>
+                        <span class="cloture-statut" th:classappend="${i.statut.name() == 'ACTIF' ? 'cloture-statut-ferme' : 'cloture-statut-annule'}" th:text="${i.statut.name() == 'ACTIF' ? 'Actif' : 'Annulé'}">Actif</span>
+                        <span class="d-block small text-muted" th:text="${'Figé le ' + #temporals.format(i.creeLe, 'dd/MM/yyyy HH:mm') + ' par ' + i.creePar}"></span>
+                        <span th:if="${i.statut.name() == 'ANNULE'}" class="d-block small text-muted" th:text="${'Annulé le ' + #temporals.format(i.annuleLe, 'dd/MM/yyyy HH:mm') + ' par ' + i.annulePar + ' : ' + i.motifAnnulation}"></span>
+                        <code class="d-block small cloture-empreinte" th:text="${i.empreinte}">empreinte</code>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </div>
+</div>

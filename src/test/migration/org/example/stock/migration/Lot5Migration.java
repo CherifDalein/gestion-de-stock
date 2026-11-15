@@ -7,7 +7,12 @@ import java.sql.*;
 import java.util.*;
 
 /**
- * Lot 5a (comptabilité) : crée {@code sous_compte_boutique} et {@code correspondance_compta}, puis donne un sous-compte à chaque compte de
+ * Lot 5c (clôture d'exercice) : crée {@code exercice_comptable}, {@code solde_ouverture}, {@code instantane_exercice}, {@code instantane_document} et
+ * {@code affectation_resultat}, et ajoute à {@code reglage_comptable_boutique} le début du premier exercice et la validation par l'expert-comptable (colonnes
+ * facultatives, ajoutées seulement si elles manquent). Une base sans exercice clôturé se comporte comme avant : aucune ligne n'est écrite, les exercices sont les
+ * années civiles. Aucune donnée existante n'est réécrite ; les réglages déjà saisis sont conservés.
+ *
+ * <p>Lot 5a (comptabilité) : crée {@code sous_compte_boutique} et {@code correspondance_compta}, puis donne un sous-compte à chaque compte de
  * trésorerie qui n'en a pas (par exemple 5711 « Caisse » sous 571). Lot 5b : crée aussi {@code reglage_comptable_boutique} (le système des états financiers de la boutique, normal par défaut), y compris sur une base où le 5a est déjà posé. Les écritures ne sont jamais stockées : aucune autre table n'est touchée.
  *
  * <p>Déroulement, chaque étape pouvant être reprise après une interruption : création des tables absentes (avec leurs contraintes), puis un
@@ -19,7 +24,12 @@ import java.util.*;
 public final class Lot5Migration {
     static final String VERROU = "stock_lot5_migration";
     static final String SOUS_COMPTES = "sous_compte_boutique", CORRESPONDANCES = "correspondance_compta", REGLAGES = "reglage_comptable_boutique";
-    static final List<String> TABLES = List.of(SOUS_COMPTES, CORRESPONDANCES, REGLAGES);
+    static final String EXERCICES = "exercice_comptable", SOLDES_OUVERTURE = "solde_ouverture", INSTANTANES = "instantane_exercice", DOCUMENTS = "instantane_document",
+            AFFECTATIONS = "affectation_resultat";
+    static final List<String> TABLES = List.of(SOUS_COMPTES, CORRESPONDANCES, REGLAGES, EXERCICES, SOLDES_OUVERTURE, INSTANTANES, DOCUMENTS, AFFECTATIONS);
+    /** Colonnes du lot 5c ajoutées à une table du lot 5b : absentes d'une base 5a ou 5b, elles sont à ajouter et non une non-conformité. */
+    static final Map<String, String> COLONNES_AJOUTEES = new LinkedHashMap<>(Map.of(
+            REGLAGES + ".debut_premier_exercice", "DATE NULL", REGLAGES + ".valide_cabinet", "VARCHAR(120) NULL", REGLAGES + ".valide_le", "DATE NULL"));
     private static final String MOTEUR = " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
     /** Colonne attendue : types JDBC acceptés, taille (0 si sans objet) et caractère facultatif. */
@@ -36,16 +46,52 @@ public final class Lot5Migration {
             new Colonne(CORRESPONDANCES, "cle", Set.of(Types.VARCHAR), 40, false), new Colonne(CORRESPONDANCES, "compte_numero", Set.of(Types.VARCHAR), 8, false),
             new Colonne(CORRESPONDANCES, "mots_cles", Set.of(Types.VARCHAR), 255, true),
             new Colonne(REGLAGES, "id", Set.of(Types.BIGINT), 0, false), new Colonne(REGLAGES, "boutique_id", Set.of(Types.BIGINT), 0, false),
-            new Colonne(REGLAGES, "systeme", Set.of(Types.VARCHAR), 10, false));
+            new Colonne(REGLAGES, "systeme", Set.of(Types.VARCHAR), 10, false),
+            new Colonne(REGLAGES, "debut_premier_exercice", Set.of(Types.DATE), 0, true), new Colonne(REGLAGES, "valide_cabinet", Set.of(Types.VARCHAR), 120, true),
+            new Colonne(REGLAGES, "valide_le", Set.of(Types.DATE), 0, true),
+            new Colonne(EXERCICES, "id", Set.of(Types.BIGINT), 0, false), new Colonne(EXERCICES, "boutique_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(EXERCICES, "date_debut", Set.of(Types.DATE), 0, false), new Colonne(EXERCICES, "date_fin", Set.of(Types.DATE), 0, false),
+            new Colonne(EXERCICES, "statut", Set.of(Types.VARCHAR), 10, false), new Colonne(EXERCICES, "cloture_le", Set.of(Types.TIMESTAMP), 0, true),
+            new Colonne(EXERCICES, "cloture_par", Set.of(Types.VARCHAR), 120, true), new Colonne(EXERCICES, "motif", Set.of(Types.VARCHAR), 255, true),
+            new Colonne(EXERCICES, "resultat", Set.of(Types.DECIMAL, Types.NUMERIC), 19, true), new Colonne(EXERCICES, "valeur_stock", Set.of(Types.DECIMAL, Types.NUMERIC), 19, true),
+            new Colonne(EXERCICES, "plafond_client_id", Set.of(Types.BIGINT), 0, true), new Colonne(EXERCICES, "plafond_fournisseur_id", Set.of(Types.BIGINT), 0, true),
+            new Colonne(SOLDES_OUVERTURE, "id", Set.of(Types.BIGINT), 0, false), new Colonne(SOLDES_OUVERTURE, "exercice_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(SOLDES_OUVERTURE, "compte", Set.of(Types.VARCHAR), 8, false), new Colonne(SOLDES_OUVERTURE, "tiers_type", Set.of(Types.VARCHAR), 12, false),
+            new Colonne(SOLDES_OUVERTURE, "tiers_id", Set.of(Types.BIGINT), 0, false), new Colonne(SOLDES_OUVERTURE, "tiers_nom", Set.of(Types.VARCHAR), 160, true),
+            new Colonne(SOLDES_OUVERTURE, "solde", Set.of(Types.DECIMAL, Types.NUMERIC), 19, false),
+            new Colonne(INSTANTANES, "id", Set.of(Types.BIGINT), 0, false), new Colonne(INSTANTANES, "boutique_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(INSTANTANES, "exercice_id", Set.of(Types.BIGINT), 0, false), new Colonne(INSTANTANES, "version", Set.of(Types.INTEGER), 0, false),
+            new Colonne(INSTANTANES, "statut", Set.of(Types.VARCHAR), 10, false), new Colonne(INSTANTANES, "date_debut", Set.of(Types.DATE), 0, false),
+            new Colonne(INSTANTANES, "date_fin", Set.of(Types.DATE), 0, false), new Colonne(INSTANTANES, "systeme", Set.of(Types.VARCHAR), 10, false),
+            new Colonne(INSTANTANES, "resultat", Set.of(Types.DECIMAL, Types.NUMERIC), 19, false), new Colonne(INSTANTANES, "empreinte", Set.of(Types.VARCHAR, Types.CHAR), 64, false),
+            new Colonne(INSTANTANES, "contenu", Set.of(Types.BLOB, Types.LONGVARBINARY), 0, false), new Colonne(INSTANTANES, "cree_le", Set.of(Types.TIMESTAMP), 0, false),
+            new Colonne(INSTANTANES, "cree_par", Set.of(Types.VARCHAR), 120, false), new Colonne(INSTANTANES, "motif", Set.of(Types.VARCHAR), 255, true),
+            new Colonne(INSTANTANES, "annule_le", Set.of(Types.TIMESTAMP), 0, true), new Colonne(INSTANTANES, "annule_par", Set.of(Types.VARCHAR), 120, true),
+            new Colonne(INSTANTANES, "motif_annulation", Set.of(Types.VARCHAR), 255, true),
+            new Colonne(DOCUMENTS, "id", Set.of(Types.BIGINT), 0, false), new Colonne(DOCUMENTS, "instantane_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(DOCUMENTS, "code", Set.of(Types.VARCHAR), 30, false), new Colonne(DOCUMENTS, "titre", Set.of(Types.VARCHAR), 120, false),
+            new Colonne(DOCUMENTS, "nom_fichier", Set.of(Types.VARCHAR), 160, false), new Colonne(DOCUMENTS, "pdf", Set.of(Types.BLOB, Types.LONGVARBINARY), 0, false),
+            new Colonne(DOCUMENTS, "excel", Set.of(Types.BLOB, Types.LONGVARBINARY), 0, false),
+            new Colonne(AFFECTATIONS, "id", Set.of(Types.BIGINT), 0, false), new Colonne(AFFECTATIONS, "boutique_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(AFFECTATIONS, "exercice_id", Set.of(Types.BIGINT), 0, false), new Colonne(AFFECTATIONS, "date_affectation", Set.of(Types.DATE), 0, false),
+            new Colonne(AFFECTATIONS, "compte_destination", Set.of(Types.VARCHAR), 8, false), new Colonne(AFFECTATIONS, "montant", Set.of(Types.DECIMAL, Types.NUMERIC), 19, false),
+            new Colonne(AFFECTATIONS, "libelle", Set.of(Types.VARCHAR), 160, false), new Colonne(AFFECTATIONS, "cree_le", Set.of(Types.TIMESTAMP), 0, false),
+            new Colonne(AFFECTATIONS, "cree_par", Set.of(Types.VARCHAR), 120, false));
 
     /** Unicités attendues : table → colonnes de chaque contrainte unique (hors clé primaire). */
     static final Map<String, List<List<String>>> UNICITES = Map.of(
             SOUS_COMPTES, List.of(List.of("boutique_id", "numero"), List.of("compte_tresorerie_id")),
-            CORRESPONDANCES, List.of(List.of("boutique_id", "cle")), REGLAGES, List.of(List.of("boutique_id")));
+            CORRESPONDANCES, List.of(List.of("boutique_id", "cle")), REGLAGES, List.of(List.of("boutique_id")),
+            EXERCICES, List.of(List.of("boutique_id", "date_debut")), SOLDES_OUVERTURE, List.of(List.of("exercice_id", "compte", "tiers_type", "tiers_id")),
+            INSTANTANES, List.of(List.of("exercice_id", "version")), DOCUMENTS, List.of(List.of("instantane_id", "code")), AFFECTATIONS, List.of(List.of("exercice_id")));
 
     /** Clés étrangères attendues : table.colonne → table cible. */
-    static final Map<String, String> CLES_ETRANGERES = Map.of(
-            SOUS_COMPTES + ".boutique_id", "boutique", SOUS_COMPTES + ".compte_tresorerie_id", "compte_tresorerie_boutique", CORRESPONDANCES + ".boutique_id", "boutique", REGLAGES + ".boutique_id", "boutique");
+    static final Map<String, String> CLES_ETRANGERES = Map.ofEntries(
+            Map.entry(SOUS_COMPTES + ".boutique_id", "boutique"), Map.entry(SOUS_COMPTES + ".compte_tresorerie_id", "compte_tresorerie_boutique"),
+            Map.entry(CORRESPONDANCES + ".boutique_id", "boutique"), Map.entry(REGLAGES + ".boutique_id", "boutique"),
+            Map.entry(EXERCICES + ".boutique_id", "boutique"), Map.entry(SOLDES_OUVERTURE + ".exercice_id", EXERCICES),
+            Map.entry(INSTANTANES + ".boutique_id", "boutique"), Map.entry(INSTANTANES + ".exercice_id", EXERCICES), Map.entry(DOCUMENTS + ".instantane_id", INSTANTANES),
+            Map.entry(AFFECTATIONS + ".boutique_id", "boutique"), Map.entry(AFFECTATIONS + ".exercice_id", EXERCICES));
 
     /** Compte officiel parent du sous-compte de chaque type de compte de trésorerie. */
     static final Map<String, String> PARENTS = Map.of("ESPECES", "571", "ORANGE_MONEY", "552", "BANQUE", "521");
@@ -133,6 +179,38 @@ public final class Lot5Migration {
                 + " CONSTRAINT fk_correspondance_compta_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))" + moteur);
         if (!tables.containsKey(REGLAGES)) sql(c, "CREATE TABLE " + REGLAGES + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, systeme VARCHAR(10) NOT NULL,"
                 + " CONSTRAINT uk_reglage_comptable_boutique UNIQUE (boutique_id), CONSTRAINT fk_reglage_comptable_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))" + moteur);
+        // Lot 5c : réglages complétés, puis les exercices, leurs soldes d'ouverture, leurs instantanés (avec les PDF et Excel) et les affectations du résultat.
+        ajouterColonnesReglage(c);
+        String blob = maria(c) ? "LONGBLOB" : "BLOB";
+        if (!tables.containsKey(EXERCICES)) sql(c, "CREATE TABLE " + EXERCICES + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, date_debut DATE NOT NULL, date_fin DATE NOT NULL,"
+                + " statut VARCHAR(10) NOT NULL, cloture_le DATETIME(6) NULL, cloture_par VARCHAR(120) NULL, motif VARCHAR(255) NULL, resultat DECIMAL(19,2) NULL, valeur_stock DECIMAL(19,2) NULL,"
+                + " plafond_client_id BIGINT NULL, plafond_fournisseur_id BIGINT NULL, CONSTRAINT uk_exercice_boutique_debut UNIQUE (boutique_id, date_debut),"
+                + " CONSTRAINT fk_exercice_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))" + moteur);
+        if (!tables.containsKey(SOLDES_OUVERTURE)) sql(c, "CREATE TABLE " + SOLDES_OUVERTURE + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, exercice_id BIGINT NOT NULL, compte VARCHAR(8) NOT NULL,"
+                + " tiers_type VARCHAR(12) NOT NULL, tiers_id BIGINT NOT NULL, tiers_nom VARCHAR(160) NULL, solde DECIMAL(19,2) NOT NULL,"
+                + " CONSTRAINT uk_solde_ouverture UNIQUE (exercice_id, compte, tiers_type, tiers_id), CONSTRAINT fk_solde_ouverture_exercice FOREIGN KEY (exercice_id) REFERENCES " + EXERCICES + " (id))" + moteur);
+        if (!tables.containsKey(INSTANTANES)) sql(c, "CREATE TABLE " + INSTANTANES + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, exercice_id BIGINT NOT NULL, version INT NOT NULL,"
+                + " statut VARCHAR(10) NOT NULL, date_debut DATE NOT NULL, date_fin DATE NOT NULL, systeme VARCHAR(10) NOT NULL, resultat DECIMAL(19,2) NOT NULL, empreinte VARCHAR(64) NOT NULL,"
+                + " contenu " + blob + " NOT NULL, cree_le DATETIME(6) NOT NULL, cree_par VARCHAR(120) NOT NULL, motif VARCHAR(255) NULL, annule_le DATETIME(6) NULL, annule_par VARCHAR(120) NULL,"
+                + " motif_annulation VARCHAR(255) NULL, CONSTRAINT uk_instantane_exercice_version UNIQUE (exercice_id, version),"
+                + " CONSTRAINT fk_instantane_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id), CONSTRAINT fk_instantane_exercice FOREIGN KEY (exercice_id) REFERENCES " + EXERCICES + " (id))" + moteur);
+        if (!tables.containsKey(DOCUMENTS)) sql(c, "CREATE TABLE " + DOCUMENTS + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, instantane_id BIGINT NOT NULL, code VARCHAR(30) NOT NULL, titre VARCHAR(120) NOT NULL,"
+                + " nom_fichier VARCHAR(160) NOT NULL, pdf " + blob + " NOT NULL, excel " + blob + " NOT NULL, CONSTRAINT uk_instantane_document_code UNIQUE (instantane_id, code),"
+                + " CONSTRAINT fk_instantane_document FOREIGN KEY (instantane_id) REFERENCES " + INSTANTANES + " (id))" + moteur);
+        if (!tables.containsKey(AFFECTATIONS)) sql(c, "CREATE TABLE " + AFFECTATIONS + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, exercice_id BIGINT NOT NULL,"
+                + " date_affectation DATE NOT NULL, compte_destination VARCHAR(8) NOT NULL, montant DECIMAL(19,2) NOT NULL, libelle VARCHAR(160) NOT NULL, cree_le DATETIME(6) NOT NULL,"
+                + " cree_par VARCHAR(120) NOT NULL, CONSTRAINT uk_affectation_exercice UNIQUE (exercice_id), CONSTRAINT fk_affectation_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),"
+                + " CONSTRAINT fk_affectation_exercice FOREIGN KEY (exercice_id) REFERENCES " + EXERCICES + " (id))" + moteur);
+    }
+
+    /** Ajoute au réglage comptable les colonnes du lot 5c qui manquent (toutes facultatives) : les réglages existants sont conservés. */
+    static void ajouterColonnesReglage(Connection c) throws SQLException {
+        if (!BoutiquesMigration.tables(c).containsKey(REGLAGES)) return;
+        var presentes = InscriptionEssaiMigration.colonnes(c, REGLAGES);
+        for (var colonne : COLONNES_AJOUTEES.entrySet()) {
+            String nom = colonne.getKey().substring(REGLAGES.length() + 1);
+            if (!presentes.containsKey(nom)) sql(c, "ALTER TABLE " + REGLAGES + " ADD COLUMN " + nom + " " + colonne.getValue());
+        }
     }
 
     /**
@@ -181,6 +259,10 @@ public final class Lot5Migration {
         var tables = BoutiquesMigration.tables(c);
         int manquants = 0;
         for (String t : TABLES) if (!tables.containsKey(t)) manquants++;
+        if (tables.containsKey(REGLAGES)) {
+            var presentes = InscriptionEssaiMigration.colonnes(c, REGLAGES);
+            for (String cle : COLONNES_AJOUTEES.keySet()) if (!presentes.containsKey(cle.substring(REGLAGES.length() + 1))) manquants++;
+        }
         if (tables.containsKey(SOUS_COMPTES) && tables.containsKey("compte_tresorerie_boutique"))
             manquants += (int) BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id NOT IN (SELECT compte_tresorerie_id FROM " + SOUS_COMPTES + " WHERE compte_tresorerie_id IS NOT NULL)");
         else if (tables.containsKey("compte_tresorerie_boutique")) manquants += (int) BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique");
@@ -192,6 +274,7 @@ public final class Lot5Migration {
         for (Colonne attendue : COLONNES) {
             if (!tables.containsKey(attendue.table())) continue;
             var col = InscriptionEssaiMigration.colonnes(c, attendue.table()).get(attendue.nom());
+            if (col == null && COLONNES_AJOUTEES.containsKey(attendue.cle())) continue;
             if (col == null) nonConforme(attendue.cle() + " est absente");
             boolean facultative = col.nullable() == DatabaseMetaData.columnNullable;
             if (!attendue.types().contains(col.type()) || attendue.taille() > 0 && col.taille() != attendue.taille() || facultative != attendue.facultative()
@@ -207,10 +290,37 @@ public final class Lot5Migration {
                 nonConforme(cle.getKey() + " doit viser " + cle.getValue());
         }
         if (tables.containsKey(SOUS_COMPTES)) verifierSousComptes(c);
+        verifierCloture(c, tables);
         if (tables.containsKey(CORRESPONDANCES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + CORRESPONDANCES + " WHERE compte_numero = '' OR cle = ''") != 0)
             nonConforme("une ligne de correspondance a une clé ou un compte vide");
         if (tables.containsKey(REGLAGES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + REGLAGES + " WHERE systeme NOT IN ('NORMAL', 'MINIMAL')") != 0)
             nonConforme("un réglage comptable a un système inconnu");
+    }
+
+    /** Lot 5c : statuts connus, dates cohérentes, contenus binaires LONGBLOB sur MariaDB, au plus un instantané actif par exercice, un instantané actif seulement pour un exercice clôturé. */
+    private static void verifierCloture(Connection c, Map<String, String> tables) throws SQLException {
+        if (tables.containsKey(EXERCICES)) {
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + EXERCICES + " WHERE statut NOT IN ('OUVERT', 'CLOTURE')") != 0) nonConforme("un exercice a un statut inconnu");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + EXERCICES + " WHERE date_fin < date_debut") != 0) nonConforme("un exercice finit avant de commencer");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + EXERCICES + " WHERE statut = 'CLOTURE' AND (cloture_le IS NULL OR cloture_par IS NULL OR resultat IS NULL)") != 0)
+                nonConforme("un exercice clôturé n'a pas sa date, son auteur ou son résultat");
+        }
+        if (tables.containsKey(INSTANTANES)) {
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + INSTANTANES + " WHERE statut NOT IN ('ACTIF', 'ANNULE')") != 0) nonConforme("un instantané a un statut inconnu");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM (SELECT exercice_id FROM " + INSTANTANES + " WHERE statut = 'ACTIF' GROUP BY exercice_id HAVING COUNT(*) > 1) x") != 0)
+                nonConforme("un exercice a plusieurs instantanés actifs");
+            if (tables.containsKey(EXERCICES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + INSTANTANES + " i JOIN " + EXERCICES + " e ON e.id = i.exercice_id WHERE i.statut = 'ACTIF' AND e.statut <> 'CLOTURE'") != 0)
+                nonConforme("un instantané actif appartient à un exercice non clôturé");
+            if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + INSTANTANES + " WHERE statut = 'ANNULE' AND (annule_le IS NULL OR annule_par IS NULL OR motif_annulation IS NULL)") != 0)
+                nonConforme("un instantané annulé n'a pas sa date, son auteur ou son motif");
+            blobLong(c, INSTANTANES, "contenu");
+        }
+        if (tables.containsKey(DOCUMENTS)) { blobLong(c, DOCUMENTS, "pdf"); blobLong(c, DOCUMENTS, "excel"); }
+    }
+
+    private static void blobLong(Connection c, String table, String colonne) throws SQLException {
+        var col = InscriptionEssaiMigration.colonnes(c, table).get(colonne);
+        if (col != null && maria(c) && !col.nomType().equalsIgnoreCase("LONGBLOB")) nonConforme(table + "." + colonne + " doit être LONGBLOB");
     }
 
     /** Un sous-compte commence par son parent, n'est jamais un compte officiel, et celui d'un compte de trésorerie suit son type et sa boutique. */

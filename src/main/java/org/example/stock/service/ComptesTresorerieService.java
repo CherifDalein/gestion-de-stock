@@ -28,6 +28,7 @@ import java.util.*;
  */
 @Service
 public class ComptesTresorerieService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     /** Comptes actifs au plus par boutique, les trois comptes de base compris. */
     public static final int LIMITE = 12;
 
@@ -383,6 +384,7 @@ public class ComptesTresorerieService {
     /** Gérant connecté, boutique verrouillée en premier (ordre global des verrous). */
     private Utilisateur gerantVerrouille() {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         return gerant();
     }
 

@@ -30,9 +30,11 @@ public class ComptabiliteService {
     private final SoldePartenaireService soldes;
     private final EcheanceService horloge;
     private final EntityManager em;
+    private final ExercicesService exercices;
 
     public ComptabiliteService(DonneesComptablesService donnees, CorrespondanceService correspondances, PlanComptesService plan,
-                               SoldePartenaireService soldes, EcheanceService horloge, EntityManager em) {
+                               SoldePartenaireService soldes, EcheanceService horloge, EntityManager em, ExercicesService exercices) {
+        this.exercices = exercices;
         this.donnees = donnees;
         this.correspondances = correspondances;
         this.plan = plan;
@@ -76,9 +78,18 @@ public class ComptabiliteService {
         LocalDate f = fin == null ? aujourdhui : fin;
         LocalDate d = debut == null ? f.withDayOfMonth(1) : debut;
         if (d.isAfter(f)) throw new IllegalArgumentException("La date de début doit précéder la date de fin.");
+        return calculer(boutiqueId, d, f, exercices.reprisePourDebut(boutiqueId, d).orElse(null));
+    }
+
+    /**
+     * Écritures arrêtées à {@code fin}, à partir du report à nouveau {@code reprise} d'un exercice clôturé ({@code null} : depuis l'origine). Les écritures de
+     * l'exercice clos ne sont pas recalculées : les soldes enregistrés à la clôture les remplacent, et le stock de la fin de cet exercice est celui de la clôture.
+     */
+    @Transactional
+    public Livres calculer(Long boutiqueId, LocalDate d, LocalDate f, Reprise reprise) {
         Correspondance corr = correspondances.effective(boutiqueId);
         LocalDateTime limite = f.atTime(LocalTime.MAX);
-        DonneesComptables data = donnees.charger(boutiqueId, limite, horloge.maintenant(), true);
+        DonneesComptables data = donnees.charger(boutiqueId, limite, horloge.maintenant(), true, reprise, exercices.stocksFiges(boutiqueId).get(f));
         List<Ecriture> ecritures = new ConstructeurEcritures(data, corr).construire();
         return new Livres(boutiqueId, d, f, ecritures, corr, plan.intitules(boutiqueId));
     }

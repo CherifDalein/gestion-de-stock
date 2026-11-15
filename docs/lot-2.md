@@ -608,6 +608,8 @@ puis produits »…) qui se contredisaient et produisaient de vrais interblocage
 
 ### La règle
 
+Lot 5c : une fois la boutique verrouillée, `VerrouExercice` lit (lecture partagée) le dernier exercice clôturé et refuse toute opération datée d'un exercice clôturé ; la clôture, son annulation et l'affectation du résultat prennent la boutique, puis l'exercice, en écriture ([lot 5](lot-5.md#clôture-dexercice-étape-5c)).
+
 La corbeille du lot 6 suit la même règle : restaurer ou effacer une fiche verrouille la boutique, puis la fiche ([lot 6](lot-6.md)).
 
 Toute opération d'écriture métier qui modifie l'argent, le stock, les factures, les retours, les avances ou les soldes verrouille

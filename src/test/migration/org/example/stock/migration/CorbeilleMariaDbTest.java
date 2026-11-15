@@ -8,6 +8,7 @@ import org.example.stock.config.TrialProperties;
 import org.example.stock.enums.Role;
 import org.example.stock.model.*;
 import org.example.stock.repository.*;
+import org.example.stock.compta.VerrouExercice;
 import org.example.stock.service.*;
 import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -323,7 +324,7 @@ public final class CorbeilleMariaDbTest {
     @Profile("corbeille-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({CorbeilleService.class, ClientService.class, FournisseurService.class, CategorieService.class, ProduitService.class,
+    @Import({VerrouExercice.class, CorbeilleService.class, ClientService.class, FournisseurService.class, CategorieService.class, ProduitService.class,
             BoutiqueService.class, EssaiBoutiqueService.class, StockLockRepository.class, EcheanceService.class, SoldeDepartService.class,
             SoldePartenaireService.class, SoldePartenaireRepository.class, CaisseService.class, InitialisationBoutiqueService.class,
             ComptesTresorerieService.class, NumerotationFactureService.class, DevisService.class})

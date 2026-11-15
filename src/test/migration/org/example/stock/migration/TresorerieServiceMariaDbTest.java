@@ -12,6 +12,7 @@ import org.example.stock.form.DepenseTresorerieForm;
 import org.example.stock.model.Boutique;
 import org.example.stock.model.Utilisateur;
 import org.example.stock.repository.*;
+import org.example.stock.compta.VerrouExercice;
 import org.example.stock.service.*;
 import org.springframework.context.annotation.*;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -404,7 +405,7 @@ public final class TresorerieServiceMariaDbTest {
     @Profile("tresorerie-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class})
+    @Import({VerrouExercice.class, CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

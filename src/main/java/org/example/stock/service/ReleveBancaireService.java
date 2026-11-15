@@ -49,6 +49,7 @@ import java.util.Optional;
  */
 @Service
 public class ReleveBancaireService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     /** Lignes d'un relevé au plus : au-delà, l'écran de pointage devient inutilisable. */
     public static final int LIGNES_MAX = 5_000;
     /** Durée maximale d'un relevé, en jours. */
@@ -147,6 +148,7 @@ public class ReleveBancaireService {
         Long boutiqueId = boutiques.idBoutiqueCourante();
         Optional<ReleveBancaire> deja = releves.findByBoutiqueIdAndJeton(boutiqueId, jeton);
         if (deja.isPresent()) return deja.get();
+        verrouExercice.exigerOuvert(fin);
         CompteTresorerieBoutique compte = compteRapprochable(compteId, boutiqueId, true);
         controlerPeriode(debut, fin);
         BigDecimal debutSolde = soldeValide(ouverture, "Le solde d'ouverture"), finSolde = soldeValide(cloture, "Le solde de clôture");
@@ -164,7 +166,9 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(id);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
+        verrouExercice.exigerOuvert(fin);
         controlerPeriode(debut, fin);
         BigDecimal debutSolde = soldeValide(ouverture, "Le solde d'ouverture"), finSolde = soldeValide(cloture, "Le solde de clôture");
         exigerSansChevauchement(r.getCompte().getId(), r.getId(), debut, fin);
@@ -182,6 +186,7 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(id);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
         refus.supprimerDuReleve(id);
         lignes.detacherDuReleve(id);
@@ -200,6 +205,7 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
         if (lignes.countByReleveId(releveId) >= LIGNES_MAX) throw new IllegalArgumentException("Un relevé comporte au plus " + LIGNES_MAX + " lignes.");
         LigneReleve l = new LigneReleve();
@@ -213,6 +219,7 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
         LigneReleve l = lignes.findByIdAndReleveId(ligneId, releveId).orElseThrow(ReleveBancaireService::introuvable);
         if (l.estRapprochee()) throw new IllegalArgumentException("Cette ligne est rapprochée : défaites d'abord le rapprochement pour la modifier.");
@@ -226,6 +233,7 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
         LigneReleve l = lignes.findByIdAndReleveId(ligneId, releveId).orElseThrow(ReleveBancaireService::introuvable);
         if (l.estRapprochee()) throw new IllegalArgumentException("Cette ligne est rapprochée : défaites d'abord le rapprochement pour la supprimer.");
@@ -268,6 +276,7 @@ public class ReleveBancaireService {
         verrous.verrouillerBoutiqueCourante();
         caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         exigerBrouillon(r);
         AnalyseReleve marquee = marquer(r.getCompte().getId(), analyse.verifierPeriode(r.getDateDebut(), r.getDateFin()));
         List<LigneAnalysee> aImporter = marquee.aImporter(avecDoublons);

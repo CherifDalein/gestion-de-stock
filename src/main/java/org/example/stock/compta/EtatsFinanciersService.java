@@ -29,9 +29,12 @@ public class EtatsFinanciersService {
     private final ComptabiliteService compta;
     private final ReglageComptableBoutiqueRepository reglages;
     private final BoutiqueService boutiques;
+    private final ExercicesService exercices;
+    private final InstantanesService instantanes;
 
-    public EtatsFinanciersService(ComptabiliteService compta, ReglageComptableBoutiqueRepository reglages, BoutiqueService boutiques) {
-        this.compta = compta; this.reglages = reglages; this.boutiques = boutiques;
+    public EtatsFinanciersService(ComptabiliteService compta, ReglageComptableBoutiqueRepository reglages, BoutiqueService boutiques, ExercicesService exercices,
+                                  InstantanesService instantanes) {
+        this.compta = compta; this.reglages = reglages; this.boutiques = boutiques; this.exercices = exercices; this.instantanes = instantanes;
     }
 
     /** Système des états financiers de la boutique : le système normal tant que le gérant n'a rien choisi. */
@@ -51,28 +54,60 @@ public class EtatsFinanciersService {
     }
 
     /** Résultat : l'exercice N, l'exercice N-1 (ou {@code null} s'il n'y a pas de données), et la correspondance qui a produit les écritures. */
-    public record Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules) {
+    public record Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules, Fige fige) {
+        public Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules) {
+            this(boutiqueId, du, au, n, n1, correspondance, intitules, null);
+        }
+
         public LocalDate du1() { return du.minusYears(1); }
         public LocalDate au1() { return au.minusYears(1); }
     }
 
+    /** Ces états sont ceux de l'instantané d'un exercice clôturé : rien n'a été recalculé. */
+    public record Fige(Long instantaneId, int version, java.time.LocalDateTime clotureLe, String cloturePar) {}
+
+    /**
+     * États de la période. Quand la période est exactement celle d'un exercice clôturé, ce sont les montants de son instantané (jamais un nouveau calcul) ;
+     * sinon le calcul part du report à nouveau du dernier exercice clôturé qui précède la période, ou de l'origine s'il n'y en a pas.
+     */
     @Transactional
     public Etats calculer(Long boutiqueId, LocalDate du, LocalDate au) {
         if (du == null || au == null) throw new IllegalArgumentException("La période est incomplète.");
         if (du.isAfter(au)) throw new IllegalArgumentException("La date de début doit précéder la date de fin.");
-        Map<LocalDate, Livres> cache = new HashMap<>();
-        Livres fin = livres(cache, boutiqueId, au);
+        var figee = instantanes.actif(boutiqueId, du, au);
+        if (figee.isPresent()) {
+            var i = figee.get().instantane();
+            ContenuInstantane c = figee.get().contenu();
+            return new Etats(boutiqueId, du, au, c.exercice(), c.exercicePrecedent(), null, Map.of(), new Fige(i.getId(), i.getVersion(), i.getCreeLe(), i.getCreePar()));
+        }
+        return calculerEnDirect(boutiqueId, du, au);
+    }
+
+    /** Calcul à partir des écritures, sans regarder l'instantané de la période : c'est ce que la clôture fige. */
+    @Transactional
+    public Etats calculerEnDirect(Long boutiqueId, LocalDate du, LocalDate au) {
+        Map<String, Livres> cache = new HashMap<>();
+        Livres fin = livres(cache, boutiqueId, du, au);
         String report = fin.correspondance().compte(CleCompta.REPORT_A_NOUVEAU);
-        Exercice n = EtatsFinanciersCalcul.calculer(fin.ecritures(), livres(cache, boutiqueId, du.minusDays(1)).ecritures(), du, au, report);
+        Exercice n = EtatsFinanciersCalcul.calculer(fin.ecritures(), livres(cache, boutiqueId, du, du.minusDays(1)).ecritures(), du, au, report);
         LocalDate du1 = du.minusYears(1), au1 = au.minusYears(1);
-        Livres fin1 = livres(cache, boutiqueId, au1);
-        Exercice n1 = fin1.ecritures().isEmpty() ? null
-                : EtatsFinanciersCalcul.calculer(fin1.ecritures(), livres(cache, boutiqueId, du1.minusDays(1)).ecritures(), du1, au1, report);
+        Exercice n1;
+        var figeePrecedent = instantanes.actif(boutiqueId, du1, au1);
+        if (figeePrecedent.isPresent()) n1 = figeePrecedent.get().contenu().exercice();
+        else {
+            Livres fin1 = livres(cache, boutiqueId, du1, au1);
+            n1 = fin1.ecritures().isEmpty() ? null
+                    : EtatsFinanciersCalcul.calculer(fin1.ecritures(), livres(cache, boutiqueId, du1, du1.minusDays(1)).ecritures(), du1, au1, report);
+        }
         return new Etats(boutiqueId, du, au, n, n1, fin.correspondance(), fin.intitules());
     }
 
-    private Livres livres(Map<LocalDate, Livres> cache, Long boutiqueId, LocalDate fin) {
-        return cache.computeIfAbsent(fin, d -> compta.calculer(boutiqueId, d.withDayOfMonth(1), d));
+    /** Écritures arrêtées à {@code fin}, avec le report à nouveau choisi d'après le début {@code du} de la période (le même pour la fin et pour la veille du début). */
+    private Livres livres(Map<String, Livres> cache, Long boutiqueId, LocalDate du, LocalDate fin) {
+        return cache.computeIfAbsent(du + "|" + fin, k -> {
+            Reprise reprise = exercices.reprisePourDebut(boutiqueId, du).orElse(null);
+            return compta.calculer(boutiqueId, fin.withDayOfMonth(1).isAfter(fin) ? fin : fin.withDayOfMonth(1), fin, reprise);
+        });
     }
 
     // ---- Contrôles de l'étape 5b (ajoutés à la page Contrôles de l'étape 5a) ------------------------------------------------------------

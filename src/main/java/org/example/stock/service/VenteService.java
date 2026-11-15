@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import org.example.stock.compta.VerrouExercice;
 import org.example.stock.model.Client;
 import org.example.stock.model.Devis;
 import org.example.stock.model.DetailVente;
@@ -49,6 +50,7 @@ public class VenteService {
     @Autowired private SoldePartenaireService soldes;
     @Autowired private DevisService devisService;
     @Autowired private ComptesTresorerieService comptes;
+    @Autowired private VerrouExercice verrouExercice;
 
     @Transactional
     public Vente effectuerVente(Vente vente) {
@@ -72,6 +74,7 @@ public class VenteService {
         // Ordre global des verrous : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »), puis le devis, le client et
         // ses factures, puis les produits.
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         if (vente.getClient() != null) {
             if (vente.getClient().getId() == null) throw new IllegalArgumentException("Client invalide");
             vente.setClient(clientRepository.findByIdAndBoutiqueId(vente.getClient().getId(), boutiqueService.idBoutiqueCourante())
@@ -260,6 +263,7 @@ public class VenteService {
         if (montant.signum() == 0) throw new IllegalArgumentException("Le versement doit être supérieur à zéro.");
         montantVerseAttendu = Montants.positifOuNul(montantVerseAttendu, "Le montant déjà versé attendu");
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         Vente vente = stockLockRepository.verrouillerVente(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(vente.getMontantVerse()), "Le montant déjà versé");

@@ -50,25 +50,63 @@ public final class ConstructeurEcritures {
     }
 
     public List<Ecriture> construire() {
-        // Aucune opération avant la date : rien à écrire (ni report, ni stock).
-        if (d.ouverture() == null) return List.of();
-        d.ventes().forEach(v -> ventes.put(v.id(), v));
-        d.achats().forEach(a -> achats.put(a.id(), a));
-        d.retours().forEach(r -> retours.put(r.id(), r));
-        d.clients().forEach(p -> clients.put(p.id(), p.nom()));
-        d.fournisseurs().forEach(p -> fournisseurs.put(p.id(), p.nom()));
-        d.ventes().forEach(v -> surplus.put(-v.id(), positif(v.verse().subtract(v.total()))));
-        d.achats().forEach(a -> surplus.put(a.id(), positif(a.verse().subtract(a.total()))));
+        // Aucune opération avant la date : rien à écrire (ni report, ni stock), sauf le report à nouveau d'un exercice clôturé.
+        if (d.ouverture() == null && d.reprise() == null) return List.of();
+        if (d.ouverture() != null) {
+            d.ventes().forEach(v -> ventes.put(v.id(), v));
+            d.achats().forEach(a -> achats.put(a.id(), a));
+            d.retours().forEach(r -> retours.put(r.id(), r));
+            d.clients().forEach(p -> clients.put(p.id(), p.nom()));
+            d.fournisseurs().forEach(p -> fournisseurs.put(p.id(), p.nom()));
+            d.ventes().forEach(v -> surplus.put(-v.id(), positif(v.verse().subtract(v.total()))));
+            d.achats().forEach(a -> surplus.put(a.id(), positif(a.verse().subtract(a.total()))));
 
-        reports();
-        d.ventes().forEach(this::vente);
-        d.achats().forEach(this::achat);
-        d.retours().forEach(this::retour);
-        mouvements();
+            reports();
+            d.ventes().forEach(this::vente);
+            d.achats().forEach(this::achat);
+            d.retours().forEach(this::retour);
+            mouvements();
+        }
         regularisationStock();
+        if (d.reprise() != null) reprise(d.reprise());
         List<Ecriture> tri = new ArrayList<>(resultat);
         tri.sort(Comparator.comparing(Ecriture::date).thenComparing(e -> e.journal().ordinal()).thenComparing(Ecriture::piece));
         return tri;
+    }
+
+    // ---- Report à nouveau d'un exercice clôturé (étape 5c) -----------------------------------------------------------------
+
+    /**
+     * Les écritures d'un exercice clôturé ne sont pas recalculées : celles qui sont datées jusqu'à la clôture sont écartées (leurs opérations ne
+     * servent plus que de référence, pour retrouver un numéro de pièce, un tiers ou l'origine d'une annulation) et remplacées par une seule
+     * écriture de report, les soldes enregistrés à la clôture. Les affectations du résultat s'y ajoutent à leur date.
+     */
+    private void reprise(Reprise r) {
+        resultat.removeIf(e -> !e.date().isAfter(r.limite()));
+        // Un stock de départ saisi après la clôture (nouveau produit) se reporte comme avant : D 31 / C 12, sans toucher au résultat.
+        BigDecimal ajoute = d.stockDepart().subtract(r.stockDepart());
+        if (ajoute.signum() != 0) {
+            List<Ligne> s = new ArrayList<>();
+            s.add(ajoute.signum() > 0 ? debit(c.compte(CleCompta.STOCK), ajoute) : credit(c.compte(CleCompta.STOCK), ajoute.negate()));
+            s.add(ajoute.signum() > 0 ? credit(c.compte(CleCompta.REPORT_A_NOUVEAU), ajoute) : debit(c.compte(CleCompta.REPORT_A_NOUVEAU), ajoute.negate()));
+            ajouter(r.limite().plusNanos(1), Journal.OD, "OUV-STOCK", "Stock de départ", s, "STOCK_DEPART", false);
+        }
+        List<Ligne> l = new ArrayList<>();
+        for (Reprise.Solde s : r.soldes()) {
+            if (s.solde().signum() == 0) continue;
+            l.add(s.solde().signum() > 0 ? debit(s.compte(), s.solde(), s.tiersType(), s.tiersId(), s.tiersNom()) : credit(s.compte(), s.solde().negate(), s.tiersType(), s.tiersId(), s.tiersNom()));
+        }
+        if (!l.isEmpty()) ajouter(r.limite(), Journal.OD, "OUV-" + r.finExercice().plusDays(1).getYear(), r.libelle(), l, "OUVERTURE:" + r.exerciceId(), false);
+        for (Reprise.Affectation a : r.affectations()) {
+            if (a.montant().signum() == 0) continue;
+            String resultatCompte = a.montant().signum() > 0 ? "131" : "139";
+            BigDecimal m = a.montant().abs();
+            List<Ligne> lignes = new ArrayList<>();
+            // Bénéfice : D 131 / C destination ; perte : D destination / C 139.
+            if (a.montant().signum() > 0) { lignes.add(debit(resultatCompte, m)); lignes.add(credit(a.compteDestination(), m)); }
+            else { lignes.add(debit(a.compteDestination(), m)); lignes.add(credit(resultatCompte, m)); }
+            ajouter(a.date(), Journal.OD, "AFF-" + a.id(), a.libelle(), lignes, "AFFECTATION:" + a.id(), false);
+        }
     }
 
     // ---- Reports -------------------------------------------------------------------------------------------------
@@ -76,11 +114,11 @@ public final class ConstructeurEcritures {
     private void reports() {
         for (Partenaire p : d.clients()) {
             BigDecimal depart = soldeDepart(p, true);
-            if (depart.signum() != 0) reportTiers(TypeTiers.CLIENT, p, depart, true);
+            if (depart.signum() != 0 && (d.reprise() == null || p.id() > d.reprise().plafondClients())) reportTiers(TypeTiers.CLIENT, p, depart, true);
         }
         for (Partenaire p : d.fournisseurs()) {
             BigDecimal depart = soldeDepart(p, false);
-            if (depart.signum() != 0) reportTiers(TypeTiers.FOURNISSEUR, p, depart, false);
+            if (depart.signum() != 0 && (d.reprise() == null || p.id() > d.reprise().plafondFournisseurs())) reportTiers(TypeTiers.FOURNISSEUR, p, depart, false);
         }
         for (Ajustement a : d.ajustements()) {
             BigDecimal delta = a.nouveauSolde().subtract(a.ancienSolde());
@@ -105,7 +143,9 @@ public final class ConstructeurEcritures {
     }
 
     private void reportTiers(TypeTiers type, Partenaire p, BigDecimal montant, boolean client) {
-        reportTiers(type, p, montant, client, d.ouverture(), "Solde de départ de " + p.nom(), "OUV-" + (client ? "C" : "F") + p.id());
+        // Après une clôture, le solde de départ d'un tiers plus récent qu'elle se reporte au début de l'exercice suivant ; celui des autres est déjà dans les soldes d'ouverture.
+        LocalDateTime date = d.reprise() == null ? d.ouverture() : d.reprise().limite().plusNanos(1);
+        reportTiers(type, p, montant, client, date, "Solde de départ de " + p.nom(), "OUV-" + (client ? "C" : "F") + p.id());
     }
 
     /** {@code montant} signé : positif, le tiers doit à la boutique ; négatif, la boutique lui doit. */
@@ -318,8 +358,10 @@ public final class ConstructeurEcritures {
 
     /** Régularisation du stock (inventaire intermittent) : le stock passe de sa valeur de départ à sa valeur à la date demandée. */
     private void regularisationStock() {
+        // Après un exercice clôturé, le stock de départ est celui de la clôture : le compte 31 d'ouverture le porte déjà.
+        BigDecimal reference = d.reprise() != null ? d.reprise().valeurStock().add(d.stockDepart()).subtract(d.reprise().stockDepart()) : d.stockDepart();
         for (DonneesComptables.ValeurStock v : d.valeursStock()) {
-            BigDecimal ecart = v.valeur().subtract(d.stockDepart());
+            BigDecimal ecart = v.valeur().subtract(reference);
             if (ecart.signum() == 0) continue;
             List<Ligne> l = new ArrayList<>();
             if (ecart.signum() > 0) { l.add(debit(c.compte(CleCompta.STOCK), ecart)); l.add(credit(c.compte(CleCompta.VARIATION_STOCK), ecart)); }

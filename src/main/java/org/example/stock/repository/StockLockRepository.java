@@ -8,6 +8,7 @@ import org.example.stock.model.Client;
 import org.example.stock.model.ComptageCaisse;
 import org.example.stock.model.Devis;
 import org.example.stock.model.Emprunt;
+import org.example.stock.model.ExerciceComptable;
 import org.example.stock.model.PartenaireFinancier;
 import org.example.stock.model.ReleveBancaire;
 import org.example.stock.model.Fournisseur;
@@ -30,7 +31,8 @@ import java.util.TreeSet;
  * Les verrous restent détenus jusqu'à la fin de la transaction métier.
  *
  * <p>Ordre global des verrous (voir « Ordre des verrous » dans {@code docs/lot-2.md}) : toute écriture métier commence par
- * {@link #verrouillerBoutiqueCourante()}, puis le document (vente, achat, devis, emprunt, comptage, relevé bancaire), le partenaire (client, fournisseur, partenaire
+ * {@link #verrouillerBoutiqueCourante()}, puis l'exercice (étape 5c : en lecture partagée par le contrôle des exercices clôturés, en écriture par la clôture),
+ * puis le document (vente, achat, devis, emprunt, comptage, relevé bancaire), le partenaire (client, fournisseur, partenaire
  * financier), les factures du partenaire, les produits et enfin les comptes de trésorerie.</p>
  */
 @Repository
@@ -61,6 +63,19 @@ public class StockLockRepository {
         }
         boutiques.exigerAppartenance(boutique);
         return boutique;
+    }
+
+    /**
+     * Verrou en écriture d'un exercice comptable de la boutique courante (404 sinon), après celui de la boutique et avant celui du document : c'est celui de la
+     * clôture, de son annulation et de l'affectation du résultat. Les écritures, elles, le prennent en lecture partagée par {@code VerrouExercice}.
+     */
+    public ExerciceComptable verrouillerExercice(Long id) {
+        verifierIdentifiant("ExerciceComptable", id, boutiques.idBoutiqueCourante());
+        ExerciceComptable exercice = entityManager.find(ExerciceComptable.class, id, LockModeType.PESSIMISTIC_WRITE);
+        if (exercice == null) throw introuvable("Exercice");
+        entityManager.refresh(exercice, LockModeType.PESSIMISTIC_WRITE);
+        boutiques.exigerAppartenance(exercice.getBoutique());
+        return exercice;
     }
 
     public Map<Long, Produit> verrouillerProduits(Collection<Long> ids) {

@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import jakarta.validation.Validator;
 import org.example.stock.enums.Periodicite;
 import org.example.stock.enums.SensEmprunt;
@@ -52,6 +53,7 @@ import java.util.UUID;
  */
 @Service
 public class EmpruntService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final CaisseService caisse;
     private final StockLockRepository verrous;
     private final ComptesTresorerieService comptes;
@@ -196,6 +198,7 @@ public class EmpruntService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public Creation creer(EmpruntForm f) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = caisse.gerantPourEcriture();
         if (f == null || !validator.validate(f).isEmpty()) throw new IllegalArgumentException("Les champs de l'emprunt doivent être valides.");
         Long boutiqueId = boutiques.idBoutiqueCourante();
@@ -296,6 +299,7 @@ public class EmpruntService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean rembourser(Long id, RemboursementForm f) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = caisse.gerantPourEcriture();
         if (f == null || !validator.validate(f).isEmpty()) throw new IllegalArgumentException("Le montant, le compte et l'état affiché doivent être valides.");
         Long boutiqueId = boutiques.idBoutiqueCourante();
@@ -348,6 +352,7 @@ public class EmpruntService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void annulerRemboursement(Long empruntId, Long operationId, String motifSaisi) {
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = caisse.gerantPourEcriture();
         String motif = motifSaisi == null ? "" : motifSaisi.strip();
         if (motif.length() < AnnulationReglementService.MOTIF_MINIMUM || motif.length() > AnnulationReglementService.MOTIF_MAXIMUM) {

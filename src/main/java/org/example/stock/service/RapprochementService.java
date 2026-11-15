@@ -50,6 +50,7 @@ import java.util.UUID;
  */
 @Service
 public class RapprochementService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     /** Marge, en jours, autour de la période du relevé pour les mouvements proposés au pointage. */
     public static final int MARGE_JOURS = 7;
     /** Lignes et mouvements affichés par colonne ; au-delà, l'écran le signale. */
@@ -187,6 +188,7 @@ public class RapprochementService {
         verrous.verrouillerBoutiqueCourante();
         Utilisateur gerant = caisse.gerantPourEcriture();
         ReleveBancaire r = verrous.verrouillerReleve(releveId);
+        verrouExercice.exigerOuvert(r.getDateFin());
         ReleveBancaireService.exigerBrouillon(r);
         Long boutiqueId = boutiques.idBoutiqueCourante();
         comptes.verrouiller(boutiqueId, gerant, false, compteActif, List.of(r.getCompte().getId()));

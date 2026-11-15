@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.enums.TypeLigneInventaire;
 import org.example.stock.model.Client;
@@ -51,6 +52,7 @@ import java.util.Set;
  */
 @Service
 public class InventaireCreancesService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     /** Nombre maximal de partenaires dans un même inventaire (formulaire borné). */
     public static final int LIGNES_MAXIMUM = 100;
     public static final int TEXTE_MAXIMUM = 255;
@@ -122,6 +124,7 @@ public class InventaireCreancesService {
         if (utiles.size() > LIGNES_MAXIMUM) throw new IllegalArgumentException("Un inventaire comporte au plus " + LIGNES_MAXIMUM + " partenaires.");
 
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Long boutiqueId = boutiques.idBoutiqueCourante();
         InventaireCreances deja = inventaires.findByBoutiqueIdAndJeton(boutiqueId, jeton).orElse(null);
         if (deja != null) return deja;

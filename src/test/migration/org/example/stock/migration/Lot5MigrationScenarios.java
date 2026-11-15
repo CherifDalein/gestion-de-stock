@@ -9,9 +9,10 @@ import java.util.*;
  */
 final class Lot5MigrationScenarios {
     static final List<String> VALIDES = List.of("ancien", "vide", "schema_neuf", "tables_partielles", "sous_comptes_partiels", "relance", "nouveau_compte", "compte_archive",
-            "numeros_officiels_evites", "reglage_absent");
+            "numeros_officiels_evites", "reglage_absent", "cinq_b_seulement", "cloture_interrompue");
     static final List<String> INVALIDES = List.of("numero_taille", "unicite_absente", "sous_compte_officiel", "sous_compte_hors_parent", "parent_inconnu",
-            "sous_compte_type_incoherent", "correspondance_compte_vide", "cle_etrangere_absente", "reglage_systeme_inconnu");
+            "sous_compte_type_incoherent", "correspondance_compte_vide", "cle_etrangere_absente", "reglage_systeme_inconnu", "exercice_statut_inconnu", "instantane_double_actif",
+            "instantane_actif_exercice_ouvert", "colonne_validation_trop_courte");
     private Lot5MigrationScenarios() {}
 
     /** Base des lots 1 à 4 et 6 migrés, sans les tables du lot 5a. */
@@ -39,6 +40,20 @@ final class Lot5MigrationScenarios {
             }
             // Le lot 5a est déjà posé (sous-comptes et correspondance saisis) : seule la table des réglages manque, rien d'autre ne bouge.
             case "reglage_absent" -> { Lot5Migration.migrer(c, true); saisirComptabilite(c); sql(c, "DROP TABLE reglage_comptable_boutique"); return; }
+            // Les lots 5a et 5b sont posés (réglage MINIMAL saisi) : les colonnes du 5c et ses cinq tables sont ajoutées, le réglage est conservé.
+            case "cinq_b_seulement" -> {
+                Lot5Migration.migrer(c, true); saisirComptabilite(c);
+                sql(c, "INSERT INTO reglage_comptable_boutique(boutique_id,systeme) SELECT MAX(id),'MINIMAL' FROM boutique");
+                retirerLot5c(c, true);
+                return;
+            }
+            // Interruption après la création de la table des exercices : une ligne y est déjà, les autres tables et les colonnes sont ajoutées, la ligne est conservée.
+            case "cloture_interrompue" -> {
+                Lot5Migration.migrer(c, true);
+                sql(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut) VALUES(1,'2025-01-01','2025-12-31','OUVERT')");
+                retirerLot5c(c, false);
+                return;
+            }
             // Les sous-comptes ne reprennent jamais un numéro officiel (5711 et 5712 sont des comptes du plan) : le premier numéro libre est choisi.
             case "numeros_officiels_evites" -> { return; }
             default -> {}
@@ -60,12 +75,38 @@ final class Lot5MigrationScenarios {
             case "sous_compte_type_incoherent" -> sql(c, "UPDATE sous_compte_boutique SET parent_numero='521', numero='5219' WHERE id=(SELECT MIN(id) FROM (SELECT id FROM sous_compte_boutique WHERE parent_numero='571') x)");
             case "correspondance_compte_vide" -> sql(c, "INSERT INTO correspondance_compta(boutique_id,cle,compte_numero) VALUES(1,'VENTES_SERVICES','')");
             case "reglage_systeme_inconnu" -> sql(c, "INSERT INTO reglage_comptable_boutique(boutique_id,systeme) VALUES(1,'AUTRE')");
+            case "exercice_statut_inconnu" -> sql(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut) VALUES(1,'2025-01-01','2025-12-31','FERME')");
+            case "instantane_double_actif" -> {
+                exerciceCloture(c, "2025-01-01", "2025-12-31");
+                sql(c, instantane(1, "ACTIF")); sql(c, instantane(2, "ACTIF"));
+            }
+            case "instantane_actif_exercice_ouvert" -> {
+                sql(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut) VALUES(1,'2025-01-01','2025-12-31','OUVERT')");
+                sql(c, instantane(1, "ACTIF"));
+            }
+            case "colonne_validation_trop_courte" -> sql(c, "ALTER TABLE reglage_comptable_boutique " + modifier(c) + " valide_cabinet VARCHAR(40) NULL");
             case "cle_etrangere_absente" -> {
                 if (maria(c)) sql(c, "ALTER TABLE sous_compte_boutique DROP FOREIGN KEY fk_sous_compte_compte_tresorerie");
                 else sql(c, "ALTER TABLE sous_compte_boutique DROP CONSTRAINT fk_sous_compte_compte_tresorerie");
             }
             default -> throw new IllegalStateException("Scénario lot 5 inconnu.");
         }
+    }
+
+    /** Retire les colonnes et les tables du lot 5c (les cinq tables si {@code toutes}, sinon tout sauf la table des exercices) pour retrouver une base 5a+5b ou interrompue. */
+    private static void retirerLot5c(Connection c, boolean toutes) throws SQLException {
+        for (String table : List.of("affectation_resultat", "instantane_document", "instantane_exercice", "solde_ouverture")) sql(c, "DROP TABLE " + table);
+        if (toutes) sql(c, "DROP TABLE exercice_comptable");
+        for (String colonne : List.of("debut_premier_exercice", "valide_cabinet", "valide_le")) sql(c, "ALTER TABLE reglage_comptable_boutique DROP COLUMN " + colonne);
+    }
+
+    private static void exerciceCloture(Connection c, String debut, String fin) throws SQLException {
+        sql(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut,cloture_le,cloture_par,resultat) VALUES(1,'" + debut + "','" + fin + "','CLOTURE','2026-01-15 10:00:00.000000','Gérant',0.00)");
+    }
+
+    private static String instantane(int version, String statut) {
+        return "INSERT INTO instantane_exercice(boutique_id,exercice_id,version,statut,date_debut,date_fin,systeme,resultat,empreinte,contenu,cree_le,cree_par)"
+                + " SELECT 1,id," + version + ",'" + statut + "',date_debut,date_fin,'NORMAL',0.00,'" + "a".repeat(64) + "',X'00','2026-01-15 10:00:00.000000','Gérant' FROM exercice_comptable WHERE boutique_id=1 ORDER BY id DESC LIMIT 1";
     }
 
     private static String creerSousComptesSeulement(Connection c) throws SQLException {
@@ -108,6 +149,7 @@ final class Lot5MigrationScenarios {
         var finalEtat = etatComplet(c);
         Lot5Migration.migrer(c, true); Lot5Migration.migrer(c, false);
         exiger(finalEtat.equals(etatComplet(c)), "Relance non idempotente");
+        verifierLot5c(c, scenario);
         if (scenario.equals("relance")) verifierComptabiliteConservee(c);
         if (scenario.equals("reglage_absent")) { verifierComptabiliteConservee(c); exiger(BoutiquesMigration.tables(c).containsKey("reglage_comptable_boutique"), "La table des réglages n'a pas été créée"); }
         if (scenario.equals("nouveau_compte")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM sous_compte_boutique s JOIN compte_tresorerie_boutique t ON t.id=s.compte_tresorerie_id"
@@ -116,6 +158,46 @@ final class Lot5MigrationScenarios {
                 "Le sous-compte posé à la main a été réécrit");
         if (scenario.equals("compte_archive")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique t WHERE t.actif=FALSE AND EXISTS (SELECT 1 FROM sous_compte_boutique s WHERE s.compte_tresorerie_id=t.id)")
                 == BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE actif=FALSE"), "Un compte archivé n'a pas de sous-compte");
+    }
+
+    /** Lot 5c : les cinq tables et les trois colonnes existent, les réglages et les exercices déjà saisis sont conservés, les contraintes sont réelles. */
+    private static void verifierLot5c(Connection c, String scenario) throws SQLException {
+        var tables = BoutiquesMigration.tables(c);
+        for (String t : List.of("exercice_comptable", "solde_ouverture", "instantane_exercice", "instantane_document", "affectation_resultat")) exiger(tables.containsKey(t), "Table du lot 5c absente : " + t);
+        var colonnes = InscriptionEssaiMigration.colonnes(c, "reglage_comptable_boutique");
+        exiger(colonnes.containsKey("debut_premier_exercice") && colonnes.containsKey("valide_cabinet") && colonnes.containsKey("valide_le"), "Colonnes de réglage du lot 5c absentes");
+        if (scenario.equals("cinq_b_seulement")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM reglage_comptable_boutique WHERE boutique_id=(SELECT MAX(id) FROM boutique) AND systeme='MINIMAL' AND valide_cabinet IS NULL") == 1,
+                "Le réglage saisi avant le lot 5c n'a pas été conservé");
+        if (scenario.equals("cloture_interrompue")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM exercice_comptable WHERE boutique_id=1 AND date_debut='2025-01-01' AND statut='OUVERT'") == 1,
+                "L'exercice déjà présent n'a pas été conservé");
+        // Un exercice clôturé avec instantané, document, soldes d'ouverture et affectation : mêmes contraintes sur H2 et MariaDB.
+        long boutique = BoutiquesMigration.compter(c, "SELECT COALESCE(MIN(id),0) FROM boutique");
+        if (boutique == 0) return;
+        sql(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut,cloture_le,cloture_par,resultat) VALUES(" + boutique + ",'2024-01-01','2024-12-31','CLOTURE','2025-01-15 10:00:00.000000','Gérant',1500.50)");
+        long exercice = BoutiquesMigration.compter(c, "SELECT MAX(id) FROM exercice_comptable");
+        exigerRefus(c, "INSERT INTO exercice_comptable(boutique_id,date_debut,date_fin,statut) VALUES(" + boutique + ",'2024-01-01','2024-12-31','OUVERT')", "Deux exercices de même début ont été acceptés");
+        sql(c, "INSERT INTO solde_ouverture(exercice_id,compte,tiers_type,tiers_id,solde) VALUES(" + exercice + ",'571','',0,100.00)");
+        exigerRefus(c, "INSERT INTO solde_ouverture(exercice_id,compte,tiers_type,tiers_id,solde) VALUES(" + exercice + ",'571','',0,5.00)", "Deux soldes d'ouverture identiques ont été acceptés");
+        sql(c, "INSERT INTO instantane_exercice(boutique_id,exercice_id,version,statut,date_debut,date_fin,systeme,resultat,empreinte,contenu,cree_le,cree_par) VALUES(" + boutique + "," + exercice
+                + ",1,'ACTIF','2024-01-01','2024-12-31','NORMAL',1500.50,'" + "b".repeat(64) + "',X'0102','2025-01-15 10:00:00.000000','Gérant')");
+        long instantane = BoutiquesMigration.compter(c, "SELECT MAX(id) FROM instantane_exercice");
+        exigerRefus(c, "INSERT INTO instantane_exercice(boutique_id,exercice_id,version,statut,date_debut,date_fin,systeme,resultat,empreinte,contenu,cree_le,cree_par) VALUES(" + boutique + "," + exercice
+                + ",1,'ANNULE','2024-01-01','2024-12-31','NORMAL',0,'" + "c".repeat(64) + "',X'01','2025-01-15 10:00:00.000000','Gérant')", "Deux instantanés de même version ont été acceptés");
+        sql(c, "INSERT INTO instantane_document(instantane_id,code,titre,nom_fichier,pdf,excel) VALUES(" + instantane + ",'bilan','Bilan','bilan.pdf',X'25504446',X'504B')");
+        exigerRefus(c, "INSERT INTO instantane_document(instantane_id,code,titre,nom_fichier,pdf,excel) VALUES(" + instantane + ",'bilan','Bilan','bilan.pdf',X'25',X'50')", "Deux documents de même code ont été acceptés");
+        sql(c, "INSERT INTO affectation_resultat(boutique_id,exercice_id,date_affectation,compte_destination,montant,libelle,cree_le,cree_par) VALUES(" + boutique + "," + exercice
+                + ",'2025-01-02','12',1500.50,'Affectation','2025-01-02 09:00:00.000000','Gérant')");
+        exigerRefus(c, "INSERT INTO affectation_resultat(boutique_id,exercice_id,date_affectation,compte_destination,montant,libelle,cree_le,cree_par) VALUES(" + boutique + "," + exercice
+                + ",'2025-01-03','11',1.00,'Autre','2025-01-02 09:00:00.000000','Gérant')", "Deux affectations pour un même exercice ont été acceptées");
+        for (String t : List.of("affectation_resultat", "instantane_document", "solde_ouverture")) sql(c, "DELETE FROM " + t);
+        sql(c, "DELETE FROM instantane_exercice WHERE id=" + instantane);
+        sql(c, "DELETE FROM exercice_comptable WHERE id=" + exercice);
+    }
+
+    private static void exigerRefus(Connection c, String requete, String message) throws SQLException {
+        boolean refuse = false;
+        try { sql(c, requete); } catch (SQLException e) { refuse = e.getSQLState() != null && e.getSQLState().startsWith("23"); }
+        exiger(refuse, message);
     }
 
     /** Chaque compte de trésorerie a un sous-compte sous le bon parent, jamais un numéro officiel, jamais deux fois le même numéro dans une boutique. */

@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import org.example.stock.enums.SensSolde;
 import org.example.stock.model.Client;
 import org.example.stock.model.Emails;
@@ -32,6 +33,7 @@ import java.util.Objects;
  */
 @Service
 public class SoldeDepartService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final StockLockRepository verrous;
     private final SoldePartenaireService soldes;
     private final BoutiqueService boutiques;
@@ -82,6 +84,7 @@ public class SoldeDepartService {
         if (!saisie.isSoldeDepartSoumis()) return;
         exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Client client = verrous.verrouillerClient(id);
         Solde solde = calculer(Partenaire.CLIENT, id, client.getSoldeInitial(), client.getEcheanceSoldeInitial(),
                 saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
@@ -94,6 +97,7 @@ public class SoldeDepartService {
         if (!saisie.isSoldeDepartSoumis()) return;
         exigerGerant();
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Fournisseur fournisseur = verrous.verrouillerFournisseur(id);
         Solde solde = calculer(Partenaire.FOURNISSEUR, id, fournisseur.getSoldeInitial(), fournisseur.getEcheanceSoldeInitial(),
                 saisie.getMontantSoldeDepart(), saisie.getSensSoldeDepart(), saisie.getEcheanceSoldeInitial(), saisie.isConfirmationSoldeDepart());
@@ -142,6 +146,7 @@ public class SoldeDepartService {
         montant = controlerSaisie(montant, reglementAttendu, compte);
         Long compteId = comptes.resoudreId(compte);
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         Client client = verrous.verrouillerClient(clientId);
         BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.CLIENT, clientId).net();
@@ -160,6 +165,7 @@ public class SoldeDepartService {
         montant = controlerSaisie(montant, reglementAttendu, compte);
         Long compteId = comptes.resoudreId(compte);
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         Fournisseur fournisseur = verrous.verrouillerFournisseur(fournisseurId);
         BigDecimal regle = soldes.reglementsVerrouilles(Partenaire.FOURNISSEUR, fournisseurId).net();

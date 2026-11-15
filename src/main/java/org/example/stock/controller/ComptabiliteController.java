@@ -51,6 +51,7 @@ public class ComptabiliteController {
     private final DocumentPdfService pdf;
     private final ContexteDocumentService contextes;
     private final EtatsFinanciersService financiers;
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.MentionComptable mentions;
 
     public ComptabiliteController(ComptabiliteService compta, PlanComptesService plan, CorrespondanceService correspondance, BoutiqueService boutiques,
                                   EcheanceService horloge, ExportExcelService excel, DocumentPdfService pdf, ContexteDocumentService contextes,
@@ -73,7 +74,7 @@ public class ComptabiliteController {
                 new Carte("/comptabilite/controles", "Contrôles de cohérence", "Neuf vérifications entre les écritures, les soldes de l'application et les états financiers."),
                 new Carte("/comptabilite/plan", "Plan de comptes", "Le plan officiel du SYSCOHADA révisé et les sous-comptes de la boutique."),
                 new Carte("/comptabilite/correspondance", "Table de correspondance", "Le compte comptable de chaque nature d'opération, modifiable.")));
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        model.addAttribute("mention", mentions.pour(boutiques.idBoutiqueCourante()));
         model.addAttribute("view", "compta/accueil");
         return "dashboard";
     }
@@ -171,7 +172,7 @@ public class ComptabiliteController {
         model.addAttribute("journaux", Journal.values());
         model.addAttribute("avertissement", f.avertissement);
         model.addAttribute("requeteExport", f.requete());
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        model.addAttribute("mention", mentions.pour(boutiques.idBoutiqueCourante()));
         model.addAttribute("genereLe", horloge.maintenant());
         model.addAttribute("view", "compta/livre");
         return "dashboard";
@@ -185,6 +186,7 @@ public class ComptabiliteController {
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+        etat = org.example.stock.compta.MentionComptable.avecMention(etat, mentions.pour(boutiques.idBoutiqueCourante()));
         ContexteDocument contexte = contextes.courant();
         boolean estPdf = "pdf".equals(format);
         String nom = TelechargementExport.nomFichier(etat.base(), etat.du(), etat.au(), estPdf ? "pdf" : "xlsx");
@@ -276,7 +278,7 @@ public class ComptabiliteController {
         model.addAttribute("ouvert", !recherche.isEmpty() || !cl.isEmpty());
         model.addAttribute("total", groupes.values().stream().mapToInt(List::size).sum());
         model.addAttribute("officiels", plan.getPlan().taille());
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        model.addAttribute("mention", mentions.pour(boutiques.idBoutiqueCourante()));
         model.addAttribute("view", "compta/plan");
         return "dashboard";
     }
@@ -315,7 +317,7 @@ public class ComptabiliteController {
         model.addAttribute("groupes", groupes);
         model.addAttribute("tresorerie", tresorerie);
         model.addAttribute("modifiees", lignes.stream().filter(CorrespondanceService.LigneVue::modifie).count());
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        model.addAttribute("mention", mentions.pour(boutiques.idBoutiqueCourante()));
         model.addAttribute("view", "compta/correspondance");
         return "dashboard";
     }

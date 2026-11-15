@@ -1,5 +1,6 @@
 package org.example.stock.service;
 
+import java.time.LocalDateTime;
 import org.example.stock.model.Fournisseur;
 import org.example.stock.model.Montants;
 import org.example.stock.repository.FournisseurRepository;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 public class FournisseurService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     @Autowired
     private FournisseurRepository fournisseurRepository;
 
@@ -73,6 +75,7 @@ public class FournisseurService {
     public CorbeilleService.ElementSupprime supprimerFournisseur(Long id) {
         // La suppression contrôle les factures du fournisseur : la boutique d'abord, puis la fiche (docs/lot-2.md, « Ordre des verrous »).
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         Fournisseur fournisseur = verrous.verrouillerFournisseur(id);
         corbeille.exigerSansLien(TypeCorbeille.FOURNISSEUR, id);
         var supprime = corbeille.placer(TypeCorbeille.FOURNISSEUR, fournisseur);

@@ -850,6 +850,92 @@ CREATE TABLE IF NOT EXISTS reglage_comptable_boutique (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     boutique_id BIGINT NOT NULL,
     systeme VARCHAR(10) NOT NULL,
+    debut_premier_exercice DATE NULL,
+    valide_cabinet VARCHAR(120) NULL,
+    valide_le DATE NULL,
     CONSTRAINT uk_reglage_comptable_boutique UNIQUE (boutique_id),
     CONSTRAINT fk_reglage_comptable_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Lot 5c (clôture d'exercice) : exercice_comptable (une ligne par exercice clôturé, ou rouvert après annulation), solde_ouverture (les soldes des comptes de bilan
+-- à la clôture, qui ouvrent l'exercice suivant), instantane_exercice et instantane_document (les états figés à la clôture, avec leurs PDF et Excel et l'empreinte
+-- SHA-256 ; un instantané annulé est conservé), affectation_resultat (l'affectation du résultat saisie par le gérant). reglage_comptable_boutique reçoit le début du
+-- premier exercice et la validation par l'expert-comptable. Un exercice sans ligne est ouvert : par défaut, c'est l'année civile.
+CREATE TABLE IF NOT EXISTS exercice_comptable (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    statut VARCHAR(10) NOT NULL,
+    cloture_le DATETIME(6) NULL,
+    cloture_par VARCHAR(120) NULL,
+    motif VARCHAR(255) NULL,
+    resultat DECIMAL(19,2) NULL,
+    valeur_stock DECIMAL(19,2) NULL,
+    plafond_client_id BIGINT NULL,
+    plafond_fournisseur_id BIGINT NULL,
+    CONSTRAINT uk_exercice_boutique_debut UNIQUE (boutique_id, date_debut),
+    CONSTRAINT fk_exercice_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS solde_ouverture (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    exercice_id BIGINT NOT NULL,
+    compte VARCHAR(8) NOT NULL,
+    tiers_type VARCHAR(12) NOT NULL,
+    tiers_id BIGINT NOT NULL,
+    tiers_nom VARCHAR(160) NULL,
+    solde DECIMAL(19,2) NOT NULL,
+    CONSTRAINT uk_solde_ouverture UNIQUE (exercice_id, compte, tiers_type, tiers_id),
+    CONSTRAINT fk_solde_ouverture_exercice FOREIGN KEY (exercice_id) REFERENCES exercice_comptable (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS instantane_exercice (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    exercice_id BIGINT NOT NULL,
+    version INT NOT NULL,
+    statut VARCHAR(10) NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    systeme VARCHAR(10) NOT NULL,
+    resultat DECIMAL(19,2) NOT NULL,
+    empreinte VARCHAR(64) NOT NULL,
+    contenu LONGBLOB NOT NULL,
+    cree_le DATETIME(6) NOT NULL,
+    cree_par VARCHAR(120) NOT NULL,
+    motif VARCHAR(255) NULL,
+    annule_le DATETIME(6) NULL,
+    annule_par VARCHAR(120) NULL,
+    motif_annulation VARCHAR(255) NULL,
+    CONSTRAINT uk_instantane_exercice_version UNIQUE (exercice_id, version),
+    CONSTRAINT fk_instantane_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_instantane_exercice FOREIGN KEY (exercice_id) REFERENCES exercice_comptable (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS instantane_document (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    instantane_id BIGINT NOT NULL,
+    code VARCHAR(30) NOT NULL,
+    titre VARCHAR(120) NOT NULL,
+    nom_fichier VARCHAR(160) NOT NULL,
+    pdf LONGBLOB NOT NULL,
+    excel LONGBLOB NOT NULL,
+    CONSTRAINT uk_instantane_document_code UNIQUE (instantane_id, code),
+    CONSTRAINT fk_instantane_document FOREIGN KEY (instantane_id) REFERENCES instantane_exercice (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS affectation_resultat (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    exercice_id BIGINT NOT NULL,
+    date_affectation DATE NOT NULL,
+    compte_destination VARCHAR(8) NOT NULL,
+    montant DECIMAL(19,2) NOT NULL,
+    libelle VARCHAR(160) NOT NULL,
+    cree_le DATETIME(6) NOT NULL,
+    cree_par VARCHAR(120) NOT NULL,
+    CONSTRAINT uk_affectation_exercice UNIQUE (exercice_id),
+    CONSTRAINT fk_affectation_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id),
+    CONSTRAINT fk_affectation_exercice FOREIGN KEY (exercice_id) REFERENCES exercice_comptable (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

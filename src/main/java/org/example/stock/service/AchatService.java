@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 @Service
 public class AchatService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
 
     @Autowired private AchatRepository achatRepository;
     @Autowired private StockLockRepository stockLockRepository;
@@ -53,6 +54,7 @@ public class AchatService {
         // Ordre global des verrous : la boutique d'abord (docs/lot-2.md, « Ordre des verrous »), puis le fournisseur et ses
         // factures, puis les produits.
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         validerAchat(achat);
         achat.setNumero(NumerotationFactureService.validerSaisie(achat.getNumero()));
         initialisation.verrouillerEtClorePourActivite();
@@ -113,9 +115,11 @@ public class AchatService {
             throw new IllegalArgumentException("Utilisez le formulaire de règlement pour enregistrer un versement.");
         }
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         // Même ordre que le retour d'achat : boutique, achat, fiche du fournisseur, produits.
         Achat ancienAchat = stockLockRepository.verrouillerAchat(id);
+        verrouExercice.exigerOuvert(ancienAchat.getDateAchat());
         // Lecture verrouillée sous le verrou de l'achat : un retour d'achat validé à l'instant est vu.
         if (!entityManager.createQuery("select r.id from Retour r where r.achat.id = :achat", Long.class)
                 .setParameter("achat", id).setLockMode(LockModeType.PESSIMISTIC_READ).setMaxResults(1).getResultList().isEmpty()) {
@@ -202,6 +206,7 @@ public class AchatService {
             throw new IllegalArgumentException("Rechargez le formulaire de règlement.");
         }
         stockLockRepository.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         Achat achat = stockLockRepository.verrouillerAchat(id);
         BigDecimal dejaVerse = Montants.positifOuNul(Montants.ouZero(achat.getMontantVerse()), "Le montant déjà versé");

@@ -14,10 +14,18 @@ import java.util.Map;
  * @param ouverture      date des écritures de report (soldes de départ des partenaires, stock de départ)
  * @param stockDepart    valeur du stock de départ (avant toute opération) au coût moyen pondéré
  * @param valeursStock   valeur du stock aux dates de régularisation demandées, du plus ancien au plus récent
+ * @param reprise        report à nouveau d'un exercice clôturé (étape 5c) ; {@code null} quand on calcule depuis l'origine
  */
 public record DonneesComptables(LocalDateTime ouverture, List<Vente> ventes, List<Achat> achats, List<Retour> retours, List<Mouvement> mouvements,
                                 Map<Long, Operation> operations, List<Partenaire> clients, List<Partenaire> fournisseurs, List<Ajustement> ajustements,
-                                BigDecimal stockDepart, List<ValeurStock> valeursStock) {
+                                BigDecimal stockDepart, List<ValeurStock> valeursStock, Reprise reprise) {
+
+    /** Données sans report à nouveau : les écritures se calculent depuis l'origine. */
+    public DonneesComptables(LocalDateTime ouverture, List<Vente> ventes, List<Achat> achats, List<Retour> retours, List<Mouvement> mouvements,
+                             Map<Long, Operation> operations, List<Partenaire> clients, List<Partenaire> fournisseurs, List<Ajustement> ajustements,
+                             BigDecimal stockDepart, List<ValeurStock> valeursStock) {
+        this(ouverture, ventes, achats, retours, mouvements, operations, clients, fournisseurs, ajustements, stockDepart, valeursStock, null);
+    }
 
     /** Vente : total, montant versé (le surplus sur le total est une avance du client), avance utilisée, et part des services (le reste du total est de la marchandise). */
     public record Vente(Long id, String numero, LocalDateTime date, BigDecimal total, BigDecimal verse, BigDecimal avanceUtilisee, Long clientId, String clientNom, BigDecimal services) {}

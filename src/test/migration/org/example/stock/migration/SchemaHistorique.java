@@ -40,8 +40,8 @@ public final class SchemaHistorique {
      * après le lot 6 : tous les schémas plus anciens passent par ici.
      */
     public static String sansLot5(String schema) {
-        return schema.replaceAll("(?m)^-- Lot 5a \\(comptabilité\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "")
-                .replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:sous_compte_boutique|correspondance_compta|reglage_comptable_boutique) \\(.*?\\) ENGINE=InnoDB[^;]*;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
+        return schema.replaceAll("(?m)^-- Lot 5[ac] \\((?:comptabilité|clôture d'exercice)\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "")
+                .replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:sous_compte_boutique|correspondance_compta|reglage_comptable_boutique|exercice_comptable|solde_ouverture|instantane_exercice|instantane_document|affectation_resultat) \\(.*?\\) ENGINE=InnoDB[^;]*;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
     }
 
     private static final List<String> LIGNES_LOT6 = List.of("supprime_le DATETIME(6) NULL,", "supprime_par BIGINT NULL,", "nom_cle VARCHAR(255) NULL,");

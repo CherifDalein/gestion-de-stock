@@ -52,6 +52,7 @@ import java.util.Set;
  */
 @Service
 public class RetourAchatService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final int MOTIF_LONGUEUR_MAXIMALE = 255;
 
     private final RetourRepository retours;
@@ -163,6 +164,7 @@ public class RetourAchatService {
         // 1. La boutique d'abord (ordre global des verrous), 2. l'achat : deux retours simultanés sur le même achat passent
         //    l'un après l'autre, et un règlement de cet achat aussi.
         verrous.verrouillerBoutiqueCourante();
+        verrouExercice.exigerOuvert(LocalDateTime.now());
         initialisation.verrouillerEtClorePourActivite();
         Achat achat = verrous.verrouillerAchat(achatId);
         Map<Long, Integer> demandees = quantitesDemandees(form);
