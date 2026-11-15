@@ -202,7 +202,6 @@ public class ComptabiliteService {
         }
         Map<String, BigDecimal> livre = soldesParCompte(l);
         List<String> ecarts = new ArrayList<>();
-        int compares = 0;
         List<Long> ids = new ArrayList<>(appli.keySet());
         int compares = ids.size();
         // Un compte comptable peut recevoir plusieurs comptes de trésorerie (correspondance modifiée) : on compare par compte comptable.
