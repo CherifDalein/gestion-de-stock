@@ -23,7 +23,10 @@ public class AccountEmailsMariaDbTest {
                 execute(c, "CREATE DATABASE " + database + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 try {
                     c.setCatalog(database);
-                    execute(c, "CREATE TABLE utilisateur(id BIGINT AUTO_INCREMENT PRIMARY KEY,nom VARCHAR(255),email VARCHAR(255),mot_de_passe VARCHAR(255),date_inscription DATE,role VARCHAR(255))");
+                    // Les contrôles d'emails portent sur d'anciens schémas minimaux ; la création du premier administrateur,
+                    // elle, rattache le compte à une boutique et provisionne ses comptes de trésorerie : schéma actuel complet.
+                    if (cas.equals("administrateur")) creerSchemaActuel(c);
+                    else execute(c, "CREATE TABLE utilisateur(id BIGINT AUTO_INCREMENT PRIMARY KEY,nom VARCHAR(255),email VARCHAR(255),mot_de_passe VARCHAR(255),date_inscription DATE,role VARCHAR(255))");
                     if (!cas.equals("administrateur")) {
                         String email = cas.equals("null") ? null : cas.equals("invalide") ? "abc" : cas.equals("unicode") ? "\tIDENTITÉ@EXAMPLE.TEST\t" : " ADMIN@EXAMPLE.TEST ";
                         inserer(c, email);
@@ -58,6 +61,9 @@ public class AccountEmailsMariaDbTest {
                             try { InitialAdmin.creer(c, "autre@example.test", "MotDePasseTest42"); throw new AssertionError("Deuxième admin accepté"); }
                             catch (IllegalStateException attendu) {}
                             if (!valeur(c, "SELECT COUNT(*) FROM utilisateur").equals("1")) throw new AssertionError("Compte supplémentaire");
+                            if (!valeur(c, "SELECT COUNT(*) FROM boutique").equals("1")) throw new AssertionError("Boutique principale absente ou en double");
+                            if (!valeur(c, "SELECT COUNT(*) FROM utilisateur u JOIN boutique b ON b.id=u.boutique_id").equals("1")) throw new AssertionError("Administrateur non rattaché à la boutique");
+                            if (!valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique").equals("3")) throw new AssertionError("Comptes de trésorerie non provisionnés");
                         }
                         AccountEmailMigration.migrer(c, true);
                         if (cas.equals("conforme") && backup(c)) throw new AssertionError("Copie créée pour une base conforme");
@@ -74,6 +80,14 @@ public class AccountEmailsMariaDbTest {
             }
         }
         System.out.println(reussis + " scénarios réussis ; bases temporaires supprimées.");
+    }
+    static void creerSchemaActuel(Connection c) throws Exception {
+        String script = Files.readString(Path.of("docs/database-schema.sql")).replaceAll("(?m)^\\s*--[^\\r\\n]*", "");
+        for (String partie : script.split(";")) {
+            String instruction = partie.strip();
+            if (instruction.isEmpty() || instruction.startsWith("CREATE DATABASE") || instruction.startsWith("USE ")) continue;
+            execute(c, instruction);
+        }
     }
     static void execute(Connection c, String sql) throws SQLException { AccountEmailMigration.executer(c, sql); }
     static String valeur(Connection c, String sql) throws SQLException { try (var s = c.createStatement(); var r = s.executeQuery(sql)) { r.next(); return r.getString(1); } }

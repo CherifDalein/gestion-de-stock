@@ -89,6 +89,19 @@ ventes et achats ».
 
 Les tests utilisent H2 en mémoire.
 
+Les vérifications propres à MariaDB (verrous InnoDB, migrations, requêtes natives, validation Hibernate du schéma documenté)
+sont des tâches gradle `*MariaDbTest`. Elles créent des bases temporaires sur le serveur MariaDB local (démarrer avec
+`service mariadb start`), les suppriment ensuite et ne touchent jamais `stock_pro`. Une seule commande les lance toutes,
+l'une après l'autre :
+
+```sh
+./gradlew mariaDbTestsTous --no-daemon          # ajouter --continue pour aller au bout malgré un échec
+./gradlew tableauDeBordMariaDbTest --no-daemon  # ou une seule vérification
+```
+
+Toute nouvelle tâche dont le nom se termine par `MariaDbTest` est reprise automatiquement par `mariaDbTestsTous`.
+Quand le schéma ou un service évolue, mettre à jour les jeux de données et les contextes Spring réduits de ces tests en même temps.
+
 Les calculs des paniers se vérifient aussi avec Node.js :
 
 ```sh
