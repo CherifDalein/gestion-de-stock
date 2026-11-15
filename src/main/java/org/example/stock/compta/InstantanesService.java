@@ -58,6 +58,10 @@ public class InstantanesService {
         return documents.findByInstantaneIdAndCode(instantaneId, code).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
     }
 
+    /** Le document figé de l'instantané, ou vide s'il n'existe pas pour ce code. */
+    @Transactional(readOnly = true)
+    public Optional<InstantaneDocument> documentOuAucun(Long instantaneId, String code) { return documents.findByInstantaneIdAndCode(instantaneId, code); }
+
     /** Vrai si le contenu et les documents enregistrés donnent toujours l'empreinte enregistrée à la clôture. */
     public boolean empreinteConforme(InstantaneExercice i) {
         return i.getEmpreinte().equals(empreinte(i.getContenu(), documents.findByInstantaneIdOrderById(i.getId())));

@@ -61,3 +61,38 @@
     .compta-page[data-etat] .etat-table th:first-child, .compta-page[data-etat] .etat-table td:first-child { width: 2.4rem; }
     .compta-page[data-etat] .etat-table th.text-end, .compta-page[data-etat] .etat-table td.text-end { width: 4.5rem; font-size: .76rem; overflow-wrap: anywhere; }
 }
+
+/* Exercices et clôture (étape 5c) : statuts, liste de pré-clôture, formulaires. Couleurs des jetons : le thème sombre suit sans règle propre. */
+.compta-page .cloture-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.compta-page .cloture-form > .cloture-champ-large { flex: 1 1 16rem; min-width: 0; }
+.compta-page .cloture-form .form-control, .compta-page .cloture-form .form-select { min-width: 0; }
+.compta-page .cloture-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.compta-page .cloture-statut { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: var(--rfc-neutral-bg); color: var(--app-ink); }
+.compta-page .cloture-statut-ferme { background: var(--rfc-tint); color: var(--rfc-green-text); border: 1px solid var(--rfc-green-border); }
+.compta-page .cloture-statut-ouvert { background: var(--rfc-info-bg); color: var(--rfc-info-fg); }
+.compta-page .cloture-statut-annule { background: var(--rfc-danger-bg); color: var(--rfc-danger-fg); border: 1px solid var(--rfc-danger-border); }
+.compta-page .cloture-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.compta-page .cloture-point { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--app-border); border-radius: 10px; }
+.compta-page .cloture-point-corps { min-width: 0; overflow-wrap: anywhere; }
+.compta-page .cloture-marque { flex: 0 0 1.75rem; height: 1.75rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: 800; background: var(--rfc-neutral-bg); }
+.compta-page .cloture-ok .cloture-marque { background: var(--rfc-tint); color: var(--rfc-green-text); border: 1px solid var(--rfc-green-border); }
+.compta-page .cloture-bloque { border-color: var(--rfc-danger-border); background: var(--rfc-danger-bg); }
+.compta-page .cloture-bloque .cloture-marque { background: var(--rfc-danger-solid); color: var(--rfc-on-accent); }
+.compta-page .cloture-reco { border-color: var(--rfc-warn-border); background: var(--rfc-warn-bg); }
+.compta-page .cloture-reco .cloture-marque { background: var(--rfc-warn-fg); color: var(--rfc-warn-bg); }
+.compta-page .cloture-niveau { margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: .75rem; font-weight: 700; border: 1px solid currentColor; white-space: nowrap; }
+.compta-page .cloture-niveau-bloquant { color: var(--rfc-danger-fg); }
+.compta-page .cloture-niveau-reco { color: var(--rfc-warn-fg); }
+.compta-page .cloture-refus { color: var(--rfc-danger-fg); font-weight: 600; }
+.compta-page .cloture-resume { display: grid; gap: 10px; margin: 0; }
+.compta-page .cloture-resume dt { font-size: .8rem; color: var(--app-muted); font-weight: 600; }
+.compta-page .cloture-resume dd { margin: 0; overflow-wrap: anywhere; }
+.compta-page .cloture-empreinte { display: block; overflow-wrap: anywhere; word-break: break-all; font-size: .78rem; }
+.compta-page .cloture-document { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--app-border); }
+.compta-page .cloture-document:first-child { border-top: 0; }
+.compta-page .cloture-table th[scope="row"] { font-weight: 700; }
+@media (max-width: 767px) {
+    .compta-page .cloture-form > .btn { width: 100%; }
+    .compta-page .cloture-table { min-width: 0; }
+    .compta-page .cloture-actions { justify-content: flex-start; }
+}

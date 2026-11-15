@@ -154,7 +154,7 @@ public class ClotureService {
             v.add(new Verification("affectation", "Le résultat de l'exercice précédent est affecté", Niveau.RECOMMANDE, affecte,
                     affecte ? "Rien à affecter, ou l'affectation est saisie." : "Le résultat de l'exercice " + prec.libelle() + " n'est pas affecté : il restera en compte 13 et ne pourra plus l'être une fois cet exercice clôturé.", "/comptabilite/exercices"));
         }
-        boolean valide = boutiques.boutiqueCourante() != null && mentions.pour(b).startsWith("États validés");
+        boolean valide = mentions.pour(b).startsWith("États validés");
         v.add(new Verification("validation", "États validés par un expert-comptable", Niveau.RECOMMANDE, valide,
                 valide ? mentions.pour(b) : "Les états portent encore la mention « en cours de validation » : renseignez la validation de l'expert-comptable quand elle est faite.", "/comptabilite/exercices#validation"));
         return new PreCloture(ex, v);
@@ -248,7 +248,6 @@ public class ClotureService {
         List<InstantaneDocument> documents = new ArrayList<>();
         for (Etat brut : etatsFiges) {
             Etat e = MentionComptable.avecMention(brut, mention);
-            if (e == brut) e = MentionComptable.avecMention(brut, mention + " ");   // la mention standard est remplacée même quand elle est seule
             byte[] fichierPdf = pdf.rendreEtat(e.titre(), e.parametres(), e.notes(), e.sections(), contexte, e.format());
             byte[] fichierExcel = excel.ecrire(e.sections(), contexte);
             documents.add(new InstantaneDocument(instantane, e.code(), e.titre(), TelechargementExport.nomFichier(e.base(), e.du(), e.au(), "pdf"), fichierPdf, fichierExcel));

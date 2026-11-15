@@ -162,6 +162,19 @@ public class ExercicesService {
         r.fixerDebutPremierExercice(debut);
     }
 
+    /** Réglage « États validés par un expert-comptable » : cabinet et date de validation ; deux champs vides retirent la validation. */
+    @Transactional
+    public void enregistrerValidation(String cabinetSaisi, LocalDate le) {
+        String cabinet = cabinetSaisi == null ? "" : cabinetSaisi.strip();
+        if (cabinet.length() > 120) throw new IllegalArgumentException("Le nom du cabinet est trop long (120 caractères au plus).");
+        if (cabinet.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Le nom du cabinet contient un caractère non autorisé.");
+        if (cabinet.isEmpty() != (le == null)) throw new IllegalArgumentException("Renseignez le cabinet et la date de validation, ou laissez les deux vides pour retirer la validation.");
+        if (le != null && (le.getYear() < 2000 || le.isAfter(horloge.aujourdHui()))) throw new IllegalArgumentException("La date de validation doit être comprise entre 2000 et aujourd'hui.");
+        var boutique = verrous.verrouillerBoutiqueCourante();
+        ReglageComptableBoutique r = reglages.findByBoutiqueId(boutique.getId()).orElseGet(() -> reglages.save(new ReglageComptableBoutique(boutique, SystemeComptable.NORMAL)));
+        if (cabinet.isEmpty()) r.valider(null, null); else r.valider(cabinet, le);
+    }
+
     // ---- Report à nouveau ----------------------------------------------------------------------------------------------------
 
     /**

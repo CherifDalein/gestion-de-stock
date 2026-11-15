@@ -1,0 +1,137 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="exercice" th:attr="data-exercice-statut=${cloture ? 'cloture' : 'ouvert'}">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1 th:text="${titre}">Exercice 2025</h1>
+                <p class="app-page-subtitle" th:text="${sousTitre}"></p>
+            </div>
+            <div class="etat-actions">
+                <a th:href="@{__${etats}__}" class="btn btn-outline-primary"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> États</a>
+                <a th:href="@{/comptabilite/exercices}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Exercices</a>
+            </div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <!-- Exercice ouvert : pré-clôture et clôture -->
+        <th:block th:if="${!cloture}">
+            <section class="card shadow-sm mb-4" aria-labelledby="titrePre">
+                <div class="card-body">
+                    <h2 id="titrePre" class="h5">Avant de clôturer</h2>
+                    <ul class="cloture-liste" data-pre-cloture>
+                        <li th:each="v : ${pre.verifications}" class="cloture-point" th:classappend="${v.ok ? 'cloture-ok' : (v.niveau.name() == 'BLOQUANT' ? 'cloture-bloque' : 'cloture-reco')}" th:attr="data-verification=${v.code}">
+                            <span class="cloture-marque" aria-hidden="true" th:text="${v.ok ? '✓' : (v.niveau.name() == 'BLOQUANT' ? '✕' : '!')}">✓</span>
+                            <div class="cloture-point-corps">
+                                <strong th:text="${v.libelle}">Libellé</strong>
+                                <span class="cloture-niveau" th:classappend="${v.niveau.name() == 'BLOQUANT' ? 'cloture-niveau-bloquant' : 'cloture-niveau-reco'}" th:text="${v.niveau.libelle}">Bloquant</span>
+                                <span class="visually-hidden" th:text="${v.ok ? ' : conforme' : ' : à corriger'}"></span>
+                                <span class="d-block small text-muted" th:text="${v.detail}">Détail</span>
+                                <a th:if="${!v.ok}" class="small" th:href="@{__${v.lien}__}">Corriger</a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+            <section class="card shadow-sm mb-4" aria-labelledby="titreCloture">
+                <div class="card-body">
+                    <h2 id="titreCloture" class="h5">Clôturer l'exercice</h2>
+                    <p class="small text-muted">Les états sont figés (montants, PDF, Excel, empreinte SHA-256), les soldes des comptes de bilan ouvrent l'exercice suivant et plus aucune opération ne peut être enregistrée à une date de cet exercice.</p>
+                    <form method="post" th:action="@{/comptabilite/exercices/{d}/cloturer(d=${exercice.debut})}" class="cloture-form" data-cloturer data-confirmer
+                          th:attr="data-confirmer-titre='Clôturer l\'exercice ' + ${exercice.libelle} + ' ?',data-confirmer-sujet='Exercice ' + ${exercice.libelle}"
+                          data-confirmer-texte=" sera figé : plus aucune opération ne pourra être enregistrée à ces dates. Vous pourrez annuler la clôture tant que l'exercice suivant n'est pas clôturé et que le résultat n'est pas affecté."
+                          data-confirmer-oui="Clôturer" data-confirmer-non="Pas maintenant">
+                        <div class="cloture-champ-large">
+                            <label for="motifCloture" class="form-label small mb-1">Motif ou remarque (facultatif)</label>
+                            <input id="motifCloture" name="motif" type="text" class="form-control" maxlength="255" autocomplete="off">
+                        </div>
+                        <button type="submit" class="btn btn-primary" th:disabled="${!pre.peutCloturer}"><i class="fas fa-lock" aria-hidden="true"></i> Clôturer l'exercice</button>
+                    </form>
+                    <p th:if="${!pre.peutCloturer}" class="small cloture-refus mt-2 mb-0" data-cloture-bloquee th:text="${pre.bloquants + ' point(s) bloquant(s) à corriger avant de clôturer.'}"></p>
+                </div>
+            </section>
+        </th:block>
+
+        <!-- Exercice clôturé -->
+        <th:block th:if="${cloture}">
+            <section class="card shadow-sm mb-4" aria-labelledby="titreResume">
+                <div class="card-body">
+                    <h2 id="titreResume" class="h5">Exercice clôturé</h2>
+                    <dl class="cloture-resume" data-resume>
+                        <div><dt>Clôturé</dt><dd th:text="${'Le ' + #temporals.format(exercice.ligne.clotureLe, 'dd/MM/yyyy') + ' par ' + exercice.ligne.cloturePar}">Le 01/02/2026</dd></div>
+                        <div><dt>Résultat net</dt><dd th:text="${#numbers.formatInteger(exercice.ligne.resultat, 1, 'WHITESPACE') + ' GNF ' + (exercice.ligne.resultat.signum() >= 0 ? '(bénéfice, compte 131)' : '(perte, compte 139)')}">0 GNF</dd></div>
+                        <div th:if="${exercice.ligne.motif != null}"><dt>Motif</dt><dd th:text="${exercice.ligne.motif}"></dd></div>
+                        <div th:if="${instantane != null}"><dt>Empreinte SHA-256</dt><dd><code class="cloture-empreinte" th:text="${instantane.empreinte}">empreinte</code>
+                            <span class="cloture-statut" th:classappend="${conforme ? 'cloture-statut-ferme' : 'cloture-statut-annule'}" th:text="${conforme ? 'Conforme' : 'Non conforme : le contenu stocké a changé'}" data-empreinte></span></dd></div>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="card shadow-sm mb-4" aria-labelledby="titreDocs" th:if="${instantane != null}">
+                <div class="card-body">
+                    <h2 id="titreDocs" class="h5">Documents figés</h2>
+                    <ul class="compta-liste" data-documents>
+                        <li th:each="d : ${documents}" class="cloture-document" th:attr="data-document=${d.code}">
+                            <span th:text="${d.titre}">Bilan</span>
+                            <span class="cloture-actions">
+                                <a class="btn btn-sm btn-outline-danger" th:href="@{/comptabilite/exercices/instantanes/{i}/{c}/pdf(i=${instantane.id},c=${d.code})}" th:attr="aria-label='Télécharger ' + ${d.titre} + ' au format PDF'"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                                <a class="btn btn-sm btn-outline-success" th:href="@{/comptabilite/exercices/instantanes/{i}/{c}/excel(i=${instantane.id},c=${d.code})}" th:attr="aria-label='Télécharger ' + ${d.titre} + ' au format Excel'"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="card shadow-sm mb-4" aria-labelledby="titreAffectation">
+                <div class="card-body">
+                    <h2 id="titreAffectation" class="h5">Affectation du résultat</h2>
+                    <th:block th:if="${affectation != null}">
+                        <p data-affectation th:text="${affectation.libelle + ' : ' + #numbers.formatInteger(affectation.montant.abs(), 1, 'WHITESPACE') + ' GNF, le ' + #temporals.format(affectation.dateAffectation, 'dd/MM/yyyy') + ' (compte ' + affectation.compteDestination + ').'}"></p>
+                        <form th:if="${peutSupprimerAffectation}" method="post" th:action="@{/comptabilite/exercices/{d}/affectation/supprimer(d=${exercice.debut})}" data-confirmer
+                              data-confirmer-titre="Supprimer l'affectation ?" data-confirmer-sujet="L'affectation du résultat" data-confirmer-texte=" sera supprimée : le résultat restera en compte 13."
+                              data-confirmer-oui="Supprimer" data-confirmer-non="Garder">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Supprimer l'affectation</button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${affectation == null}">
+                        <p class="small text-muted" th:if="${!peutAffecter}" data-affectation-impossible>Il n'y a rien à affecter, ou l'exercice suivant est déjà clôturé.</p>
+                        <form th:if="${peutAffecter}" method="post" th:action="@{/comptabilite/exercices/{d}/affecter(d=${exercice.debut})}" class="cloture-form" data-affecter>
+                            <div>
+                                <label for="destination" class="form-label small mb-1" th:text="${perte ? 'Imputer la perte sur' : 'Affecter le bénéfice à'}">Affecter à</label>
+                                <select id="destination" name="destination" class="form-select" required>
+                                    <option value="12">Report à nouveau (12)</option>
+                                    <option value="11">Réserves (11)</option>
+                                    <option value="465" th:if="${!perte}">Associés, dividendes à payer (465)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="dateAffectation" class="form-label small mb-1">Date de l'écriture</label>
+                                <input id="dateAffectation" name="date" type="date" class="form-control" required th:min="${suivant.debut}" th:max="${suivant.fin}" th:value="${dateAffectationDefaut}">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Affecter</button>
+                        </form>
+                        <p class="small text-muted mt-2 mb-0">L'écriture, à passer dans l'exercice suivant, solde le compte 13 : une opération diverse (OD) du gérant.</p>
+                    </th:block>
+                </div>
+            </section>
+
+            <section class="card shadow-sm mb-4" aria-labelledby="titreAnnulation" th:if="${peutAnnuler}">
+                <div class="card-body">
+                    <h2 id="titreAnnulation" class="h5">Annuler la clôture</h2>
+                    <p class="small text-muted">Supprime les soldes d'ouverture et le verrou. L'instantané est conservé, marqué « annulé », avec la date, l'auteur et le motif. Possible pour le dernier exercice clôturé, tant que son résultat n'est pas affecté.</p>
+                    <form method="post" th:action="@{/comptabilite/exercices/{d}/annuler(d=${exercice.debut})}" class="cloture-form" data-annuler data-confirmer
+                          th:attr="data-confirmer-titre='Annuler la clôture de ' + ${exercice.libelle} + ' ?',data-confirmer-sujet='Exercice ' + ${exercice.libelle}"
+                          data-confirmer-texte=" sera rouvert : les opérations datées de cet exercice pourront de nouveau être enregistrées."
+                          data-confirmer-oui="Annuler la clôture" data-confirmer-non="Garder la clôture">
+                        <div class="cloture-champ-large">
+                            <label for="motifAnnulation" class="form-label small mb-1">Motif (obligatoire)</label>
+                            <input id="motifAnnulation" name="motif" type="text" class="form-control" required minlength="3" maxlength="255" autocomplete="off">
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">Annuler la clôture</button>
+                    </form>
+                </div>
+            </section>
+        </th:block>
+    </div>
+</div>

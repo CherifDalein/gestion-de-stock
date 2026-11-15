@@ -19,6 +19,18 @@
         </header>
         <div th:replace="~{compta/bandeau :: entete}"></div>
 
+        <form th:if="${avecPeriode and !#lists.isEmpty(exercicesChoix)}" method="get" th:action="@{__${chemin}__}" class="etat-periode" aria-label="Choisir un exercice" data-etat-exercice>
+            <div>
+                <label for="cptExercice" class="form-label small mb-1">Exercice</label>
+                <select id="cptExercice" name="exercice" class="form-select" required>
+                    <option value="" th:selected="${exerciceChoisi == null}" disabled>Autre période (dates ci-dessous)</option>
+                    <option th:each="x : ${exercicesChoix}" th:value="${x.debut}" th:selected="${x.debut == exerciceChoisi}" th:text="${x.libelle + (x.estCloture ? ' (clôturé)' : ' (ouvert)')}">2026 (ouvert)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Afficher l'exercice</button>
+        </form>
+        <div th:if="${fige != null}" class="alert alert-info" role="note" data-etat-fige th:text="${'Exercice clôturé : ces montants sont ceux de l\'instantané figé le ' + #temporals.format(fige.clotureLe, 'dd/MM/yyyy') + ' (version ' + fige.version + '), pas un nouveau calcul.'}"></div>
+
         <form th:if="${avecPeriode}" method="get" th:action="@{__${chemin}__}" class="etat-periode" aria-label="Choisir la période">
             <div>
                 <label for="cptDu" class="form-label small mb-1">Du</label>

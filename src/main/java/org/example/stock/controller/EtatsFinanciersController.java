@@ -5,6 +5,9 @@ import org.example.stock.compta.ComptabiliteEtats;
 import org.example.stock.compta.EtatsFinanciersEtats;
 import org.example.stock.compta.EtatsFinanciersService;
 import org.example.stock.compta.EtatsFinanciersService.Etats;
+import org.example.stock.compta.ExercicesService;
+import org.example.stock.compta.InstantanesService;
+import org.example.stock.compta.MentionComptable;
 import org.example.stock.enums.SystemeComptable;
 import org.example.stock.export.ContexteDocument;
 import org.example.stock.export.ContexteDocumentService;
@@ -56,6 +59,9 @@ public class EtatsFinanciersController {
     private final ExportExcelService excel;
     private final DocumentPdfService pdf;
     private final ContexteDocumentService contextes;
+    @org.springframework.beans.factory.annotation.Autowired private MentionComptable mentions;
+    @org.springframework.beans.factory.annotation.Autowired private ExercicesService exercices;
+    @org.springframework.beans.factory.annotation.Autowired private InstantanesService instantanes;
 
     public EtatsFinanciersController(EtatsFinanciersService etats, BoutiqueService boutiques, EcheanceService horloge, ExportExcelService excel, DocumentPdfService pdf,
                                      ContexteDocumentService contextes) {
@@ -76,7 +82,9 @@ public class EtatsFinanciersController {
         model.addAttribute("cartes", cartes);
         model.addAttribute("systeme", systeme);
         model.addAttribute("systemes", SystemeComptable.values());
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        model.addAttribute("mention", mentions.pour(boutiques.idBoutiqueCourante()));
+        model.addAttribute("exercicesChoix", exercices.liste(boutiques.idBoutiqueCourante()).reversed());
+        model.addAttribute("exerciceChoisi", null);
         model.addAttribute("view", "compta/etats-financiers-accueil");
         return "dashboard";
     }
@@ -104,32 +112,63 @@ public class EtatsFinanciersController {
     public Object rattachementsExport(@PathVariable String format) { return exporter(format, EtatsFinanciersEtats.rattachements(horloge.aujourdHui())); }
 
     @GetMapping("/{code}")
-    public String ecran(@PathVariable String code, @RequestParam(name = "du", required = false) List<String> du, @RequestParam(name = "au", required = false) List<String> au, Model model) {
+    public String ecran(@PathVariable String code, @RequestParam(name = "du", required = false) List<String> du, @RequestParam(name = "au", required = false) List<String> au,
+                        @RequestParam(name = "exercice", required = false) List<String> exercice, Model model) {
         Function<Etats, Etat> construire = constructeur(code);
-        Periode p = Periode.civile(du, au, horloge.aujourdHui());
+        Long b = boutiques.idBoutiqueCourante();
+        Periode p = periode(b, du, au, exercice);
         Etat etat = null;
         List<String> alertes = List.of();
+        String mention = mentions.pour(b);
         try {
-            Etats e = etats.calculer(boutiques.idBoutiqueCourante(), p.du, p.au);
-            etat = construire.apply(e);
+            Etats e = etats.calculer(b, p.du, p.au);
+            if (e.fige() != null) mention = mentions.pourExerciceFige(b, e.fige().clotureLe(), e.fige().cloturePar());
+            etat = MentionComptable.avecMention(construire.apply(e), mention);
             alertes = EtatsFinanciersEtats.alertes(e);
+            model.addAttribute("fige", e.fige());
         } catch (IllegalArgumentException ex) {
             model.addAttribute("erreur", ex.getMessage());
         }
-        return afficher(code, TITRES.get(code), SOUS_TITRES.get(code), p, model, etat, alertes, etats.systeme(boutiques.idBoutiqueCourante()));
+        model.addAttribute("mentionEtat", mention);
+        return afficher(code, TITRES.get(code), SOUS_TITRES.get(code), p, model, etat, alertes, etats.systeme(b));
     }
 
     @GetMapping("/{code}/export/{format}")
     public Object export(@PathVariable String code, @PathVariable String format, @RequestParam(name = "du", required = false) List<String> du,
-                         @RequestParam(name = "au", required = false) List<String> au) {
+                         @RequestParam(name = "au", required = false) List<String> au, @RequestParam(name = "exercice", required = false) List<String> exercice) {
         Function<Etats, Etat> construire = constructeur(code);
-        Periode p = Periode.civile(du, au, horloge.aujourdHui());
+        Long b = boutiques.idBoutiqueCourante();
+        Periode p = periode(b, du, au, exercice);
         if (p.avertissement != null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Période invalide");
         try {
-            return exporter(format, construire.apply(etats.calculer(boutiques.idBoutiqueCourante(), p.du, p.au)));
+            Etats e = etats.calculer(b, p.du, p.au);
+            if (e.fige() != null && ("pdf".equals(format) || "excel".equals(format))) {
+                // Période d'un exercice clôturé : le document figé à la clôture, jamais un nouveau calcul.
+                var doc = instantanes.documentOuAucun(e.fige().instantaneId(), code);
+                if (doc.isPresent()) {
+                    boolean estPdf = "pdf".equals(format);
+                    String nom = estPdf ? doc.get().getNomFichier() : doc.get().getNomFichier().replaceAll("\\.pdf$", ".xlsx");
+                    return estPdf ? TelechargementExport.pdf(nom, doc.get().getPdf()) : TelechargementExport.excel(nom, doc.get().getExcel());
+                }
+            }
+            return exporter(format, MentionComptable.avecMention(construire.apply(e), mentions.pour(b)));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    /** La période de l'adresse ; {@code exercice=AAAA-MM-JJ} (début d'un exercice) la remplace par les dates exactes de cet exercice. */
+    private Periode periode(Long boutiqueId, List<String> du, List<String> au, List<String> exercice) {
+        if (exercice != null) {
+            if (exercice.size() != 1 || !exercice.getFirst().strip().matches("\\d{4}-\\d{2}-\\d{2}")) return Periode.civile(List.of("x"), List.of("x"), horloge.aujourdHui());
+            try {
+                LocalDate debut = LocalDate.parse(exercice.getFirst().strip());
+                var e = exercices.exercicePour(boutiqueId, debut);
+                if (e.debut().equals(debut)) return Periode.exact(e.debut(), e.fin());
+            } catch (DateTimeException ignore) { /* période invalide ci-dessous */ }
+            return Periode.civile(List.of("x"), List.of("x"), horloge.aujourdHui());
+        }
+        return Periode.civile(du, au, horloge.aujourdHui());
     }
 
     private static Function<Etats, Etat> constructeur(String code) {
@@ -158,7 +197,10 @@ public class EtatsFinanciersController {
         model.addAttribute("autreSysteme", autreSysteme ? "Votre boutique est réglée sur le " + (systeme == SystemeComptable.NORMAL ? "système normal" : "système minimal de trésorerie")
                 + " : cet état est affiché à titre indicatif. Le réglage se change depuis la page des états financiers." : null);
         model.addAttribute("requeteExport", p.requete());
-        model.addAttribute("mention", ComptabiliteEtats.MENTION);
+        if (!model.containsAttribute("mentionEtat")) model.addAttribute("mentionEtat", mentions.pour(boutiques.idBoutiqueCourante()));
+        model.addAttribute("mention", model.getAttribute("mentionEtat"));
+        model.addAttribute("exercicesChoix", exercices.liste(boutiques.idBoutiqueCourante()).reversed());
+        model.addAttribute("exerciceChoisi", exercices.exact(boutiques.idBoutiqueCourante(), p.du, p.au).map(ExercicesService.Exercice::debut).orElse(null));
         model.addAttribute("genereLe", horloge.maintenant());
         model.addAttribute("view", "compta/etat-financier");
         return "dashboard";
@@ -184,6 +226,8 @@ public class EtatsFinanciersController {
         public LocalDate getAu() { return au; }
 
         String requete() { return "?du=" + du + "&au=" + au; }
+
+        static Periode exact(LocalDate du, LocalDate au) { return new Periode(du, au, null); }
 
         static Periode civile(List<String> du, List<String> au, LocalDate aujourdhui) {
             LocalDate d = LocalDate.of(aujourdhui.getYear(), 1, 1), a = LocalDate.of(aujourdhui.getYear(), 12, 31);
