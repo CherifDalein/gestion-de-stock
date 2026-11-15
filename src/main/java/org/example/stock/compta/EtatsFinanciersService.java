@@ -123,26 +123,26 @@ public class EtatsFinanciersService {
         List<Controle> r = new ArrayList<>();
         BigDecimal ecartBilan = arrondi(n.bilan().ecart());
         List<String> lignes = new ArrayList<>();
-        for (EtatsFinanciersCalcul.NonRattache x : n.bilan().nonRattaches()) lignes.add("Compte " + x.compte() + " (solde " + arrondi(x.solde()).toPlainString() + ") : rangé en poste " + x.poste() + " par choix de l'application.");
+        for (EtatsFinanciersCalcul.NonRattache x : n.bilan().nonRattaches()) lignes.add("Compte " + x.compte() + " (solde " + MontantTexte.de(arrondi(x.solde())) + ") : rangé en poste " + x.poste() + " par choix de l'application.");
         r.add(new Controle(6, "Bilan : actif = passif", ecartBilan.signum() == 0 ? Statut.OK : Statut.ECART,
-                ecartBilan.signum() == 0 ? "Total actif " + arrondi(n.bilan().totalActif()).toPlainString() + " = total passif " + arrondi(n.bilan().totalPassif()).toPlainString() + "."
-                        : "Total actif " + arrondi(n.bilan().totalActif()).toPlainString() + ", total passif " + arrondi(n.bilan().totalPassif()).toPlainString() + ", écart " + ecartBilan.toPlainString() + ".", lignes));
+                ecartBilan.signum() == 0 ? "Total actif " + MontantTexte.de(arrondi(n.bilan().totalActif())) + " = total passif " + MontantTexte.de(arrondi(n.bilan().totalPassif())) + "."
+                        : "Total actif " + MontantTexte.de(arrondi(n.bilan().totalActif())) + ", total passif " + MontantTexte.de(arrondi(n.bilan().totalPassif())) + ", écart " + MontantTexte.de(ecartBilan) + ".", lignes));
         BigDecimal cj = n.bilan().passif("CJ"), xi = n.compteResultat().montant("XI");
         BigDecimal ecartResultat = arrondi(cj.subtract(xi)), ecartComptes = arrondi(n.compteResultat().ecart());
         boolean okResultat = ecartResultat.signum() == 0 && ecartComptes.signum() == 0;
         List<String> detailResultat = new ArrayList<>();
-        for (EtatsFinanciersCalcul.NonRattache x : n.compteResultat().nonRattaches()) detailResultat.add("Compte " + x.compte() + " (solde " + arrondi(x.solde()).toPlainString() + ") : " + (x.poste().isEmpty() ? "aucun poste du compte de résultat ne le reprend" : "rangé en poste " + x.poste() + " par choix de l'application") + ".");
+        for (EtatsFinanciersCalcul.NonRattache x : n.compteResultat().nonRattaches()) detailResultat.add("Compte " + x.compte() + " (solde " + MontantTexte.de(arrondi(x.solde())) + ") : " + (x.poste().isEmpty() ? "aucun poste du compte de résultat ne le reprend" : "rangé en poste " + x.poste() + " par choix de l'application") + ".");
         r.add(new Controle(7, "Résultat du bilan = résultat du compte de résultat", okResultat ? Statut.OK : Statut.ECART,
-                okResultat ? "Résultat net " + arrondi(xi).toPlainString() + " : le bilan (CJ) et le compte de résultat (XI) donnent le même montant, égal à la somme des comptes de gestion."
-                        : "Bilan (CJ) " + arrondi(cj).toPlainString() + ", compte de résultat (XI) " + arrondi(xi).toPlainString() + ", somme des comptes de gestion " + arrondi(n.compteResultat().resultatDesComptes()).toPlainString() + ".", detailResultat));
+                okResultat ? "Résultat net " + MontantTexte.de(arrondi(xi)) + " : le bilan (CJ) et le compte de résultat (XI) donnent le même montant, égal à la somme des comptes de gestion."
+                        : "Bilan (CJ) " + MontantTexte.de(arrondi(cj)) + ", compte de résultat (XI) " + MontantTexte.de(arrondi(xi)) + ", somme des comptes de gestion " + MontantTexte.de(arrondi(n.compteResultat().resultatDesComptes())) + ".", detailResultat));
         BigDecimal ecartFlux = arrondi(n.ecartFlux());
         r.add(new Controle(8, "Tableau des flux : trésorerie finale = balance", ecartFlux.signum() == 0 ? Statut.OK : Statut.ECART,
-                ecartFlux.signum() == 0 ? "Trésorerie nette finale " + arrondi(n.flux().get("ZH")).toPlainString() + " = classe 5 hors 59 de la balance " + arrondi(n.tresorerieBalance()).toPlainString() + "."
-                        : "Tableau des flux " + arrondi(n.flux().get("ZH")).toPlainString() + ", balance " + arrondi(n.tresorerieBalance()).toPlainString() + ", écart " + ecartFlux.toPlainString() + ".", List.of()));
+                ecartFlux.signum() == 0 ? "Trésorerie nette finale " + MontantTexte.de(arrondi(n.flux().get("ZH"))) + " = classe 5 hors 59 de la balance " + MontantTexte.de(arrondi(n.tresorerieBalance())) + "."
+                        : "Tableau des flux " + MontantTexte.de(arrondi(n.flux().get("ZH"))) + ", balance " + MontantTexte.de(arrondi(n.tresorerieBalance())) + ", écart " + MontantTexte.de(ecartFlux) + ".", List.of()));
         BigDecimal ecartSmt = arrondi(n.smt().ecart());
         r.add(new Controle(9, "Système minimal de trésorerie : bilan équilibré", ecartSmt.signum() == 0 ? Statut.OK : Statut.ECART,
-                ecartSmt.signum() == 0 ? "Total actif SMT " + arrondi(n.smt().bilan().get("TOTAL_ACTIF")).toPlainString() + " = total passif SMT " + arrondi(n.smt().bilan().get("TOTAL_PASSIF")).toPlainString() + "."
-                        : "Total actif SMT " + arrondi(n.smt().bilan().get("TOTAL_ACTIF")).toPlainString() + ", total passif SMT " + arrondi(n.smt().bilan().get("TOTAL_PASSIF")).toPlainString() + ", écart " + ecartSmt.toPlainString() + ".", List.of()));
+                ecartSmt.signum() == 0 ? "Total actif SMT " + MontantTexte.de(arrondi(n.smt().bilan().get("TOTAL_ACTIF"))) + " = total passif SMT " + MontantTexte.de(arrondi(n.smt().bilan().get("TOTAL_PASSIF"))) + "."
+                        : "Total actif SMT " + MontantTexte.de(arrondi(n.smt().bilan().get("TOTAL_ACTIF"))) + ", total passif SMT " + MontantTexte.de(arrondi(n.smt().bilan().get("TOTAL_PASSIF"))) + ", écart " + MontantTexte.de(ecartSmt) + ".", List.of()));
         return r;
     }
 

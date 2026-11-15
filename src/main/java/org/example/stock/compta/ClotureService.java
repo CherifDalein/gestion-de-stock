@@ -220,7 +220,7 @@ public class ClotureService {
         BigDecimal resultat = somme.setScale(2, RoundingMode.HALF_UP);
         if (resultat.signum() != 0) bilan.merge(new SoldesComptables.Cle(resultat.signum() > 0 ? "131" : "139", null, null), resultat.negate(), BigDecimal::add);
         BigDecimal total = bilan.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (total.signum() != 0) throw new IllegalStateException("Les soldes de clôture ne s'équilibrent pas (écart " + total.toPlainString() + ") : la clôture est annulée.");
+        if (total.signum() != 0) throw new IllegalStateException("Les soldes de clôture ne s'équilibrent pas (écart " + MontantTexte.de(total) + ") : la clôture est annulée.");
         BigDecimal valeurStock = soldes.solde(livres.correspondance().compte(CleCompta.STOCK)).setScale(2, RoundingMode.HALF_UP);
         long plafondClients = plafond("client"), plafondFournisseurs = plafond("fournisseur");
 
