@@ -498,6 +498,9 @@ tasks.register('mariaDbTestsTous') {
     group = 'verification'
     description = 'Lance toutes les tâches *MariaDbTest l’une après l’autre (bases MariaDB temporaires locales)'
     def tests = tasks.withType(JavaExec).matching { it.name.endsWith('MariaDbTest') }.toList().sort { it.name }
+    // lot6MariaDbTest est suivi de corbeilleMariaDbTest (finalizedBy) : conserver cet ordre pour ne pas créer de cycle.
+    def corbeille = tests.find { it.name == 'corbeilleMariaDbTest' }
+    if (corbeille != null) { tests.remove(corbeille); tests.add(tests.findIndexOf { it.name == 'lot6MariaDbTest' } + 1, corbeille) }
     dependsOn tests
     def precedent = null
     tests.each { t ->
