@@ -437,6 +437,14 @@ tasks.register('lot6MariaDbTest', JavaExec) {
     description = 'Vérifie la migration du lot 6 et la validation Hibernate dans des bases MariaDB temporaires'
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.Lot6MariaDbTest'
+    finalizedBy 'corbeilleMariaDbTest'
+}
+
+tasks.register('corbeilleMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la corbeille (SQL natif de CorbeilleService : lister, restaurer, conflit de nom, effacement, vidage, purge) sur MariaDB temporaire'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.CorbeilleMariaDbTest'
 }
 
 tasks.register('coutMoyenServiceMariaDbTest', JavaExec) {

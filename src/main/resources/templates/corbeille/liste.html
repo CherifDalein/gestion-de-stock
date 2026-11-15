@@ -63,11 +63,15 @@
                     <td class="corbeille-cellule-nom" data-label="Nom">
                         <strong th:text="${l.nom()}">Nom</strong>
                         <small th:if="${l.detail() != null and !#strings.isEmpty(l.detail())}" th:text="${'Réf. ' + l.detail()}">Réf. X</small>
+                        <span class="corbeille-resume">
+                            <span th:text="${'Supprimé le ' + (l.supprimeLe() != null ? #temporals.format(l.supprimeLe(), 'dd/MM/yyyy') : '—') + (l.supprimeParNom() != null ? ' par ' + #strings.arraySplit(l.supprimeParNom(), ' ')[0] : '') + ' · effacé dans '}">Supprimé le 01/01/2026 par Awa · effacé dans </span><span class="corbeille-delai" th:classappend="${l.joursRestants() <= 7 ? 'corbeille-delai--urgent' : ''}"
+                                  th:text="${l.joursRestants() == 0 ? 'moins d’un jour' : l.joursRestants() + (l.joursRestants() == 1 ? ' jour' : ' jours')}">30 jours</span>
+                        </span>
                     </td>
                     <td data-label="Supprimé le" th:text="${l.supprimeLe() != null ? #temporals.format(l.supprimeLe(), 'dd/MM/yyyy HH:mm') : '—'}">01/01/2026 10:00</td>
                     <td data-label="Supprimé par" th:text="${l.supprimeParNom() != null ? l.supprimeParNom() : '—'}">Gérant</td>
                     <td data-label="Effacement dans">
-                        <span class="corbeille-delai" th:classappend="${l.joursRestants() <= 3 ? 'corbeille-delai--urgent' : ''}"
+                        <span class="corbeille-delai" th:classappend="${l.joursRestants() <= 7 ? 'corbeille-delai--urgent' : ''}"
                               th:text="${l.joursRestants() == 0 ? 'Aujourd’hui' : l.joursRestants() + (l.joursRestants() == 1 ? ' jour' : ' jours')}">30 jours</span>
                     </td>
                     <td class="corbeille-cellule-actions" data-label="Actions">

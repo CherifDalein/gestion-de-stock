@@ -34,24 +34,34 @@
 .corbeille-vide p { margin: 0; font-size: .85rem; }
 .corbeille-vide-icone { font-size: 1.7rem; color: var(--rfc-faint); }
 
-/* Téléphone : une carte par fiche, comme les listes de clients. */
+.corbeille-resume { display: none; }
+
+/* Téléphone : une carte compacte par fiche (nom et type, ligne grise, deux boutons côte à côte). */
 @media (max-width: 767.98px) {
-    .corbeille-filtres { grid-template-columns: 1fr; padding: .9rem; }
-    .corbeille-filtre-actions .btn { flex: 1 1 auto; }
-    .corbeille-entete > form, .corbeille-entete > form .btn { width: 100%; }
+    .corbeille-entete { flex-wrap: nowrap; align-items: flex-end; gap: .5rem; margin-bottom: .75rem; }
+    .corbeille-entete .app-page-subtitle { display: none; }
+    .corbeille-entete > form { flex: 0 0 auto; }
+    .corbeille-entete > form .btn { padding: .3rem .6rem; font-size: .8rem; white-space: nowrap; }
+    .corbeille-filtres { grid-template-columns: minmax(0, 1fr) auto; gap: .5rem; padding: .7rem; margin-bottom: .75rem; }
+    .corbeille-filtre-recherche { grid-column: 1 / -1; }
+    .corbeille-filtres .form-label { margin-bottom: .2rem; }
     .corbeille-tableau { background: transparent; border: 0; border-radius: 0; overflow: visible; }
     .corbeille-table { min-width: 0; background: transparent; }
     .corbeille-table thead { display: none; }
-    .corbeille-table, .corbeille-table tbody, .corbeille-table tr, .corbeille-table td { display: block; width: 100%; }
-    .corbeille-table tr { background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 14px; margin-bottom: .75rem; padding: .35rem .9rem .75rem;
-        box-shadow: 0 3px 14px rgb(var(--rfc-shadow-rgb) / 3%); }
-    .corbeille-table td { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; border: 0; padding: .3rem 0; text-align: right; background: transparent; }
-    .corbeille-table td::before { content: attr(data-label); flex: 0 0 38%; text-align: left; color: var(--app-muted); font-size: .76rem; font-weight: 600; }
-    .corbeille-cellule-nom { max-width: none; flex-direction: row; }
+    .corbeille-table, .corbeille-table tbody { display: block; width: 100%; }
+    .corbeille-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nom type" "resume resume" "actions actions";
+        align-items: center; gap: .15rem .6rem; background: var(--rfc-surface); border: 1px solid var(--app-border); border-radius: 12px; margin-bottom: .55rem;
+        padding: .6rem .75rem; box-shadow: 0 3px 14px rgb(var(--rfc-shadow-rgb) / 3%); }
+    body.stock-app .corbeille-table.table > tbody > tr > td { display: block; border: 0; padding: 0; background: transparent; }
+    .corbeille-table td::before { display: none; }
+    body.stock-app .corbeille-table.table > tbody > tr > td[data-label="Supprimé le"], body.stock-app .corbeille-table.table > tbody > tr > td[data-label="Supprimé par"], body.stock-app .corbeille-table.table > tbody > tr > td[data-label="Effacement dans"] { display: none; }
+    .corbeille-cellule-nom { grid-area: nom; max-width: none; }
     .corbeille-cellule-nom strong { font-size: 1rem; }
-    .corbeille-cellule-nom small { display: block; }
-    .corbeille-cellule-actions { display: block; padding-top: .6rem; border-top: 1px solid var(--app-border); margin-top: .4rem; }
-    .corbeille-cellule-actions::before { display: none; }
-    .corbeille-actions { flex-direction: column; align-items: stretch; }
-    .corbeille-actions .btn { width: 100%; min-height: 44px; }
+    .corbeille-cellule-type { grid-area: type; }
+    .corbeille-resume { display: block; margin-top: .1rem; color: var(--app-muted); font-size: .76rem; line-height: 1.35; }
+    .corbeille-resume .corbeille-delai { color: inherit; white-space: normal; }
+    .corbeille-resume .corbeille-delai--urgent { color: var(--rfc-danger-fg); white-space: nowrap; }
+    .corbeille-cellule-actions { grid-area: actions; padding-top: .45rem; }
+    .corbeille-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: .5rem; }
+    .corbeille-actions .btn { width: 100%; min-height: 36px; padding: .25rem .4rem; font-size: .78rem; white-space: nowrap; }
 }
