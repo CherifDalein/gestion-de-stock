@@ -19,10 +19,10 @@ public record DonneesComptables(LocalDateTime ouverture, List<Vente> ventes, Lis
                                 Map<Long, Operation> operations, List<Partenaire> clients, List<Partenaire> fournisseurs, List<Ajustement> ajustements,
                                 BigDecimal stockDepart, List<ValeurStock> valeursStock) {
 
-    /** Vente : total, avance utilisée, et part des services (le reste du total est de la marchandise). */
-    public record Vente(Long id, String numero, LocalDateTime date, BigDecimal total, BigDecimal avanceUtilisee, Long clientId, String clientNom, BigDecimal services) {}
+    /** Vente : total, montant versé (le surplus sur le total est une avance du client), avance utilisée, et part des services (le reste du total est de la marchandise). */
+    public record Vente(Long id, String numero, LocalDateTime date, BigDecimal total, BigDecimal verse, BigDecimal avanceUtilisee, Long clientId, String clientNom, BigDecimal services) {}
 
-    public record Achat(Long id, String numero, LocalDateTime date, BigDecimal total, BigDecimal avanceUtilisee, Long fournisseurId, String fournisseurNom) {}
+    public record Achat(Long id, String numero, LocalDateTime date, BigDecimal total, BigDecimal verse, BigDecimal avanceUtilisee, Long fournisseurId, String fournisseurNom) {}
 
     /** Retour de vente ({@code vente = true}) ou d'achat ; {@code services} : part de services d'un retour de vente. */
     public record Retour(Long id, String numero, boolean vente, LocalDateTime date, BigDecimal total, BigDecimal rembourse, BigDecimal avoir,
