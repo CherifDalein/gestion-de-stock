@@ -84,7 +84,7 @@ public class DonneesComptablesService {
         List<Partenaire> listeClients = reporter(clients, origineClients);
         List<Partenaire> listeFournisseurs = reporter(fournisseurs, origineFournisseurs);
 
-        LocalDateTime ouverture = ouverture(fin, ventes, achats, retours, mouvements, ajustements);
+        LocalDateTime ouverture = ouverture(ventes, achats, retours, mouvements, ajustements);
         BigDecimal stockDepart = stockDepart(boutiqueId, fin);
         List<ValeurStock> valeurs = regulariser ? List.of(new ValeurStock(fin, valeurStock(boutiqueId, fin, maintenant))) : List.of();
         Map<Long, Operation> ops = operations;
@@ -106,14 +106,15 @@ public class DonneesComptablesService {
         return m;
     }
 
-    private static LocalDateTime ouverture(LocalDateTime fin, List<Vente> v, List<Achat> a, List<Retour> r, List<Mouvement> m, List<Ajustement> aj) {
-        LocalDateTime min = fin;
-        for (Vente x : v) if (x.date().isBefore(min)) min = x.date();
-        for (Achat x : a) if (x.date().isBefore(min)) min = x.date();
-        for (Retour x : r) if (x.date().isBefore(min)) min = x.date();
-        for (Mouvement x : m) if (x.date().isBefore(min)) min = x.date();
-        for (Ajustement x : aj) if (x.date().isBefore(min)) min = x.date();
-        return min.toLocalDate().atStartOfDay();
+    /** Début du jour de la plus ancienne opération ; {@code null} s'il n'y en a aucune avant la date (les livres sont alors vides). */
+    private static LocalDateTime ouverture(List<Vente> v, List<Achat> a, List<Retour> r, List<Mouvement> m, List<Ajustement> aj) {
+        LocalDateTime min = null;
+        for (Vente x : v) if (min == null || x.date().isBefore(min)) min = x.date();
+        for (Achat x : a) if (min == null || x.date().isBefore(min)) min = x.date();
+        for (Retour x : r) if (min == null || x.date().isBefore(min)) min = x.date();
+        for (Mouvement x : m) if (min == null || x.date().isBefore(min)) min = x.date();
+        for (Ajustement x : aj) if (min == null || x.date().isBefore(min)) min = x.date();
+        return min == null ? null : min.toLocalDate().atStartOfDay();
     }
 
     // ---- Stock ----------------------------------------------------------------------------------------------------

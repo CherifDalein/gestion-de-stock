@@ -50,6 +50,8 @@ public final class ConstructeurEcritures {
     }
 
     public List<Ecriture> construire() {
+        // Aucune opération avant la date : rien à écrire (ni report, ni stock).
+        if (d.ouverture() == null) return List.of();
         d.ventes().forEach(v -> ventes.put(v.id(), v));
         d.achats().forEach(a -> achats.put(a.id(), a));
         d.retours().forEach(r -> retours.put(r.id(), r));

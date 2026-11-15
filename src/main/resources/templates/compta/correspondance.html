@@ -1,0 +1,58 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="correspondance">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1>Table de correspondance</h1>
+                <p class="app-page-subtitle">Le compte comptable de chaque nature d'opération. Les valeurs par défaut sont prudentes : changez-les avec votre expert-comptable.</p>
+            </div>
+            <div class="etat-actions"><a th:href="@{/comptabilite}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Comptabilité</a></div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <section th:each="g : ${groupes}" th:unless="${#lists.isEmpty(g.value)}" class="card shadow-sm mb-4" th:attr="data-corr-groupe=${g.key.name()}">
+            <div class="card-body">
+                <h2 class="h5" th:text="${g.key.libelle}">Groupe</h2>
+                <p th:if="${g.key.name() == 'DEPENSES'}" class="small text-muted">Une dépense est classée d'après les mots de son motif : le premier mot-clé trouvé, dans l'ordre ci-dessous, donne le compte. Séparez les mots-clés par des virgules.</p>
+                <div class="compta-corr" th:each="l : ${g.value}" th:attr="data-corr-cle=${l.cle.code}">
+                    <form method="post" th:action="@{'/comptabilite/correspondance/' + ${l.cle.code}}" class="compta-corr-form">
+                        <div class="compta-corr-texte">
+                            <strong th:text="${l.cle.libelle}">Créances clients</strong>
+                            <span th:if="${l.modifie}" class="badge bg-warning text-dark ms-1">Modifié</span>
+                            <div class="small text-muted" th:text="${l.cle.aide}">Aide</div>
+                            <div class="small" th:if="${!#strings.isEmpty(l.intituleCompte)}" th:text="${l.intituleCompte}">Intitulé</div>
+                        </div>
+                        <div class="compta-corr-champs">
+                            <div>
+                                <label class="form-label small mb-1" th:for="'c' + ${l.cle.code}">Compte</label>
+                                <input th:id="'c' + ${l.cle.code}" name="compte" class="form-control compta-compte" inputmode="numeric" pattern="[0-9]{2,8}" maxlength="8" th:value="${l.compte}" required>
+                            </div>
+                            <div th:if="${l.cle.estDepense()}" class="compta-mots">
+                                <label class="form-label small mb-1" th:for="'m' + ${l.cle.code}">Mots-clés</label>
+                                <input th:id="'m' + ${l.cle.code}" name="motsCles" class="form-control" maxlength="255" th:value="${l.motsCles}">
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary">Enregistrer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section class="card shadow-sm mb-4" th:unless="${#lists.isEmpty(tresorerie)}">
+            <div class="card-body">
+                <h2 class="h5">Comptes de trésorerie</h2>
+                <p class="small text-muted">Chaque compte de trésorerie a son sous-compte, créé automatiquement. Son intitulé suit le nom du compte ; il se consulte dans le <a th:href="@{/comptabilite/plan(q='5')}">plan de comptes</a>.</p>
+                <ul class="compta-liste">
+                    <li th:each="t : ${tresorerie}"><strong th:text="${t[0]}">5711</strong> <span th:text="${t[1]}">Caisse</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <form method="post" th:action="@{/comptabilite/correspondance/defauts}" class="mb-5" onsubmit="return confirm('Rétablir toutes les valeurs par défaut ? Vos modifications seront perdues.');">
+            <button type="submit" class="btn btn-outline-danger" data-corr-defauts><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Rétablir les valeurs par défaut</button>
+            <span class="small text-muted ms-2"><span th:text="${modifiees}">0</span> ligne(s) modifiée(s).</span>
+        </form>
+    </div>
+</div>

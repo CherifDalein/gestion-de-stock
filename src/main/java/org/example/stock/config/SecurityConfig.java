@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/controles/comptages", "/controles/comptages/**").hasAnyRole("ADMIN", "CAISSIER")
                         .requestMatchers("/controles", "/controles/**").hasRole("ADMIN")
                         .requestMatchers("/etats", "/etats/**").hasRole("ADMIN")
+                        .requestMatchers("/comptabilite", "/comptabilite/**").hasRole("ADMIN")
                         .anyRequest().denyAll()
                 )
                 .formLogin(form -> form

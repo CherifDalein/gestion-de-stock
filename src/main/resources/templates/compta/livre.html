@@ -1,0 +1,75 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" th:attr="data-etat=${etat != null ? etat.code : ''}">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1 th:text="${titre}">Journal</h1>
+                <p class="app-page-subtitle" th:text="${sousTitre}"></p>
+            </div>
+            <div class="etat-actions">
+                <a th:if="${etat != null}" th:href="|@{__${chemin}__/export/excel}${requeteExport}|" class="btn btn-outline-success" data-etat-export="excel"
+                   th:attr="aria-label='Exporter ' + ${etat.titre} + ' au format Excel'"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+                <a th:if="${etat != null}" th:href="|@{__${chemin}__/export/pdf}${requeteExport}|" class="btn btn-outline-danger" data-etat-export="pdf"
+                   th:attr="aria-label='Exporter ' + ${etat.titre} + ' au format PDF'"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                <button type="button" class="btn btn-primary" data-etat-imprimer onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> Imprimer</button>
+                <a th:href="@{/comptabilite}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Comptabilité</a>
+            </div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <form method="get" th:action="@{__${chemin}__}" class="etat-periode" aria-label="Choisir la période et les filtres">
+            <div>
+                <label for="cptDu" class="form-label small mb-1">Du</label>
+                <input id="cptDu" name="du" type="date" class="form-control" required min="2000-01-01" max="9998-12-31" th:value="${filtres.du}">
+            </div>
+            <div>
+                <label for="cptAu" class="form-label small mb-1">Au (inclus)</label>
+                <input id="cptAu" name="au" type="date" class="form-control" required min="2000-01-01" max="9998-12-31" th:value="${filtres.au}">
+            </div>
+            <div th:if="${avecJournal}">
+                <label for="cptJournal" class="form-label small mb-1">Journal</label>
+                <select id="cptJournal" name="journal" class="form-select">
+                    <option value="">Tous</option>
+                    <option th:each="j : ${journaux}" th:value="${j.name()}" th:text="${j.name() + ' - ' + j.libelle}" th:selected="${filtres.journal == j.name()}">VE</option>
+                </select>
+            </div>
+            <div th:if="${avecFiltres}">
+                <label for="cptCompte" class="form-label small mb-1">Compte (début du numéro)</label>
+                <input id="cptCompte" name="compte" type="text" inputmode="numeric" pattern="[0-9]{1,8}" maxlength="8" class="form-control compta-compte" th:value="${filtres.compte}" placeholder="ex. 411">
+            </div>
+            <div th:if="${avecRecherche}">
+                <label for="cptQ" class="form-label small mb-1">Pièce ou libellé</label>
+                <input id="cptQ" name="q" type="search" maxlength="80" class="form-control" th:value="${filtres.q}">
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Afficher</button>
+        </form>
+
+        <p th:if="${etat != null}" class="etat-impression" data-etat-periode th:text="${etat.parametres + ' · édité le ' + #temporals.format(genereLe, 'dd/MM/yyyy HH:mm') + ' · ' + mention}"></p>
+        <p th:if="${etat != null}" class="small text-muted no-print" data-etat-parametres th:text="${etat.parametres + ' · montants en GNF'}"></p>
+
+        <section th:each="vue, it : ${vues}" class="card shadow-sm mb-4" th:attr="aria-labelledby='etatSection' + ${it.index}" data-etat-section>
+            <div class="card-body">
+                <h2 th:id="'etatSection' + ${it.index}" class="h5" th:text="${vue.titre}">Section</h2>
+                <div class="table-responsive etat-table-wrap" role="region" tabindex="0" th:attr="aria-label=${vue.titre}">
+                    <table class="table etat-table">
+                        <caption class="visually-hidden" th:text="${vue.titre}"></caption>
+                        <thead><tr><th th:each="c : ${vue.colonnes}" scope="col" th:classappend="${c.numerique ? 'text-end' : ''}" th:text="${c.titre}">Colonne</th></tr></thead>
+                        <tbody>
+                        <tr th:each="ligne, li : ${vue.lignes}" th:classappend="${vue.estSousTotal(li.index) ? 'etat-soustotal' : ''}">
+                            <td th:each="cellule, ct : ${ligne}" th:classappend="${vue.colonnes[ct.index].numerique ? 'text-end etat-nombre' : ''}" th:text="${cellule}">valeur</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(vue.lignes)}"><td th:colspan="${#lists.size(vue.colonnes)}" class="text-muted text-center" data-etat-vide>Aucune ligne sur cette période.</td></tr>
+                        </tbody>
+                        <tfoot th:if="${vue.totaux != null}"><tr data-etat-totaux>
+                            <td th:each="cellule, ct : ${vue.totaux}" th:classappend="${vue.colonnes[ct.index].numerique ? 'text-end etat-nombre' : ''}" th:text="${cellule}">total</td>
+                        </tr></tfoot>
+                    </table>
+                </div>
+                <p th:each="note : ${vue.notes}" class="small text-muted mt-3 mb-0" th:text="${note}">Note</p>
+            </div>
+        </section>
+        <p th:if="${etat != null}" th:each="note : ${etat.notes}" class="small text-muted" th:text="${note}"></p>
+    </div>
+</div>

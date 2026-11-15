@@ -1,0 +1,78 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="plan">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1>Plan de comptes</h1>
+                <p class="app-page-subtitle"><span th:text="${officiels}">1401</span> comptes officiels du SYSCOHADA révisé (lecture seule) et les sous-comptes de votre boutique.</p>
+            </div>
+            <div class="etat-actions"><a th:href="@{/comptabilite}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Comptabilité</a></div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <form method="get" th:action="@{/comptabilite/plan}" class="etat-periode" aria-label="Rechercher un compte">
+            <div class="compta-recherche">
+                <label for="planQ" class="form-label small mb-1">Numéro ou mots de l'intitulé</label>
+                <input id="planQ" name="q" type="search" maxlength="80" class="form-control" th:value="${recherche}" placeholder="ex. 571 ou caisse">
+            </div>
+            <div>
+                <label for="planClasse" class="form-label small mb-1">Classe</label>
+                <select id="planClasse" name="classe" class="form-select">
+                    <option value="">Toutes</option>
+                    <option th:each="n : ${#numbers.sequence(1, 9)}" th:value="${n}" th:text="'Classe ' + ${n}" th:selected="${classe == #strings.toString(n)}">1</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-primary">Rechercher</button>
+        </form>
+        <p class="small text-muted" data-plan-total><span th:text="${total}">0</span> compte(s) affiché(s).</p>
+
+        <details th:each="g : ${groupes}" class="card shadow-sm mb-3 compta-classe" th:attr="open=${ouvert} ? 'open' : null" data-plan-classe>
+            <summary class="card-body py-3">
+                <strong>Classe <span th:text="${g.key}">1</span></strong> <span th:text="${libellesClasses.get(g.key)}">Ressources durables</span>
+                <span class="badge bg-secondary ms-2" th:text="${#lists.size(g.value)}">3</span>
+            </summary>
+            <div class="table-responsive etat-table-wrap px-3 pb-3" tabindex="0" role="region" aria-label="Comptes de la classe">
+                <table class="table etat-table">
+                    <thead><tr><th scope="col">Numéro</th><th scope="col">Intitulé</th><th scope="col">Niveau</th><th scope="col" class="no-print">Sous-compte</th></tr></thead>
+                    <tbody>
+                    <tr th:each="c : ${g.value}" th:classappend="${c.estSousCompte ? 'compta-sous-compte' : ''}">
+                        <td class="etat-nombre"><strong th:text="${c.numero}">571</strong></td>
+                        <td>
+                            <span th:text="${c.intitule}">Caisse</span>
+                            <form th:if="${c.estSousCompte}" method="post" th:action="@{'/comptabilite/plan/sous-comptes/' + ${c.sousCompteId}}" class="compta-ligne-form">
+                                <label class="visually-hidden" th:for="'int' + ${c.sousCompteId}">Intitulé du sous-compte</label>
+                                <input th:id="'int' + ${c.sousCompteId}" name="intitule" class="form-control form-control-sm" maxlength="120" th:value="${c.intitule}" th:disabled="${c.tresorerie}" required>
+                                <input th:unless="${c.tresorerie}" type="text" name="numero" th:value="${c.numero}" class="form-control form-control-sm compta-compte" maxlength="8" aria-label="Numéro du sous-compte" required>
+                                <button th:unless="${c.tresorerie}" type="submit" class="btn btn-sm btn-outline-primary">Enregistrer</button>
+                            </form>
+                        </td>
+                        <td th:text="${c.niveau}">Compte principal</td>
+                        <td class="no-print">
+                            <span th:if="${c.estSousCompte and c.tresorerie}" class="badge bg-info text-dark">Trésorerie</span>
+                            <form th:if="${c.estSousCompte and !c.tresorerie}" method="post" th:action="@{'/comptabilite/plan/sous-comptes/' + ${c.sousCompteId} + '/supprimer'}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <p th:if="${total == 0}" class="text-muted" data-etat-vide>Aucun compte ne correspond à cette recherche.</p>
+
+        <section class="card shadow-sm mt-4" aria-labelledby="ajoutSousCompte">
+            <div class="card-body">
+                <h2 id="ajoutSousCompte" class="h5">Ouvrir un sous-compte</h2>
+                <p class="small text-muted">Le numéro commence par celui du compte officiel parent (2 à 4 chiffres) et compte 8 chiffres au plus. Les comptes de trésorerie ont déjà le leur.</p>
+                <form method="post" th:action="@{/comptabilite/plan/sous-comptes}" class="compta-form-ajout">
+                    <div><label for="scParent" class="form-label small mb-1">Compte parent</label><input id="scParent" name="parent" class="form-control compta-compte" inputmode="numeric" pattern="[0-9]{2,4}" maxlength="4" required></div>
+                    <div><label for="scNumero" class="form-label small mb-1">Numéro</label><input id="scNumero" name="numero" class="form-control compta-compte" inputmode="numeric" pattern="[0-9]{3,8}" maxlength="8" required></div>
+                    <div class="compta-recherche"><label for="scIntitule" class="form-label small mb-1">Intitulé</label><input id="scIntitule" name="intitule" class="form-control" maxlength="120" required></div>
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
+                </form>
+            </div>
+        </section>
+    </div>
+</div>

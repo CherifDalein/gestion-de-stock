@@ -1,0 +1,31 @@
+/* Section « Comptabilité » : mention de validation, filtres, plan de comptes et table de correspondance.
+   Les couleurs viennent des jetons de theme.css : le thème sombre est repris sans règle propre. */
+.compta-page .compta-bandeau { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--rfc-warn-border);
+    border-radius: 10px; background: var(--rfc-warn-bg); color: var(--rfc-warn-fg); font-weight: 600; font-size: .92rem; line-height: 1.4; }
+.compta-page .compta-bandeau i { margin-top: 3px; }
+.compta-page .compta-compte { max-width: 9rem; font-variant-numeric: tabular-nums; }
+.compta-page .compta-recherche { flex: 1 1 14rem; min-width: 0; }
+.compta-page .compta-recherche .form-control { max-width: none; }
+.compta-page details.compta-classe > summary { cursor: pointer; list-style: none; }
+.compta-page details.compta-classe > summary::-webkit-details-marker { display: none; }
+.compta-page details.compta-classe > summary:focus-visible { outline: 3px solid var(--app-green); outline-offset: -3px; }
+.compta-page tr.compta-sous-compte > td { background: rgba(21, 128, 61, .06); }
+.compta-page .compta-ligne-form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.compta-page .compta-ligne-form .form-control { flex: 1 1 12rem; min-width: 0; }
+.compta-page .compta-ligne-form .compta-compte { flex: 0 1 8rem; }
+.compta-page .compta-form-ajout { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.compta-page .compta-corr { padding: 12px 0; border-top: 1px solid var(--app-border); }
+.compta-page .compta-corr:first-of-type { border-top: 0; }
+.compta-page .compta-corr-form { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px 20px; align-items: start; }
+.compta-page .compta-corr-champs { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.compta-page .compta-corr-champs .compta-mots { flex: 1 1 14rem; min-width: 0; }
+.compta-page .compta-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.compta-page .etat-table > tbody > tr > td { overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+    .compta-page .compta-corr-form { grid-template-columns: minmax(0, 1fr); }
+    .compta-page .compta-compte { max-width: none; flex: 1 1 8rem; }
+    .compta-page .compta-corr-champs > .btn, .compta-page .compta-form-ajout > .btn { width: 100%; }
+}
+@media print {
+    .compta-page .compta-bandeau { border: 1px solid var(--app-ink); background: transparent; color: var(--app-ink); }
+}

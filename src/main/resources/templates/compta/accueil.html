@@ -1,0 +1,24 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="accueil">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1>Comptabilité</h1>
+                <p class="app-page-subtitle">Les écritures SYSCOHADA sont calculées à partir de vos opérations : rien n'est saisi deux fois. Réservé au gérant.</p>
+            </div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4" th:each="c : ${cartes}">
+                <a class="card shadow-sm h-100 text-decoration-none" th:href="@{__${c.chemin}__}" th:attr="data-compta-lien=${c.chemin}">
+                    <div class="card-body">
+                        <h2 class="h5" th:text="${c.titre}">Titre</h2>
+                        <p class="mb-0 text-muted" th:text="${c.description}">Description</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
