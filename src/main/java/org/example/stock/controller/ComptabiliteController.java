@@ -50,9 +50,12 @@ public class ComptabiliteController {
     private final ExportExcelService excel;
     private final DocumentPdfService pdf;
     private final ContexteDocumentService contextes;
+    private final EtatsFinanciersService financiers;
 
     public ComptabiliteController(ComptabiliteService compta, PlanComptesService plan, CorrespondanceService correspondance, BoutiqueService boutiques,
-                                  EcheanceService horloge, ExportExcelService excel, DocumentPdfService pdf, ContexteDocumentService contextes) {
+                                  EcheanceService horloge, ExportExcelService excel, DocumentPdfService pdf, ContexteDocumentService contextes,
+                                  EtatsFinanciersService financiers) {
+        this.financiers = financiers;
         this.compta = compta; this.plan = plan; this.correspondance = correspondance; this.boutiques = boutiques; this.horloge = horloge;
         this.excel = excel; this.pdf = pdf; this.contextes = contextes;
     }
@@ -66,7 +69,8 @@ public class ComptabiliteController {
                 new Carte("/comptabilite/journal", "Journal", "Toutes les écritures de la période, par journal (ventes, achats, trésorerie, opérations diverses)."),
                 new Carte("/comptabilite/grand-livre", "Grand livre", "Le détail de chaque compte, avec le report et le solde après chaque ligne."),
                 new Carte("/comptabilite/balance", "Balance", "Les soldes et les mouvements de tous les comptes, avec les totaux."),
-                new Carte("/comptabilite/controles", "Contrôles de cohérence", "Cinq vérifications entre les écritures et les soldes de l'application."),
+                new Carte("/comptabilite/etats-financiers", "États financiers", "Compte de résultat, bilan et tableau des flux de trésorerie du SYSCOHADA révisé, ou système minimal de trésorerie."),
+                new Carte("/comptabilite/controles", "Contrôles de cohérence", "Neuf vérifications entre les écritures, les soldes de l'application et les états financiers."),
                 new Carte("/comptabilite/plan", "Plan de comptes", "Le plan officiel du SYSCOHADA révisé et les sous-comptes de la boutique."),
                 new Carte("/comptabilite/correspondance", "Table de correspondance", "Le compte comptable de chaque nature d'opération, modifiable.")));
         model.addAttribute("mention", ComptabiliteEtats.MENTION);
@@ -121,13 +125,20 @@ public class ComptabiliteController {
     @GetMapping("/controles")
     public String controles(@RequestParam(name = "du", required = false) List<String> du, @RequestParam(name = "au", required = false) List<String> au, Model model) {
         Filtres f = Filtres.lire(du, au, null, null, null, horloge.aujourdHui());
-        return ecran("controles", "Contrôles de cohérence", "Les écritures comparées aux soldes de l'application.", f, model, false, l -> ComptabiliteEtats.controles(l, compta.controles(l)));
+        return ecran("controles", "Contrôles de cohérence", "Les écritures comparées aux soldes de l'application.", f, model, false, this::controlesComplets);
     }
 
     @GetMapping("/controles/export/{format}")
     public Object controlesExport(@PathVariable String format, @RequestParam(name = "du", required = false) List<String> du, @RequestParam(name = "au", required = false) List<String> au) {
         Filtres f = Filtres.lireStrict(du, au, null, null, null, horloge.aujourdHui());
-        return exporter(format, f, l -> ComptabiliteEtats.controles(l, compta.controles(l)));
+        return exporter(format, f, this::controlesComplets);
+    }
+
+    /** Les cinq contrôles de l'étape 5a, puis ceux des états financiers de l'étape 5b, sur la même période. */
+    private Etat controlesComplets(Livres l) {
+        List<ComptabiliteService.Controle> tous = new ArrayList<>(compta.controles(l));
+        tous.addAll(financiers.controles(l.boutiqueId(), l.debut(), l.fin()));
+        return ComptabiliteEtats.controles(l, tous);
     }
 
     private Etat etatJournal(Livres l, Filtres f) {

@@ -4,6 +4,10 @@ import org.example.stock.compta.ComptabiliteService.Controle;
 import org.example.stock.compta.ComptabiliteService.Livres;
 import org.example.stock.compta.ComptabiliteService.Statut;
 import org.example.stock.compta.EtatsFinanciersCalcul.Exercice;
+import org.example.stock.enums.SystemeComptable;
+import org.example.stock.model.ReglageComptableBoutique;
+import org.example.stock.repository.ReglageComptableBoutiqueRepository;
+import org.example.stock.service.BoutiqueService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,8 +27,28 @@ import java.util.Map;
 @Service
 public class EtatsFinanciersService {
     private final ComptabiliteService compta;
+    private final ReglageComptableBoutiqueRepository reglages;
+    private final BoutiqueService boutiques;
 
-    public EtatsFinanciersService(ComptabiliteService compta) { this.compta = compta; }
+    public EtatsFinanciersService(ComptabiliteService compta, ReglageComptableBoutiqueRepository reglages, BoutiqueService boutiques) {
+        this.compta = compta; this.reglages = reglages; this.boutiques = boutiques;
+    }
+
+    /** Système des états financiers de la boutique : le système normal tant que le gérant n'a rien choisi. */
+    @Transactional(readOnly = true)
+    public SystemeComptable systeme(Long boutiqueId) {
+        return reglages.findByBoutiqueId(boutiqueId).map(ReglageComptableBoutique::getSysteme).orElse(SystemeComptable.NORMAL);
+    }
+
+    /** Enregistre le choix du gérant pour la boutique connectée (jamais pour une autre). */
+    @Transactional
+    public void choisirSysteme(SystemeComptable systeme) {
+        if (systeme == null) throw new IllegalArgumentException("Choisissez un système comptable.");
+        var boutique = boutiques.boutiqueCourante();
+        ReglageComptableBoutique r = reglages.findByBoutiqueId(boutique.getId()).orElse(null);
+        if (r == null) reglages.save(new ReglageComptableBoutique(boutique, systeme));
+        else r.choisir(systeme);
+    }
 
     /** Résultat : l'exercice N, l'exercice N-1 (ou {@code null} s'il n'y a pas de données), et la correspondance qui a produit les écritures. */
     public record Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules) {

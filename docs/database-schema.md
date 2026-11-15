@@ -337,6 +337,13 @@ Lot 5a. Les valeurs de la table de correspondance que le gérant a changées ; u
 - `compte_numero` VARCHAR(8) NOT NULL : compte officiel ou sous-compte de la boutique
 - `mots_cles` VARCHAR(255) NULL : mots-clés (séparés par des virgules) d'une catégorie de dépense
 
+### `reglage_comptable_boutique`
+
+Lot 5b. Le système dans lequel la boutique présente ses états financiers ; une boutique sans ligne est au système normal.
+
+- `id` PK ; `boutique_id` BIGINT NOT NULL UNIQUE (`uk_reglage_comptable_boutique`), FK `fk_reglage_comptable_boutique` -> `boutique.id`
+- `systeme` VARCHAR(10) NOT NULL : `NORMAL` (compte de résultat, bilan, tableau des flux) ou `MINIMAL` (système minimal de trésorerie)
+
 ## Diagramme relationnel
 
 ```mermaid
@@ -680,5 +687,5 @@ déjà enregistrés.
 ## Mise à jour d'une base existante : comptabilité (lot 5a)
 
 Après le lot 6 et une sauvegarde complète : `./gradlew lot5Check`, puis `LOT5_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot5Migrate`
-(tables `sous_compte_boutique` et `correspondance_compta`, un sous-compte par compte de trésorerie). Voir [lot-5.md](lot-5.md) et
+(tables `sous_compte_boutique`, `correspondance_compta` et `reglage_comptable_boutique` du lot 5b, un sous-compte par compte de trésorerie). Voir [lot-5.md](lot-5.md) et
 [migrations/lot-5.md](migrations/lot-5.md).

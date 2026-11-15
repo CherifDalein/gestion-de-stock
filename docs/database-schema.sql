@@ -820,7 +820,8 @@ CREATE TABLE IF NOT EXISTS mouvement_stock (
 
 -- Lot 5a (comptabilité) : les écritures ne sont jamais stockées, elles se calculent à partir des opérations. Deux petites tables seulement :
 -- sous_compte_boutique (les sous-comptes d'une boutique, dont celui de chaque compte de trésorerie) et correspondance_compta (les valeurs de
--- la table de correspondance que le gérant a changées ; une ligne absente veut dire « valeur par défaut »).
+-- la table de correspondance que le gérant a changées ; une ligne absente veut dire « valeur par défaut »). Lot 5b : reglage_comptable_boutique
+-- (le système des états financiers d'une boutique, normal ou minimal de trésorerie ; une boutique sans ligne est au système normal).
 CREATE TABLE IF NOT EXISTS sous_compte_boutique (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     boutique_id BIGINT NOT NULL,
@@ -843,4 +844,12 @@ CREATE TABLE IF NOT EXISTS correspondance_compta (
     mots_cles VARCHAR(255) NULL,
     CONSTRAINT uk_correspondance_compta_cle UNIQUE (boutique_id, cle),
     CONSTRAINT fk_correspondance_compta_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id)
+) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS reglage_comptable_boutique (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    boutique_id BIGINT NOT NULL,
+    systeme VARCHAR(10) NOT NULL,
+    CONSTRAINT uk_reglage_comptable_boutique UNIQUE (boutique_id),
+    CONSTRAINT fk_reglage_comptable_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id)
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -29,3 +29,9 @@
 @media print {
     .compta-page .compta-bandeau { border: 1px solid var(--app-ink); background: transparent; color: var(--app-ink); }
 }
+
+/* États financiers (étape 5b) : écarts de contrôle en rouge, choix du système, lignes de totaux lisibles. */
+.compta-page .compta-ecart { font-weight: 600; }
+.compta-page .compta-systeme fieldset { border: 0; margin: 0; padding: 0; }
+.compta-page .compta-systeme .form-check { margin-bottom: 10px; }
+.compta-page .etat-table > tbody > tr.etat-soustotal > td { font-weight: 700; }

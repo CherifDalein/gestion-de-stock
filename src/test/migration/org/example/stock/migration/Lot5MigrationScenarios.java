@@ -9,9 +9,9 @@ import java.util.*;
  */
 final class Lot5MigrationScenarios {
     static final List<String> VALIDES = List.of("ancien", "vide", "schema_neuf", "tables_partielles", "sous_comptes_partiels", "relance", "nouveau_compte", "compte_archive",
-            "numeros_officiels_evites");
+            "numeros_officiels_evites", "reglage_absent");
     static final List<String> INVALIDES = List.of("numero_taille", "unicite_absente", "sous_compte_officiel", "sous_compte_hors_parent", "parent_inconnu",
-            "sous_compte_type_incoherent", "correspondance_compte_vide", "cle_etrangere_absente");
+            "sous_compte_type_incoherent", "correspondance_compte_vide", "cle_etrangere_absente", "reglage_systeme_inconnu");
     private Lot5MigrationScenarios() {}
 
     /** Base des lots 1 à 4 et 6 migrés, sans les tables du lot 5a. */
@@ -37,6 +37,8 @@ final class Lot5MigrationScenarios {
                 sql(c, "UPDATE compte_tresorerie_boutique SET actif=FALSE WHERE id=(SELECT MAX(id) FROM compte_tresorerie_boutique)");
                 return;
             }
+            // Le lot 5a est déjà posé (sous-comptes et correspondance saisis) : seule la table des réglages manque, rien d'autre ne bouge.
+            case "reglage_absent" -> { Lot5Migration.migrer(c, true); saisirComptabilite(c); sql(c, "DROP TABLE reglage_comptable_boutique"); return; }
             // Les sous-comptes ne reprennent jamais un numéro officiel (5711 et 5712 sont des comptes du plan) : le premier numéro libre est choisi.
             case "numeros_officiels_evites" -> { return; }
             default -> {}
@@ -57,6 +59,7 @@ final class Lot5MigrationScenarios {
             case "parent_inconnu" -> sql(c, "INSERT INTO sous_compte_boutique(boutique_id,numero,parent_numero,intitule,date_creation) VALUES(1,'9999001','9999','Parent inconnu','2026-01-02 08:00:00.000000')");
             case "sous_compte_type_incoherent" -> sql(c, "UPDATE sous_compte_boutique SET parent_numero='521', numero='5219' WHERE id=(SELECT MIN(id) FROM (SELECT id FROM sous_compte_boutique WHERE parent_numero='571') x)");
             case "correspondance_compte_vide" -> sql(c, "INSERT INTO correspondance_compta(boutique_id,cle,compte_numero) VALUES(1,'VENTES_SERVICES','')");
+            case "reglage_systeme_inconnu" -> sql(c, "INSERT INTO reglage_comptable_boutique(boutique_id,systeme) VALUES(1,'AUTRE')");
             case "cle_etrangere_absente" -> {
                 if (maria(c)) sql(c, "ALTER TABLE sous_compte_boutique DROP FOREIGN KEY fk_sous_compte_compte_tresorerie");
                 else sql(c, "ALTER TABLE sous_compte_boutique DROP CONSTRAINT fk_sous_compte_compte_tresorerie");
@@ -106,6 +109,7 @@ final class Lot5MigrationScenarios {
         Lot5Migration.migrer(c, true); Lot5Migration.migrer(c, false);
         exiger(finalEtat.equals(etatComplet(c)), "Relance non idempotente");
         if (scenario.equals("relance")) verifierComptabiliteConservee(c);
+        if (scenario.equals("reglage_absent")) { verifierComptabiliteConservee(c); exiger(BoutiquesMigration.tables(c).containsKey("reglage_comptable_boutique"), "La table des réglages n'a pas été créée"); }
         if (scenario.equals("nouveau_compte")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM sous_compte_boutique s JOIN compte_tresorerie_boutique t ON t.id=s.compte_tresorerie_id"
                 + " WHERE t.nom='Banque de l''Est' AND s.parent_numero='521'") == 1, "Le compte créé après la migration n'a pas reçu son sous-compte");
         if (scenario.equals("sous_comptes_partiels")) exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM sous_compte_boutique WHERE numero='57150' AND intitule='Caisse nommée à la main'") == 1,
@@ -149,6 +153,12 @@ final class Lot5MigrationScenarios {
         catch (SQLException e) { refuse = e.getSQLState() != null && e.getSQLState().startsWith("23"); }
         exiger(refuse, "Deux lignes de correspondance de même clé ont été acceptées");
         sql(c, "DELETE FROM correspondance_compta WHERE cle='CLE_DE_TEST'");
+        sql(c, "INSERT INTO reglage_comptable_boutique(boutique_id,systeme) VALUES(" + boutique + ",'MINIMAL')");
+        refuse = false;
+        try { sql(c, "INSERT INTO reglage_comptable_boutique(boutique_id,systeme) VALUES(" + boutique + ",'NORMAL')"); }
+        catch (SQLException e) { refuse = e.getSQLState() != null && e.getSQLState().startsWith("23"); }
+        exiger(refuse, "Deux réglages comptables pour une même boutique ont été acceptés");
+        sql(c, "DELETE FROM reglage_comptable_boutique WHERE boutique_id=" + boutique);
         long compte = BoutiquesMigration.compter(c, "SELECT COALESCE(MIN(compte_tresorerie_id),0) FROM sous_compte_boutique");
         if (compte > 0) {
             refuse = false;

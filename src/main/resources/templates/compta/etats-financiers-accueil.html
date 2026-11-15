@@ -1,0 +1,53 @@
+<div th:fragment="content">
+    <link th:href="@{/css/etats.css}" rel="stylesheet">
+    <link th:href="@{/css/comptabilite.css}" rel="stylesheet">
+    <div id="stockEtat" class="container-fluid px-4 etat-page compta-page" data-compta="etats-financiers">
+        <header class="etat-header">
+            <div>
+                <p class="app-page-kicker">Comptabilité</p>
+                <h1>États financiers</h1>
+                <p class="app-page-subtitle">Les états annuels du SYSCOHADA révisé, calculés à partir de vos écritures. Réservé au gérant.</p>
+            </div>
+            <div class="etat-actions"><a th:href="@{/comptabilite}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left" aria-hidden="true"></i> Comptabilité</a></div>
+        </header>
+        <div th:replace="~{compta/bandeau :: entete}"></div>
+
+        <section class="card shadow-sm mb-4" aria-labelledby="titreSysteme">
+            <div class="card-body">
+                <h2 id="titreSysteme" class="h5">Système de votre boutique</h2>
+                <form method="post" th:action="@{/comptabilite/etats-financiers/systeme}" class="compta-systeme" data-compta-systeme>
+                    <fieldset>
+                        <legend class="visually-hidden">Système comptable</legend>
+                        <div class="form-check" th:each="s : ${systemes}">
+                            <input class="form-check-input" type="radio" name="systeme" th:id="'systeme' + ${s.name()}" th:value="${s.name()}" th:checked="${s == systeme}">
+                            <label class="form-check-label" th:for="'systeme' + ${s.name()}">
+                                <strong th:text="${s.libelle}">Système normal</strong>
+                                <span class="d-block small text-muted" th:text="${s.description}">Description</span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <button type="submit" class="btn btn-primary mt-3">Enregistrer</button>
+                </form>
+            </div>
+        </section>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4" th:each="c : ${cartes}">
+                <a class="card shadow-sm h-100 text-decoration-none" th:href="@{__${c.chemin}__}" th:attr="data-compta-lien=${c.chemin}">
+                    <div class="card-body">
+                        <h2 class="h5" th:text="${c.titre}">Titre</h2>
+                        <p class="mb-0 text-muted" th:text="${c.description}">Description</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+                <a class="card shadow-sm h-100 text-decoration-none" th:href="@{/comptabilite/etats-financiers/rattachements}" data-compta-lien="/comptabilite/etats-financiers/rattachements">
+                    <div class="card-body">
+                        <h2 class="h5">Rattachement des comptes</h2>
+                        <p class="mb-0 text-muted">Le poste du bilan et du compte de résultat où va chaque compte, avec ce qui vient du texte officiel et ce que l'application a choisi.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
