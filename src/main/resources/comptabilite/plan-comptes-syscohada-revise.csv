@@ -1,0 +1,1402 @@
+﻿Classe;Libellé de la classe;Numéro;Intitulé;Niveau
+1;Ressources durables;10;CAPITAL;Compte principal
+1;Ressources durables;11;RÉSERVES;Compte principal
+1;Ressources durables;12;REPORT À NOUVEAU;Compte principal
+1;Ressources durables;13;RÉSULTAT NET DE L'EXERCICE;Compte principal
+1;Ressources durables;14;SUBVENTIONS D'INVESTISSEMENT;Compte principal
+1;Ressources durables;15;PROVISIONS RÉGLEMENTÉES ET FONDS ASSIMILÉS;Compte principal
+1;Ressources durables;16;EMPRUNTS ET DETTES ASSIMILÉES;Compte principal
+1;Ressources durables;17;DETTES DE LOCATION ACQUISITION;Compte principal
+1;Ressources durables;18;DETTES LIÉES À DES PARTICIPATIONS ET COMPTES DE LIAISON DES ÉTABLISSEMENTS ET SOCIÉTÉS EN PARTICIPATION;Compte principal
+1;Ressources durables;19;PROVISIONS POUR RISQUES ET CHARGES;Compte principal
+1;Ressources durables;101;CAPITAL SOCIAL;Compte
+1;Ressources durables;1011;Capital souscrit, non appelé;Compte divisionnaire
+1;Ressources durables;1012;Capital souscrit, appelé, non versé;Compte divisionnaire
+1;Ressources durables;1013;Capital souscrit, appelé, versé, non amorti;Compte divisionnaire
+1;Ressources durables;1014;Capital souscrit, appelé, versé, amorti;Compte divisionnaire
+1;Ressources durables;1018;Capital souscrit soumis à des conditions particulières;Compte divisionnaire
+1;Ressources durables;102;CAPITAL PAR DOTATION;Compte
+1;Ressources durables;1021;Dotation initiale;Compte divisionnaire
+1;Ressources durables;1022;Dotations complémentaires;Compte divisionnaire
+1;Ressources durables;1028;Autres dotations;Compte divisionnaire
+1;Ressources durables;103;CAPITAL PERSONNEL;Compte
+1;Ressources durables;104;COMPTE DE L'EXPLOITANT;Compte
+1;Ressources durables;1041;Apports temporaires;Compte divisionnaire
+1;Ressources durables;1042;Opérations courantes;Compte divisionnaire
+1;Ressources durables;1043;Rémunérations, impôts et autres charges personnelles;Compte divisionnaire
+1;Ressources durables;1047;Prélèvements d’autoconsommation;Compte divisionnaire
+1;Ressources durables;1048;Autres prélèvements;Compte divisionnaire
+1;Ressources durables;105;PRIMES LIÉES AU CAPITAL SOCIAL;Compte
+1;Ressources durables;1051;Primes d'émission;Compte divisionnaire
+1;Ressources durables;1052;Primes d'apport;Compte divisionnaire
+1;Ressources durables;1053;Primes de fusion;Compte divisionnaire
+1;Ressources durables;1054;Primes de conversion;Compte divisionnaire
+1;Ressources durables;1058;Autres primes;Compte divisionnaire
+1;Ressources durables;106;ÉCARTS DE RÉÉVALUATION;Compte
+1;Ressources durables;1061;Écarts de réévaluation légale;Compte divisionnaire
+1;Ressources durables;1062;Écarts de réévaluation libre;Compte divisionnaire
+1;Ressources durables;109;APPORTEURS, CAPITAL SOUSCRIT, NON APPELÉ;Compte
+1;Ressources durables;111;RÉSERVE LÉGALE;Compte
+1;Ressources durables;112;RÉSERVES STATUTAIRES OU CONTRACTUELLES;Compte
+1;Ressources durables;113;RÉSERVES RÉGLEMENTÉES;Compte
+1;Ressources durables;1131;Réserves de plus-values nettes à long terme;Compte divisionnaire
+1;Ressources durables;1132;Réserves d’attribution gratuite d’actions au personnel salarié et aux dirigeants;Compte divisionnaire
+1;Ressources durables;1133;Réserves consécutives à l'octroi de subventions d'investissement;Compte divisionnaire
+1;Ressources durables;1134;Réserves des valeurs mobilières donnant accès au capital;Compte divisionnaire
+1;Ressources durables;1138;Autres réserves réglementées;Compte divisionnaire
+1;Ressources durables;118;AUTRES RÉSERVES;Compte
+1;Ressources durables;1181;Réserves facultatives;Compte divisionnaire
+1;Ressources durables;1188;Réserves diverses;Compte divisionnaire
+1;Ressources durables;121;REPORT À NOUVEAU CRÉDITEUR;Compte
+1;Ressources durables;129;REPORT À NOUVEAU DÉBITEUR;Compte
+1;Ressources durables;1291;Perte nette à reporter;Compte divisionnaire
+1;Ressources durables;1292;Perte - Amortissements réputés différés;Compte divisionnaire
+1;Ressources durables;130;RÉSULTAT EN INSANCE D’AFFECTATION;Compte
+1;Ressources durables;1301;Résultat en instance d'affectation : Bénéfice;Compte divisionnaire
+1;Ressources durables;1309;Résultat en instance d'affectation : Perte;Compte divisionnaire
+1;Ressources durables;131;RÉSULTAT NET : BÉNÉFICE;Compte
+1;Ressources durables;132;MARGE COMMERCIALE (MC);Compte
+1;Ressources durables;133;VALEUR AJOUTÉE (V.A.);Compte
+1;Ressources durables;134;EXCÉDENT BRUT D'EXPLOITATION (E.B.E.);Compte
+1;Ressources durables;135;RÉSULTAT D'EXPLOITATION (R.E.);Compte
+1;Ressources durables;136;RÉSULTAT FINANCIER (R.F.);Compte
+1;Ressources durables;137;RÉSULTAT DES ACTIVITÉS ORDINAIRES (R.A.O.);Compte
+1;Ressources durables;138;RÉSULTAT HORS ACTIVITÉS ORDINAIRES (R.H.A.O.);Compte
+1;Ressources durables;1381;Résultat de fusion;Compte divisionnaire
+1;Ressources durables;1382;Résultat d’apport partiel d’actif;Compte divisionnaire
+1;Ressources durables;1383;Résultat de scission;Compte divisionnaire
+1;Ressources durables;1384;Résultat de liquidation;Compte divisionnaire
+1;Ressources durables;139;RÉSULTAT NET : PERTE;Compte
+1;Ressources durables;141;SUBVENTIONS D'EQUIPEMENT;Compte
+1;Ressources durables;1411;État;Compte divisionnaire
+1;Ressources durables;1412;Régions;Compte divisionnaire
+1;Ressources durables;1413;Départements;Compte divisionnaire
+1;Ressources durables;1414;Communes et collectivités publiques décentralisées;Compte divisionnaire
+1;Ressources durables;1415;Entités publiques ou mixtes;Compte divisionnaire
+1;Ressources durables;1416;Entités et organismes privés;Compte divisionnaire
+1;Ressources durables;1417;Organismes internationaux;Compte divisionnaire
+1;Ressources durables;1418;Autres;Compte divisionnaire
+1;Ressources durables;148;AUTRES SUBVENTIONS D'INVESTISSEMENT;Compte
+1;Ressources durables;151;AMORTISSEMENTS DÉROGATOIRES;Compte
+1;Ressources durables;152;PLUS-VALUES DE CESSION À RÉINVESTIR;Compte
+1;Ressources durables;153;FONDS RÉGLEMENTÉS;Compte
+1;Ressources durables;1531;Fonds National;Compte divisionnaire
+1;Ressources durables;1532;Prélèvement pour le Budget;Compte divisionnaire
+1;Ressources durables;154;PROVISIONS SPÉCIALES DE RÉÉVALUATION;Compte
+1;Ressources durables;155;PROVISIONS RÉGLEMENTÉES RELATIVES AUX IMMOBILISATIONS;Compte
+1;Ressources durables;1551;Reconstitution des gisements miniers et pétroliers;Compte divisionnaire
+1;Ressources durables;156;PROVISIONS RÉGLEMENTÉES RELATIVES AUX STOCKS;Compte
+1;Ressources durables;1561;Hausse de prix;Compte divisionnaire
+1;Ressources durables;1562;Fluctuation des cours;Compte divisionnaire
+1;Ressources durables;157;PROVISIONS POUR INVESTISSEMENT;Compte
+1;Ressources durables;158;AUTRES PROVISIONS ET FONDS RÉGLEMENTES;Compte
+1;Ressources durables;161;EMPRUNTS OBLIGATAIRES;Compte
+1;Ressources durables;1611;Emprunts obligataires ordinaires;Compte divisionnaire
+1;Ressources durables;1612;Emprunts obligataires convertibles en actions;Compte divisionnaire
+1;Ressources durables;1613;Emprunts obligataires remboursables en actions;Compte divisionnaire
+1;Ressources durables;1618;Autres emprunts obligataires;Compte divisionnaire
+1;Ressources durables;162;EMPRUNTS ET DETTES AUPRÈS DES ÉTABLISSEMENTS DE CRÉDIT;Compte
+1;Ressources durables;163;AVANCES REÇUES DE L'ÉTAT;Compte
+1;Ressources durables;164;AVANCES REÇUES ET COMPTES COURANTS BLOQUÉS;Compte
+1;Ressources durables;165;DÉPÔTS ET CAUTIONNEMENTS RECUS;Compte
+1;Ressources durables;1651;Dépôts;Compte divisionnaire
+1;Ressources durables;1652;Cautionnements;Compte divisionnaire
+1;Ressources durables;166;INTÉRÊTS COURUS;Compte
+1;Ressources durables;1661;sur emprunts obligataires;Compte divisionnaire
+1;Ressources durables;1662;sur emprunts et dettes auprès des établissements de crédit;Compte divisionnaire
+1;Ressources durables;1663;sur avances reçues de l'État;Compte divisionnaire
+1;Ressources durables;1664;sur avances reçues et comptes courants bloqués;Compte divisionnaire
+1;Ressources durables;1665;sur dépôts et cautionnements reçus;Compte divisionnaire
+1;Ressources durables;1667;sur avances assorties de conditions particulières;Compte divisionnaire
+1;Ressources durables;1668;sur autres emprunts et dettes;Compte divisionnaire
+1;Ressources durables;167;AVANCES ASSORTIES DE CONDITIONS PARTICULIÈRES;Compte
+1;Ressources durables;1671;Avances bloquées pour augmentation du capital;Compte divisionnaire
+1;Ressources durables;1672;Avances conditionnées par l'État;Compte divisionnaire
+1;Ressources durables;1673;Avances conditionnées par les autres organismes africains;Compte divisionnaire
+1;Ressources durables;1674;Avances conditionnées par les organismes internationaux;Compte divisionnaire
+1;Ressources durables;168;AUTRES EMPRUNTS ET DETTES;Compte
+1;Ressources durables;1681;Rentes viagères capitalisées;Compte divisionnaire
+1;Ressources durables;1682;Billets de fonds;Compte divisionnaire
+1;Ressources durables;1683;Dettes consécutives à des titres empruntés;Compte divisionnaire
+1;Ressources durables;1684;Emprunts participatifs;Compte divisionnaire
+1;Ressources durables;1685;Participation des travailleurs aux bénéfices;Compte divisionnaire
+1;Ressources durables;1686;Emprunts et dettes contractés auprès des autres tiers;Compte divisionnaire
+1;Ressources durables;172;DETTES DE LOCATION ACQUISITION/ CRÉDIT-BAIL IMMOBILIER;Compte
+1;Ressources durables;173;DETTES DE LOCATION ACQUISITION/ CRÉDIT-BAIL MOBILIER;Compte
+1;Ressources durables;174;DETTES DE LOCATION ACQUISITION /LOCATION DE VENTE;Compte
+1;Ressources durables;176;INTÉRÊTS COURUS;Compte
+1;Ressources durables;1762;sur dettes de location acquisition / crédit-bail immobilier;Compte divisionnaire
+1;Ressources durables;1763;dettes de location acquisition /crédit-bail mobilier;Compte divisionnaire
+1;Ressources durables;1764;sur dettes de location acquisition /location-vente;Compte divisionnaire
+1;Ressources durables;1768;sur autres dettes de location acquisition;Compte divisionnaire
+1;Ressources durables;178;AUTRES DETTES DE LOCATION ACQUISITION;Compte
+1;Ressources durables;181;DETTES LIÉES À DES PARTICIPATIONS;Compte
+1;Ressources durables;1811;Dettes liées à des participations (groupe);Compte divisionnaire
+1;Ressources durables;1812;Dettes liées à des participations (hors groupe);Compte divisionnaire
+1;Ressources durables;182;DETTES LIÉES À DES SOCIÉTÉS EN PARTICIPATION;Compte
+1;Ressources durables;183;INTÉRÊTS COURUS SUR DETTES LIÉES À DES PARTICIPATIONS;Compte
+1;Ressources durables;184;COMPTES PERMANENTS BLOQUÉS DES ÉTABLISSEMENTS ET SUCCURSALES;Compte
+1;Ressources durables;185;COMPTES PERMANENTS NON BLOQUÉS DES ÉTABLISSEMENTS ET SUCCURSALES;Compte
+1;Ressources durables;186;COMPTES DE LIAISON CHARGES;Compte
+1;Ressources durables;187;COMPTES DE LIAISON PRODUITS;Compte
+1;Ressources durables;188;COMPTES DE LIAISON DES SOCIÉTÉS EN PARTICIPATION;Compte
+1;Ressources durables;191;PROVISIONS POUR LITIGES;Compte
+1;Ressources durables;192;PROVISIONS POUR GARANTIES DONNÉES AUX CLIENTS;Compte
+1;Ressources durables;193;PROVISIONS POUR PERTES SUR MARCHÉS À ACHÈVEMENT FUTUR;Compte
+1;Ressources durables;194;PROVISIONS POUR PERTES DE CHANGE;Compte
+1;Ressources durables;195;PROVISIONS POUR IMPÔTS;Compte
+1;Ressources durables;196;PROVISIONS POUR PENSIONS ET OBLIGATIONS SIMILAIRES;Compte
+1;Ressources durables;1961;Provisions pour pensions et obligations similaires –engagement de retraite;Compte divisionnaire
+1;Ressources durables;1962;Actif du régime de retraite;Compte divisionnaire
+1;Ressources durables;197;PROVISIONS POUR RESTRUCTURATION;Compte
+1;Ressources durables;198;AUTRES PROVISIONS POUR RISQUES ET CHARGES;Compte
+1;Ressources durables;1981;Provisions pour amendes et pénalités;Compte divisionnaire
+1;Ressources durables;1983;Provisions pour propre assureur;Compte divisionnaire
+1;Ressources durables;1984;Provisions pour démantèlement et remise en état;Compte divisionnaire
+1;Ressources durables;1985;Provisions pour droits à réduction ou avantage en nature (Chèques cadeau, cartes de fidélité…);Compte divisionnaire
+1;Ressources durables;1988;Provisions pour divers risques et charges;Compte divisionnaire
+2;Actif immobilisé;21;IMMOBILISATIONS INCORPORELLES;Compte principal
+2;Actif immobilisé;22;TERRAINS;Compte principal
+2;Actif immobilisé;23;BÂTIMENTS, INSTALLATIONS TECHNIQUES ET AGENCEMENTS;Compte principal
+2;Actif immobilisé;24;MATÉRIEL, MOBILIER ET ACTIFS BIOLOGIQUES;Compte principal
+2;Actif immobilisé;25;AVANCES ET ACOMPTES VERSÉS SUR IMMOBILISATIONS;Compte principal
+2;Actif immobilisé;26;TITRES DE PARTICIPATION;Compte principal
+2;Actif immobilisé;27;AUTRES IMMOBILISATIONS FINANCIÈRES;Compte principal
+2;Actif immobilisé;28;AMORTISSEMENTS;Compte principal
+2;Actif immobilisé;29;DÉPRÉCIATIONS DES IMMOBILISATIONS;Compte principal
+2;Actif immobilisé;211;FRAIS DE DÉVELOPPEMENT;Compte
+2;Actif immobilisé;212;BREVETS, LICENCES, CONCESSIONS, ET DROITS SIMILAIRES;Compte
+2;Actif immobilisé;2121;Brevets;Compte divisionnaire
+2;Actif immobilisé;2122;Licences;Compte divisionnaire
+2;Actif immobilisé;2123;Concessions de service public;Compte divisionnaire
+2;Actif immobilisé;2128;Autres concessions et droits similaires;Compte divisionnaire
+2;Actif immobilisé;213;LOGICIELS ET SITES INTERNET;Compte
+2;Actif immobilisé;2131;Logiciels;Compte divisionnaire
+2;Actif immobilisé;2132;Sites internet;Compte divisionnaire
+2;Actif immobilisé;214;MARQUES;Compte
+2;Actif immobilisé;215;FONDS COMMERCIAL;Compte
+2;Actif immobilisé;216;DROIT AU BAIL;Compte
+2;Actif immobilisé;217;INVESTISSEMENTS DE CRÉATION;Compte
+2;Actif immobilisé;218;AUTRES DROITS ET VALEURS INCORPORELS;Compte
+2;Actif immobilisé;2181;Frais de prospection et d’évaluation de ressources minérales;Compte divisionnaire
+2;Actif immobilisé;2182;Coûts d’obtention du contrat;Compte divisionnaire
+2;Actif immobilisé;2183;Fichiers clients, notices, titres de journaux et magazines;Compte divisionnaire
+2;Actif immobilisé;2184;Coûts des franchises;Compte divisionnaire
+2;Actif immobilisé;2188;Divers droits et valeurs incorporelles;Compte divisionnaire
+2;Actif immobilisé;219;IMMOBILISATIONS INCORPORELLES EN COURS;Compte
+2;Actif immobilisé;2191;Frais de développement;Compte divisionnaire
+2;Actif immobilisé;2193;Logiciels et internet;Compte divisionnaire
+2;Actif immobilisé;2198;Autres droits et valeurs incorporels;Compte divisionnaire
+2;Actif immobilisé;221;TERRAINS AGRICOLES ET FORESTIERS;Compte
+2;Actif immobilisé;2211;Terrains d'exploitation agricole;Compte divisionnaire
+2;Actif immobilisé;2212;Terrains d'exploitation forestière;Compte divisionnaire
+2;Actif immobilisé;2218;Autres terrains;Compte divisionnaire
+2;Actif immobilisé;222;TERRAINS NUS;Compte
+2;Actif immobilisé;2221;Terrains à bâtir;Compte divisionnaire
+2;Actif immobilisé;2228;Autres terrains nus;Compte divisionnaire
+2;Actif immobilisé;223;TERRAINS BÂTIS;Compte
+2;Actif immobilisé;2231;pour bâtiments industriels et agricoles;Compte divisionnaire
+2;Actif immobilisé;2232;pour bâtiments administratifs et commerciaux;Compte divisionnaire
+2;Actif immobilisé;2234;pour bâtiments affectés aux autres opérations professionnelles;Compte divisionnaire
+2;Actif immobilisé;2235;pour bâtiments affectés aux autres opérations non professionnelles;Compte divisionnaire
+2;Actif immobilisé;2238;Autres terrains bâtis;Compte divisionnaire
+2;Actif immobilisé;224;TRAVAUX DE MISE EN VALEUR DES TERRAINS;Compte
+2;Actif immobilisé;2241;Plantation d'arbres et d'arbustes;Compte divisionnaire
+2;Actif immobilisé;2245;Améliorations du fonds;Compte divisionnaire
+2;Actif immobilisé;2248;Autres travaux;Compte divisionnaire
+2;Actif immobilisé;225;TERRAINS DE CARRIERES – TREFONDS;Compte
+2;Actif immobilisé;2251;Carrières;Compte divisionnaire
+2;Actif immobilisé;226;TERRAINS AMÉNAGÉS;Compte
+2;Actif immobilisé;2261;Parkings;Compte divisionnaire
+2;Actif immobilisé;227;TERRAINS MIS EN CONCESSION;Compte
+2;Actif immobilisé;228;AUTRES TERRAINS;Compte
+2;Actif immobilisé;2281;Terrains - immeubles de placement;Compte divisionnaire
+2;Actif immobilisé;2285;Terrains des logements affectés au personnel;Compte divisionnaire
+2;Actif immobilisé;2286;Terrains de location - acquisition;Compte divisionnaire
+2;Actif immobilisé;2288;Divers terrains;Compte divisionnaire
+2;Actif immobilisé;229;AMÉNAGEMENTS DE TERRAINS EN COURS;Compte
+2;Actif immobilisé;2291;Terrains agricoles et forestiers;Compte divisionnaire
+2;Actif immobilisé;2292;Terrains nus;Compte divisionnaire
+2;Actif immobilisé;2295;Terrains de carrières - tréfonds;Compte divisionnaire
+2;Actif immobilisé;2298;Autres terrains;Compte divisionnaire
+2;Actif immobilisé;231;BÂTIMENTS INDUSTRIELS, AGRICOLES, ADMINISTRATIFS ET COMMERCIAUX SUR SOL PROPRE;Compte
+2;Actif immobilisé;2311;Bâtiments industriels;Compte divisionnaire
+2;Actif immobilisé;2312;Bâtiments agricoles;Compte divisionnaire
+2;Actif immobilisé;2313;Bâtiments administratifs et commerciaux;Compte divisionnaire
+2;Actif immobilisé;2314;Bâtiments affectés au logement du personnel;Compte divisionnaire
+2;Actif immobilisé;2315;Bâtiments - immeubles de placement;Compte divisionnaire
+2;Actif immobilisé;2316;Bâtiments de location - acquisition;Compte divisionnaire
+2;Actif immobilisé;232;BÂTIMENTS INDUSTRIELS, AGRICOLES, ADMINISTRATIFS ET COMMERCIAUX SUR SOL D’AUTRUI;Compte
+2;Actif immobilisé;2321;Bâtiments industriels;Compte divisionnaire
+2;Actif immobilisé;2322;Bâtiments agricoles;Compte divisionnaire
+2;Actif immobilisé;2323;Bâtiments administratifs et commerciaux;Compte divisionnaire
+2;Actif immobilisé;2324;Bâtiments affectés au logement du personnel;Compte divisionnaire
+2;Actif immobilisé;2325;Bâtiments - immeubles de placement;Compte divisionnaire
+2;Actif immobilisé;2326;Bâtiments de location - acquisition;Compte divisionnaire
+2;Actif immobilisé;233;OUVRAGES D’INFRASTRUCTURE;Compte
+2;Actif immobilisé;2331;Voies de terre;Compte divisionnaire
+2;Actif immobilisé;2332;Voies de fer;Compte divisionnaire
+2;Actif immobilisé;2333;Voies d’eau;Compte divisionnaire
+2;Actif immobilisé;2334;Barrages, Digues;Compte divisionnaire
+2;Actif immobilisé;2335;Pistes d’aérodrome;Compte divisionnaire
+2;Actif immobilisé;2338;Autres ouvrages d’infrastructures;Compte divisionnaire
+2;Actif immobilisé;234;AMENAGEMENTS, AGENCEMENTS ET INSTALLATIONS TECHNIQUES;Compte
+2;Actif immobilisé;2341;Installations complexes spécialisées sur sol propre;Compte divisionnaire
+2;Actif immobilisé;2342;Installations complexes spécialisées sur sol d’autrui;Compte divisionnaire
+2;Actif immobilisé;2343;Installations à caractère spécifique sur sol propre;Compte divisionnaire
+2;Actif immobilisé;2344;Installations à caractère spécifique sur sol d’autrui;Compte divisionnaire
+2;Actif immobilisé;2345;Aménagements et agencements des bâtiments;Compte divisionnaire
+2;Actif immobilisé;235;AMENAGEMENTS DE BUREAUX;Compte
+2;Actif immobilisé;2351;Installations générales;Compte divisionnaire
+2;Actif immobilisé;2358;Autres aménagements de bureaux;Compte divisionnaire
+2;Actif immobilisé;237;BÂTIMENTS INDUSTRIELS, AGRICOLES ET COMMERCIAUX MIS EN CONCESSION;Compte
+2;Actif immobilisé;238;AUTRES INSTALLATIONS ET AGENCEMENTS;Compte
+2;Actif immobilisé;239;BÂTIMENTS AMENAGEMENTS, AGENCEMENTS ET INSTALLATIONS EN COURS;Compte
+2;Actif immobilisé;2391;Bâtiments en cours;Compte divisionnaire
+2;Actif immobilisé;2392;Installations en cours;Compte divisionnaire
+2;Actif immobilisé;2393;Ouvrages d’infrastructure en cours;Compte divisionnaire
+2;Actif immobilisé;2394;Aménagements et agencements et installations techniques en cours;Compte divisionnaire
+2;Actif immobilisé;2395;Aménagements de bureaux en cours;Compte divisionnaire
+2;Actif immobilisé;2398;Autres installations et agencements en cours;Compte divisionnaire
+2;Actif immobilisé;241;MATÉRIEL ET OUTILLAGE INDUSTRIEL ET COMMERCIAL;Compte
+2;Actif immobilisé;2411;Matériel industriel;Compte divisionnaire
+2;Actif immobilisé;2412;Outillage industriel;Compte divisionnaire
+2;Actif immobilisé;2413;Matériel commercial;Compte divisionnaire
+2;Actif immobilisé;2414;Outillage commercial;Compte divisionnaire
+2;Actif immobilisé;2416;Matériel et outillage industriel et commercial de location – acquisition;Compte divisionnaire
+2;Actif immobilisé;242;MATÉRIEL ET OUTILLAGE AGRICOLE;Compte
+2;Actif immobilisé;2421;Matériel agricole;Compte divisionnaire
+2;Actif immobilisé;2422;Outillage agricole;Compte divisionnaire
+2;Actif immobilisé;2426;Matériel et outillage agricole de location – acquisition;Compte divisionnaire
+2;Actif immobilisé;243;MATÉRIEL D’EMBALLAGE RÉCUPÉRABLE ET IDENTIFIABLE;Compte
+2;Actif immobilisé;244;MATÉRIEL ET MOBILIER;Compte
+2;Actif immobilisé;2441;Matériel de bureau;Compte divisionnaire
+2;Actif immobilisé;2442;Matériel informatique;Compte divisionnaire
+2;Actif immobilisé;2443;Matériel bureautique;Compte divisionnaire
+2;Actif immobilisé;2444;Mobilier de bureau;Compte divisionnaire
+2;Actif immobilisé;2445;Matériel et mobilier - immeubles de placement;Compte divisionnaire
+2;Actif immobilisé;2446;Matériel et mobilier de location - acquisition;Compte divisionnaire
+2;Actif immobilisé;2447;Matériel et mobilier des logements du personnel;Compte divisionnaire
+2;Actif immobilisé;245;MATÉRIEL DE TRANSPORT;Compte
+2;Actif immobilisé;2451;Matériel automobile;Compte divisionnaire
+2;Actif immobilisé;2452;Matériel ferroviaire;Compte divisionnaire
+2;Actif immobilisé;2453;Matériel fluvial, lagunaire;Compte divisionnaire
+2;Actif immobilisé;2454;Matériel naval;Compte divisionnaire
+2;Actif immobilisé;2455;Matériel aérien;Compte divisionnaire
+2;Actif immobilisé;2456;Matériel de transport de location - acquisition;Compte divisionnaire
+2;Actif immobilisé;2457;Matériel hippomobile;Compte divisionnaire
+2;Actif immobilisé;2458;Autres matériels de transport;Compte divisionnaire
+2;Actif immobilisé;246;ACTIFS BIOLOGIQUES;Compte
+2;Actif immobilisé;2461;Cheptel, animaux de trait;Compte divisionnaire
+2;Actif immobilisé;2462;Cheptel, animaux reproducteurs;Compte divisionnaire
+2;Actif immobilisé;2463;Animaux de garde;Compte divisionnaire
+2;Actif immobilisé;2465;Plantations agricoles;Compte divisionnaire
+2;Actif immobilisé;2468;Autres actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;247;AGENCEMENTS, AMÉNAGEMENTS DU MATÉRIEL ET ACTIFS BIOLOGIQUES;Compte
+2;Actif immobilisé;2471;Agencements et aménagements du matériel;Compte divisionnaire
+2;Actif immobilisé;2472;Agencements et aménagements des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2478;Autres agencements, aménagements du matériel et actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;248;AUTRES MATÉRIELS ET MOBILIERS;Compte
+2;Actif immobilisé;2481;Collections et œuvres d’art;Compte divisionnaire
+2;Actif immobilisé;2488;Divers matériels mobiliers;Compte divisionnaire
+2;Actif immobilisé;249;MATÉRIELS ET ACTIFS BIOLOGIQUES EN COURS;Compte
+2;Actif immobilisé;2491;Matériel et outillage industriel et commercial;Compte divisionnaire
+2;Actif immobilisé;2492;Matériel et outillage agricole;Compte divisionnaire
+2;Actif immobilisé;2493;Matériel d’emballage récupérable et identifiable;Compte divisionnaire
+2;Actif immobilisé;2494;Matériel et mobilier de bureau;Compte divisionnaire
+2;Actif immobilisé;2495;Matériel de transport;Compte divisionnaire
+2;Actif immobilisé;2496;Actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2497;Agencements et aménagements du matériel et des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2498;Autres matériels et actifs biologiques en cours;Compte divisionnaire
+2;Actif immobilisé;251;AVANCES ET ACOMPTES VERSÉS SUR IMMOBILISATIONS INCORPORELLES;Compte
+2;Actif immobilisé;252;AVANCES ET ACOMPTES VERSÉS SUR IMMOBILISATIONS CORPORELLES;Compte
+2;Actif immobilisé;261;TITRES DE PARTICIPATION DANS DES SOCIÉTÉS SOUS CONTRÔLE EXCLUSIF;Compte
+2;Actif immobilisé;262;TITRES DE PARTICIPATION DANS DES SOCIÉTÉS SOUS CONTRÔLE CONJOINT;Compte
+2;Actif immobilisé;263;TITRES DE PARTICIPATION DANS DES SOCIÉTÉS CONFÉRANT UNE INFLUENCE NOTABLE;Compte
+2;Actif immobilisé;265;PARTICIPATIONS DANS DES ORGANISMES PROFESSIONNELS;Compte
+2;Actif immobilisé;266;PARTS DANS DES GROUPEMENTS D’INTÉRÊT ÉCONOMIQUE (G.I.E.);Compte
+2;Actif immobilisé;268;AUTRES TITRES DE PARTICIPATION;Compte
+2;Actif immobilisé;271;PRÊTS ET CRÉANCES;Compte
+2;Actif immobilisé;2711;Prêts participatifs;Compte divisionnaire
+2;Actif immobilisé;2712;Prêts aux associés;Compte divisionnaire
+2;Actif immobilisé;2713;Billets de fonds;Compte divisionnaire
+2;Actif immobilisé;2714;Titres prêtés;Compte divisionnaire
+2;Actif immobilisé;2718;Autres prêts et créances;Compte divisionnaire
+2;Actif immobilisé;272;PRÊTS AU PERSONNEL;Compte
+2;Actif immobilisé;2721;Prêts immobiliers;Compte divisionnaire
+2;Actif immobilisé;2722;Prêts mobiliers et d’installation;Compte divisionnaire
+2;Actif immobilisé;2728;Autres prêts au personnel;Compte divisionnaire
+2;Actif immobilisé;273;CRÉANCES SUR L’ÉTAT;Compte
+2;Actif immobilisé;2731;Retenues de garantie;Compte divisionnaire
+2;Actif immobilisé;2733;Fonds réglementé;Compte divisionnaire
+2;Actif immobilisé;2734;Créances sur le concédant;Compte divisionnaire
+2;Actif immobilisé;2738;Autres créances sur l’Etat;Compte divisionnaire
+2;Actif immobilisé;274;TITRES IMMOBILISÉS;Compte
+2;Actif immobilisé;2741;Titres immobilisés de l’activité de portefeuille (T.I.A.P.);Compte divisionnaire
+2;Actif immobilisé;2742;Titres participatifs;Compte divisionnaire
+2;Actif immobilisé;2743;Certificats d’investissement;Compte divisionnaire
+2;Actif immobilisé;2744;Parts de fonds commun de placement (F.C.P.);Compte divisionnaire
+2;Actif immobilisé;2745;Obligations;Compte divisionnaire
+2;Actif immobilisé;2746;Actions ou parts propres;Compte divisionnaire
+2;Actif immobilisé;2748;Autres titres immobilisés;Compte divisionnaire
+2;Actif immobilisé;275;DÉPÔTS ET CAUTIONNEMENTS VERSÉS;Compte
+2;Actif immobilisé;2751;Dépôts pour loyers d’avance;Compte divisionnaire
+2;Actif immobilisé;2752;Dépôts pour l’électricité;Compte divisionnaire
+2;Actif immobilisé;2753;Dépôts pour l’eau;Compte divisionnaire
+2;Actif immobilisé;2754;Dépôts pour le gaz;Compte divisionnaire
+2;Actif immobilisé;2755;Dépôts pour le téléphone, le télex, la télécopie;Compte divisionnaire
+2;Actif immobilisé;2756;Cautionnements sur marchés publics;Compte divisionnaire
+2;Actif immobilisé;2757;Cautionnements sur autres opérations;Compte divisionnaire
+2;Actif immobilisé;2758;Autres dépôts et cautionnement;Compte divisionnaire
+2;Actif immobilisé;276;INTÉRÊTS COURUS;Compte
+2;Actif immobilisé;2761;Prêts et créances non commerciales;Compte divisionnaire
+2;Actif immobilisé;2762;Prêts au personnel;Compte divisionnaire
+2;Actif immobilisé;2763;Créances sur l'Etat;Compte divisionnaire
+2;Actif immobilisé;2764;Titres immobilisés;Compte divisionnaire
+2;Actif immobilisé;2765;Dépôts et cautionnements versés;Compte divisionnaire
+2;Actif immobilisé;2767;Créances rattachées à des participations;Compte divisionnaire
+2;Actif immobilisé;2768;Immobilisations financières diverses;Compte divisionnaire
+2;Actif immobilisé;277;CRÉANCES RATTACHÉES À DES PARTICIPATIONS ET AVANCES À DES G.I.E.;Compte
+2;Actif immobilisé;2771;Créances rattachées à des participations (groupe);Compte divisionnaire
+2;Actif immobilisé;2772;Créances rattachées à des participations (hors groupe);Compte divisionnaire
+2;Actif immobilisé;2773;Créances rattachées à des sociétés en participation;Compte divisionnaire
+2;Actif immobilisé;2774;Avances à des Groupements d'intérêt économique (G.I.E.);Compte divisionnaire
+2;Actif immobilisé;278;IMMOBILISATIONS FINANCIÈRES DIVERSES;Compte
+2;Actif immobilisé;2781;Créances diverses groupe;Compte divisionnaire
+2;Actif immobilisé;2782;Créances diverses hors groupe;Compte divisionnaire
+2;Actif immobilisé;2784;Banques dépôts à terme;Compte divisionnaire
+2;Actif immobilisé;2785;Or et métaux précieux (1);Compte divisionnaire
+2;Actif immobilisé;2788;Autres immobilisations financières;Compte divisionnaire
+2;Actif immobilisé;281;AMORTISSEMENTS DES IMMOBILISATIONS INCORPORELLES;Compte
+2;Actif immobilisé;2811;Amortissements des frais de développement;Compte divisionnaire
+2;Actif immobilisé;2812;Amortissements des brevets, licences, concessions et droits similaires;Compte divisionnaire
+2;Actif immobilisé;2813;Amortissements des logiciels et sites internet;Compte divisionnaire
+2;Actif immobilisé;2814;Amortissements des marques;Compte divisionnaire
+2;Actif immobilisé;2815;Amortissements du fonds commercial;Compte divisionnaire
+2;Actif immobilisé;2816;Amortissements du droit au bail;Compte divisionnaire
+2;Actif immobilisé;2817;Amortissements des investissements de création;Compte divisionnaire
+2;Actif immobilisé;2818;Amortissements des autres droits et valeurs incorporels;Compte divisionnaire
+2;Actif immobilisé;282;AMORTISSEMENTS DES TERRAINS;Compte
+2;Actif immobilisé;2824;Amortissements des travaux de mise en valeur des terrains;Compte divisionnaire
+2;Actif immobilisé;283;AMORTISSEMENTS DES BÂTIMENTS, INSTALLATIONS TECHNIQUES ET AGENCEMENTS;Compte
+2;Actif immobilisé;2831;Amortissements des bâtiments industriels, agricoles, administratifs et commerciaux sur sol propre;Compte divisionnaire
+2;Actif immobilisé;2832;Amortissements des bâtiments industriels, agricoles, administratifs et commerciaux sur sol d'autrui;Compte divisionnaire
+2;Actif immobilisé;2833;Amortissements des ouvrages d'infrastructure;Compte divisionnaire
+2;Actif immobilisé;2834;Amortissements des aménagements, agencements et installations techniques;Compte divisionnaire
+2;Actif immobilisé;2835;Amortissements des aménagements de bureaux;Compte divisionnaire
+2;Actif immobilisé;2837;Amortissements des bâtiments industriels, agricoles et commerciaux mis en concession;Compte divisionnaire
+2;Actif immobilisé;2838;Amortissements des autres installations et agencements;Compte divisionnaire
+2;Actif immobilisé;284;AMORTISSEMENTS DU MATÉRIEL;Compte
+2;Actif immobilisé;2841;Amortissements du matériel et outillage industriel et commercial;Compte divisionnaire
+2;Actif immobilisé;2842;Amortissements du matériel et outillage agricole;Compte divisionnaire
+2;Actif immobilisé;2843;Amortissements du matériel d'emballage récupérable et identifiable;Compte divisionnaire
+2;Actif immobilisé;2844;Amortissements du matériel et mobilier;Compte divisionnaire
+2;Actif immobilisé;2845;Amortissements du matériel de transport;Compte divisionnaire
+2;Actif immobilisé;2846;Amortissements des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2847;Amortissements des agencements et aménagements du matériel et des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2848;Amortissements des autres matériels;Compte divisionnaire
+2;Actif immobilisé;291;DÉPRÉCIATIONS DES IMMOBILISATIONS INCORPORELLES;Compte
+2;Actif immobilisé;2911;Dépréciations des frais de développement;Compte divisionnaire
+2;Actif immobilisé;2912;Dépréciations des brevets, licences, concessions et droits similaires;Compte divisionnaire
+2;Actif immobilisé;2913;Dépréciations des logiciels et sites internet;Compte divisionnaire
+2;Actif immobilisé;2914;Dépréciations des marques;Compte divisionnaire
+2;Actif immobilisé;2915;Dépréciations du fonds commercial;Compte divisionnaire
+2;Actif immobilisé;2916;Dépréciations du droit au bail;Compte divisionnaire
+2;Actif immobilisé;2917;Dépréciations des investissements de création;Compte divisionnaire
+2;Actif immobilisé;2918;Dépréciations des autres droits et valeurs incorporels;Compte divisionnaire
+2;Actif immobilisé;2919;Dépréciations des immobilisations incorporelles en cours;Compte divisionnaire
+2;Actif immobilisé;292;DÉPRÉCIATIONS DES TERRAINS;Compte
+2;Actif immobilisé;2921;Dépréciations des terrains agricoles et forestiers;Compte divisionnaire
+2;Actif immobilisé;2922;Dépréciations des terrains nus;Compte divisionnaire
+2;Actif immobilisé;2923;Dépréciations des terrains bâtis;Compte divisionnaire
+2;Actif immobilisé;2924;Dépréciations des travaux de mise en valeur des terrains;Compte divisionnaire
+2;Actif immobilisé;2925;Dépréciations des terrains de gisement;Compte divisionnaire
+2;Actif immobilisé;2926;Dépréciations des terrains aménagés;Compte divisionnaire
+2;Actif immobilisé;2927;Dépréciations des terrains mis en concession;Compte divisionnaire
+2;Actif immobilisé;2928;Dépréciations des autres terrains;Compte divisionnaire
+2;Actif immobilisé;2929;Dépréciations des aménagements de terrains en cours;Compte divisionnaire
+2;Actif immobilisé;293;DÉPRÉCIATIONS DES BÂTIMENTS, INSTALLATIONS TECHNIQUES ET AGENCEMENTS;Compte
+2;Actif immobilisé;2931;Dépréciations des bâtiments industriels, agricoles, administratifs et commerciaux sur sol propre;Compte divisionnaire
+2;Actif immobilisé;2932;Dépréciations des bâtiments industriels, agricoles, administratifs et commerciaux sur sol d'autrui;Compte divisionnaire
+2;Actif immobilisé;2933;Dépréciations des ouvrages d'infrastructures;Compte divisionnaire
+2;Actif immobilisé;2934;Dépréciations des aménagements, agencements et installations techniques;Compte divisionnaire
+2;Actif immobilisé;2935;Dépréciations des aménagements de bureaux;Compte divisionnaire
+2;Actif immobilisé;2937;Dépréciations des bâtiments industriels, agricoles et commerciaux mis en concession;Compte divisionnaire
+2;Actif immobilisé;2938;Dépréciations des autres installations et agencements;Compte divisionnaire
+2;Actif immobilisé;2939;Dépréciations des bâtiments et installations en cours;Compte divisionnaire
+2;Actif immobilisé;294;DÉPRÉCIATIONS DE MATÉRIEL, DU MOBILIER ET DE L’ACTIF BIOLOGIQUE;Compte
+2;Actif immobilisé;2941;Dépréciations du matériel et outillage industriel et commercial;Compte divisionnaire
+2;Actif immobilisé;2942;Dépréciations du matériel et outillage agricole;Compte divisionnaire
+2;Actif immobilisé;2943;Dépréciations du matériel d'emballage récupérable et identifiable;Compte divisionnaire
+2;Actif immobilisé;2944;Dépréciations du matériel et mobilier;Compte divisionnaire
+2;Actif immobilisé;2945;Dépréciations du matériel de transport;Compte divisionnaire
+2;Actif immobilisé;2946;Dépréciations des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2947;Dépréciations des agencements et aménagements du matériel et des actifs biologiques;Compte divisionnaire
+2;Actif immobilisé;2948;Dépréciations des autres matériels;Compte divisionnaire
+2;Actif immobilisé;2949;Dépréciations de matériel en cours;Compte divisionnaire
+2;Actif immobilisé;295;DÉPRÉCIATIONS DES AVANCES ET ACOMPTES VERSÉS SUR IMMOBILISATIONS;Compte
+2;Actif immobilisé;2951;Dépréciations des avances et acomptes versés sur immobilisations incorporelles;Compte divisionnaire
+2;Actif immobilisé;2952;Dépréciations des avances et acomptes versés sur immobilisations corporelles;Compte divisionnaire
+2;Actif immobilisé;296;DÉPRÉCIATIONS DES TITRES DE PARTICIPATION;Compte
+2;Actif immobilisé;2961;Dépréciations des titres de participation dans des sociétés sous contrôle exclusif;Compte divisionnaire
+2;Actif immobilisé;2962;Dépréciations des titres de participation dans les sociétés sous contrôle conjoint;Compte divisionnaire
+2;Actif immobilisé;2963;Dépréciations des titres de participation dans les sociétés conférant une influence notable;Compte divisionnaire
+2;Actif immobilisé;2965;Dépréciations des participations dans des organismes professionnels;Compte divisionnaire
+2;Actif immobilisé;2966;Dépréciations des parts dans des GIE;Compte divisionnaire
+2;Actif immobilisé;2968;Dépréciations des autres titres de participation;Compte divisionnaire
+2;Actif immobilisé;297;DÉPRÉCIATIONS DES AUTRES IMMOBILISATIONS FINANCIÈRES;Compte
+2;Actif immobilisé;2971;Dépréciations des prêts et créances;Compte divisionnaire
+2;Actif immobilisé;2972;Dépréciations des prêts au personnel;Compte divisionnaire
+2;Actif immobilisé;2973;Dépréciations des créances sur l'Etat;Compte divisionnaire
+2;Actif immobilisé;2974;Dépréciations des titres immobilisés;Compte divisionnaire
+2;Actif immobilisé;2975;Dépréciations des dépôts et cautionnements versés;Compte divisionnaire
+2;Actif immobilisé;2977;Dépréciations des créances rattachées à des participations et avances à des GIE;Compte divisionnaire
+2;Actif immobilisé;2978;Dépréciations des créances financières diverses;Compte divisionnaire
+3;Stocks;31;MARCHANDISES;Compte principal
+3;Stocks;32;MATIÈRES PREMIERES ET FOURNITURES LIÉES;Compte principal
+3;Stocks;33;AUTRES APPROVISIONNEMENTS;Compte principal
+3;Stocks;34;PRODUITS EN COURS;Compte principal
+3;Stocks;35;SERVICES EN COURS;Compte principal
+3;Stocks;36;PRODUITS FINIS;Compte principal
+3;Stocks;37;PRODUITS INTERMÉDIAIRES ET RÉSIDUELS;Compte principal
+3;Stocks;38;STOCKS EN COURS DE ROUTE, EN CONSIGNATION OU EN DÉPÔT;Compte principal
+3;Stocks;39;DÉPRÉCIATIONS DES STOCKS ET ENCOURS DE PRODUCTION;Compte principal
+3;Stocks;311;MARCHANDISES A;Compte
+3;Stocks;3111;Marchandises A1;Compte divisionnaire
+3;Stocks;3112;Marchandises A2;Compte divisionnaire
+3;Stocks;312;MARCHANDISES B;Compte
+3;Stocks;3121;Marchandises B1;Compte divisionnaire
+3;Stocks;3122;Marchandises B2;Compte divisionnaire
+3;Stocks;313;ACTIFS BIOLOGIQUES;Compte
+3;Stocks;3131;Animaux;Compte divisionnaire
+3;Stocks;3132;Végétaux;Compte divisionnaire
+3;Stocks;318;MARCHANDISES HORS ACTIVITÉS ORDINAIRES (H.A.O.);Compte
+3;Stocks;321;MATIÈRES A;Compte
+3;Stocks;322;MATIÈRES B;Compte
+3;Stocks;323;FOURNITURES (A,B);Compte
+3;Stocks;331;MATIÈRES CONSOMMABLES;Compte
+3;Stocks;332;FOURNITURES D'ATELIER ET D'USINE;Compte
+3;Stocks;333;FOURNITURES DE MAGASIN;Compte
+3;Stocks;334;FOURNITURES DE BUREAU;Compte
+3;Stocks;335;EMBALLAGES;Compte
+3;Stocks;3351;Emballages perdus;Compte divisionnaire
+3;Stocks;3352;Emballages rcupérables non identifiables;Compte divisionnaire
+3;Stocks;3353;Emballages à usage mixte;Compte divisionnaire
+3;Stocks;3358;Autres emballages;Compte divisionnaire
+3;Stocks;338;AUTRES MATIÈRES;Compte
+3;Stocks;341;PRODUITS EN COURS;Compte
+3;Stocks;3411;Produits en cours P1;Compte divisionnaire
+3;Stocks;3412;Produits en cours P2;Compte divisionnaire
+3;Stocks;342;TRAVAUX EN COURS;Compte
+3;Stocks;3421;Travaux en cours T1;Compte divisionnaire
+3;Stocks;3422;Travaux en cours T2;Compte divisionnaire
+3;Stocks;343;PRODUITS INTERMÉDIAIRES EN COURS;Compte
+3;Stocks;3431;Produits intermédiaires A;Compte divisionnaire
+3;Stocks;3432;Produits intermédiaires B;Compte divisionnaire
+3;Stocks;344;PRODUITS RÉSIDUELS EN COURS;Compte
+3;Stocks;3441;Produits résiduels A;Compte divisionnaire
+3;Stocks;3442;Produits résiduels B;Compte divisionnaire
+3;Stocks;345;ACTIFS BIOLOGIQUES EN COURS;Compte
+3;Stocks;3451;Animaux;Compte divisionnaire
+3;Stocks;3452;Végétaux;Compte divisionnaire
+3;Stocks;351;ÉTUDES EN COURS;Compte
+3;Stocks;3511;Études en cours E1;Compte divisionnaire
+3;Stocks;3512;Études en cours E2;Compte divisionnaire
+3;Stocks;352;PRESTATIONS DE SERVICES EN COURS;Compte
+3;Stocks;3521;Prestations de services S1;Compte divisionnaire
+3;Stocks;3522;Prestations de services S2;Compte divisionnaire
+3;Stocks;361;PRODUITS FINIS A;Compte
+3;Stocks;362;PRODUITS FINIS B;Compte
+3;Stocks;363;ACTIFS BIOLOGIQUES;Compte
+3;Stocks;3631;Animaux;Compte divisionnaire
+3;Stocks;3632;Végétaux;Compte divisionnaire
+3;Stocks;3638;Autres stocks (activités annexes);Compte divisionnaire
+3;Stocks;371;PRODUITS INTERMÉDIAIRES;Compte
+3;Stocks;3711;Produits intermédiaires A;Compte divisionnaire
+3;Stocks;3712;Produits intermédiaires B;Compte divisionnaire
+3;Stocks;372;PRODUITS RÉSIDUELS;Compte
+3;Stocks;3721;Déchets;Compte divisionnaire
+3;Stocks;3722;Rebuts;Compte divisionnaire
+3;Stocks;3723;Matières de Récupération;Compte divisionnaire
+3;Stocks;373;ACTIFS BIOLOGIQUES;Compte
+3;Stocks;3731;Animaux;Compte divisionnaire
+3;Stocks;3732;Végétaux;Compte divisionnaire
+3;Stocks;3738;Autres stocks (activités annexes);Compte divisionnaire
+3;Stocks;381;MARCHANDISES EN COURS DE ROUTE;Compte
+3;Stocks;382;MATIÈRES PREMIÈRES ET FOURNITURES LIÉES EN COURS DE ROUTE;Compte
+3;Stocks;383;AUTRES APPROVISIONNEMENTS EN COURS DE ROUTE;Compte
+3;Stocks;386;PRODUITS FINIS EN COURS DE ROUTE;Compte
+3;Stocks;387;STOCK EN CONSIGNATION OU EN DÉPÔT;Compte
+3;Stocks;3871;Stock en consignation;Compte divisionnaire
+3;Stocks;3872;Stock en dépôt;Compte divisionnaire
+3;Stocks;388;STOCK PROVENANT D'IMMOBILISATIONS MISES HORS SERVICE OU AU REBUT;Compte
+3;Stocks;391;DÉPRÉCIATIONS DES STOCKS DE MARCHANDISES;Compte
+3;Stocks;392;DÉPRÉCIATIONS DES STOCKS DE MATIÈRES PREMIÈRES ET FOURNITURES LIÉES;Compte
+3;Stocks;393;DÉPRÉCIATIONS DES STOCKS D'AUTRES APPOVISIONNEMENTS;Compte
+3;Stocks;394;DÉPRÉCIATIONS DES PRODUCTIONS EN COURS;Compte
+3;Stocks;395;DÉPRÉCIATIONS DES SERVICES EN COURS;Compte
+3;Stocks;396;DÉPRÉCIATIONS DES STOCKS DE PRODUITS FINIS;Compte
+3;Stocks;397;DÉPRÉCIATIONS DES STOCKS DE PRODUITS INTERMÉDIAIRES ET RÉSIDUELS;Compte
+3;Stocks;398;DÉPRÉCIATIONS DES STOCKS EN COURS DE ROUTE, EN CONSIGNATION OU EN DÉPÔT;Compte
+4;Tiers;40;FOURNISSEURS ET COMPTES RATTACHÉS;Compte principal
+4;Tiers;41;CLIENTS ET COMPTES RATTACHÉS;Compte principal
+4;Tiers;42;PERSONNEL;Compte principal
+4;Tiers;43;ORGANISMES SOCIAUX;Compte principal
+4;Tiers;44;ÉTAT ET COLLECTIVITÉS PUBLIQUES;Compte principal
+4;Tiers;45;ORGANISMES INTERNATIONAUX;Compte principal
+4;Tiers;46;APPORTEURS ASSOCIÉS ET GROUPE;Compte principal
+4;Tiers;47;DÉBITEURS ET CRÉDITEURS DIVERS;Compte principal
+4;Tiers;48;CRÉANCES ET DETTES HORS ACTIVITÉS ORDINAIRES (H.A.O.);Compte principal
+4;Tiers;49;DÉPRÉCIATIONS ET PROVISIONS POUR RISQUES A COURT TERME (Tiers);Compte principal
+4;Tiers;401;FOURNISSEURS, DETTES EN COMPTE;Compte
+4;Tiers;4011;Fournisseurs;Compte divisionnaire
+4;Tiers;4012;Fournisseurs Groupe;Compte divisionnaire
+4;Tiers;4013;Fournisseurs sous-traitants;Compte divisionnaire
+4;Tiers;4016;Fournisseurs, réserve de propriété;Compte divisionnaire
+4;Tiers;4017;Fournisseurs, retenues de garantie;Compte divisionnaire
+4;Tiers;402;FOURNISSEURS, EFFETS À PAYER;Compte
+4;Tiers;4021;Fournisseurs, Effets à payer;Compte divisionnaire
+4;Tiers;4022;Fournisseurs - Groupe, Effets à payer;Compte divisionnaire
+4;Tiers;4023;Fournisseurs sous-traitants, Effets à payer;Compte divisionnaire
+4;Tiers;404;FOURNISSEURS, ACQUISITIONS COURANTES D’IMMOBILISATIONS;Compte
+4;Tiers;4041;Fournisseurs dettes en compte, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4042;Fournisseurs dettes en compte, immobilisations corporelles;Compte divisionnaire
+4;Tiers;4046;Fournisseurs effets à payer, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4047;Fournisseurs effets à payer, immobilisations corporelles;Compte divisionnaire
+4;Tiers;408;FOURNISSEURS, FACTURES NON PARVENUES;Compte
+4;Tiers;4081;Fournisseurs;Compte divisionnaire
+4;Tiers;4082;Fournisseurs - Groupe;Compte divisionnaire
+4;Tiers;4083;Fournisseurs sous-traitants;Compte divisionnaire
+4;Tiers;4086;Fournisseurs, intérêts courus;Compte divisionnaire
+4;Tiers;409;FOURNISSEURS DÉBITEURS;Compte
+4;Tiers;4091;Fournisseurs avances et acomptes versés;Compte divisionnaire
+4;Tiers;4092;Fournisseurs - Groupe avances et acomptes versés;Compte divisionnaire
+4;Tiers;4093;Fournisseurs sous-traitants avances et acomptes versés;Compte divisionnaire
+4;Tiers;4094;Fournisseurs créances pour emballages et matériels à rendre;Compte divisionnaire
+4;Tiers;4098;Fournisseurs, rabais, remises, ristournes et autres avoirs à obtenir;Compte divisionnaire
+4;Tiers;411;CLIENTS;Compte
+4;Tiers;4111;Clients;Compte divisionnaire
+4;Tiers;4112;Clients - Groupe;Compte divisionnaire
+4;Tiers;4114;Clients, État et Collectivités publiques;Compte divisionnaire
+4;Tiers;4115;Clients, organismes internationaux;Compte divisionnaire
+4;Tiers;4116;Clients, réserve de propriété;Compte divisionnaire
+4;Tiers;4117;Clients, retenues de garantie;Compte divisionnaire
+4;Tiers;4118;Clients, dégrèvement de Taxes sur la Valeur Ajoutée (T.V.A.);Compte divisionnaire
+4;Tiers;412;CLIENTS, ÉFFETS À RECEVOIR EN PORTEFEUILLE;Compte
+4;Tiers;4121;Clients, Effets à recevoir;Compte divisionnaire
+4;Tiers;4122;Clients - Groupe, Effets à recevoir;Compte divisionnaire
+4;Tiers;4124;État et Collectivités publiques, Effets à recevoir;Compte divisionnaire
+4;Tiers;413;CLIENTS, CHEQUES, EFFETS ET AUTRES VALEURS IMPAYES;Compte
+4;Tiers;4131;Clients, chèques impayés;Compte divisionnaire
+4;Tiers;4132;Clients, effets impayés;Compte divisionnaire
+4;Tiers;4133;Clients, cartes de crédit impayées;Compte divisionnaire
+4;Tiers;4138;Clients, autres valeurs impayées;Compte divisionnaire
+4;Tiers;414;CRÉANCES SUR CESSIONS COURANTES D'IMMOBILISATIONS;Compte
+4;Tiers;4141;Créances en compte, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4142;Créances en compte, immobilisations corporelles;Compte divisionnaire
+4;Tiers;4146;Effets à recevoir, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4147;Effets à recevoir, immobilisations corporelles;Compte divisionnaire
+4;Tiers;415;CLIENTS, EFFETS ESCOMPTÉS NON ÉCHUS;Compte
+4;Tiers;416;CRÉANCES CLIENTS LITIGIEUSES OU DOUTEUSES;Compte
+4;Tiers;4161;Créances litigieuses;Compte divisionnaire
+4;Tiers;4162;Créances douteuses;Compte divisionnaire
+4;Tiers;418;CLIENTS, PRODUITS À RECEVOIR;Compte
+4;Tiers;4181;Clients, factures à établir;Compte divisionnaire
+4;Tiers;4186;Clients, intérêts courus;Compte divisionnaire
+4;Tiers;419;CLIENTS CRÉDITEURS;Compte
+4;Tiers;4191;Clients, avances et acomptes reçus;Compte divisionnaire
+4;Tiers;4192;Clients - Groupe, avances et acomptes reçus;Compte divisionnaire
+4;Tiers;4194;Clients, dettes pour emballages et matériels consignés;Compte divisionnaire
+4;Tiers;4198;Clients, rabais, remises, ristournes et autres avoirs à accorder;Compte divisionnaire
+4;Tiers;421;PERSONNEL, AVANCES ET ACOMPTES;Compte
+4;Tiers;4211;Personnel, avances;Compte divisionnaire
+4;Tiers;4212;Personnel, acomptes;Compte divisionnaire
+4;Tiers;4213;Frais avancés et fournitures au personnel;Compte divisionnaire
+4;Tiers;422;PERSONNEL, RÉMUNÉRATIONS DUES;Compte
+4;Tiers;423;PERSONNEL, OPPOSITIONS, SAISIES-ARRÊTS;Compte
+4;Tiers;4231;Personnel, oppositions;Compte divisionnaire
+4;Tiers;4232;Personnel, saisies arrêts;Compte divisionnaire
+4;Tiers;4233;Personnel, avis à tiers détenteur;Compte divisionnaire
+4;Tiers;424;PERSONNEL, OEUVRES SOCIALES INTERNES;Compte
+4;Tiers;4241;Assistance médicale;Compte divisionnaire
+4;Tiers;4242;Allocations familiales;Compte divisionnaire
+4;Tiers;4245;Organismes sociaux rattachés à l’entité;Compte divisionnaire
+4;Tiers;4248;Autres œuvres sociales internes;Compte divisionnaire
+4;Tiers;425;REPRÉSENTANTS DU PERSONNEL;Compte
+4;Tiers;4251;Délégués du personnel;Compte divisionnaire
+4;Tiers;4252;Syndicats et Comités d'entreprises, d'Établissement;Compte divisionnaire
+4;Tiers;4258;Autres représentants du personnel;Compte divisionnaire
+4;Tiers;426;PERSONNEL, PARTICIPATION AUX BÉNÉFICES ET AU CAPITAL;Compte
+4;Tiers;4261;Participation aux bénéfices;Compte divisionnaire
+4;Tiers;4264;Participation au capital;Compte divisionnaire
+4;Tiers;427;PERSONNEL – DÉPÔTS;Compte
+4;Tiers;428;PERSONNEL, CHARGES À PAYER ET PRODUITS À RECEVOIR;Compte
+4;Tiers;4281;Dettes provisionnées pour congés à payer;Compte divisionnaire
+4;Tiers;4286;Autres Charges à payer;Compte divisionnaire
+4;Tiers;4287;Produits à recevoir;Compte divisionnaire
+4;Tiers;431;SÉCURITÉ SOCIALE;Compte
+4;Tiers;4311;Prestations familiales;Compte divisionnaire
+4;Tiers;4312;Accidents de travail;Compte divisionnaire
+4;Tiers;4313;Caisse de retraite obligatoire;Compte divisionnaire
+4;Tiers;4314;Caisse de retraite facultative;Compte divisionnaire
+4;Tiers;4318;Autres cotisations sociales;Compte divisionnaire
+4;Tiers;432;CAISSES DE RETRAITE COMPLÉMENTAIRE;Compte
+4;Tiers;433;AUTRES ORGANISMES SOCIAUX;Compte
+4;Tiers;4331;Mutuelle;Compte divisionnaire
+4;Tiers;4332;Assurances Retraite;Compte divisionnaire
+4;Tiers;4333;Assurances et organismes de santé;Compte divisionnaire
+4;Tiers;438;ORGANISMES SOCIAUX, CHARGES À PAYER ET PRODUITS À RECEVOIR;Compte
+4;Tiers;4381;Charges sociales sur gratifications à payer;Compte divisionnaire
+4;Tiers;4382;Charges sociales sur congés à payer;Compte divisionnaire
+4;Tiers;4386;Autres charges à payer;Compte divisionnaire
+4;Tiers;4387;Produits à recevoir;Compte divisionnaire
+4;Tiers;441;ÉTAT, IMPÔT SUR LES BÉNÉFICES;Compte
+4;Tiers;442;ÉTAT, AUTRES IMPÔTS ET TAXES;Compte
+4;Tiers;4421;Impôts et taxes d'Etat;Compte divisionnaire
+4;Tiers;4422;Impôts et taxes pour les collectivités publiques;Compte divisionnaire
+4;Tiers;4423;Impôts et taxes recouvrables sur des obligataires;Compte divisionnaire
+4;Tiers;4424;Impôts et taxes recouvrables sur des associés;Compte divisionnaire
+4;Tiers;4426;Droits de douane;Compte divisionnaire
+4;Tiers;4428;Autres impôts et taxes;Compte divisionnaire
+4;Tiers;443;ÉTAT, T.V.A. FACTURÉE;Compte
+4;Tiers;4431;T.V.A. facturée sur ventes;Compte divisionnaire
+4;Tiers;4432;T.V.A. facturée sur prestations de services;Compte divisionnaire
+4;Tiers;4433;T.V.A. facturée sur travaux;Compte divisionnaire
+4;Tiers;4434;T.V.A. facturée sur production livrée à soi-même;Compte divisionnaire
+4;Tiers;4435;T.V.A. sur factures à établir;Compte divisionnaire
+4;Tiers;444;ÉTAT, T.V.A. DUE OU CRÉDIT DE T.V.A.;Compte
+4;Tiers;4441;État, T.V.A. due;Compte divisionnaire
+4;Tiers;4449;État, crédit de T.V.A. à reporter;Compte divisionnaire
+4;Tiers;445;ÉTAT, T.V.A. RÉCUPÉRABLE;Compte
+4;Tiers;4451;T.V.A. récupérable sur immobilisations;Compte divisionnaire
+4;Tiers;4452;T.V.A. récupérable sur achats;Compte divisionnaire
+4;Tiers;4453;T.V.A. récupérable sur transport;Compte divisionnaire
+4;Tiers;4454;T.V.A. récupérable sur services extérieurs et autres charges;Compte divisionnaire
+4;Tiers;4455;T.V.A. récupérable sur factures non parvenues;Compte divisionnaire
+4;Tiers;4456;T.V.A. transférée par d'autres entités;Compte divisionnaire
+4;Tiers;446;ÉTAT, AUTRES TAXES SUR LE CHIFFRE D'AFFAIRES;Compte
+4;Tiers;447;ÉTAT, IMPÔTS RETENUS À LA SOURCE;Compte
+4;Tiers;4471;Impôt Général sur le revenu;Compte divisionnaire
+4;Tiers;4472;Impôts sur salaires;Compte divisionnaire
+4;Tiers;4473;Contribution nationale;Compte divisionnaire
+4;Tiers;4474;Contribution nationale de solidarité;Compte divisionnaire
+4;Tiers;4478;Autres impôts et contributions;Compte divisionnaire
+4;Tiers;448;ÉTAT, CHARGES À PAYER ET PRODUITS À RECEVOIR;Compte
+4;Tiers;4486;Charges à payer;Compte divisionnaire
+4;Tiers;4487;Produits à recevoir;Compte divisionnaire
+4;Tiers;449;ÉTAT, CRÉANCES ET DETTES DIVERSES;Compte
+4;Tiers;4491;État, obligations cautionnées;Compte divisionnaire
+4;Tiers;4492;État, avances et acomptes versés sur impôts;Compte divisionnaire
+4;Tiers;4493;État, fonds de dotation à recevoir;Compte divisionnaire
+4;Tiers;4494;État, subventions investissement à recevoir;Compte divisionnaire
+4;Tiers;4495;État, subventions d'exploitation à recevoir;Compte divisionnaire
+4;Tiers;4496;État, subventions d'équilibre à recevoir;Compte divisionnaire
+4;Tiers;4497;État avances sur subventions;Compte divisionnaire
+4;Tiers;4499;État, fonds réglementés provisionnés;Compte divisionnaire
+4;Tiers;451;OPÉRATIONS AVEC LES ORGANISMES AFRICAINS;Compte
+4;Tiers;452;OPÉRATIONS AVEC LES AUTRES ORGANISMES INTERNATIONAUX;Compte
+4;Tiers;458;ORGANISMES INTERNATIONAUX, FONDS DE DOTATION ET SUBVENTIONS À RECEVOIR;Compte
+4;Tiers;4581;Organismes internationaux, fonds de dotation à recevoir;Compte divisionnaire
+4;Tiers;4582;Organismes internationaux, subventions à recevoir;Compte divisionnaire
+4;Tiers;461;APPORTEURS, OPÉRATIONS SUR LE CAPITAL;Compte
+4;Tiers;4611;Apporteurs, apports en nature;Compte divisionnaire
+4;Tiers;4612;Apporteurs, apports en numéraire;Compte divisionnaire
+4;Tiers;4613;Apporteurs, capital appelé, non versé;Compte divisionnaire
+4;Tiers;4614;Apporteurs, compte d’apport, opérations de restructuration (fusion…);Compte divisionnaire
+4;Tiers;4615;Apporteurs, versements reçus sur augmentation de capital;Compte divisionnaire
+4;Tiers;4616;Apporteurs, versements anticipés;Compte divisionnaire
+4;Tiers;4617;Apporteurs défaillants;Compte divisionnaire
+4;Tiers;4618;Apporteurs, titres à échanger;Compte divisionnaire
+4;Tiers;4619;Apporteurs, capital à rembourser;Compte divisionnaire
+4;Tiers;462;ASSOCIÉS (1), COMPTES COURANTS;Compte
+4;Tiers;4621;Principal;Compte divisionnaire
+4;Tiers;4626;Intérêts courus;Compte divisionnaire
+4;Tiers;463;ASSOCIÉS (1), OPÉRATIONS FAITES EN COMMUN ET GIE;Compte
+4;Tiers;4631;Opérations courantes;Compte divisionnaire
+4;Tiers;4636;Intérêts courus;Compte divisionnaire
+4;Tiers;465;ASSOCIÉS (1), DIVIDENDES À PAYER;Compte
+4;Tiers;466;GROUPE, COMPTES COURANTS;Compte
+4;Tiers;467;APPORTEURS RESTANT DÛ SUR CAPITAL APPELÉ;Compte
+4;Tiers;471;DEBITEURS ET CREDITEURS DIVERS;Compte
+4;Tiers;4711;Débiteurs divers;Compte divisionnaire
+4;Tiers;4712;Créditeurs divers;Compte divisionnaire
+4;Tiers;4713;Obligataires;Compte divisionnaire
+4;Tiers;4715;Rémunérations d’administrateurs;Compte divisionnaire
+4;Tiers;4716;Compte d’affacturage;Compte divisionnaire
+4;Tiers;4717;Débiteurs divers - retenues de garantie;Compte divisionnaire
+4;Tiers;4718;Apport, compte de fusion et opérations assimilées;Compte divisionnaire
+4;Tiers;4719;Bons de souscription d’actions et d’obligations;Compte divisionnaire
+4;Tiers;472;CREANCES ET DETTES SUR TITRES DE PLACEMENT;Compte
+4;Tiers;4721;Créances sur cessions de titres de placement;Compte divisionnaire
+4;Tiers;4726;Versements restant à effectuer sur titres de placement non libérés;Compte divisionnaire
+4;Tiers;473;INTERMÉDIAIRES - OPERATIONS FAITES POUR COMPTE DE TIERS;Compte
+4;Tiers;4731;Mandants;Compte divisionnaire
+4;Tiers;4732;Mandataires;Compte divisionnaire
+4;Tiers;4733;Commettants;Compte divisionnaire
+4;Tiers;4734;Commissionnaires;Compte divisionnaire
+4;Tiers;4739;Etat, Collectivités publiques, fonds global d’allocation;Compte divisionnaire
+4;Tiers;474;COMPTE DE RÉPARTITION PERIODIQUE DES CHARGES ET DES PRODUITS;Compte
+4;Tiers;4746;Compte de répartition périodique des charges;Compte divisionnaire
+4;Tiers;4747;Compte de répartition périodique des produits;Compte divisionnaire
+4;Tiers;475;COMPTE TRANSITOIRE, AJUSTEMENT SPECIAL LIE A LA REVISION DU SYSCOHADA;Compte
+4;Tiers;4751;Compte actif;Compte divisionnaire
+4;Tiers;4752;Compte passif;Compte divisionnaire
+4;Tiers;476;CHARGES CONSTATÉES D'AVANCE;Compte
+4;Tiers;477;PRODUITS CONSTATÉS D'AVANCE;Compte
+4;Tiers;478;ÉCARTS DE CONVERSION - ACTIF;Compte
+4;Tiers;4781;Diminution des créances d’exploitation;Compte divisionnaire
+4;Tiers;4782;Diminution des créances financières;Compte divisionnaire
+4;Tiers;4783;Augmentation des dettes d’exploitation;Compte divisionnaire
+4;Tiers;4784;Augmentation des dettes financières;Compte divisionnaire
+4;Tiers;4786;Différences d’évaluation sur instruments de trésorerie;Compte divisionnaire
+4;Tiers;4788;Différences compensées par couverture de change;Compte divisionnaire
+4;Tiers;479;ÉCARTS DE CONVERSION - PASSIF;Compte
+4;Tiers;4791;Augmentation des créances d’exploitation;Compte divisionnaire
+4;Tiers;4792;Augmentation des créances financières;Compte divisionnaire
+4;Tiers;4793;Diminution des dettes d’exploitation;Compte divisionnaire
+4;Tiers;4794;Diminution des dettes d’exploitation;Compte divisionnaire
+4;Tiers;4797;Différences d’évaluation sur instruments de trésorerie;Compte divisionnaire
+4;Tiers;4798;Différences compensées par couverture de change;Compte divisionnaire
+4;Tiers;481;FOURNISSEURS D'INVESTISSEMENTS;Compte
+4;Tiers;4811;Immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4812;Immobilisations corporelles;Compte divisionnaire
+4;Tiers;4813;Versements restant à effectuer sur titres de participation et titres immobilisés non libérés;Compte divisionnaire
+4;Tiers;4816;Réserve de propriété (1);Compte divisionnaire
+4;Tiers;4817;Retenues de garantie (1);Compte divisionnaire
+4;Tiers;4818;Factures non parvenues (1);Compte divisionnaire
+4;Tiers;482;FOURNISSEURS D'INVESTISSEMENTS, EFFETS À PAYER;Compte
+4;Tiers;4821;Immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4822;Immobilisations corporelles;Compte divisionnaire
+4;Tiers;484;AUTRES DETTES HORS ACTIVITES ORDINAIRES (H.A.O.);Compte
+4;Tiers;485;CRÉANCES SUR CESSIONS D'IMMOBILISATIONS;Compte
+4;Tiers;4851;En compte, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4852;En compte, immobilisations corporelles;Compte divisionnaire
+4;Tiers;4853;Effets à recevoir, immobilisations incorporelles;Compte divisionnaire
+4;Tiers;4854;Effets à recevoir, immobilisations corporelles;Compte divisionnaire
+4;Tiers;4855;Effets escomptés non échus;Compte divisionnaire
+4;Tiers;4857;Retenues de garantie;Compte divisionnaire
+4;Tiers;4858;Factures à établir;Compte divisionnaire
+4;Tiers;488;AUTRES CREANCES HORS ACTIVITÉS ORDINAIRES (H.A.O.);Compte
+4;Tiers;490;DÉPRÉCIATIONS DES COMPTES FOURNISSEURS;Compte
+4;Tiers;491;DÉPRÉCIATIONS DES COMPTES CLIENTS;Compte
+4;Tiers;4911;Créances litigieuses;Compte divisionnaire
+4;Tiers;4912;Créances douteuses;Compte divisionnaire
+4;Tiers;492;DÉPRÉCIATIONS DES COMPTES PERSONNEL;Compte
+4;Tiers;493;DÉPRÉCIATIONS DES COMPTES ORGANISMES SOCIAUX;Compte
+4;Tiers;494;DÉPRÉCIATIONS DES COMPTES ÉTAT ET COLLECTIVITÉS PUBLIQUES;Compte
+4;Tiers;495;DÉPRÉCIATIONS DES COMPTES ORGANISMES INTERNATIONAUX;Compte
+4;Tiers;496;DÉPRÉCIATIONS DES COMPTES APPORTEURS ASSOCIÉS ET GROUPE;Compte
+4;Tiers;4962;Associés, comptes courants;Compte divisionnaire
+4;Tiers;4963;Associés, opérations faites en commun;Compte divisionnaire
+4;Tiers;4966;Groupe, comptes courants;Compte divisionnaire
+4;Tiers;497;DÉPRÉCIATIONS DES COMPTES DÉBITEURS DIVERS;Compte
+4;Tiers;498;DÉPRÉCIATIONS DES COMPTES DE CRÉANCES H.A.O.;Compte
+4;Tiers;4985;Créances sur cessions d'immobilisations;Compte divisionnaire
+4;Tiers;4986;Créances sur cessions de titres de placement;Compte divisionnaire
+4;Tiers;4988;Autres créances H.A.O.;Compte divisionnaire
+4;Tiers;499;PROVISIONS POUR RISQUES À COURT TERME;Compte
+4;Tiers;4991;sur opérations d'exploitation;Compte divisionnaire
+4;Tiers;4997;sur opérations financières;Compte divisionnaire
+4;Tiers;4998;sur opérations H.A.O.;Compte divisionnaire
+5;Trésorerie;50;TITRES DE PLACEMENT;Compte principal
+5;Trésorerie;51;VALEURS À ENCAISSER;Compte principal
+5;Trésorerie;52;BANQUES;Compte principal
+5;Trésorerie;53;ÉTABLISSEMENTS FINANCIERS ET ASSIMILÉS;Compte principal
+5;Trésorerie;54;INSTRUMENTS DE TRÉSORERIE;Compte principal
+5;Trésorerie;55;INSTRUMENTS DE MONNAIE ELECTRONIQUE;Compte principal
+5;Trésorerie;56;BANQUES, CRÉDITS DE TRÉSORERIE ET D'ESCOMPTE;Compte principal
+5;Trésorerie;57;CAISSE;Compte principal
+5;Trésorerie;58;RÉGIES D'AVANCES, ACCRÉDITIFS ET VIREMENTS INTERNES;Compte principal
+5;Trésorerie;59;DÉPRÉCIATIONS ET PROVISIONS POUR RISQUES A COURT TERME;Compte principal
+5;Trésorerie;501;TITRES DU TRÉSOR ET BONS DE CAISSE À COURT TERME;Compte
+5;Trésorerie;5011;Titres du Trésor à court terme;Compte divisionnaire
+5;Trésorerie;5012;Titres d'organismes financiers;Compte divisionnaire
+5;Trésorerie;5013;Bons de caisse à court terme;Compte divisionnaire
+5;Trésorerie;5016;Frais d’acquisition des titres de trésor et bons de caisse;Compte divisionnaire
+5;Trésorerie;502;ACTIONS;Compte
+5;Trésorerie;5021;Actions ou parts propres;Compte divisionnaire
+5;Trésorerie;5022;Actions cotées;Compte divisionnaire
+5;Trésorerie;5023;Actions non cotées;Compte divisionnaire
+5;Trésorerie;5024;"Actions démembrées (certificats d'investissement ; droits de vote)";Compte divisionnaire
+5;Trésorerie;5025;Autres actions;Compte divisionnaire
+5;Trésorerie;5026;Frais d’acquisition des actions;Compte divisionnaire
+5;Trésorerie;503;OBLIGATIONS;Compte
+5;Trésorerie;5031;Obligations émises par la société et rachetées par elle;Compte divisionnaire
+5;Trésorerie;5032;Obligations cotées;Compte divisionnaire
+5;Trésorerie;5033;Obligations non cotées;Compte divisionnaire
+5;Trésorerie;5035;Autres obligations;Compte divisionnaire
+5;Trésorerie;5036;Frais d’acquisition des obligations;Compte divisionnaire
+5;Trésorerie;504;BONS DE SOUSCRIPTION;Compte
+5;Trésorerie;5042;Bons de souscription d'actions;Compte divisionnaire
+5;Trésorerie;5043;Bons de souscription d'obligations;Compte divisionnaire
+5;Trésorerie;505;TITRES NÉGOCIABLES HORS REGION;Compte
+5;Trésorerie;506;INTÉRÊTS COURUS;Compte
+5;Trésorerie;5061;Titres du Trésor et bons de caisse à court terme;Compte divisionnaire
+5;Trésorerie;5062;Actions;Compte divisionnaire
+5;Trésorerie;5063;Obligations;Compte divisionnaire
+5;Trésorerie;508;AUTRES TITRES DE PLACEMENT ET CREANCES ASSIMILEES;Compte
+5;Trésorerie;511;EFFETS À ENCAISSER;Compte
+5;Trésorerie;512;EFFETS À L'ENCAISSEMENT;Compte
+5;Trésorerie;513;CHÈQUES À ENCAISSER;Compte
+5;Trésorerie;514;CHÈQUES À L'ENCAISSEMENT;Compte
+5;Trésorerie;515;CARTES DE CRÉDIT À ENCAISSER;Compte
+5;Trésorerie;518;AUTRES VALEURS À L'ENCAISSEMENT;Compte
+5;Trésorerie;5181;Warrants;Compte divisionnaire
+5;Trésorerie;5182;Billets de fonds;Compte divisionnaire
+5;Trésorerie;5185;Chèques de voyage;Compte divisionnaire
+5;Trésorerie;5186;Coupons échus;Compte divisionnaire
+5;Trésorerie;5187;Intérêts échus des obligations;Compte divisionnaire
+5;Trésorerie;521;BANQUES LOCALES;Compte
+5;Trésorerie;5211;Banques en monnaie nationale;Compte divisionnaire
+5;Trésorerie;5215;Banques en devises;Compte divisionnaire
+5;Trésorerie;522;BANQUES AUTRES ÉTATS REGION;Compte
+5;Trésorerie;523;BANQUES AUTRES ETATS ZONE MONETAIRE;Compte
+5;Trésorerie;524;BANQUES HORS ZONE MONETAIRE;Compte
+5;Trésorerie;525;BANQUES DEPOT A TERME;Compte
+5;Trésorerie;526;BANQUES, INTERETS COURUS;Compte
+5;Trésorerie;5261;Banque, intérêts courus charges à payer;Compte divisionnaire
+5;Trésorerie;5267;Banque, intérêts courus produits à recevoir;Compte divisionnaire
+5;Trésorerie;531;CHÈQUES POSTAUX;Compte
+5;Trésorerie;532;TRÉSOR;Compte
+5;Trésorerie;533;SOCIÉTÉS DE GESTION ET D'INTERMÉDIATION (S.G.I.);Compte
+5;Trésorerie;536;ETABLISSEMENTS FINANCIERS, INTERETS COURUS;Compte
+5;Trésorerie;538;AUTRES ORGANISMES FINANCIERS;Compte
+5;Trésorerie;541;OPTIONS DE TAUX D'INTÉRÊT;Compte
+5;Trésorerie;542;OPTIONS DE TAUX DE CHANGE;Compte
+5;Trésorerie;543;OPTIONS DE TAUX BOURSIERS;Compte
+5;Trésorerie;544;INSTRUMENTS DE MARCHÉS À TERME;Compte
+5;Trésorerie;545;AVOIRS D'OR ET AUTRES MÉTAUX PRÉCIEUX (1);Compte
+5;Trésorerie;551;MONNAIE ELECTRONIQUE - CARTE CARBURANT;Compte
+5;Trésorerie;552;MONNAIE ELECTRONIQUE - TELEPHONE PORTABLE;Compte
+5;Trésorerie;553;MONNAIE ELECTRONIQUE - CARTE PEAGE;Compte
+5;Trésorerie;554;PORTE -MONNAIE ELECTRONIQUE;Compte
+5;Trésorerie;558;AUTRES INSTRUMENTS MONNAIES ELECTRONIQUES;Compte
+5;Trésorerie;561;CRÉDITS DE TRÉSORERIE;Compte
+5;Trésorerie;564;ESCOMPTE DE CRÉDITS DE CAMPAGNE;Compte
+5;Trésorerie;565;ESCOMPTE DE CRÉDITS ORDINAIRES;Compte
+5;Trésorerie;566;BANQUES, CREDITS DE TRESORERIE, INTERETS COURUS;Compte
+5;Trésorerie;571;CAISSE SIÈGE SOCIAL;Compte
+5;Trésorerie;5711;Caisse en monnaie nationale;Compte divisionnaire
+5;Trésorerie;5712;Caisse en devises;Compte divisionnaire
+5;Trésorerie;572;CAISSE SUCCURSALE A;Compte
+5;Trésorerie;5721;en monnaie nationale;Compte divisionnaire
+5;Trésorerie;5722;en devises;Compte divisionnaire
+5;Trésorerie;573;CAISSE SUCCURSALE B;Compte
+5;Trésorerie;5731;en monnaie nationale;Compte divisionnaire
+5;Trésorerie;5732;en devises;Compte divisionnaire
+5;Trésorerie;581;RÉGIES D'AVANCE;Compte
+5;Trésorerie;582;ACCRÉDITIFS;Compte
+5;Trésorerie;585;VIREMENTS DE FONDS;Compte
+5;Trésorerie;588;AUTRES VIREMENTS INTERNES;Compte
+5;Trésorerie;590;DÉPRÉCIATIONS DES TITRES DE PLACEMENT;Compte
+5;Trésorerie;591;DÉPRÉCIATIONS DES TITRES ET VALEURS À ENCAISSER;Compte
+5;Trésorerie;592;DÉPRÉCIATIONS DES COMPTES BANQUES;Compte
+5;Trésorerie;593;DÉPRÉCIATIONS DES COMPTES ÉTABLISSEMENTS FINANCIERS ET ASSIMILÉS;Compte
+5;Trésorerie;594;DÉPRÉCIATIONS DES COMPTES D’INSTRUMENTS DE TRÉSORERIE;Compte
+5;Trésorerie;599;PROVISIONS POUR RISQUE A COURT TERME À CARACTÈRE FINANCIER;Compte
+6;Charges des activités ordinaires;60;ACHATS ET VARIATIONS DE STOCKS;Compte principal
+6;Charges des activités ordinaires;61;TRANSPORTS;Compte principal
+6;Charges des activités ordinaires;62;SERVICES EXTÉRIEURS;Compte principal
+6;Charges des activités ordinaires;63;AUTRES SERVICES EXTÉRIEURS;Compte principal
+6;Charges des activités ordinaires;64;IMPÔTS ET TAXES;Compte principal
+6;Charges des activités ordinaires;65;AUTRES CHARGES;Compte principal
+6;Charges des activités ordinaires;66;CHARGES DE PERSONNEL;Compte principal
+6;Charges des activités ordinaires;67;FRAIS FINANCIERS ET CHARGES ASSIMILÉES;Compte principal
+6;Charges des activités ordinaires;68;DOTATIONS AUX AMORTISSEMENTS;Compte principal
+6;Charges des activités ordinaires;69;DOTATIONS AUX PROVISIONS ET AUX DÉPRÉCIATIONS;Compte principal
+6;Charges des activités ordinaires;601;ACHATS DE MARCHANDISES;Compte
+6;Charges des activités ordinaires;6011;dans la Région (1);Compte divisionnaire
+6;Charges des activités ordinaires;6012;hors Région (4);Compte divisionnaire
+6;Charges des activités ordinaires;6013;aux entités du groupe dans la Région;Compte divisionnaire
+6;Charges des activités ordinaires;6014;aux entités du groupe hors Région;Compte divisionnaire
+6;Charges des activités ordinaires;6015;frais sur achats (2);Compte divisionnaire
+6;Charges des activités ordinaires;6019;Rabais, Remises et Ristournes obtenus (non ventilés);Compte divisionnaire
+6;Charges des activités ordinaires;602;ACHATS DE MATIÈRES PREMIÈRES ET FOURNITURES LIÉES;Compte
+6;Charges des activités ordinaires;6021;dans la Région (4);Compte divisionnaire
+6;Charges des activités ordinaires;6022;hors Région (4);Compte divisionnaire
+6;Charges des activités ordinaires;6023;aux entités du groupe dans la Région;Compte divisionnaire
+6;Charges des activités ordinaires;6024;aux entités du groupe hors Région;Compte divisionnaire
+6;Charges des activités ordinaires;6025;frais sur achats (5);Compte divisionnaire
+6;Charges des activités ordinaires;6029;Rabais, Remises et Ristournes obtenus (non ventilés);Compte divisionnaire
+6;Charges des activités ordinaires;603;VARIATIONS DES STOCKS DE BIENS ACHETÉS;Compte
+6;Charges des activités ordinaires;6031;Variations des stocks de marchandises;Compte divisionnaire
+6;Charges des activités ordinaires;6032;Variations des stocks de matières premières et fournitures liées;Compte divisionnaire
+6;Charges des activités ordinaires;6033;Variations des stocks d'autres approvisionnements;Compte divisionnaire
+6;Charges des activités ordinaires;604;ACHATS STOCKÉS DE MATIÈRES ET FOURNITURES CONSOMMABLES;Compte
+6;Charges des activités ordinaires;6041;Matières consommables;Compte divisionnaire
+6;Charges des activités ordinaires;6042;Matières combustibles;Compte divisionnaire
+6;Charges des activités ordinaires;6043;Produits d'entretien;Compte divisionnaire
+6;Charges des activités ordinaires;6044;Fournitures d'atelier et d'usine;Compte divisionnaire
+6;Charges des activités ordinaires;6045;Frais sur achats (1);Compte divisionnaire
+6;Charges des activités ordinaires;6046;Fournitures de magasin;Compte divisionnaire
+6;Charges des activités ordinaires;6047;Fournitures de bureau;Compte divisionnaire
+6;Charges des activités ordinaires;6049;Rabais, Remises et Ristournes obtenus (non ventilés);Compte divisionnaire
+6;Charges des activités ordinaires;605;AUTRES ACHATS;Compte
+6;Charges des activités ordinaires;6051;Fournitures non stockables -Eau;Compte divisionnaire
+6;Charges des activités ordinaires;6052;Fournitures non stockables - Electricité;Compte divisionnaire
+6;Charges des activités ordinaires;6053;Fournitures non stockables – Autres énergies;Compte divisionnaire
+6;Charges des activités ordinaires;6054;Fournitures d'entretien non stockables;Compte divisionnaire
+6;Charges des activités ordinaires;6055;Fournitures de bureau non stockables;Compte divisionnaire
+6;Charges des activités ordinaires;6056;Achats de petit matériel et outillage;Compte divisionnaire
+6;Charges des activités ordinaires;6057;Achats d'études et prestations de services;Compte divisionnaire
+6;Charges des activités ordinaires;6058;Achats de travaux, matériels et équipements;Compte divisionnaire
+6;Charges des activités ordinaires;6059;Rabais, Remises et Ristournes obtenus (non ventilés);Compte divisionnaire
+6;Charges des activités ordinaires;608;ACHATS D'EMBALLAGES;Compte
+6;Charges des activités ordinaires;6081;Emballages perdus;Compte divisionnaire
+6;Charges des activités ordinaires;6082;Emballages récupérables non identifiables;Compte divisionnaire
+6;Charges des activités ordinaires;6083;Emballages à usage mixte;Compte divisionnaire
+6;Charges des activités ordinaires;6085;Frais sur achats (6);Compte divisionnaire
+6;Charges des activités ordinaires;6089;Rabais, Remises et Ristournes obtenus (non ventilés;Compte divisionnaire
+6;Charges des activités ordinaires;612;TRANSPORTS SUR VENTES;Compte
+6;Charges des activités ordinaires;613;TRANSPORTS POUR LE COMPTE DE TIERS;Compte
+6;Charges des activités ordinaires;614;TRANSPORTS DU PERSONNEL;Compte
+6;Charges des activités ordinaires;616;TRANSPORTS DE PLIS;Compte
+6;Charges des activités ordinaires;618;AUTRES FRAIS DE TRANSPORT;Compte
+6;Charges des activités ordinaires;6181;Voyages et déplacements;Compte divisionnaire
+6;Charges des activités ordinaires;6182;Transports entre établissements ou chantiers;Compte divisionnaire
+6;Charges des activités ordinaires;6183;Transports administratifs;Compte divisionnaire
+6;Charges des activités ordinaires;621;SOUS-TRAITANCE GÉNÉRALE;Compte
+6;Charges des activités ordinaires;622;LOCATIONS, CHARGES LOCATIVES;Compte
+6;Charges des activités ordinaires;6221;Locations de terrains;Compte divisionnaire
+6;Charges des activités ordinaires;6222;Locations de bâtiments;Compte divisionnaire
+6;Charges des activités ordinaires;6223;Locations de matériels et outillages;Compte divisionnaire
+6;Charges des activités ordinaires;6224;Malis sur emballages;Compte divisionnaire
+6;Charges des activités ordinaires;6225;Locations d'emballages;Compte divisionnaire
+6;Charges des activités ordinaires;6226;Fermages et loyers du foncier;Compte divisionnaire
+6;Charges des activités ordinaires;6228;Locations et charges locatives diverses;Compte divisionnaire
+6;Charges des activités ordinaires;623;REDEVANCES DE LOCATION ACQUISITION;Compte
+6;Charges des activités ordinaires;6232;Crédit-bail immobilier;Compte divisionnaire
+6;Charges des activités ordinaires;6233;Crédit-bail mobilier;Compte divisionnaire
+6;Charges des activités ordinaires;6234;Location vente;Compte divisionnaire
+6;Charges des activités ordinaires;6238;Autres contrats de location acquisition;Compte divisionnaire
+6;Charges des activités ordinaires;624;ENTRETIEN, RÉPARATIONS, REMISE EN ETAT ET MAINTENANCE;Compte
+6;Charges des activités ordinaires;6241;Entretien et réparations des biens immobiliers;Compte divisionnaire
+6;Charges des activités ordinaires;6242;Entretien et réparations des biens mobiliers;Compte divisionnaire
+6;Charges des activités ordinaires;6243;Maintenance;Compte divisionnaire
+6;Charges des activités ordinaires;6244;Charges de démantèlement et remise en état;Compte divisionnaire
+6;Charges des activités ordinaires;6248;Autres entretiens et réparations;Compte divisionnaire
+6;Charges des activités ordinaires;625;PRIMES D'ASSURANCE;Compte
+6;Charges des activités ordinaires;6251;Assurances multirisques;Compte divisionnaire
+6;Charges des activités ordinaires;6252;Assurances matériel de transport;Compte divisionnaire
+6;Charges des activités ordinaires;6253;Assurances risques d'exploitation;Compte divisionnaire
+6;Charges des activités ordinaires;6254;Assurances responsabilité du producteur;Compte divisionnaire
+6;Charges des activités ordinaires;6255;Assurances insolvabilité clients;Compte divisionnaire
+6;Charges des activités ordinaires;6257;Assurances transport sur ventes;Compte divisionnaire
+6;Charges des activités ordinaires;6258;Autres primes d'assurances;Compte divisionnaire
+6;Charges des activités ordinaires;626;ÉTUDES, RECHERCHES ET DOCUMENTATION;Compte
+6;Charges des activités ordinaires;6261;Études et recherches;Compte divisionnaire
+6;Charges des activités ordinaires;6265;Documentation générale;Compte divisionnaire
+6;Charges des activités ordinaires;6266;Documentation technique;Compte divisionnaire
+6;Charges des activités ordinaires;627;PUBLICITÉ, PUBLICATIONS, RELATIONS PUBLIQUES;Compte
+6;Charges des activités ordinaires;6271;Annonces, insertions;Compte divisionnaire
+6;Charges des activités ordinaires;6272;Catalogues, imprimés publicitaires;Compte divisionnaire
+6;Charges des activités ordinaires;6273;Échantillons;Compte divisionnaire
+6;Charges des activités ordinaires;6274;Foires et expositions;Compte divisionnaire
+6;Charges des activités ordinaires;6275;Publications;Compte divisionnaire
+6;Charges des activités ordinaires;6276;Cadeaux à la clientèle;Compte divisionnaire
+6;Charges des activités ordinaires;6277;Frais de colloques, séminaires, conférences;Compte divisionnaire
+6;Charges des activités ordinaires;6278;Autres charges de publicité et relations publiques;Compte divisionnaire
+6;Charges des activités ordinaires;628;FRAIS DE TÉLÉCOMMUNICATIONS;Compte
+6;Charges des activités ordinaires;6281;Frais de téléphone;Compte divisionnaire
+6;Charges des activités ordinaires;6282;Frais de télex;Compte divisionnaire
+6;Charges des activités ordinaires;6283;Frais de télécopie;Compte divisionnaire
+6;Charges des activités ordinaires;6288;Autres frais de télécommunications;Compte divisionnaire
+6;Charges des activités ordinaires;631;FRAIS BANCAIRES;Compte
+6;Charges des activités ordinaires;6311;Frais sur titres (vente, garde);Compte divisionnaire
+6;Charges des activités ordinaires;6312;Frais sur effets;Compte divisionnaire
+6;Charges des activités ordinaires;6313;Location de coffres;Compte divisionnaire
+6;Charges des activités ordinaires;6314;Commissions d’affacturage;Compte divisionnaire
+6;Charges des activités ordinaires;6315;Commissions sur cartes de crédit;Compte divisionnaire
+6;Charges des activités ordinaires;6316;Frais d'émission d'emprunts;Compte divisionnaire
+6;Charges des activités ordinaires;6317;Frais sur instruments monnaie électronique;Compte divisionnaire
+6;Charges des activités ordinaires;6318;Autres frais bancaires;Compte divisionnaire
+6;Charges des activités ordinaires;632;RÉMUNÉRATIONS D'INTERMÉDIAIRES ET DE CONSEILS;Compte
+6;Charges des activités ordinaires;6322;Commissions et courtages sur ventes;Compte divisionnaire
+6;Charges des activités ordinaires;6324;Honoraires des professions règlementées;Compte divisionnaire
+6;Charges des activités ordinaires;6325;Frais d'actes et de contentieux;Compte divisionnaire
+6;Charges des activités ordinaires;6326;Rémunérations d’affacturage;Compte divisionnaire
+6;Charges des activités ordinaires;6327;Rémunérations des autres prestataires de services;Compte divisionnaire
+6;Charges des activités ordinaires;6328;Divers frais;Compte divisionnaire
+6;Charges des activités ordinaires;633;FRAIS DE FORMATION DU PERSONNEL;Compte
+6;Charges des activités ordinaires;634;REDEVANCES POUR BREVETS, LICENCES, LOGICIELS, CONCESSIONS ET DROITS ET VALEURS SIMILAIRES;Compte
+6;Charges des activités ordinaires;6342;Redevances pour brevets, licences;Compte divisionnaire
+6;Charges des activités ordinaires;6343;Redevances pour logiciels;Compte divisionnaire
+6;Charges des activités ordinaires;6344;Redevances pour marques;Compte divisionnaire
+6;Charges des activités ordinaires;6345;Redevances pour sites internet;Compte divisionnaire
+6;Charges des activités ordinaires;6346;Redevances pour concessions, droits et valeurs similaires;Compte divisionnaire
+6;Charges des activités ordinaires;635;COTISATIONS;Compte
+6;Charges des activités ordinaires;6351;Cotisations;Compte divisionnaire
+6;Charges des activités ordinaires;6358;Concours divers;Compte divisionnaire
+6;Charges des activités ordinaires;637;RÉMUNÉRATIONS DE PERSONNEL EXTÉRIEUR À L’ENTITE;Compte
+6;Charges des activités ordinaires;6371;Personnel intérimaire;Compte divisionnaire
+6;Charges des activités ordinaires;6372;Personnel détaché ou prêté à l’entité;Compte divisionnaire
+6;Charges des activités ordinaires;638;AUTRES CHARGES EXTERNES;Compte
+6;Charges des activités ordinaires;6381;Frais de recrutement du personnel;Compte divisionnaire
+6;Charges des activités ordinaires;6382;Frais de déménagement;Compte divisionnaire
+6;Charges des activités ordinaires;6383;Réceptions;Compte divisionnaire
+6;Charges des activités ordinaires;6384;Missions;Compte divisionnaire
+6;Charges des activités ordinaires;6385;Charges de copropriété;Compte divisionnaire
+6;Charges des activités ordinaires;641;IMPÔTS ET TAXES DIRECTS;Compte
+6;Charges des activités ordinaires;6411;Impôts fonciers et taxes annexes;Compte divisionnaire
+6;Charges des activités ordinaires;6412;Patentes, licences et taxes annexes;Compte divisionnaire
+6;Charges des activités ordinaires;6413;Taxes sur appointements et salaires;Compte divisionnaire
+6;Charges des activités ordinaires;6414;Taxes d'apprentissage;Compte divisionnaire
+6;Charges des activités ordinaires;6415;Formation professionnelle continue;Compte divisionnaire
+6;Charges des activités ordinaires;6418;Autres impôts et taxes directs;Compte divisionnaire
+6;Charges des activités ordinaires;645;IMPÔTS ET TAXES INDIRECTS;Compte
+6;Charges des activités ordinaires;646;DROITS D'ENREGISTREMENT;Compte
+6;Charges des activités ordinaires;6461;Droits de mutation;Compte divisionnaire
+6;Charges des activités ordinaires;6462;Droits de timbre;Compte divisionnaire
+6;Charges des activités ordinaires;6463;Taxes sur les véhicules de société;Compte divisionnaire
+6;Charges des activités ordinaires;6464;Vignettes;Compte divisionnaire
+6;Charges des activités ordinaires;6468;Autres droits;Compte divisionnaire
+6;Charges des activités ordinaires;647;PENALITES, AMENDES FISCALES;Compte
+6;Charges des activités ordinaires;6471;Pénalités d'assiette, impôts directs;Compte divisionnaire
+6;Charges des activités ordinaires;6472;Pénalités d'assiette, impôts indirects;Compte divisionnaire
+6;Charges des activités ordinaires;6473;Pénalités de recouvrement, impôts directs;Compte divisionnaire
+6;Charges des activités ordinaires;6474;Pénalités de recouvrement, impôts indirects;Compte divisionnaire
+6;Charges des activités ordinaires;6478;Autres pénalités et amendes fiscales;Compte divisionnaire
+6;Charges des activités ordinaires;648;AUTRES IMPÔTS ET TAXES;Compte
+6;Charges des activités ordinaires;651;PERTES SUR CRÉANCES CLIENTS ET AUTRES DÉBITEURS;Compte
+6;Charges des activités ordinaires;6511;Clients;Compte divisionnaire
+6;Charges des activités ordinaires;6515;Autres débiteurs;Compte divisionnaire
+6;Charges des activités ordinaires;652;QUOTE-PART DE RÉSULTAT SUR OPÉRATIONS FAITES EN COMMUN;Compte
+6;Charges des activités ordinaires;6521;Quote-part transférée de bénéfices (comptabilité du gérant);Compte divisionnaire
+6;Charges des activités ordinaires;6525;Pertes imputées par transfert (comptabilité des associés non gérants);Compte divisionnaire
+6;Charges des activités ordinaires;654;VALEURS COMPTABLES DES CESSIONS COURANTES D’IMMOBILISATIONS;Compte
+6;Charges des activités ordinaires;6541;Immobilisations incorporelles;Compte divisionnaire
+6;Charges des activités ordinaires;6542;Immobilisations corporelles;Compte divisionnaire
+6;Charges des activités ordinaires;656;PERTE DE CHANGE SUR CREANCES ET DETTES COMMERCIALE;Compte
+6;Charges des activités ordinaires;657;PENALITES ET AMENDES PENALES;Compte
+6;Charges des activités ordinaires;658;CHARGES DIVERSES;Compte
+6;Charges des activités ordinaires;6581;Indemnités de fonction et autres rémunérations d'administrateurs;Compte divisionnaire
+6;Charges des activités ordinaires;6582;Dons;Compte divisionnaire
+6;Charges des activités ordinaires;6583;Mécénat;Compte divisionnaire
+6;Charges des activités ordinaires;6588;Autres charges diverses;Compte divisionnaire
+6;Charges des activités ordinaires;659;CHARGES POUR DÉPRÉCIATIONS ET PROVISIONS POUR RISQUES A COURT TERME D'EXPLOITATION;Compte
+6;Charges des activités ordinaires;6591;sur risques à court terme;Compte divisionnaire
+6;Charges des activités ordinaires;6593;sur stocks;Compte divisionnaire
+6;Charges des activités ordinaires;6594;sur créances;Compte divisionnaire
+6;Charges des activités ordinaires;6598;Autres charges pour dépréciations et provisions pour risques à court terme;Compte divisionnaire
+6;Charges des activités ordinaires;661;RÉMUNÉRATIONS DIRECTES VERSÉES AU PERSONNEL NATIONAL;Compte
+6;Charges des activités ordinaires;6611;Appointements salaires et commissions;Compte divisionnaire
+6;Charges des activités ordinaires;6612;Primes et gratifications;Compte divisionnaire
+6;Charges des activités ordinaires;6613;Congés payés;Compte divisionnaire
+6;Charges des activités ordinaires;6614;Indemnités de préavis, de licenciement et de recherche d'embauche;Compte divisionnaire
+6;Charges des activités ordinaires;6615;Indemnités de maladie versées aux travailleurs;Compte divisionnaire
+6;Charges des activités ordinaires;6616;Supplément familial;Compte divisionnaire
+6;Charges des activités ordinaires;6617;Avantages en nature;Compte divisionnaire
+6;Charges des activités ordinaires;6618;Autres rémunérations directes;Compte divisionnaire
+6;Charges des activités ordinaires;662;RÉMUNÉRATIONS DIRECTES VERSÉES AU PERSONNEL NON NATIONAL;Compte
+6;Charges des activités ordinaires;6621;Appointements salaires et commissions;Compte divisionnaire
+6;Charges des activités ordinaires;6622;Primes et gratifications;Compte divisionnaire
+6;Charges des activités ordinaires;6623;Congés payés;Compte divisionnaire
+6;Charges des activités ordinaires;6624;Indemnités de préavis, de licenciement et de recherche d'embauche;Compte divisionnaire
+6;Charges des activités ordinaires;6625;Indemnités de maladie versées aux travailleurs;Compte divisionnaire
+6;Charges des activités ordinaires;6626;Supplément familial;Compte divisionnaire
+6;Charges des activités ordinaires;6627;Avantages en nature;Compte divisionnaire
+6;Charges des activités ordinaires;6628;Autres rémunérations directes;Compte divisionnaire
+6;Charges des activités ordinaires;663;INDEMNITÉS FORFAITAIRES VERSÉES AU PERSONNEL;Compte
+6;Charges des activités ordinaires;6631;Indemnités de logement;Compte divisionnaire
+6;Charges des activités ordinaires;6632;Indemnités de représentation;Compte divisionnaire
+6;Charges des activités ordinaires;6633;Indemnités d'expatriation;Compte divisionnaire
+6;Charges des activités ordinaires;6634;Indemnités de transport;Compte divisionnaire
+6;Charges des activités ordinaires;6638;Autres indemnités et avantages divers;Compte divisionnaire
+6;Charges des activités ordinaires;664;CHARGES SOCIALES;Compte
+6;Charges des activités ordinaires;6641;Charges sociales sur rémunération du personnel national;Compte divisionnaire
+6;Charges des activités ordinaires;6642;Charges sociales sur rémunération du personnel non national;Compte divisionnaire
+6;Charges des activités ordinaires;666;RÉMUNÉRATIONS ET CHARGES SOCIALES DE L'EXPLOITANT INDIVIDUEL;Compte
+6;Charges des activités ordinaires;6661;Rémunération du travail de l'exploitant;Compte divisionnaire
+6;Charges des activités ordinaires;6662;Charges sociales;Compte divisionnaire
+6;Charges des activités ordinaires;667;RÉMUNÉRATION TRANSFÉRÉE DE PERSONNEL EXTÉRIEUR;Compte
+6;Charges des activités ordinaires;6671;Personnel intérimaire;Compte divisionnaire
+6;Charges des activités ordinaires;6672;Personnel détaché ou prêté à l’entité;Compte divisionnaire
+6;Charges des activités ordinaires;668;AUTRES CHARGES SOCIALES;Compte
+6;Charges des activités ordinaires;6681;Versements aux Syndicats et Comités d'entreprise, d'établissement;Compte divisionnaire
+6;Charges des activités ordinaires;6682;Versements aux Comités d'hygiène et de sécurité;Compte divisionnaire
+6;Charges des activités ordinaires;6683;Versements et contributions aux autres œuvres sociales;Compte divisionnaire
+6;Charges des activités ordinaires;6684;Médecine du travail et pharmacie;Compte divisionnaire
+6;Charges des activités ordinaires;6685;Assurances et organismes de santé;Compte divisionnaire
+6;Charges des activités ordinaires;6686;Assurances retraite et fonds de pension;Compte divisionnaire
+6;Charges des activités ordinaires;6687;Majorations et pénalités sociales;Compte divisionnaire
+6;Charges des activités ordinaires;6688;Charges sociales diverses;Compte divisionnaire
+6;Charges des activités ordinaires;671;INTÉRÊTS DES EMPRUNTS;Compte
+6;Charges des activités ordinaires;6711;Emprunts obligataires;Compte divisionnaire
+6;Charges des activités ordinaires;6712;Emprunts auprès des établissements de crédit;Compte divisionnaire
+6;Charges des activités ordinaires;6713;Dettes liées à des participations;Compte divisionnaire
+6;Charges des activités ordinaires;6714;Primes de remboursement des obligations;Compte divisionnaire
+6;Charges des activités ordinaires;672;INTÉRÊTS DANS LOYERS DE LOCATION ACQUISITION;Compte
+6;Charges des activités ordinaires;6722;Intérêts dans loyers de location acquisition/crédit-bail immobilier;Compte divisionnaire
+6;Charges des activités ordinaires;6723;Intérêts dans loyers de location acquisition/crédit-bail mobilier;Compte divisionnaire
+6;Charges des activités ordinaires;6724;Intérêts dans loyers de location acquisition/location-vente;Compte divisionnaire
+6;Charges des activités ordinaires;6728;Intérêts dans loyers des autres locations acquisition;Compte divisionnaire
+6;Charges des activités ordinaires;673;ESCOMPTES ACCORDÉS;Compte
+6;Charges des activités ordinaires;674;AUTRES INTÉRÊTS;Compte
+6;Charges des activités ordinaires;6741;Avances reçues et dépôts créditeurs;Compte divisionnaire
+6;Charges des activités ordinaires;6742;Comptes courants bloqués;Compte divisionnaire
+6;Charges des activités ordinaires;6743;Intérêts sur obligations cautionnées;Compte divisionnaire
+6;Charges des activités ordinaires;6744;Intérêts sur dettes commerciales;Compte divisionnaire
+6;Charges des activités ordinaires;6745;Intérêts bancaires et sur opérations de financement (escompte…);Compte divisionnaire
+6;Charges des activités ordinaires;6748;Intérêts sur dettes diverses;Compte divisionnaire
+6;Charges des activités ordinaires;675;ESCOMPTES DES EFFETS DE COMMERCE;Compte
+6;Charges des activités ordinaires;676;PERTES DE CHANGE FINANCIERES;Compte
+6;Charges des activités ordinaires;677;PERTES SUR TITRES DE PLACEMENT;Compte
+6;Charges des activités ordinaires;6771;Pertes sur cessions de titres de placement;Compte divisionnaire
+6;Charges des activités ordinaires;6772;Malis provenant d’attribution gratuite d’actions au personnel salarié et aux dirigeants;Compte divisionnaire
+6;Charges des activités ordinaires;678;PERTES ET CHARGES SUR RISQUES FINANCIERS;Compte
+6;Charges des activités ordinaires;6781;sur rentes viagères;Compte divisionnaire
+6;Charges des activités ordinaires;6782;sur opérations financières;Compte divisionnaire
+6;Charges des activités ordinaires;6784;sur instruments de trésorerie;Compte divisionnaire
+6;Charges des activités ordinaires;679;CHARGES POUR DEPRECIATIONS ET PROVISIONS POUR RISQUES A COURT TERME FINANCIÈRES;Compte
+6;Charges des activités ordinaires;6791;sur risques financiers;Compte divisionnaire
+6;Charges des activités ordinaires;6795;sur titres de placement;Compte divisionnaire
+6;Charges des activités ordinaires;6798;Autres charges pour dépréciations et provisions pour risques à court terme financières;Compte divisionnaire
+6;Charges des activités ordinaires;681;DOTATIONS AUX AMORTISSEMENTS D'EXPLOITATION;Compte
+6;Charges des activités ordinaires;6812;Dotations aux amortissements des immobilisations incorporelles;Compte divisionnaire
+6;Charges des activités ordinaires;6813;Dotations aux amortissements des immobilisations corporelles;Compte divisionnaire
+6;Charges des activités ordinaires;691;DOTATIONS AUX PROVISIONS ET AUX DEPRECIATIONS D'EXPLOITATION;Compte
+6;Charges des activités ordinaires;6911;Dotations aux provisions pour risques et charges;Compte divisionnaire
+6;Charges des activités ordinaires;6913;Dotations aux dépréciations des immobilisations incorporelles;Compte divisionnaire
+6;Charges des activités ordinaires;6914;Dotations aux dépréciations des immobilisations corporelles;Compte divisionnaire
+6;Charges des activités ordinaires;697;DOTATIONS AUX PROVISIONS ET AUX DEPRECIATIONS FINANCIÈRES;Compte
+6;Charges des activités ordinaires;6971;Dotations aux provisions pour risques et charges;Compte divisionnaire
+6;Charges des activités ordinaires;6972;Dotations aux dépréciations des immobilisations financières;Compte divisionnaire
+7;Produits des activités ordinaires;70;VENTES;Compte principal
+7;Produits des activités ordinaires;71;SUBVENTIONS D'EXPLOITATION;Compte principal
+7;Produits des activités ordinaires;72;PRODUCTION IMMOBILISÉE;Compte principal
+7;Produits des activités ordinaires;73;VARIATIONS DE STOCKS DE BIENS ET DE SERVICES PRODUITS;Compte principal
+7;Produits des activités ordinaires;75;AUTRES PRODUITS;Compte principal
+7;Produits des activités ordinaires;77;REVENUS FINANCIERS ET ASSIMILÉS;Compte principal
+7;Produits des activités ordinaires;78;TRANSFERTS DE CHARGES;Compte principal
+7;Produits des activités ordinaires;79;REPRISES DE PROVISIONS, DE DEPRECIATIONS ET AUTRES;Compte principal
+7;Produits des activités ordinaires;701;VENTES DE MARCHANDISES;Compte
+7;Produits des activités ordinaires;7011;dans la Région (1);Compte divisionnaire
+7;Produits des activités ordinaires;7012;hors Région (7);Compte divisionnaire
+7;Produits des activités ordinaires;7013;Aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7014;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7015;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7019;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;702;VENTES DE PRODUITS FINIS;Compte
+7;Produits des activités ordinaires;7021;dans la Région (7);Compte divisionnaire
+7;Produits des activités ordinaires;7022;hors Région (7);Compte divisionnaire
+7;Produits des activités ordinaires;7023;aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7024;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7025;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7029;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;703;VENTES DE PRODUITS INTERMÉDIAIRES;Compte
+7;Produits des activités ordinaires;7031;dans la Région (7);Compte divisionnaire
+7;Produits des activités ordinaires;7032;hors Région (7);Compte divisionnaire
+7;Produits des activités ordinaires;7033;aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7034;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7035;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7039;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;704;VENTES DE PRODUITS RÉSIDUELS;Compte
+7;Produits des activités ordinaires;7041;dans la Région (8);Compte divisionnaire
+7;Produits des activités ordinaires;7042;hors Région (1);Compte divisionnaire
+7;Produits des activités ordinaires;7043;aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7044;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7045;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7049;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;705;TRAVAUX FACTURÉS;Compte
+7;Produits des activités ordinaires;7051;dans la Région (8);Compte divisionnaire
+7;Produits des activités ordinaires;7052;hors Région (8);Compte divisionnaire
+7;Produits des activités ordinaires;7053;aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7054;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7055;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7059;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;706;SERVICES VENDUS;Compte
+7;Produits des activités ordinaires;7061;dans la Région (8);Compte divisionnaire
+7;Produits des activités ordinaires;7062;hors Région (8);Compte divisionnaire
+7;Produits des activités ordinaires;7063;aux entités du groupe dans la Région;Compte divisionnaire
+7;Produits des activités ordinaires;7064;aux entités du groupe hors Région;Compte divisionnaire
+7;Produits des activités ordinaires;7065;sur internet;Compte divisionnaire
+7;Produits des activités ordinaires;7069;Rabais, remises, ristournes accordés (non ventilés);Compte divisionnaire
+7;Produits des activités ordinaires;707;PRODUITS ACCESSOIRES;Compte
+7;Produits des activités ordinaires;7071;Ports, emballages perdus et autres frais facturés;Compte divisionnaire
+7;Produits des activités ordinaires;7072;Commissions et courtages (2);Compte divisionnaire
+7;Produits des activités ordinaires;7073;Locations (9);Compte divisionnaire
+7;Produits des activités ordinaires;7074;Bonis sur reprises et cessions d'emballages;Compte divisionnaire
+7;Produits des activités ordinaires;7075;Mise à disposition de personnel (9);Compte divisionnaire
+7;Produits des activités ordinaires;7076;Redevances pour brevets, logiciels, marques et droits similaires (9);Compte divisionnaire
+7;Produits des activités ordinaires;7077;Services exploités dans l'intérêt du personnel;Compte divisionnaire
+7;Produits des activités ordinaires;7078;Autres produits accessoires;Compte divisionnaire
+7;Produits des activités ordinaires;711;SUR PRODUITS À L'EXPORTATION;Compte
+7;Produits des activités ordinaires;712;SUR PRODUITS À L'IMPORTATION;Compte
+7;Produits des activités ordinaires;713;SUR PRODUITS DE PÉRÉQUATION;Compte
+7;Produits des activités ordinaires;714;INDEMNITES ET SUBVENTIONS D’EXPLOITATION (entité agricole);Compte
+7;Produits des activités ordinaires;718;AUTRES SUBVENTIONS D'EXPLOITATION;Compte
+7;Produits des activités ordinaires;7181;Versées par l'État et les collectivités publiques;Compte divisionnaire
+7;Produits des activités ordinaires;7182;Versées par les organismes internationaux;Compte divisionnaire
+7;Produits des activités ordinaires;7183;Versées par des tiers;Compte divisionnaire
+7;Produits des activités ordinaires;721;IMMOBILISATIONS INCORPORELLES;Compte
+7;Produits des activités ordinaires;722;IMMOBILISATIONS CORPORELLES;Compte
+7;Produits des activités ordinaires;7221;immobilisations corporelles (hors actifs biologiques);Compte divisionnaire
+7;Produits des activités ordinaires;7222;immobilisations corporelles (actifs biologiques);Compte divisionnaire
+7;Produits des activités ordinaires;724;PRODUCTION AUTO-CONSOMMEE;Compte
+7;Produits des activités ordinaires;726;IMMOBILISATIONS FINANCIÈRES (1);Compte
+7;Produits des activités ordinaires;734;VARIATIONS DES STOCKS DE PRODUITS EN COURS;Compte
+7;Produits des activités ordinaires;7341;Produits en cours;Compte divisionnaire
+7;Produits des activités ordinaires;7342;Travaux en cours;Compte divisionnaire
+7;Produits des activités ordinaires;735;VARIATIONS DES EN-COURS DE SERVICES;Compte
+7;Produits des activités ordinaires;7351;Études en cours;Compte divisionnaire
+7;Produits des activités ordinaires;7352;Prestations de services en cours;Compte divisionnaire
+7;Produits des activités ordinaires;736;VARIATIONS DES STOCKS DE PRODUITS FINIS;Compte
+7;Produits des activités ordinaires;737;VARIATIONS DES STOCKS DE PRODUITS INTERMÉDIAIRES ET RÉSIDUELS;Compte
+7;Produits des activités ordinaires;7371;Produits intermédiaires;Compte divisionnaire
+7;Produits des activités ordinaires;7372;Produits résiduels;Compte divisionnaire
+7;Produits des activités ordinaires;751;PROFITS SUR CREANCES CLIENTS ET AUTRES DEBITEURS;Compte
+7;Produits des activités ordinaires;752;QUOTE-PART DE RÉSULTAT SUR OPÉRATIONS FAITES EN COMMUN;Compte
+7;Produits des activités ordinaires;7521;Quote-part transférée de pertes (comptabilité du gérant);Compte divisionnaire
+7;Produits des activités ordinaires;7525;Bénéfices attribués par transfert (comptabilité des associés non gérants);Compte divisionnaire
+7;Produits des activités ordinaires;754;PRODUITS DES CESSIONS COURANTES D’IMMOBILISATIONS;Compte
+7;Produits des activités ordinaires;7541;Immobilisations incorporelles;Compte divisionnaire
+7;Produits des activités ordinaires;7542;Immobilisations corporelles;Compte divisionnaire
+7;Produits des activités ordinaires;756;GAINS DE CHANGE SUR CREANCES ET DETTES COMMERCIALES;Compte
+7;Produits des activités ordinaires;758;PRODUITS DIVERS;Compte
+7;Produits des activités ordinaires;7581;Indemnités de fonction et autres rémunérations d'administrateurs;Compte divisionnaire
+7;Produits des activités ordinaires;7582;Indemnités d’assurances reçues;Compte divisionnaire
+7;Produits des activités ordinaires;7588;Autres produits divers;Compte divisionnaire
+7;Produits des activités ordinaires;759;REPRISES DE CHARGES POUR DEPRECIATIONS ET PROVISIONS POUR RISQUES A COURT TERME D'EXPLOITATION;Compte
+7;Produits des activités ordinaires;7591;sur risques à court terme;Compte divisionnaire
+7;Produits des activités ordinaires;7593;sur stocks;Compte divisionnaire
+7;Produits des activités ordinaires;7594;sur créances;Compte divisionnaire
+7;Produits des activités ordinaires;7598;sur autres charges pour dépréciations et provisions pour risques à court terme d’exploitation;Compte divisionnaire
+7;Produits des activités ordinaires;771;INTÉRÊTS DE PRÊTS ET CREANCES DIVERSES;Compte
+7;Produits des activités ordinaires;7712;Intérêts de prêts;Compte divisionnaire
+7;Produits des activités ordinaires;7713;Intérêts sur créances diverses;Compte divisionnaire
+7;Produits des activités ordinaires;772;REVENUS DE PARTICIPATIONS ET AUTRES TITRES IMMOBILISES;Compte
+7;Produits des activités ordinaires;7721;Revenus des titres de participation;Compte divisionnaire
+7;Produits des activités ordinaires;7722;Revenus autres titres immobilisés;Compte divisionnaire
+7;Produits des activités ordinaires;773;ESCOMPTES OBTENUS;Compte
+7;Produits des activités ordinaires;774;REVENUS DE PLACEMENT;Compte
+7;Produits des activités ordinaires;7745;Revenus des obligations;Compte divisionnaire
+7;Produits des activités ordinaires;7746;Revenus des titres de placement;Compte divisionnaire
+7;Produits des activités ordinaires;775;INTERETS DANS LOYERS DE LOCATION ACQUISITION;Compte
+7;Produits des activités ordinaires;776;GAINS DE CHANGE FINANCIERS;Compte
+7;Produits des activités ordinaires;777;GAINS SUR CESSIONS DE TITRES DE PLACEMENT;Compte
+7;Produits des activités ordinaires;778;GAINS SUR RISQUES FINANCIERS;Compte
+7;Produits des activités ordinaires;7781;sur rentes viagères;Compte divisionnaire
+7;Produits des activités ordinaires;7782;sur opérations financières;Compte divisionnaire
+7;Produits des activités ordinaires;7784;sur instruments de trésorerie;Compte divisionnaire
+7;Produits des activités ordinaires;779;REPRISES DE CHARGES POUR DEPRECIATIONS ET PROVISIONS A COURT TERME FINANCIÈRES;Compte
+7;Produits des activités ordinaires;7791;sur risques financiers;Compte divisionnaire
+7;Produits des activités ordinaires;7795;sur titres de placement;Compte divisionnaire
+7;Produits des activités ordinaires;7798;sur autres charges pour dépréciations et provisions pour risques à court terme financières;Compte divisionnaire
+7;Produits des activités ordinaires;781;TRANSFERTS DE CHARGES D'EXPLOITATION;Compte
+7;Produits des activités ordinaires;787;TRANSFERTS DE CHARGES FINANCIERES;Compte
+7;Produits des activités ordinaires;791;REPRISES DE PROVISIONS ET DEPRECIATIONS D'EXPLOITATION;Compte
+7;Produits des activités ordinaires;7911;pour risques et charges;Compte divisionnaire
+7;Produits des activités ordinaires;7913;des immobilisations incorporelles;Compte divisionnaire
+7;Produits des activités ordinaires;7914;des immobilisations corporelles;Compte divisionnaire
+7;Produits des activités ordinaires;797;REPRISES DE PROVISIONS ET DEPRECIATIONS FINANCIÈRES;Compte
+7;Produits des activités ordinaires;7971;pour risques et charges;Compte divisionnaire
+7;Produits des activités ordinaires;7972;des immobilisations financières;Compte divisionnaire
+7;Produits des activités ordinaires;798;REPRISES D'AMORTISSEMENTS (1);Compte
+7;Produits des activités ordinaires;799;REPRISES DE SUBVENTIONS D’INVESTISSEMENT;Compte
+8;Autres charges et autres produits;81;VALEURS COMPTABLES DES CESSIONS D'IMMOBILISATIONS;Compte principal
+8;Autres charges et autres produits;82;PRODUITS DES CESSIONS D'IMMOBILISATIONS;Compte principal
+8;Autres charges et autres produits;83;CHARGES HORS ACTIVITÉS ORDINAIRES;Compte principal
+8;Autres charges et autres produits;84;PRODUITS HORS ACTIVITÉS ORDINAIRES;Compte principal
+8;Autres charges et autres produits;85;DOTATIONS HORS ACTIVITÉS ORDINAIRES;Compte principal
+8;Autres charges et autres produits;86;REPRISES HORS ACTIVITÉS ORDINAIRES;Compte principal
+8;Autres charges et autres produits;87;PARTICIPATION DES TRAVAILLEURS;Compte principal
+8;Autres charges et autres produits;88;SUBVENTIONS D'ÉQUILIBRE;Compte principal
+8;Autres charges et autres produits;89;IMPÔTS SUR LE RÉSULTAT;Compte principal
+8;Autres charges et autres produits;811;IMMOBILISATIONS INCORPORELLES;Compte
+8;Autres charges et autres produits;812;IMMOBILISATIONS CORPORELLES;Compte
+8;Autres charges et autres produits;816;IMMOBILISATIONS FINANCIÈRES;Compte
+8;Autres charges et autres produits;821;IMMOBILISATIONS INCORPORELLES;Compte
+8;Autres charges et autres produits;822;IMMOBILISATIONS CORPORELLES;Compte
+8;Autres charges et autres produits;826;IMMOBILISATIONS FINANCIÈRES;Compte
+8;Autres charges et autres produits;831;CHARGES H.A.O. CONSTATÉES;Compte
+8;Autres charges et autres produits;834;PERTES SUR CRÉANCES H.A.O.;Compte
+8;Autres charges et autres produits;833;CHARGES LIEES AUX OPERATIONS DE RESTRUCTURATION;Compte
+8;Autres charges et autres produits;835;DONS ET LIBÉRALITÉS ACCORDÉS;Compte
+8;Autres charges et autres produits;836;ABANDONS DE CRÉANCES CONSENTIS;Compte
+8;Autres charges et autres produits;837;CHARGES LIEES AUX OPERATIONS DE LIQUIDATION;Compte
+8;Autres charges et autres produits;839;CHARGES POUR DÉPRÉCIATIONS ET PROVISIONS POUR RISQUES À COURT TERME H.A.O.;Compte
+8;Autres charges et autres produits;841;PRODUITS H.A.O CONSTATÉS;Compte
+8;Autres charges et autres produits;844;INDEMNITES ET SUBVENTIONS H.A.O. (entité agricole);Compte
+8;Autres charges et autres produits;843;PRODUITS LIES AUX OPERATIONS DE RESTRUCTURATION;Compte
+8;Autres charges et autres produits;845;DONS ET LIBÉRALITÉS OBTENUS;Compte
+8;Autres charges et autres produits;846;ABANDONS DE CRÉANCES OBTENUS;Compte
+8;Autres charges et autres produits;847;PRODUITS LIES AUX OPERATIONS DE LIQUIDATION;Compte
+8;Autres charges et autres produits;848;TRANSFERTS DE CHARGES H.A.O;Compte
+8;Autres charges et autres produits;849;REPRISES DE CHARGES POUR DEPRECIATIONS ET PROVISIONS POUR RISQUES A COURT TERME H.A.O.;Compte
+8;Autres charges et autres produits;851;DOTATIONS AUX PROVISIONS RÉGLEMENTÉES;Compte
+8;Autres charges et autres produits;852;DOTATIONS AUX AMORTISSEMENTS H.A.O.;Compte
+8;Autres charges et autres produits;853;DOTATIONS AUX DÉPRÉCIATIONS H.A.O.;Compte
+8;Autres charges et autres produits;854;DOTATIONS AUX PROVISIONS POUR RISQUES ET CHARGES H.A.O.;Compte
+8;Autres charges et autres produits;858;AUTRES DOTATIONS H.A.O.;Compte
+8;Autres charges et autres produits;861;REPRISES DE PROVISIONS RÉGLEMENTÉES;Compte
+8;Autres charges et autres produits;862;REPRISES D’AMORTISSEMENTS HAO;Compte
+8;Autres charges et autres produits;863;REPRISES DE DÉPRÉCIATIONS H.A.O.;Compte
+8;Autres charges et autres produits;864;REPRISES DE PROVISIONS POUR RISQUES ET CHARGES H.A.O.;Compte
+8;Autres charges et autres produits;868;AUTRES REPRISES H.A.O.;Compte
+8;Autres charges et autres produits;871;PARTICIPATION LÉGALE AUX BÉNÉFICES;Compte
+8;Autres charges et autres produits;874;PARTICIPATION CONTRACTUELLE AUX BÉNÉFICES;Compte
+8;Autres charges et autres produits;878;AUTRES PARTICIPATIONS;Compte
+8;Autres charges et autres produits;881;ÉTAT;Compte
+8;Autres charges et autres produits;884;COLLECTIVITÉS PUBLIQUES;Compte
+8;Autres charges et autres produits;886;GROUPE;Compte
+8;Autres charges et autres produits;888;AUTRES;Compte
+8;Autres charges et autres produits;891;IMPÔTS SUR LES BÉNÉFICES DE L'EXERCICE;Compte
+8;Autres charges et autres produits;8911;Activités exercées dans l'État;Compte divisionnaire
+8;Autres charges et autres produits;8912;Activités exercées dans les autres États de la Région;Compte divisionnaire
+8;Autres charges et autres produits;8913;Activités exercées hors Région;Compte divisionnaire
+8;Autres charges et autres produits;892;RAPPEL D'IMPÔTS SUR RÉSULTATS ANTÉRIEURS;Compte
+8;Autres charges et autres produits;895;IMPÔT MINIMUM FORFAITAIRE (I.M.F.);Compte
+8;Autres charges et autres produits;899;DÉGRÈVEMENTS ET ANNULATIONS D’IMPÔTS SUR RÉSULTATS ANTÉRIEURS;Compte
+8;Autres charges et autres produits;8991;Dégrèvements;Compte divisionnaire
+8;Autres charges et autres produits;8994;Annulations pour pertes rétroactives;Compte divisionnaire
+9;Engagements et comptabilité analytique;90;ENGAGEMENTS OBTENUS ET ENGAGEMENTS ACCORDES;Compte principal
+9;Engagements et comptabilité analytique;91;CONTREPARTIES DES ENGAGEMENTS;Compte principal
+9;Engagements et comptabilité analytique;901;ENGAGEMENTS DE FINANCEMENT OBTENUS;Compte
+9;Engagements et comptabilité analytique;9011;Crédits confirmés obtenus;Compte divisionnaire
+9;Engagements et comptabilité analytique;9012;Emprunts restant à encaisser;Compte divisionnaire
+9;Engagements et comptabilité analytique;9013;Facilités de financement renouvelables;Compte divisionnaire
+9;Engagements et comptabilité analytique;9014;Facilités d'émission;Compte divisionnaire
+9;Engagements et comptabilité analytique;9018;Autres engagements de financement obtenus;Compte divisionnaire
+9;Engagements et comptabilité analytique;902;ENGAGEMENTS DE GARANTIE OBTENUS;Compte
+9;Engagements et comptabilité analytique;9021;Avals obtenus;Compte divisionnaire
+9;Engagements et comptabilité analytique;9022;Cautions, garanties obtenues;Compte divisionnaire
+9;Engagements et comptabilité analytique;9023;Hypothèques obtenues;Compte divisionnaire
+9;Engagements et comptabilité analytique;9024;Effets endossés par des tiers;Compte divisionnaire
+9;Engagements et comptabilité analytique;9028;Autres garanties obtenues;Compte divisionnaire
+9;Engagements et comptabilité analytique;903;ENGAGEMENTS RÉCIPROQUES;Compte
+9;Engagements et comptabilité analytique;9031;Achats de marchandises à terme;Compte divisionnaire
+9;Engagements et comptabilité analytique;9032;Achats à terme de devises;Compte divisionnaire
+9;Engagements et comptabilité analytique;9033;Commandes fermes des clients;Compte divisionnaire
+9;Engagements et comptabilité analytique;9038;Autres engagements réciproques;Compte divisionnaire
+9;Engagements et comptabilité analytique;904;AUTRES ENGAGEMENTS OBTENUS;Compte
+9;Engagements et comptabilité analytique;9041;Abandons de créances conditionnels;Compte divisionnaire
+9;Engagements et comptabilité analytique;9043;Ventes avec clause de réserve de propriété;Compte divisionnaire
+9;Engagements et comptabilité analytique;9048;Divers engagements obtenus;Compte divisionnaire
+9;Engagements et comptabilité analytique;905;ENGAGEMENTS DE FINANCEMENT ACCORDÉS;Compte
+9;Engagements et comptabilité analytique;9051;Crédits accordés non décaissés;Compte divisionnaire
+9;Engagements et comptabilité analytique;9058;Autres engagements de financement accordés;Compte divisionnaire
+9;Engagements et comptabilité analytique;906;ENGAGEMENTS DE GARANTIE ACCORDÉS;Compte
+9;Engagements et comptabilité analytique;9061;Avals accordés;Compte divisionnaire
+9;Engagements et comptabilité analytique;9062;Cautions, garanties accordées;Compte divisionnaire
+9;Engagements et comptabilité analytique;9063;Hypothèques accordées;Compte divisionnaire
+9;Engagements et comptabilité analytique;9064;Effets endossés par l’entité;Compte divisionnaire
+9;Engagements et comptabilité analytique;9068;Autres garanties accordées;Compte divisionnaire
+9;Engagements et comptabilité analytique;907;ENGAGEMENTS RÉCIPROQUES;Compte
+9;Engagements et comptabilité analytique;9071;Ventes de marchandises à terme;Compte divisionnaire
+9;Engagements et comptabilité analytique;9072;Ventes à terme de devises;Compte divisionnaire
+9;Engagements et comptabilité analytique;9073;Commandes fermes aux fournisseurs;Compte divisionnaire
+9;Engagements et comptabilité analytique;9078;Autres engagements réciproques;Compte divisionnaire
+9;Engagements et comptabilité analytique;9081;Annulations conditionnelles de dettes;Compte divisionnaire
+9;Engagements et comptabilité analytique;9082;Engagements de retraite;Compte divisionnaire
+9;Engagements et comptabilité analytique;9083;Achats avec clause de réserve de propriété;Compte divisionnaire
+9;Engagements et comptabilité analytique;9088;Divers engagements accordés;Compte divisionnaire
+9;Engagements et comptabilité analytique;911;à 914 CONTREPARTIE DES ENGAGEMENTS OBTENUS, 901 à 904;Compte
+9;Engagements et comptabilité analytique;915;à 918 CONTREPARTIE DES ENGAGEMENTS ACCORDÉS, 905 à 908;Compte
+9;Engagements et comptabilité analytique;92;COMPTES REFLECHIS;Compte principal
+9;Engagements et comptabilité analytique;93;COMPTES DE RECLASSEMENTS;Compte principal
+9;Engagements et comptabilité analytique;94;COMPTES DE COÛTS;Compte principal
+9;Engagements et comptabilité analytique;95;COMPTES DE STOCKS;Compte principal
+9;Engagements et comptabilité analytique;96;COMPTES D'ECARTS SUR COUTS PREETABLIS;Compte principal
+9;Engagements et comptabilité analytique;97;COMPTES DE DIFFERENCES DE TRAITEMENT COMPTABLE;Compte principal
+9;Engagements et comptabilité analytique;98;COMPTES DE RESULTATS;Compte principal
+9;Engagements et comptabilité analytique;99;COMPTES DE LIAISONS INTERNES;Compte principal

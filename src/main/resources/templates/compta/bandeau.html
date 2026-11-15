@@ -1,0 +1,11 @@
+<!-- Mention de validation et messages : à placer en tête de chaque page de la comptabilité. -->
+<div th:fragment="entete" class="compta-entete">
+    <div class="compta-bandeau" role="note" data-compta-bandeau>
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span th:text="${mention}">Comptabilité en cours de validation par un expert-comptable : vérifiez les états avant tout usage officiel.</span>
+    </div>
+    <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" role="alert" data-etat-erreur th:text="${error}"></div>
+    <div th:if="${erreur}" class="alert alert-danger" role="alert" data-etat-erreur th:text="${erreur}"></div>
+    <div th:if="${avertissement}" class="alert alert-warning" role="status" data-etat-avertissement th:text="${avertissement}"></div>
+</div>

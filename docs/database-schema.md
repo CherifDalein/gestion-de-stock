@@ -317,6 +317,26 @@ Marchandise rendue par un client (`VENTE`, livrée par le retour de vente) ou à
 
 Un résultat est enregistré dans la même transaction que le stock, le document et la caisse. Les résultats utilisés sont conservés pour reconnaître les renvois ultérieurs.
 
+### `sous_compte_boutique`
+
+Lot 5a (comptabilité). Les écritures ne sont jamais stockées ; cette table nomme les sous-comptes d'une boutique.
+
+- `id` PK ; `boutique_id` BIGINT NOT NULL FK `fk_sous_compte_boutique` -> `boutique.id`
+- `numero` VARCHAR(8) NOT NULL : commence par `parent_numero`, jamais un numéro du plan officiel ; unique par boutique (`uk_sous_compte_boutique_numero`)
+- `parent_numero` VARCHAR(4) NOT NULL : compte officiel parent (2 à 4 chiffres)
+- `intitule` VARCHAR(120) NOT NULL
+- `compte_tresorerie_id` BIGINT NULL UNIQUE (`uk_sous_compte_compte_tresorerie`), FK `fk_sous_compte_compte_tresorerie` -> `compte_tresorerie_boutique.id` : renseigné pour le sous-compte d'un compte de trésorerie
+- `date_creation` DATETIME(6) NOT NULL
+
+### `correspondance_compta`
+
+Lot 5a. Les valeurs de la table de correspondance que le gérant a changées ; une ligne absente veut dire « valeur par défaut ».
+
+- `id` PK ; `boutique_id` BIGINT NOT NULL FK `fk_correspondance_compta_boutique` -> `boutique.id`
+- `cle` VARCHAR(40) NOT NULL : nature d'opération (`CleCompta`, par exemple `VENTES_MARCHANDISES`) ; unique par boutique (`uk_correspondance_compta_cle`)
+- `compte_numero` VARCHAR(8) NOT NULL : compte officiel ou sous-compte de la boutique
+- `mots_cles` VARCHAR(255) NULL : mots-clés (séparés par des virgules) d'une catégorie de dépense
+
 ## Diagramme relationnel
 
 ```mermaid
@@ -543,6 +563,8 @@ erDiagram
 - `ParametresPlateforme.java`
 - `HistoriqueAbonnement.java`
 - `MouvementStock.java`
+- `SousCompteBoutique.java`
+- `CorrespondanceCompta.java`
 
 ## Remarques
 
@@ -654,3 +676,9 @@ statut défini, y compris si un prix était zéro. Les anciennes lignes d’acha
 les anciens mouvements ne reçoivent aucun prix de vente déduit du tarif actuel.
 Une relance conserve les nouvelles fiches sans tarifs et tous les prix historiques
 déjà enregistrés.
+
+## Mise à jour d'une base existante : comptabilité (lot 5a)
+
+Après le lot 6 et une sauvegarde complète : `./gradlew lot5Check`, puis `LOT5_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot5Migrate`
+(tables `sous_compte_boutique` et `correspondance_compta`, un sous-compte par compte de trésorerie). Voir [lot-5.md](lot-5.md) et
+[migrations/lot-5.md](migrations/lot-5.md).

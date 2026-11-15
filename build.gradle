@@ -432,6 +432,23 @@ tasks.register('lot3MariaDbTest', JavaExec) {
     }
 }
 
+['lot5Check': '--check', 'lot5Migrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute les tables de la comptabilité du lot 5a (sous-comptes et correspondance) et un sous-compte par compte de trésorerie, sans modifier aucune autre donnée'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.Lot5Migration'
+        args mode
+    }
+}
+
+tasks.register('lot5MariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration du lot 5a, la validation Hibernate et les requêtes groupées de la comptabilité dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.Lot5MariaDbTest'
+}
+
 tasks.register('lot6MariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie la migration du lot 6 et la validation Hibernate dans des bases MariaDB temporaires'
