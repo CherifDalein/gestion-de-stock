@@ -63,12 +63,12 @@ class Lot5MigrationTests {
     @Test void leSchemaHistoriqueRetireSeulementLeLot5() throws Exception {
         String actuel = Files.readString(Path.of("docs/database-schema.sql"));
         String ancien = SchemaHistorique.sansLot5(actuel);
-        assertThat(actuel).contains("sous_compte_boutique", "correspondance_compta", "uk_sous_compte_boutique_numero", "uk_correspondance_compta_cle", "Lot 5a (comptabilité)");
-        assertThat(ancien).doesNotContain("sous_compte_boutique", "correspondance_compta", "Lot 5a (comptabilité)").contains("supprime_le", "uk_categorie_boutique_nom_cle");
+        assertThat(actuel).contains("sous_compte_boutique", "correspondance_compta", "uk_sous_compte_boutique_numero", "uk_correspondance_compta_cle", "reglage_comptable_boutique", "Lot 5a (comptabilité)");
+        assertThat(ancien).doesNotContain("sous_compte_boutique", "correspondance_compta", "reglage_comptable_boutique", "Lot 5a (comptabilité)").contains("supprime_le", "uk_categorie_boutique_nom_cle");
         assertThat(actuel.length() - ancien.length()).isPositive();
         // Les schémas des lots antérieurs partent de celui du lot 6, donc sans la comptabilité.
         for (String historique : List.of(SchemaHistorique.sansLot6(actuel), SchemaHistorique.sansLot3(actuel), SchemaHistorique.sansLot1(actuel)))
-            assertThat(historique).doesNotContain("sous_compte_boutique", "correspondance_compta");
+            assertThat(historique).doesNotContain("sous_compte_boutique", "correspondance_compta", "reglage_comptable_boutique");
     }
 
     @Test void sauvegardeVerifieeEtCibleLocaleSontObligatoires() throws Exception {

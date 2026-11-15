@@ -8,7 +8,7 @@ import java.util.*;
 
 /**
  * Lot 5a (comptabilité) : crée {@code sous_compte_boutique} et {@code correspondance_compta}, puis donne un sous-compte à chaque compte de
- * trésorerie qui n'en a pas (par exemple 5711 « Caisse » sous 571). Les écritures ne sont jamais stockées : aucune autre table n'est touchée.
+ * trésorerie qui n'en a pas (par exemple 5711 « Caisse » sous 571). Lot 5b : crée aussi {@code reglage_comptable_boutique} (le système des états financiers de la boutique, normal par défaut), y compris sur une base où le 5a est déjà posé. Les écritures ne sont jamais stockées : aucune autre table n'est touchée.
  *
  * <p>Déroulement, chaque étape pouvant être reprise après une interruption : création des tables absentes (avec leurs contraintes), puis un
  * sous-compte pour chaque compte de trésorerie qui n'en a pas, dans l'ordre d'affichage des comptes, avec le plus petit numéro libre sous le
@@ -18,8 +18,8 @@ import java.util.*;
  */
 public final class Lot5Migration {
     static final String VERROU = "stock_lot5_migration";
-    static final String SOUS_COMPTES = "sous_compte_boutique", CORRESPONDANCES = "correspondance_compta";
-    static final List<String> TABLES = List.of(SOUS_COMPTES, CORRESPONDANCES);
+    static final String SOUS_COMPTES = "sous_compte_boutique", CORRESPONDANCES = "correspondance_compta", REGLAGES = "reglage_comptable_boutique";
+    static final List<String> TABLES = List.of(SOUS_COMPTES, CORRESPONDANCES, REGLAGES);
     private static final String MOTEUR = " ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci";
 
     /** Colonne attendue : types JDBC acceptés, taille (0 si sans objet) et caractère facultatif. */
@@ -34,16 +34,18 @@ public final class Lot5Migration {
             new Colonne(SOUS_COMPTES, "date_creation", Set.of(Types.TIMESTAMP), 0, false),
             new Colonne(CORRESPONDANCES, "id", Set.of(Types.BIGINT), 0, false), new Colonne(CORRESPONDANCES, "boutique_id", Set.of(Types.BIGINT), 0, false),
             new Colonne(CORRESPONDANCES, "cle", Set.of(Types.VARCHAR), 40, false), new Colonne(CORRESPONDANCES, "compte_numero", Set.of(Types.VARCHAR), 8, false),
-            new Colonne(CORRESPONDANCES, "mots_cles", Set.of(Types.VARCHAR), 255, true));
+            new Colonne(CORRESPONDANCES, "mots_cles", Set.of(Types.VARCHAR), 255, true),
+            new Colonne(REGLAGES, "id", Set.of(Types.BIGINT), 0, false), new Colonne(REGLAGES, "boutique_id", Set.of(Types.BIGINT), 0, false),
+            new Colonne(REGLAGES, "systeme", Set.of(Types.VARCHAR), 10, false));
 
     /** Unicités attendues : table → colonnes de chaque contrainte unique (hors clé primaire). */
     static final Map<String, List<List<String>>> UNICITES = Map.of(
             SOUS_COMPTES, List.of(List.of("boutique_id", "numero"), List.of("compte_tresorerie_id")),
-            CORRESPONDANCES, List.of(List.of("boutique_id", "cle")));
+            CORRESPONDANCES, List.of(List.of("boutique_id", "cle")), REGLAGES, List.of(List.of("boutique_id")));
 
     /** Clés étrangères attendues : table.colonne → table cible. */
     static final Map<String, String> CLES_ETRANGERES = Map.of(
-            SOUS_COMPTES + ".boutique_id", "boutique", SOUS_COMPTES + ".compte_tresorerie_id", "compte_tresorerie_boutique", CORRESPONDANCES + ".boutique_id", "boutique");
+            SOUS_COMPTES + ".boutique_id", "boutique", SOUS_COMPTES + ".compte_tresorerie_id", "compte_tresorerie_boutique", CORRESPONDANCES + ".boutique_id", "boutique", REGLAGES + ".boutique_id", "boutique");
 
     /** Compte officiel parent du sous-compte de chaque type de compte de trésorerie. */
     static final Map<String, String> PARENTS = Map.of("ESPECES", "571", "ORANGE_MONEY", "552", "BANQUE", "521");
@@ -129,6 +131,8 @@ public final class Lot5Migration {
         if (!tables.containsKey(CORRESPONDANCES)) sql(c, "CREATE TABLE " + CORRESPONDANCES + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, cle VARCHAR(40) NOT NULL,"
                 + " compte_numero VARCHAR(8) NOT NULL, mots_cles VARCHAR(255) NULL, CONSTRAINT uk_correspondance_compta_cle UNIQUE (boutique_id, cle),"
                 + " CONSTRAINT fk_correspondance_compta_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))" + moteur);
+        if (!tables.containsKey(REGLAGES)) sql(c, "CREATE TABLE " + REGLAGES + " (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, boutique_id BIGINT NOT NULL, systeme VARCHAR(10) NOT NULL,"
+                + " CONSTRAINT uk_reglage_comptable_boutique UNIQUE (boutique_id), CONSTRAINT fk_reglage_comptable_boutique FOREIGN KEY (boutique_id) REFERENCES boutique (id))" + moteur);
     }
 
     /**
@@ -205,6 +209,8 @@ public final class Lot5Migration {
         if (tables.containsKey(SOUS_COMPTES)) verifierSousComptes(c);
         if (tables.containsKey(CORRESPONDANCES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + CORRESPONDANCES + " WHERE compte_numero = '' OR cle = ''") != 0)
             nonConforme("une ligne de correspondance a une clé ou un compte vide");
+        if (tables.containsKey(REGLAGES) && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + REGLAGES + " WHERE systeme NOT IN ('NORMAL', 'MINIMAL')") != 0)
+            nonConforme("un réglage comptable a un système inconnu");
     }
 
     /** Un sous-compte commence par son parent, n'est jamais un compte officiel, et celui d'un compte de trésorerie suit son type et sa boutique. */
