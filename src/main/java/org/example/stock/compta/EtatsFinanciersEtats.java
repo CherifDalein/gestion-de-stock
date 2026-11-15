@@ -123,7 +123,7 @@ public final class EtatsFinanciersEtats {
         t.note("Méthode indirecte : la capacité d'autofinancement part de l'excédent brut d'exploitation, puis les variations du besoin de financement et les flux d'investissement "
                 + "et de financement se lisent sur les variations des soldes de la balance. La trésorerie finale doit égaler la classe 5 hors 59 de la balance : "
                 + Textes.montant(r(e.n().tresorerieBalance())) + " GNF.");
-        return new Etat("flux-tresorerie", "Tableau des flux de trésorerie", periode(e), notes(alertes(e), "Modèle du système normal, SYSCOHADA révisé (Acte uniforme, p. 997)."),
+        return new Etat("flux", "Tableau des flux de trésorerie", periode(e), notes(alertes(e), "Modèle du système normal, SYSCOHADA révisé (Acte uniforme, p. 997)."),
                 List.of(t), FormatPapier.A4_PORTRAIT, "tableau-des-flux", e.du(), e.au());
     }
 

@@ -35,3 +35,29 @@
 .compta-page .compta-systeme fieldset { border: 0; margin: 0; padding: 0; }
 .compta-page .compta-systeme .form-check { margin-bottom: 10px; }
 .compta-page .etat-table > tbody > tr.etat-soustotal > td { font-weight: 700; }
+/* Petits écrans : les colonnes Signe et Note (repères du modèle) passent après les montants, qui restent visibles sans défilement. */
+@media (max-width: 575px) {
+    .compta-page[data-etat="bilan"] .etat-table th:nth-child(3), .compta-page[data-etat="bilan"] .etat-table td:nth-child(3),
+    .compta-page[data-etat="compte-resultat"] .etat-table th:nth-child(3), .compta-page[data-etat="compte-resultat"] .etat-table td:nth-child(3),
+    .compta-page[data-etat="compte-resultat"] .etat-table th:nth-child(4), .compta-page[data-etat="compte-resultat"] .etat-table td:nth-child(4),
+    .compta-page[data-etat="flux"] .etat-table th:nth-child(3), .compta-page[data-etat="flux"] .etat-table td:nth-child(3),
+    .compta-page[data-etat="flux"] .etat-table th:nth-child(4), .compta-page[data-etat="flux"] .etat-table td:nth-child(4) { display: none; }
+    .compta-page[data-etat] .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-left: 6px; padding-right: 6px; font-size: .82rem; }
+}
+@media (max-width: 575px) {
+    #stockEtat.compta-page[data-etat="bilan"] .etat-table, #stockEtat.compta-page[data-etat="compte-resultat"] .etat-table, #stockEtat.compta-page[data-etat="flux"] .etat-table { min-width: 0; width: 100%; }
+    /* Bilan, actif : le brut et les amortissements restent dans le PDF et l'Excel ; l'écran étroit garde le net N et N-1. */
+    .compta-page[data-etat="bilan"] .etat-table th:nth-child(4):not(:last-child), .compta-page[data-etat="bilan"] .etat-table td:nth-child(4):not(:last-child),
+    .compta-page[data-etat="bilan"] .etat-table th:nth-child(5):not(:last-child), .compta-page[data-etat="bilan"] .etat-table td:nth-child(5):not(:last-child) { display: none; }
+}
+@media (max-width: 575px) {
+    #stockEtat.compta-page[data-etat="bilan"] .etat-table > thead > tr > th, #stockEtat.compta-page[data-etat="compte-resultat"] .etat-table > thead > tr > th,
+    #stockEtat.compta-page[data-etat="flux"] .etat-table > thead > tr > th { white-space: normal; }
+    .compta-page[data-etat="bilan"] .card-body, .compta-page[data-etat="compte-resultat"] .card-body, .compta-page[data-etat="flux"] .card-body { padding: 12px 8px; }
+    .compta-page[data-etat] .etat-table > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-left: 4px; padding-right: 4px; }
+}
+@media (max-width: 575px) {
+    #stockEtat.compta-page[data-etat="bilan"] .etat-table, #stockEtat.compta-page[data-etat="compte-resultat"] .etat-table, #stockEtat.compta-page[data-etat="flux"] .etat-table { table-layout: fixed; }
+    .compta-page[data-etat] .etat-table th:first-child, .compta-page[data-etat] .etat-table td:first-child { width: 2.4rem; }
+    .compta-page[data-etat] .etat-table th.text-end, .compta-page[data-etat] .etat-table td.text-end { width: 4.5rem; font-size: .76rem; overflow-wrap: anywhere; }
+}

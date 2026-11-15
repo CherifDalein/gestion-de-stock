@@ -415,6 +415,7 @@ class EtatsFinanciersIntegrationTests {
         mvc.perform(get(BASE + "/rattachements/export/excel").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk());
     }
 
+
     // ==== Outils ============================================================================================================
 
     static String normaliser(String texte) { return org.springframework.web.util.HtmlUtils.htmlUnescape(texte).replace(' ', ' ').replace(' ', ' '); }
