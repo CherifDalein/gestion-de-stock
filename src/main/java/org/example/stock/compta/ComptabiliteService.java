@@ -197,7 +197,7 @@ public class ComptabiliteService {
         BigDecimal debit = BigDecimal.ZERO, credit = BigDecimal.ZERO;
         for (Ecriture e : l.ecritures()) {
             debit = debit.add(e.totalDebit()); credit = credit.add(e.totalCredit());
-            if (!e.estEquilibree()) mauvaises.add(e.piece() + " : débit " + e.totalDebit().toPlainString() + ", crédit " + e.totalCredit().toPlainString());
+            if (!e.estEquilibree()) mauvaises.add(e.piece() + " : débit " + MontantTexte.de(e.totalDebit()) + ", crédit " + MontantTexte.de(e.totalCredit()));
         }
         boolean ok = mauvaises.isEmpty() && debit.compareTo(credit) == 0;
         return new Controle(1, "Équilibre des écritures", ok ? Statut.OK : Statut.ECART,
@@ -221,7 +221,7 @@ public class ComptabiliteService {
         for (String compte : attendu.keySet()) {
             BigDecimal a = arrondi(attendu.get(compte));
             BigDecimal b = arrondi(livre.getOrDefault(compte, BigDecimal.ZERO));
-            if (a.compareTo(b) != 0) ecarts.add(compte + " " + l.intitule(compte) + " : livres " + b.toPlainString() + ", application " + a.toPlainString() + ", écart " + b.subtract(a).toPlainString());
+            if (a.compareTo(b) != 0) ecarts.add(compte + " " + l.intitule(compte) + " : livres " + MontantTexte.de(b) + ", application " + MontantTexte.de(a) + ", écart " + MontantTexte.de(b.subtract(a)));
         }
         boolean ok = ecarts.isEmpty();
         return new Controle(2, "Trésorerie : comptes de la boutique", ok ? Statut.OK : Statut.ECART,
@@ -252,10 +252,10 @@ public class ComptabiliteService {
         for (Long id : appli.keySet()) {
             BigDecimal attendu = arrondi(appli.get(id).soldeNet());
             BigDecimal reel = arrondi(livre.getOrDefault(id, BigDecimal.ZERO));
-            if (attendu.compareTo(reel) != 0) ecarts.add(nom(noms, id) + " : livres " + reel.toPlainString() + ", application " + attendu.toPlainString() + ", écart " + reel.subtract(attendu).toPlainString());
+            if (attendu.compareTo(reel) != 0) ecarts.add(nom(noms, id) + " : livres " + MontantTexte.de(reel) + ", application " + MontantTexte.de(attendu) + ", écart " + MontantTexte.de(reel.subtract(attendu)));
         }
         for (var e : livre.entrySet()) {
-            if (!appli.containsKey(e.getKey()) && arrondi(e.getValue()).signum() != 0) ecarts.add(nom(noms, e.getKey()) + " (hors liste) : livres " + arrondi(e.getValue()).toPlainString() + ", application 0");
+            if (!appli.containsKey(e.getKey()) && arrondi(e.getValue()).signum() != 0) ecarts.add(nom(noms, e.getKey()) + " (hors liste) : livres " + MontantTexte.de(arrondi(e.getValue())) + ", application 0");
         }
         boolean ok = ecarts.isEmpty();
         return new Controle(numero, libelle, ok ? Statut.OK : Statut.ECART,
@@ -271,8 +271,8 @@ public class ComptabiliteService {
         BigDecimal appli = donnees.valeurStockAppli(l.boutiqueId());
         boolean ok = livre.compareTo(appli) == 0;
         return new Controle(5, "Stock", ok ? Statut.OK : Statut.ECART,
-                ok ? "Le compte " + compte + " (" + livre.toPlainString() + ") égale la valeur du stock de l'application."
-                        : "Compte " + compte + " : livres " + livre.toPlainString() + ", application " + appli.toPlainString() + ", écart " + livre.subtract(appli).toPlainString() + ".",
+                ok ? "Le compte " + compte + " (" + MontantTexte.de(livre) + ") égale la valeur du stock de l'application."
+                        : "Compte " + compte + " : livres " + MontantTexte.de(livre) + ", application " + MontantTexte.de(appli) + ", écart " + MontantTexte.de(livre.subtract(appli)) + ".",
                 List.of());
     }
 
