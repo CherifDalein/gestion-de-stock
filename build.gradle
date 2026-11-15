@@ -491,3 +491,17 @@ tasks.register('tableauDeBordMariaDbTest', JavaExec) {
     classpath = sourceSets.migration.runtimeClasspath
     mainClass = 'org.example.stock.migration.TableauDeBordMariaDbTest'
 }
+
+// Toutes les vérifications MariaDB en une commande. Elles partagent le serveur local : exécution strictement en séquence.
+// Une nouvelle tâche *MariaDbTest est incluse automatiquement. Ajouter --continue pour aller au bout malgré un échec.
+tasks.register('mariaDbTestsTous') {
+    group = 'verification'
+    description = 'Lance toutes les tâches *MariaDbTest l’une après l’autre (bases MariaDB temporaires locales)'
+    def tests = tasks.withType(JavaExec).matching { it.name.endsWith('MariaDbTest') }.toList().sort { it.name }
+    dependsOn tests
+    def precedent = null
+    tests.each { t ->
+        if (precedent != null) t.mustRunAfter precedent
+        precedent = t
+    }
+}
