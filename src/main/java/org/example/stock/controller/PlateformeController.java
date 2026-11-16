@@ -98,6 +98,10 @@ public class PlateformeController {
         for (var boutique : boutiques) situations.put(boutique.getId(), abonnements.situation(boutique));
         model.addAttribute("abonnementsParBoutique", situations);
         model.addAttribute("utilisateursParBoutique", plateforme.compterUtilisateursParBoutique());
+        // Nombre de boutiques par monnaie : jamais de total de montants tous pays confondus (GNF et FCFA ne s'additionnent pas).
+        var parMonnaie = new java.util.EnumMap<org.example.stock.pays.Monnaie, Long>(org.example.stock.pays.Monnaie.class);
+        for (var boutique : boutiques) parMonnaie.merge(boutique.getMonnaie(), 1L, Long::sum);
+        model.addAttribute("boutiquesParMonnaie", parMonnaie);
         model.addAttribute("view", "plateforme/boutiques/liste");
         return "dashboard";
     }

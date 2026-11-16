@@ -31,11 +31,17 @@ Pour une base déjà à jour avec les stocks et les tarifs, appliquer ensuite la
 sauvegarde. Elle réserve les stocks et le solde initiaux à la préparation de la
 boutique, puis conserve les achats et ventes comme seules variations de stock.
 
-Pour séparer les espèces, Orange Money et la banque, appliquer la
+Pour séparer les espèces, le mobile money et la banque, appliquer la
 [migration de trésorerie](docs/migrations/tresorerie.md) après sauvegarde.
 Les anciens mouvements restent affectés à la caisse, avec leurs montants
 et leurs liens d'origine. Le [guide de trésorerie](docs/tresorerie.md) décrit
 les paiements, les transferts et les dépenses.
+
+Pour le pays et la monnaie des boutiques (Guinée en GNF, UEMOA et CEMAC en FCFA) et l'opérateur des comptes de mobile money,
+appliquer la [migration pays-monnaie](docs/migrations/pays-monnaie.md) après les lots 5 et 6 et une sauvegarde :
+`./gradlew paysMonnaieCheck`, puis `PAYS_MONNAIE_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew paysMonnaieMigrate`.
+Les boutiques existantes restent en Guinée (GN, GNF) ; les nouvelles choisissent leur pays à la création, définitivement.
+Les règles (affichage sans décimales, billetage, opérateurs) sont décrites dans [docs/pays-monnaie.md](docs/pays-monnaie.md).
 
 Pour préparer le lot 1 (seuils, unités, services, coût moyen, numéros de facture,
 échéances, avances et soldes initiaux), appliquer la
@@ -71,7 +77,7 @@ L'étape 5b ajoute les états financiers (compte de résultat, bilan, tableau de
 `reglage_comptable_boutique`, créée par la même commande `lot5Migrate` (sûre sur une base où le 5a est déjà posé) ; voir la section « États financiers » de [docs/lot-5.md](docs/lot-5.md).
 
 Pour les comptes de trésorerie multiples du lot 3 (jusqu'à 12 comptes par boutique, par
-exemple deux comptes Orange Money ou deux banques), appliquer la
+exemple deux comptes de mobile money ou deux banques), appliquer la
 [migration du lot 3](docs/migrations/lot-3.md) après le lot 4 et une sauvegarde :
 `./gradlew lot3Check`, puis `LOT3_BACKUP_DIR=/chemin/prive/sauvegarde ./gradlew lot3Migrate`.
 Chaque compte existant devient le compte principal de son type (« Caisse », « Orange Money »,
@@ -118,7 +124,8 @@ node --test src/test/js/montants.test.cjs
 - [Paramètres de boutique et coordonnées sur les factures](docs/migrations/parametres-boutique.md)
 - [Logo et coordonnées propres à chaque boutique](docs/identite-boutique.md)
 - [Démarrage de boutique, stock et solde initiaux](docs/migrations/demarrage-boutique.md)
-- [Caisse, Orange Money, banque et transferts](docs/tresorerie.md)
+- [Caisse, mobile money, banque et transferts](docs/tresorerie.md)
+- [Pays et monnaie d'une boutique (GNF, FCFA), affichage des montants, billetage, opérateurs](docs/pays-monnaie.md) et sa [migration](docs/migrations/pays-monnaie.md)
 - [Migration des trois comptes de trésorerie](docs/migrations/tresorerie.md)
 - [Préparation du schéma du lot 1](docs/migrations/lot-1.md)
 - [Préparation du schéma du lot 2](docs/migrations/lot-2.md)

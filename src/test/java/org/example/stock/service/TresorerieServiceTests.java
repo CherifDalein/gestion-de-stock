@@ -76,7 +76,7 @@ class TresorerieServiceTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"ESPECES,ORANGE_MONEY", "ESPECES,BANQUE", "ORANGE_MONEY,ESPECES", "ORANGE_MONEY,BANQUE", "BANQUE,ESPECES", "BANQUE,ORANGE_MONEY"})
+    @CsvSource({"ESPECES,MOBILE_MONEY", "ESPECES,BANQUE", "MOBILE_MONEY,ESPECES", "MOBILE_MONEY,BANQUE", "BANQUE,ESPECES", "BANQUE,MOBILE_MONEY"})
     void unTransfertDansChaqueSensConserveLeTotalEtNeGonflePasLesFlux(TypeCompteTresorerie source, TypeCompteTresorerie destination) {
         provisionner();
         var formulaire = transfert(source, destination, "100");

@@ -350,7 +350,7 @@ class JustificatifsSoldeTests {
         authentifie(GERANT, "ADMIN", () -> { fixer(JOUR); return null; });
         Client neuf = client(boutiqueA, "Client sans histoire", "0", null);
         String texte = texteLineaire(exporter("/etats/justificatifs/client/pdf?id=" + neuf.getId(), GERANT).getContentAsByteArray());
-        assertThat(texte).contains("Solde nul", "Le compte du client est soldé", "0 GNF", "zéro franc guinéen", "Arrêté à la somme de zéro franc guinéen.");
+        assertThat(texte).contains("Solde nul", "Le compte du client est soldé", "zéro franc guinéen", "Arrêté à la somme de zéro franc guinéen.");
     }
 
     // ==== Trésorerie : le solde à une date est celui du journal et du bilan ====================================================

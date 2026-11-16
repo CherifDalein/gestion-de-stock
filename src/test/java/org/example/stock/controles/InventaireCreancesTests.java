@@ -120,12 +120,12 @@ class InventaireCreancesTests {
                 new String[]{"FOURNISSEUR:" + sidi.getId(), "80000", "JE_LUI_DOIS", ""}).andExpect(status().is3xxRedirection());
         Long id = inventaires.findByBoutiqueIdAndJeton(boutique.getId(), "j-3").orElseThrow().getId();
         String page = mvc.perform(get("/controles/creances/" + id).with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("IC-" + id, "Aminata", "Sidi", "/clients/solde/ajuster/" + aminata.getId(), "− 5 000,00 GNF", "aucun solde");
+        assertThat(page).contains("IC-" + id, "Aminata", "Sidi", "/clients/solde/ajuster/" + aminata.getId(), "− 5\u00a0000\u00a0GNF", "aucun solde");
         assertThat(page).doesNotContain("/fournisseurs/solde/ajuster/" + sidi.getId());
         String liste = mvc.perform(get("/controles/creances").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(liste).contains("IC-" + id);
         String formulaire = mvc.perform(get("/controles/creances/nouveau").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(formulaire).contains("Aminata", "Sidi", "Banque du Nord", "50 000,00 GNF (il me doit)", "80 000,00 GNF (je lui dois)").doesNotContain("Client voisin");
+        assertThat(formulaire).contains("Aminata", "Sidi", "Banque du Nord", "50\u00a0000\u00a0GNF (il me doit)", "80\u00a0000\u00a0GNF (je lui dois)").doesNotContain("Client voisin");
         String recherche = mvc.perform(get("/controles/creances/nouveau").param("q", "sid").with(user(GERANT).roles("ADMIN"))).andReturn().getResponse().getContentAsString();
         assertThat(recherche).contains("Sidi").doesNotContain("Aminata");
     }

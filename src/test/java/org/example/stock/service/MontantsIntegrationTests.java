@@ -62,6 +62,8 @@ class MontantsIntegrationTests {
         produit.setCategorie(categorie); produit.setFournisseur(fournisseur); produit = produits.saveAndFlush(produit);
     }
 
+    // Les centimes sont conservés en base et dans tous les calculs (assertions BigDecimal) ; l'affichage, lui, est arrondi au franc (HALF_UP),
+    // sans décimales : 0,30 s'affiche « 0 GNF », 0,50 s'affiche « 1 GNF », 999 999 999 999 999,99 s'affiche « 1 000 000 000 000 000 GNF ».
     @Test
     void achatEtReglementConserventLesCentimesJusquaLaFacture() throws Exception {
         Achat achat = achat("0.10", 3); achat.setMontantVerse(new BigDecimal("0.10"));
@@ -75,8 +77,8 @@ class MontantsIntegrationTests {
         assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("-0.50");
         assertThat(produits.findById(produit.getId()).orElseThrow().getQuantite()).isEqualTo(14L);
         mvc.perform(get("/factures/achat/" + id)).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")))
-                .andExpect(content().string(containsString("0,50 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")))
+                .andExpect(content().string(containsString("1\u00a0GNF")));
     }
 
     @Test
@@ -88,8 +90,8 @@ class MontantsIntegrationTests {
         assertThat(relue.getResteAPayer()).isEqualByComparingTo("0.20");
         assertThat(ventes.calculerTotalVentesDepuis(LocalDate.now().atStartOfDay())).isEqualByComparingTo("0.10");
         mvc.perform(get("/factures/vente/" + id)).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")))
-                .andExpect(content().string(containsString("0,20 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")))
+                .andExpect(content().string(containsString("0\u00a0GNF")));
     }
 
     @Test
@@ -119,7 +121,7 @@ class MontantsIntegrationTests {
         assertThat(caisseService.getNetDuJour(jour)).isEqualByComparingTo("0.25");
         assertThat(caisseService.getSoldeCloture(jour)).isEqualByComparingTo("0.32");
         mvc.perform(get("/caisse/journal")).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,32 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")));
     }
 
     @Test
@@ -134,7 +136,7 @@ class MontantsIntegrationTests {
     void lesGrandsMontantsRestentExactsDansLesFacturesEtLeFormulaireDeModification() throws Exception {
         Long id = achatService.enregistrerAchat(achat("999999999999999.99", 1)).getId();
         mvc.perform(get("/factures/achat/" + id)).andExpect(status().isOk())
-                .andExpect(content().string(containsString("999 999 999 999 999,99 GNF")));
+                .andExpect(content().string(containsString("1\u00a0000\u00a0000\u00a0000\u00a0000\u00a0000\u00a0GNF")));
         mvc.perform(get("/achats/modifier/" + id)).andExpect(status().isOk())
                 .andExpect(content().string(containsString("\"999999999999999.99\"")));
     }
@@ -145,7 +147,7 @@ class MontantsIntegrationTests {
         caisseService.enregistrerEntree(Montants.MAX, "Test", "VENTE", utilisateur);
         assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("1999999999999999.98");
         mvc.perform(get("/caisse/journal")).andExpect(status().isOk())
-                .andExpect(content().string(containsString("1 999 999 999 999 999,98 GNF")));
+                .andExpect(content().string(containsString("2\u00a0000\u00a0000\u00a0000\u00a0000\u00a0000\u00a0GNF")));
     }
 
     @Test
@@ -156,9 +158,9 @@ class MontantsIntegrationTests {
             achatService.enregistrerAchat(achat("0.10", quantite));
         }
         mvc.perform(get("/factures/client/" + client.getId() + "/cumule")).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")));
         mvc.perform(get("/factures/fournisseur/" + fournisseur.getId() + "/cumule")).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")));
     }
 
     @Test
@@ -168,11 +170,11 @@ class MontantsIntegrationTests {
         Long id = venteService.effectuerVente(vente).getId();
         Vente ancienne = ventes.findById(id).orElseThrow(); ancienne.setMontantVerse(null); ventes.saveAndFlush(ancienne);
         mvc.perform(get("/factures/vente/" + id)).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")))
-                .andExpect(content().string(containsString("0,00 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")))
+                .andExpect(content().string(containsString("0\u00a0GNF")));
         mvc.perform(get("/factures/client/" + client.getId() + "/cumule")).andExpect(status().isOk())
-                .andExpect(content().string(containsString("0,30 GNF")))
-                .andExpect(content().string(containsString("0,00 GNF")));
+                .andExpect(content().string(containsString("0\u00a0GNF")))
+                .andExpect(content().string(containsString("0\u00a0GNF")));
     }
 
     @ParameterizedTest

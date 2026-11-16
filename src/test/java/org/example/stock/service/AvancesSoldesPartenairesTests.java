@@ -489,12 +489,12 @@ class AvancesSoldesPartenairesTests {
         achat(fournisseur, 10, "0");
         for (String url : List.of("/clients/modifier/" + client.getId(), "/fournisseurs/modifier/" + fournisseur.getId())) {
             String html = mvc.perform(get(url).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            assertThat(html).contains("soldeDepartFige", "soldeDepartLectureSeule", "1 000 000,00 GNF", "ajustement de solde")
+            assertThat(html).contains("soldeDepartFige", "soldeDepartLectureSeule", "1\u00a0000\u00a0000\u00a0GNF", "ajustement de solde")
                     .doesNotContain("inputMontantSoldeDepart", "inputConfirmationSoldeDepart", "name=\"montantSoldeDepart\"", "name=\"sensSoldeDepart\"");
         }
         // Après une tentative refusée, l'écran montre toujours le solde enregistré, pas la valeur forgée.
         String html = modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", true).andReturn().getResponse().getContentAsString();
-        assertThat(html).contains("1 000 000,00 GNF").doesNotContain("10 000 000");
+        assertThat(html).contains("1\u00a0000\u00a0000\u00a0GNF").doesNotContain("10 000 000");
     }
 
     @Test
@@ -842,7 +842,7 @@ class AvancesSoldesPartenairesTests {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Il me doit")));
         String factureSurplus = mvc.perform(get("/factures/vente/" + tropPayee.getId()).with(user(CAISSIER).roles("CAISSIER")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(factureSurplus).contains("Surplus versé").contains("20 000,00");
+        assertThat(factureSurplus).contains("Surplus versé").contains("20\u00a0000");
         String factureAvance = mvc.perform(get("/factures/vente/" + creditAvecAvance.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(factureAvance).contains("Avance utilisée");

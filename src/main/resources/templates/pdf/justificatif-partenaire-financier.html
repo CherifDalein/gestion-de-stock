@@ -64,7 +64,7 @@
 <p class="js-mention" th:if="${j.capitalApporte.signum() != 0}" th:text="${'Pour information, capital apporté net des retraits : ' + monnaie.formater(j.capitalApporte) + ' (non compris dans le solde).'}">Capital</p>
 
 <p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de cent vingt-cinq mille francs guinéens.</p>
-<p class="js-mention">Montants en francs guinéens ([[${monnaie.symbole}]]). Un montant positif est dû par la boutique, un montant négatif est dû à la boutique. Ce solde est celui de la fiche du partenaire à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.</p>
+<p class="js-mention">Montants en [[${monnaie.nomPluriel}]] ([[${monnaie.symbole}]]). Un montant positif est dû par la boutique, un montant négatif est dû à la boutique. Ce solde est celui de la fiche du partenaire à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.</p>
 
 <table class="js-signatures">
     <tr>

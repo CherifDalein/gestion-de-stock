@@ -96,7 +96,7 @@ class TresorerieExportTests {
             assertThat(List.of(chaine(r1, 1), chaine(r1, 2), chaine(r1, 4), chaine(r1, 5), chaine(r1, 6)))
                     .containsExactly("Caisse", "Entrée", "Solde initial", "Ouverture caisse", "Awa Gérante");
             assertThat(nombre(r1, 3)).isEqualTo(5_000_000d);
-            assertThat(r1.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(r1.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             assertThat(nombre(r2, 3)).isEqualTo(1_500_000d);
             // Le mouvement annulé porte la mention d'annulation avec son motif ; l'annulation renvoie au mouvement d'origine.
             assertThat(chaine(r3, 7)).isEqualTo("Annulé le 07/10/2026 09:00 · motif : Erreur de compte");
@@ -106,7 +106,7 @@ class TresorerieExportTests {
             assertThat(chaine(r2, 7)).isNull();
             // Centimes, utilisateur absent = « Système ».
             assertThat(nombre(r5, 3)).isEqualTo(-250_000.5);
-            assertThat(r5.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            assertThat(r5.getCell(3).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             assertThat(chaine(r5, 6)).isEqualTo("Système");
             assertThat(chaine(r5, 2)).isEqualTo("Sortie");
             // Dépense : la référence de l'opération figure dans le motif ; une formule saisie reste du texte.
@@ -122,10 +122,10 @@ class TresorerieExportTests {
             assertThat(chaine(totaux, 0)).isEqualTo("7 mouvements");
             assertThat(nombre(totaux, 3)).isEqualTo(6_149_999.5);
             String tout = texteDeLaFeuille(f);
-            assertThat(tout).contains("entrées 6 800 000 GNF", "sorties 650 000,50 GNF", "variation nette 6 149 999,50 GNF");
+            assertThat(tout).contains("entrées 6 800 000 GNF", "sorties 650 001 GNF", "variation nette 6 150 000 GNF");
             // Soldes de l'écran : caisse 6 400 000, Orange Money 0, banque −250 000,50, total 6 149 999,50 ; journée sans mouvement.
-            assertThat(tout).contains("Caisse 6 400 000 GNF", "Orange Money 0 GNF", "Banque -250 000,50 GNF", "Total 6 149 999,50 GNF",
-                    "solde à l’ouverture 6 149 999,50 GNF", "entrées 0 GNF · sorties 0 GNF · variation 0 GNF");
+            assertThat(tout).contains("Caisse 6 400 000 GNF", "Orange Money 0 GNF", "Banque -250 001 GNF", "Total 6 150 000 GNF",
+                    "solde à l’ouverture 6 150 000 GNF", "entrées 0 GNF · sorties 0 GNF · variation 0 GNF");
             assertThat(tout).doesNotContain("Vente secrète B", "9999999", "Boutique Autre B");
         }
     }
@@ -136,8 +136,8 @@ class TresorerieExportTests {
         assertThat(reponse.getHeader("Content-Disposition")).isEqualTo("attachment; filename=\"tresorerie_" + LocalDate.now() + ".pdf\"");
         String texte = pdf(reponse);
         assertThat(texte).contains("Boutique Étoile A", "12 rue de l'Œuvre, Conakry", "Journal de trésorerie", "Journal complet", "Vente FV-000001", "Ouverture caisse",
-                "Solde initial", "Orange Money", "Annulé le 07/10/2026 09:00", "Erreur de compte", "Système", "5 000 000", "250 000,50", "7 mouvements",
-                "6 149 999,50", "Soldes actuels de la boutique", "Caisse 6 400 000 GNF", "par Awa Gérante", "Page 1 / 1");
+                "Solde initial", "Orange Money", "Annulé le 07/10/2026 09:00", "Erreur de compte", "Système", "5 000 000", "250 001", "7 mouvements",
+                "6 150 000", "Soldes actuels de la boutique", "Caisse 6 400 000 GNF", "par Awa Gérante", "Page 1 / 1");
         assertThat(texte).doesNotContain("RFC-COMPTA", "Vente secrète B", "9 999 999");
         assertThat(estPaysage(reponse.getContentAsByteArray())).isTrue();
     }

@@ -118,7 +118,7 @@
                         th:attr="data-id=${p.id},data-name=${p.nom},data-telephone=${p.telephone ?: ''},data-email=${p.email ?: ''},data-adresse=${p.adresse ?: ''}">
                         <td class="partners-name" data-label="Nom">
                             <span class="partners-name-texte" th:text="${p.nom}"></span>
-                            <a th:if="${tel}" class="partners-contact-mobile" th:href="${'tel:' + p.telephone.replaceAll('[^0-9+]', '')}" th:text="${#strings.trim(p.telephone)}" th:attr="aria-label=${'Appeler ' + p.nom}"></a>
+                            <a th:if="${tel}" class="partners-contact-mobile" th:with="lienTel=${@paysCourant.lienTel(p.telephone)}" th:href="${lienTel}" th:text="${#strings.trim(p.telephone)}" th:attr="aria-label=${'Appeler ' + p.nom}"></a>
                             <a th:if="${!tel and mail}" class="partners-contact-mobile" th:href="${'mailto:' + #strings.trim(p.email)}" th:text="${#strings.trim(p.email)}" th:attr="aria-label=${'Écrire à ' + p.nom}"></a>
                         </td>
                         <td class="partners-coordinate partners-telephone" data-label="Téléphone"><th:block th:if="${tel}" th:text="${#strings.trim(p.telephone)}"></th:block><th:block th:unless="${tel}"><span aria-hidden="true">—</span><span class="visually-hidden">Aucun</span></th:block></td>

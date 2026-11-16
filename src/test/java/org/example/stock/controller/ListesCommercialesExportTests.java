@@ -116,7 +116,7 @@ class ListesCommercialesExportTests {
             assertThat(chaine(a1, 3)).isEqualTo("Awa Gérante");
             assertThat(List.of(nombre(a1, 4), nombre(a1, 5), nombre(a1, 6), nombre(a1, 7), nombre(a1, 8))).containsExactly(1_000_000d, 0d, 1_000_000d, 0d, 0d);
             assertThat(chaine(a1, 9)).isEqualTo("Réglé");
-            assertThat(a1.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(a1.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             // A2 : 800 000 − 50 000 − 300 000 − 100 000 = 350 000 restent, en retard depuis hier.
             assertThat(List.of(nombre(a2, 4), nombre(a2, 5), nombre(a2, 6), nombre(a2, 7), nombre(a2, 8))).containsExactly(800_000d, 50_000d, 300_000d, 100_000d, 350_000d);
             assertThat(chaine(a2, 9)).isEqualTo("À régler (en retard)");
@@ -124,7 +124,7 @@ class ListesCommercialesExportTests {
             assertThat(DateUtil.isCellDateFormatted(a2.getCell(10))).isTrue();
             assertThat(chaine(a3, 3)).isEqualTo("Non renseigné");
             assertThat(nombre(a3, 4)).isEqualTo(250_000.5);
-            assertThat(a3.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            assertThat(a3.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             // Un nom de fournisseur qui ressemble à une formule reste du texte inoffensif.
             assertThat(a3.getCell(2).getCellType()).isEqualTo(CellType.STRING);
             assertThat(a3.getCell(2).getCellStyle().getQuotePrefixed()).isTrue();
@@ -144,7 +144,7 @@ class ListesCommercialesExportTests {
         assertThat(reponse.getHeader("Content-Disposition")).isEqualTo("attachment; filename=\"achats_" + LocalDate.now() + ".pdf\"");
         String texte = pdf(reponse);
         assertThat(texte).contains("Boutique Étoile A", "12 rue de l'Œuvre, Conakry", "Journal des achats", "FA-000001", "Sory Import", "Agro Plus",
-                "À régler (en retard)", "Réglé", "2 050 000,50", "350 000", "3 achats", "par Awa Gérante", "Page 1 / 1");
+                "À régler (en retard)", "Réglé", "2 050 001", "350 000", "3 achats", "par Awa Gérante", "Page 1 / 1");
         assertThat(texte).doesNotContain("RFC-COMPTA", "FA-000777", "Fournisseur Secret B", "9 999 999");
         assertThat(estPaysage(reponse.getContentAsByteArray())).isTrue();
     }
@@ -258,7 +258,7 @@ class ListesCommercialesExportTests {
     void lePdfDesDevisCommenceParPdfEtPorteLaBoutique() throws Exception {
         MockHttpServletResponse reponse = mvc.perform(gerant(get("/devis/export/pdf"))).andReturn().getResponse();
         String texte = pdf(reponse);
-        assertThat(texte).contains("Boutique Étoile A", "Liste des devis", "DV-000001", "Élève Ça’ñ", "Sans client", "550 000,50", "Expiré", "Transformé", "4 devis");
+        assertThat(texte).contains("Boutique Étoile A", "Liste des devis", "DV-000001", "Élève Ça’ñ", "Sans client", "550 001", "Expiré", "Transformé", "4 devis");
         assertThat(texte).doesNotContain("DV-000777", "Client Secret B");
         // Sept colonnes : portrait.
         assertThat(estPaysage(reponse.getContentAsByteArray())).isFalse();

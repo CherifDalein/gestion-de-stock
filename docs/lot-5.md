@@ -450,3 +450,10 @@ Acte uniforme révisé (texte fourni, `ohada/full.txt`) : report à nouveau et a
 - Pas de **déclaration fiscale**, de provisions, d'amortissements ni d'écritures de régularisation (charges constatées d'avance) : à saisir hors application.
 - Le verrou se fonde sur la date des opérations : le solde de départ d'un client ou fournisseur (sans date propre) est refusé en modification seulement
   par la date du jour de la modification.
+
+## Région et zone monétaire (pays-monnaie)
+
+La notion de « Région » des comptes 7011 et 6011 (ventes et achats de marchandises) dépend de la zone de la boutique : **UEMOA**
+(Sénégal, Côte d'Ivoire, Mali, Burkina Faso, Niger, Togo, Bénin, Guinée-Bissau), **CEMAC** (Cameroun, Gabon, Congo, Tchad, Centrafrique,
+Guinée équatoriale) ou **Guinée**. Le plan et les calculs sont inchangés : l'interprétation de cette « région » pour chaque zone est **à
+confirmer par l'expert-comptable** avant l'ouverture d'un nouveau pays. Voir [pays-monnaie.md](pays-monnaie.md).

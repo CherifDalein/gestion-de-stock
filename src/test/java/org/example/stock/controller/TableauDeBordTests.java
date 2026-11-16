@@ -160,8 +160,8 @@ class TableauDeBordTests {
         String page = resultat.getResponse().getContentAsString();
         assertThat(page).contains("Activité du jour", "Activité du mois", "Bénéfice brut du jour", "Bénéfice net du mois",
                         "1 ligne de vente sans coût connu, comptée à 0", "data-lignes-sans-cout=\"1\"",
-                        "1 500,00", "1 747,75", "450,25")
-                .doesNotContain(SECRET_B, "88 888,00", "4 444,00");
+                        "1\u00a0500", "1\u00a0748", "450")
+                .doesNotContain(SECRET_B, "88\u00a0888", "4\u00a0444");
     }
 
     @Test
@@ -170,7 +170,7 @@ class TableauDeBordTests {
         ValeurStock valeur = attribut(resultat, "valeurStock");
         assertThat(valeur.valeur()).isEqualByComparingTo("5096.75");
         assertThat(valeur.nombreProduits()).isEqualTo(5);
-        assertThat(resultat.getResponse().getContentAsString()).contains("Valeur du stock", "5 096,75", "5 articles en stock");
+        assertThat(resultat.getResponse().getContentAsString()).contains("Valeur du stock", "5\u00a0097", "5 articles en stock");
     }
 
     @Test
@@ -228,7 +228,7 @@ class TableauDeBordTests {
         String page = resultat.getResponse().getContentAsString();
         assertThat(page).contains("Évolution mensuelle " + ANNEE_HISTORIQUE, "class=\"tdb-chart\"",
                 "href=\"/?annee=" + (ANNEE_HISTORIQUE - 1) + "#evolution\"", "href=\"/?annee=" + (ANNEE_HISTORIQUE + 1) + "#evolution\"",
-                "height: 100%", "-500,00", "-20,00").doesNotContain(SECRET_B, "5 555,00");
+                "height: 100%", "-500", "-20").doesNotContain(SECRET_B, "5\u00a0555");
     }
 
     @Test
@@ -297,10 +297,10 @@ class TableauDeBordTests {
         }
 
         String page = resultat.getResponse().getContentAsString();
-        assertThat(page).contains("Activité du jour", "Chiffre d’affaires du jour", "1 500,00",
+        assertThat(page).contains("Activité du jour", "Chiffre d’affaires du jour", "1\u00a0500",
                         "Encaissé sur les ventes du jour", "Produits à surveiller", "Savon")
                 .doesNotContain("Bénéfice", "Dépenses", "Valeur du stock", "Évolution mensuelle", "Activité du mois",
-                        "sans coût connu", "1 000,00", "850,00", "5 096,75", "tdb-chart\"", "annee=");
+                        "sans coût connu", "1\u00a0000", "850", "5\u00a0097", "tdb-chart\"", "annee=");
     }
 
     @Test
@@ -321,7 +321,7 @@ class TableauDeBordTests {
         EvolutionAnnuelle evolution = attribut(resultat, "evolution");
         mois(evolution, 6, "5555", "5550", "66", "5484");
         assertThat(evolution.totalVentes()).isEqualByComparingTo("5555");
-        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Savon", "Huile", "1 747,75");
+        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Savon", "Huile", "1\u00a0748");
 
         // Et inversement, A ne voit rien de B.
         MvcResult a = mvc.perform(gerantA(get("/"))).andReturn();

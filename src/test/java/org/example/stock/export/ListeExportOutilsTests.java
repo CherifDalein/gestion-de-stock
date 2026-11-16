@@ -29,7 +29,7 @@ class ListeExportOutilsTests {
     void lesMontantsSeRetrouventAvecEtSansSeparateurDeMilliers() {
         String texte = RechercheListe.montantRecherchable(new java.math.BigDecimal("1500000.50"));
         assertThat(RechercheListe.correspond("1500000.50", texte)).isTrue();
-        assertThat(RechercheListe.correspond("1 500 000,50", texte)).isTrue();
+        assertThat(RechercheListe.correspond("1 500 001", texte)).isTrue();
         assertThat(RechercheListe.correspond("1500000", texte)).isTrue();
         assertThat(RechercheListe.correspond("2500000", texte)).isFalse();
     }

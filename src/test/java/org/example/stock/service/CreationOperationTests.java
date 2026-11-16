@@ -495,7 +495,7 @@ class CreationOperationTests {
     }
 
     @ParameterizedTest
-    @CsvSource({"ACHAT,ESPECES", "ACHAT,ORANGE_MONEY", "ACHAT,BANQUE", "VENTE,ESPECES", "VENTE,ORANGE_MONEY", "VENTE,BANQUE"})
+    @CsvSource({"ACHAT,ESPECES", "ACHAT,MOBILE_MONEY", "ACHAT,BANQUE", "VENTE,ESPECES", "VENTE,MOBILE_MONEY", "VENTE,BANQUE"})
     void leCompteChoisiEstArchiveEtUnRejeuNePeutPasLeChanger(TypeOperationCreation type, TypeCompteTresorerie compte) throws Exception {
         String jeton = ouvrir(type);
         mvc.perform(formulaire(type, jeton, 3).param("comptePaiement", compte.name())

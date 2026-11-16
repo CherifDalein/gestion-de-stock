@@ -29,7 +29,7 @@
                             <option th:each="p : ${listePays}" th:value="${p.code}" th:selected="${p.code == formulaire.pays}"
                                     th:text="${p.nom + ' (' + p.monnaie.symbole + ')'}">Guinée</option>
                         </select>
-                        <p id="platformPaysHelp" class="record-help">Le pays fixe la monnaie de la boutique (franc guinéen, franc CFA UEMOA ou CEMAC). Ce choix est définitif.</p>
+                        <p id="platformPaysHelp" class="record-help">Le pays fixe la monnaie de la boutique. Ce choix est définitif.</p>
                         <p class="record-field-error" th:if="${#fields.hasErrors('paysValide')}" th:errors="*{paysValide}" role="alert"></p>
                     </div>
                     <div class="record-field record-field--wide">

@@ -16,6 +16,8 @@
         <section class="app-panel" aria-labelledby="platformSummaryTitle">
             <div class="app-panel-heading"><div><h2 id="platformSummaryTitle">Informations de la boutique</h2><p>Le statut et le type d’accès sont indépendants.</p></div></div>
             <dl class="platform-summary">
+                <div><dt>Pays</dt><dd th:text="${boutique.pays.nom}">Guinée</dd></div>
+                <div><dt>Monnaie</dt><dd th:text="${boutique.monnaie.code + ' · ' + boutique.monnaie.nomSingulier}">monnaie</dd></div>
                 <div><dt>Création</dt><dd th:text="${boutique.dateCreation != null ? #temporals.format(boutique.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></dd></div>
                 <div><dt>Statut</dt><dd><span class="platform-status" th:classappend="${boutique.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${boutique.actif ? 'Active' : 'Suspendue'}"></span></dd></div>
                 <div><dt>Accès</dt><dd><span class="platform-access" th:classappend="${boutique.accesOffert ? 'platform-access--offered' : ''}" th:text="${boutique.accesOffert ? 'Offert' : 'Standard'}"></span></dd></div>

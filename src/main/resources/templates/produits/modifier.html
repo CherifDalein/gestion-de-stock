@@ -77,7 +77,7 @@
             <section th:if="${estService}" class="record-panel" aria-labelledby="prixServiceTitre">
                 <div class="record-panel-heading">
                     <h2 id="prixServiceTitre">Prix du service</h2>
-                    <p>Un service se vend sans stock. Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p>
+                    <p>Un service se vend sans stock. Les montants sont exprimés en [[${@montants.nomPluriel}]] ([[${@montants.symbole}]]).</p>
                 </div>
                 <div class="record-grid">
                     <div class="record-field">
@@ -97,7 +97,7 @@
             <section th:if="${!estService and stockActuel != null and stockActuel.prixDefinis}" class="record-panel" aria-labelledby="prixTitre">
                 <div class="record-panel-heading">
                     <h2 id="prixTitre">Prix</h2>
-                    <p>Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p>
+                    <p>Les montants sont exprimés en [[${@montants.nomPluriel}]] ([[${@montants.symbole}]]).</p>
                 </div>
                 <th:block th:replace="~{produits/couts :: lecture(${stockActuel})}"></th:block>
                 <div class="record-grid">

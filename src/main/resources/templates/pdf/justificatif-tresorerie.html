@@ -54,7 +54,7 @@
 
 <p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de un million trente-neuf mille francs guinéens.</p>
 <p class="js-mention">Solde calculé par l'application ; à rapprocher du comptage physique.</p>
-<p class="js-mention" th:text="${'Montants en francs guinéens ([[${monnaie.symbole}]]). Chaque solde est la somme des mouvements du journal de trésorerie de la boutique ' + (j.aujourdHui ? 'au moment de l’édition.' : 'jusqu’à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy') + ' (23 h 59 comprise).')}">Mention</p>
+<p class="js-mention" th:text="${'Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + '). Chaque solde est la somme des mouvements du journal de trésorerie de la boutique ' + (j.aujourdHui ? 'au moment de l’édition.' : 'jusqu’à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy') + ' (23 h 59 comprise).')}">Mention</p>
 
 <table class="js-signatures">
     <tr>

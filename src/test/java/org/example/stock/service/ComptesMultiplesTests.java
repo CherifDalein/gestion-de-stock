@@ -344,7 +344,7 @@ class ComptesMultiplesTests {
     // ---- Outils ------------------------------------------------------------------------------------------------
 
     private CompteTresorerieBoutique creer(TypeCompteTresorerie type, String nom, String solde) {
-        var form = new CompteTresorerieForm(); form.setType(type); form.setNom(nom); form.setSoldeDepart(solde == null ? null : new BigDecimal(solde));
+        var form = new CompteTresorerieForm(); form.setType(type); if (type == MOBILE_MONEY) form.setOperateur("Orange Money"); form.setNom(nom); form.setSoldeDepart(solde == null ? null : new BigDecimal(solde));
         return comptes.creer(form);
     }
 

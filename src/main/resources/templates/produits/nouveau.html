@@ -95,7 +95,7 @@
             </section>
 
             <section class="record-panel" aria-labelledby="serviceTitre" data-nature-panel="SERVICE" th:attr="hidden=${estService ? null : 'hidden'}">
-                <div class="record-panel-heading"><h2 id="serviceTitre">Prix du service</h2><p>Un service se vend sans stock : aucune quantité n’est vérifiée ni déduite. Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p></div>
+                <div class="record-panel-heading"><h2 id="serviceTitre">Prix du service</h2><p>Un service se vend sans stock : aucune quantité n’est vérifiée ni déduite. Les montants sont exprimés en [[${@montants.nomPluriel}]] ([[${@montants.symbole}]]).</p></div>
                 <div class="record-grid">
                     <div class="record-field">
                         <label for="prixVente">Prix de vente ([[${@montants.symbole}]])</label>

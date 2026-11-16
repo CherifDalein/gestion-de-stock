@@ -75,7 +75,7 @@
 </table>
 </th:block>
 
-<p class="js-mention" th:text="${'Montants en francs guinéens ([[${monnaie.symbole}]]). Le solde théorique est celui du compte au moment du comptage, calculé sur ses mouvements enregistrés ; un mouvement saisi ensuite ne modifie pas l’écart de ce comptage.'}">Mention</p>
+<p class="js-mention" th:text="${'Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + '). Le solde théorique est celui du compte au moment du comptage, calculé sur ses mouvements enregistrés ; un mouvement saisi ensuite ne modifie pas l’écart de ce comptage.'}">Mention</p>
 
 <table class="js-signatures">
     <tr>

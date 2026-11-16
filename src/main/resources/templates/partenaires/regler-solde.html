@@ -103,7 +103,7 @@
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help" th:text="${estClient ? 'La somme reçue est ajoutée à ce compte.' : 'La somme payée est retirée de ce compte.'}"></p>
                     </div>
-                    <label for="montantReglement" class="form-label fw-semibold" th:text="${estClient ? 'Somme reçue maintenant ([[${@montants.symbole}]])' : 'Somme payée maintenant ([[${@montants.symbole}]])'}"></label>
+                    <label for="montantReglement" class="form-label fw-semibold" th:text="${estClient ? 'Somme reçue maintenant (' + @montants.symbole + ')' : 'Somme payée maintenant (' + @montants.symbole + ')'}"></label>
                     <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
                            th:max="${solde.resteSoldeDepart}" class="form-control form-control-lg"
                            th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'"

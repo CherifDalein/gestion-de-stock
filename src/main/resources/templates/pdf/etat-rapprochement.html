@@ -71,7 +71,7 @@
 </table>
 </th:block>
 
-<p class="js-mention" th:text="${groupes + (groupes == 1 ? ' rapprochement' : ' rapprochements') + ' enregistré' + (groupes == 1 ? '' : 's') + '. Montants en francs guinéens ([[${monnaie.symbole}]]) ; crédit positif, débit négatif. Un rapprochement valide a des sommes égales, sans écart toléré.'}">Mention</p>
+<p class="js-mention" th:text="${groupes + (groupes == 1 ? ' rapprochement' : ' rapprochements') + ' enregistré' + (groupes == 1 ? '' : 's') + '. Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + ') ; crédit positif, débit négatif. Un rapprochement valide a des sommes égales, sans écart toléré.'}">Mention</p>
 <p class="js-mention" th:if="${e.releve.dateValidation != null}" th:text="${'Validé le ' + fmt.dateHeure(e.releve.dateValidation) + ' par ' + e.releve.validePar.nom + '.'}">Validé</p>
 
 <table class="js-signatures">

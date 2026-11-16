@@ -322,9 +322,9 @@ class RapprochementBancaireTests {
     }
 
     @Test
-    void seulsLesComptesBanqueEtOrangeMoneyOntDesReleves() throws Exception {
+    void seulsLesComptesBanqueEtMobileMoneyOntDesReleves() throws Exception {
         assertThatThrownBy(() -> releves.creer(especes.getId(), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), BigDecimal.ZERO, BigDecimal.ZERO, "esp"))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Banque et Orange Money");
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Banque et mobile money");
         assertThat(releves.creer(orange.getId(), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), BigDecimal.ZERO, BigDecimal.ZERO, "om").getNumero()).startsWith("RB-202503-");
     }
 

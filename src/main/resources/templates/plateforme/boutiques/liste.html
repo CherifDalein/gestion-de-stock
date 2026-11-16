@@ -24,6 +24,11 @@
                 <p class="app-metric-value" th:text="${actives}">0</p>
                 <p class="platform-metric-help">Boutiques sans suspension manuelle</p>
             </article>
+            <article class="app-metric-card" th:unless="${#maps.isEmpty(boutiquesParMonnaie)}">
+                <h2 class="app-metric-label">Monnaies</h2>
+                <p class="app-metric-value platform-monnaies"><span th:each="e, it : ${boutiquesParMonnaie}"><th:block th:text="${e.key.symbole + ' ' + e.key.zone + ' : ' + e.value}">monnaie</th:block><th:block th:unless="${it.last}"> · </th:block></span></p>
+                <p class="platform-metric-help">Boutiques par monnaie ; les montants ne sont jamais additionnés d’une monnaie à l’autre</p>
+            </article>
             <article class="app-metric-card">
                 <h2 class="app-metric-label">Accès offerts</h2>
                 <p class="app-metric-value" th:text="${offertes}">0</p>
@@ -48,9 +53,11 @@
             <p id="platformBoutiquesScrollHelp" class="platform-table-help" th:unless="${#lists.isEmpty(boutiques)}">Sur un petit écran, faites défiler le tableau horizontalement pour voir toutes les colonnes.</p>
             <div class="table-responsive platform-table-wrap" role="region" aria-labelledby="platformBoutiquesTitle" aria-describedby="platformBoutiquesScrollHelp" tabindex="0" th:unless="${#lists.isEmpty(boutiques)}">
                 <table class="table table-hover platform-table mb-0" id="platformBoutiquesTable">
-                    <caption class="visually-hidden">Boutiques, date de création, utilisateurs, statut et type d’accès</caption>
+                    <caption class="visually-hidden">Boutiques, pays, monnaie, date de création, utilisateurs, statut et type d’accès</caption>
                     <thead><tr>
                         <th scope="col">Boutique</th>
+                        <th scope="col">Pays</th>
+                        <th scope="col">Monnaie</th>
                         <th scope="col">Création</th>
                         <th scope="col">Utilisateurs</th>
                         <th scope="col">Statut</th>
@@ -59,6 +66,8 @@
                     </tr></thead>
                     <tbody><tr th:each="b : ${boutiques}">
                         <th scope="row" class="platform-name"><a th:href="@{/plateforme/boutiques/{id}(id=${b.id})}" th:text="${b.nom}">Nom de la boutique</a><small th:text="${'Boutique #' + b.id}"></small></th>
+                        <td th:text="${b.pays.nom}">Guinée</td>
+                        <td th:text="${b.monnaie.code + (b.monnaie.symbole != b.monnaie.code ? ' (' + b.monnaie.symbole + ')' : '')}">monnaie</td>
                         <td class="platform-date" th:text="${b.dateCreation != null ? #temporals.format(b.dateCreation, 'dd/MM/yyyy') : 'Non renseignée'}"></td>
                         <td class="platform-number" th:text="${utilisateursParBoutique[b.id] ?: 0}">0</td>
                         <td><span class="platform-status" th:classappend="${b.actif ? 'platform-status--active' : 'platform-status--suspended'}" th:text="${b.actif ? 'Active' : 'Suspendue'}">Active</span></td>

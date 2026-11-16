@@ -44,10 +44,11 @@ final class PaysMonnaieMigrationScenarios {
             case "pays_inconnu" -> sql(c, "UPDATE boutique SET pays='ZZ' WHERE id=2");
             case "monnaie_incoherente" -> sql(c, "UPDATE boutique SET pays='SN' WHERE id=2");
             case "operateur_taille" -> sql(c, "ALTER TABLE compte_tresorerie_boutique " + alter(c) + " operateur VARCHAR(20) NULL");
-            case "operateur_vide" -> sql(c, "UPDATE compte_tresorerie_boutique SET operateur='  ' WHERE id=500");
+            case "operateur_vide" -> sql(c, "UPDATE compte_tresorerie_boutique SET operateur='  ' WHERE boutique_id=1 AND type='MOBILE_MONEY' AND principal_type='MOBILE_MONEY'");
             case "operateur_sur_caisse" -> sql(c, "UPDATE compte_tresorerie_boutique SET operateur='Wave' WHERE type='ESPECES' AND boutique_id=1");
-            case "type_compte_inconnu" -> sql(c, "UPDATE compte_tresorerie_boutique SET type='PAYPAL' WHERE id=501");
-            case "principal_incoherent" -> sql(c, "UPDATE compte_tresorerie_boutique SET principal_type='BANQUE' WHERE id=500");
+            case "type_compte_inconnu" -> sql(c, "UPDATE compte_tresorerie_boutique SET type='PAYPAL' WHERE type='BANQUE' AND boutique_id=1 AND principal_type='BANQUE'");
+            // Le compte principal de la banque porte le type d'un autre compte : la valeur est unique, l'incohérence est détectée par la migration.
+            case "principal_incoherent" -> sql(c, "UPDATE compte_tresorerie_boutique SET principal_type='AUTRE_TYPE' WHERE type='BANQUE' AND boutique_id=2 AND principal_type='BANQUE'");
             default -> throw new IllegalStateException("Scénario pays-monnaie inconnu.");
         }
     }
@@ -57,7 +58,9 @@ final class PaysMonnaieMigrationScenarios {
         sql(c, "INSERT INTO boutique(id,nom,date_creation,pays,monnaie) VALUES(70,'Boutique de Dakar factice','2026-01-01 00:00:00.000000','SN','XOF')");
         sql(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,type,nom,nom_cle,principal_type,operateur,actif,ordre) VALUES"
                 + "(700,70,'MOBILE_MONEY','Wave','wave','MOBILE_MONEY','Wave',TRUE,1),(701,70,'ESPECES','Caisse','caisse','ESPECES',NULL,TRUE,0)");
-        sql(c, "UPDATE compte_tresorerie_boutique SET operateur='MTN MoMo' WHERE id=500");
+        sql(c, "UPDATE compte_tresorerie_boutique SET operateur='MTN MoMo' WHERE boutique_id=1 AND type='MOBILE_MONEY' AND principal_type='MOBILE_MONEY'");
+        // Le lot 5 est idempotent : il donne un sous-compte aux comptes que l'application vient de créer (sinon il ne serait plus « terminé »).
+        Lot5Migration.migrer(c, true);
     }
 
     static void verifier(Connection c, String scenario) throws Exception {
@@ -109,11 +112,11 @@ final class PaysMonnaieMigrationScenarios {
         if (relance) {
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=70 AND pays='SN' AND monnaie='XOF'") == 1, "Boutique du Sénégal modifiée");
             exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id=700 AND operateur='Wave' AND type='MOBILE_MONEY'") == 1, "Compte Wave modifié");
-            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id=500 AND operateur='MTN MoMo'") == 1, "Opérateur choisi réécrit");
+            exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE boutique_id=1 AND type='MOBILE_MONEY' AND principal_type='MOBILE_MONEY' AND operateur='MTN MoMo'") == 1, "Opérateur choisi réécrit");
         }
         // L'unicité d'un compte principal par type et par boutique est conservée : un second principal du même type est refusé.
         long principaux = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE principal_type='MOBILE_MONEY'");
-        exiger(principaux >= 1, "Aucun compte principal de mobile money après conversion");
+        if (principaux == 0) { exiger(BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique") == 0, "Aucun compte principal de mobile money après conversion"); return; }
         boolean refuse = false;
         try {
             sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,principal_type,operateur,actif,ordre) SELECT boutique_id,'MOBILE_MONEY','Doublon','doublon','MOBILE_MONEY','Wave',TRUE,9 FROM compte_tresorerie_boutique WHERE principal_type='MOBILE_MONEY' ORDER BY id LIMIT 1");

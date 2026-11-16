@@ -151,6 +151,36 @@ class InscriptionBoutiqueSecurityTests {
         verify(service).confirmer(any(), eq("127.0.0.1"));
     }
 
+    @Test
+    void laPageProposeLesPaysTriesAvecLaGuineeParDefaut() throws Exception {
+        String html = mvc.perform(get("/inscription/confirmer").param("jeton", JETON)).andExpect(status().isOk())
+                .andExpect(model().attributeExists("listePays")).andReturn().getResponse().getContentAsString();
+        assertThat(html).contains("name=\"pays\"", "Sénégal", "Cameroun", "Côte d&#39;Ivoire", "Bénin");
+        assertThat(html).containsPattern("value=\"GN\"[^>]*selected");
+        assertThat(html.indexOf("Bénin")).as("liste triée par ordre alphabétique").isLessThan(html.indexOf("Sénégal"));
+        assertThat(html.indexOf("Cameroun")).isLessThan(html.indexOf("Guinée"));
+    }
+
+    @Test
+    void lePaysChoisiEstTransmisAuServiceEtGuineeEstLeDefaut() throws Exception {
+        mvc.perform(postValide().param("pays", "SN")).andExpect(redirectedUrl("/login?boutiqueCreated"));
+        var capteur = org.mockito.ArgumentCaptor.forClass(ConfirmationInscriptionForm.class);
+        verify(service).confirmer(capteur.capture(), anyString());
+        assertThat(capteur.getValue().lirePays()).isEqualTo(org.example.stock.pays.Pays.SENEGAL);
+        reset(service);
+        when(service.emailPourLien(JETON)).thenReturn(Optional.of("gerant@example.test"));
+        mvc.perform(postValide()).andExpect(redirectedUrl("/login?boutiqueCreated"));
+        verify(service).confirmer(capteur.capture(), anyString());
+        assertThat(capteur.getValue().lirePays()).isEqualTo(org.example.stock.pays.Pays.GUINEE);
+    }
+
+    @Test
+    void unPaysInconnuEstRefuseSansRienCreer() throws Exception {
+        mvc.perform(postValide().param("pays", "ZZ")).andExpect(status().isOk())
+                .andExpect(model().attributeHasFieldErrors("confirmationInscription", "paysValide"));
+        verify(service, never()).confirmer(any(), anyString());
+    }
+
     private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder postValide() {
         return post("/inscription/confirmer").with(csrf()).param("jeton", JETON).param("nom", "Gérant")
                 .param("nomBoutique", "Boutique").param("nouveauMotDePasse", MOT_DE_PASSE).param("confirmationMotDePasse", MOT_DE_PASSE);
