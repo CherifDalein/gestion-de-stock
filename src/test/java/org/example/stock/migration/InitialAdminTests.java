@@ -44,7 +44,7 @@ class InitialAdminTests {
         try (var c = base()) {
             InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique t JOIN utilisateur u ON u.boutique_id=t.boutique_id")).isEqualTo("3");
-            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(type ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("ESPECES,ORANGE_MONEY,BANQUE");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(type ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("ESPECES,MOBILE_MONEY,BANQUE");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(nom ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("Caisse,Orange Money,Banque");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(nom_cle ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("caisse,orange money,banque");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE principal_type=type AND actif")).isEqualTo("3");

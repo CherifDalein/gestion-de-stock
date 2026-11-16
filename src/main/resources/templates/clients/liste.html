@@ -38,12 +38,12 @@
             </div>
             <div class="partners-metric partners-metric--du">
                 <span class="partners-metric-heading"><span>Total à encaisser</span><i class="fas fa-coins" aria-hidden="true"></i></span>
-                <strong class="partners-metric-montant" data-synthese="total" th:attr="data-valeur=${synthese.total.toPlainString()}" th:text="${#numbers.formatDecimal(synthese.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <strong class="partners-metric-montant" data-synthese="total" th:attr="data-valeur=${synthese.total.toPlainString()}" th:text="${@montants.format(synthese.total)}">0</strong>
                 <span class="partners-metric-caption">Hors avances</span>
             </div>
             <div class="partners-metric partners-metric--avance">
                 <span class="partners-metric-heading"><span>Avances détenues</span><i class="fas fa-piggy-bank" aria-hidden="true"></i></span>
-                <strong class="partners-metric-montant" data-synthese="avances" th:attr="data-valeur=${synthese.avances.toPlainString()}" th:text="${#numbers.formatDecimal(synthese.avances, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <strong class="partners-metric-montant" data-synthese="avances" th:attr="data-valeur=${synthese.avances.toPlainString()}" th:text="${@montants.format(synthese.avances)}">0</strong>
                 <span class="partners-metric-caption">Argent reçu d’avance par vos clients</span>
             </div>
             </th:block>
@@ -127,14 +127,14 @@
                         <td class="partners-solde" data-label="Solde">
                             <th:block th:if="${s != null}" th:with="etat=${s.soldeNet.signum() > 0 ? 'doit' : (s.soldeNet.signum() < 0 ? 'avance' : 'solde')}">
                             <span class="solde-badge" th:classappend="${'solde-badge--' + etat}" th:text="${etat == 'doit' ? 'Me doit' : (etat == 'dois' ? 'Je lui dois' : (etat == 'avance' ? 'Avance' : 'Soldé'))}"></span>
-                            <span class="solde-montant" th:classappend="${'solde-montant--' + etat}" th:text="${#numbers.formatDecimal(s.soldeNet.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                            <span class="solde-montant" th:classappend="${'solde-montant--' + etat}" th:text="${@montants.format(s.soldeNet.abs())}"></span>
                             <span class="solde-phrase">
                                 <span th:if="${s.soldeNet.signum() == 0}">Soldé</span>
-                                <span th:if="${s.soldeNet.signum() > 0}" th:text="${'Il me doit ' + #numbers.formatDecimal(s.soldeNet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
-                                <span th:if="${s.soldeNet.signum() < 0}" th:text="${'Je lui dois ' + #numbers.formatDecimal(s.soldeNet.negate(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                                <span th:if="${s.soldeNet.signum() > 0}" th:text="${'Il me doit ' + @montants.format(s.soldeNet)}"></span>
+                                <span th:if="${s.soldeNet.signum() < 0}" th:text="${'Je lui dois ' + @montants.format(s.soldeNet.negate())}"></span>
                             </span>
-                            <small th:if="${s.avanceDisponible.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'Avance : ' + #numbers.formatDecimal(s.avanceDisponible, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
-                            <small th:if="${s.resteSoldeDepart.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'dont solde de départ : ' + #numbers.formatDecimal(s.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small>
+                            <small th:if="${s.avanceDisponible.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'Avance : ' + @montants.format(s.avanceDisponible)}"></small>
+                            <small th:if="${s.resteSoldeDepart.signum() > 0}" class="d-block text-muted solde-precision" th:text="${'dont solde de départ : ' + @montants.format(s.resteSoldeDepart)}"></small>
                             </th:block>
                         </td>
                         <td class="cellule-actions">

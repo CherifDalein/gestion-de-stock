@@ -16,10 +16,10 @@
             <input type="hidden" th:field="*{rangAttendu}">
             <input type="hidden" th:field="*{resteAttendu}">
             <section class="fin-chiffres" aria-label="Situation">
-                <article><span>Capital restant dû</span><strong th:text="${#numbers.formatDecimal(s.capitalRestantDu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong></article>
+                <article><span>Capital restant dû</span><strong th:text="${@montants.format(s.capitalRestantDu())}">0</strong></article>
                 <article><span>Prochaine échéance</span><strong th:text="${#temporals.format(s.prochaine().date(), 'dd/MM/yyyy')}">01/01/2027</strong>
-                    <small th:text="${#numbers.formatDecimal(s.prochaine().resteTotal(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></article>
-                <article><span>Solde pour tout rembourser</span><strong th:text="${#numbers.formatDecimal(s.soldeAnticipe(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                    <small th:text="${@montants.format(s.prochaine().resteTotal())}"></small></article>
+                <article><span>Solde pour tout rembourser</span><strong th:text="${@montants.format(s.soldeAnticipe())}">0</strong>
                     <small>Capital restant et intérêts échus</small></article>
             </section>
             <section class="record-panel" aria-labelledby="rembPanel">
@@ -27,7 +27,7 @@
                 <div th:replace="~{financements/navigation :: erreurs('remboursementForm')}"></div>
                 <div class="record-grid">
                     <div class="record-field">
-                        <label for="montant">Montant (GNF)</label>
+                        <label for="montant">Montant ([[${@montants.symbole}]])</label>
                         <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required>
                         <p class="record-help">Proposé : le reste de la prochaine échéance.</p>
                     </div>

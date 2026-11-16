@@ -30,10 +30,10 @@
                         <dl class="row mb-0">
                             <dt class="col-sm-4">Client</dt><dd class="col-sm-8" th:text="${formulaire.vente.client != null ? formulaire.vente.client.nom : 'Client de passage'}"></dd>
                             <dt class="col-sm-4">Date</dt><dd class="col-sm-8" th:text="${#temporals.format(formulaire.vente.dateVente, 'dd/MM/yyyy HH:mm')}"></dd>
-                            <dt class="col-sm-4">Total de la vente</dt><dd class="col-sm-8" th:text="${#numbers.formatDecimal(formulaire.vente.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                            <dt class="col-sm-4">Total de la vente</dt><dd class="col-sm-8" th:text="${@montants.format(formulaire.vente.montantTotal ?: 0)}"></dd>
                             <dt class="col-sm-4" th:if="${(formulaire.vente.montantRetours ?: 0) > 0}">Déjà retourné</dt>
-                            <dd class="col-sm-8" th:if="${(formulaire.vente.montantRetours ?: 0) > 0}" th:text="${#numbers.formatDecimal(formulaire.vente.montantRetours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
-                            <dt class="col-sm-4">Reste à payer par le client</dt><dd class="col-sm-8" id="retourResteAvant" th:text="${#numbers.formatDecimal(formulaire.resteAPayer, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                            <dd class="col-sm-8" th:if="${(formulaire.vente.montantRetours ?: 0) > 0}" th:text="${@montants.format(formulaire.vente.montantRetours)}"></dd>
+                            <dt class="col-sm-4">Reste à payer par le client</dt><dd class="col-sm-8" id="retourResteAvant" th:text="${@montants.format(formulaire.resteAPayer)}"></dd>
                         </dl>
                     </section>
 
@@ -67,7 +67,7 @@
                                         <small th:if="${l.service}" class="d-block text-muted">Service : ni stock ni coût</small>
                                         <input type="hidden" th:name="${'lignes[' + it.index + '].detailVenteId'}" th:value="${l.detailVenteId}" />
                                     </td>
-                                    <td class="text-end text-nowrap" th:text="${#numbers.formatDecimal(l.prixUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                    <td class="text-end text-nowrap" th:text="${@montants.format(l.prixUnitaire)}"></td>
                                     <td class="text-end" th:text="${l.quantiteVendue + (l.unite != null ? ' ' + l.unite : '')}"></td>
                                     <td class="text-end" th:text="${l.dejaRetournee}"></td>
                                     <td class="text-end fw-semibold" th:text="${l.maximum}"></td>
@@ -78,7 +78,7 @@
                                                th:disabled="${l.maximum == 0}"
                                                th:attr="aria-label=${'Quantité retournée de ' + l.produit + ', au plus ' + l.maximum}" />
                                     </td>
-                                    <td class="text-end text-nowrap fw-bold" data-montant-ligne>0,00 GNF</td>
+                                    <td class="text-end text-nowrap fw-bold" data-montant-ligne>0</td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -101,16 +101,16 @@
                     </div>
                     <div class="operation-summary-total">
                         <span>Montant du retour</span>
-                        <strong class="operation-total-value"><span id="retourMontant">0,00</span> GNF</strong>
+                        <strong class="operation-total-value"><span id="retourMontant">0</span> [[${@montants.symbole}]]</strong>
                     </div>
                     <dl class="operation-summary-lines">
                         <div>
                             <dt>Réduit la dette du client</dt>
-                            <dd><span id="retourImpute">0,00</span> GNF</dd>
+                            <dd><span id="retourImpute">0</span> [[${@montants.symbole}]]</dd>
                         </div>
                         <div>
                             <dt>À rembourser ou garder en avoir</dt>
-                            <dd><span id="retourExcedent">0,00</span> GNF</dd>
+                            <dd><span id="retourExcedent">0</span> [[${@montants.symbole}]]</dd>
                         </div>
                     </dl>
                     <p id="retourExplication" class="operation-note">Saisissez une quantité pour voir le détail.</p>

@@ -155,7 +155,7 @@ class JustificatifsSoldeTests {
         diallo = fournisseur(boutiqueA, "Diallo Distribution", "30000", null);
 
         // --- Fonds de départ (02/05)
-        fonds(TypeCompteTresorerie.ESPECES, "500000"); fonds(TypeCompteTresorerie.ORANGE_MONEY, "200000"); fonds(TypeCompteTresorerie.BANQUE, "300000");
+        fonds(TypeCompteTresorerie.ESPECES, "500000"); fonds(TypeCompteTresorerie.MOBILE_MONEY, "200000"); fonds(TypeCompteTresorerie.BANQUE, "300000");
         dater("2026-05-02");
         stocker(pA, 100); stocker(pB, 50); stocker(pC, 3);
 
@@ -163,13 +163,13 @@ class JustificatifsSoldeTests {
         Vente v1 = vente(GERANT, aminata, pA, 10, "100000", TypeCompteTresorerie.ESPECES); dater("2026-05-10");          // V1 100 000 payés en caisse
         Achat a1 = achat(sidi, pA, 20, "5000", "40000", TypeCompteTresorerie.BANQUE); echeanceAchat(a1, "2026-06-12"); dater("2026-05-12"); // A1 100 000, versé 40 000
         reglerClient(boubacar, "50000", "0", TypeCompteTresorerie.ESPECES); dater("2026-05-20");                        // reste 150 000
-        reglerFournisseur(kaba, "30000", "0", TypeCompteTresorerie.ORANGE_MONEY); dater("2026-05-22");                 // reste 60 000
+        reglerFournisseur(kaba, "30000", "0", TypeCompteTresorerie.MOBILE_MONEY); dater("2026-05-22");                 // reste 60 000
         venteAncienne(); achatAncien();                                                                             // 15 000 et 9 000 sans partenaire
 
         // --- Juin : dans la période
         vente(CAISSIER, null, pA, 4, "40000", TypeCompteTresorerie.ESPECES); dater("2026-06-03");                       // V2 40 000 comptant
-        vente(CAISSIER, null, pService, 2, "6000", TypeCompteTresorerie.ORANGE_MONEY); dater("2026-06-04");            // V2b service 6 000
-        Vente v3 = vente(GERANT, aminata, pB, 5, "30000", TypeCompteTresorerie.ORANGE_MONEY); echeanceVente(v3, "2026-06-15"); dater("2026-06-05"); // 100 000, versé 30 000
+        vente(CAISSIER, null, pService, 2, "6000", TypeCompteTresorerie.MOBILE_MONEY); dater("2026-06-04");            // V2b service 6 000
+        Vente v3 = vente(GERANT, aminata, pB, 5, "30000", TypeCompteTresorerie.MOBILE_MONEY); echeanceVente(v3, "2026-06-15"); dater("2026-06-05"); // 100 000, versé 30 000
         vente(GERANT, mariama, pA, 2, "0", TypeCompteTresorerie.ESPECES); dater("2026-06-08");                          // V4 20 000, avance utilisée 20 000
         Vente v5 = vente(GERANT, mariama, pA, 3, "80000", TypeCompteTresorerie.ESPECES); dater("2026-06-09");          // V5 30 000, versé 80 000 : avance 50 000
         Vente v6 = vente(GERANT, boubacar, pB, 1, "0", TypeCompteTresorerie.ESPECES); echeanceVente(v6, "2026-07-20"); dater("2026-06-10"); // V6 20 000 à crédit
@@ -180,20 +180,20 @@ class JustificatifsSoldeTests {
         retourVente(v1, 2, ModeRemboursement.ARGENT, TypeCompteTresorerie.ESPECES); dater("2026-06-15");                // RV1 20 000 rendus en caisse
         retourVente(v5, 1, ModeRemboursement.AVOIR, null); dater("2026-06-16");                                    // RV2 10 000 en avoir
         retourVente(v3, 1, null, null); dater("2026-06-16");                                                      // RV3 20 000 imputés sur le reste
-        Achat a2 = achat(sidi, pB, 10, "8000", "30000", TypeCompteTresorerie.ORANGE_MONEY); echeanceAchat(a2, "2026-07-17"); dater("2026-06-17"); // A2 80 000, versé 30 000
+        Achat a2 = achat(sidi, pB, 10, "8000", "30000", TypeCompteTresorerie.MOBILE_MONEY); echeanceAchat(a2, "2026-07-17"); dater("2026-06-17"); // A2 80 000, versé 30 000
         Achat a3 = achat(diallo, pA, 4, "5000", "35000", TypeCompteTresorerie.BANQUE); dater("2026-06-18");            // A3 20 000, versé 35 000 : avance 15 000
         retourAchat(a3, 2, ModeRemboursement.ARGENT, TypeCompteTresorerie.BANQUE); dater("2026-06-20");                // RA1 10 000 remboursés en banque
         retourAchat(a3, 1, ModeRemboursement.AVOIR, null); dater("2026-06-20");                                    // RA2 5 000 en avoir
         retourAchat(a1, 4, null, null); dater("2026-06-21");                                                      // RA3 20 000 imputés sur la dette de Sidi
-        depenser(TypeCompteTresorerie.ESPECES, "50000", "Loyer de juin"); depenser(TypeCompteTresorerie.ORANGE_MONEY, "12000", "Transport");
+        depenser(TypeCompteTresorerie.ESPECES, "50000", "Loyer de juin"); depenser(TypeCompteTresorerie.MOBILE_MONEY, "12000", "Transport");
         depenser(TypeCompteTresorerie.BANQUE, "80000", "Salaires"); dater("2026-06-22");
         transfert(TypeCompteTresorerie.ESPECES, TypeCompteTresorerie.BANQUE, "100000"); dater("2026-06-24");
-        reglerClient(boubacar, "30000", "50000", TypeCompteTresorerie.ORANGE_MONEY); reglerFournisseur(kaba, "20000", "30000", TypeCompteTresorerie.BANQUE); dater("2026-06-26");
+        reglerClient(boubacar, "30000", "50000", TypeCompteTresorerie.MOBILE_MONEY); reglerFournisseur(kaba, "20000", "30000", TypeCompteTresorerie.BANQUE); dater("2026-06-26");
         reglerAchat(a2, "10000", "30000", TypeCompteTresorerie.ESPECES); dater("2026-06-27");
 
         // --- Juillet : après la période
         vente(GERANT, null, pA, 1, "10000", TypeCompteTresorerie.ESPECES); dater("2026-07-02");
-        depenser(TypeCompteTresorerie.ORANGE_MONEY, "5000", "Électricité de juillet"); dater("2026-07-05");
+        depenser(TypeCompteTresorerie.MOBILE_MONEY, "5000", "Électricité de juillet"); dater("2026-07-05");
 
         // --- Boutique B : ne doit jamais apparaître dans les états de A
         Categorie catB = categorie(boutiqueB, "Catégorie secrète B");
@@ -394,7 +394,7 @@ class JustificatifsSoldeTests {
         assertThat(j.aujourdHui()).isTrue();
         assertThat(j.arrete()).isEqualTo(JOUR);
         assertThat(j.comptes().get(0).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.ESPECES)).isEqualByComparingTo("600000");
-        assertThat(j.comptes().get(1).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.ORANGE_MONEY)).isEqualByComparingTo("189000");
+        assertThat(j.comptes().get(1).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.MOBILE_MONEY)).isEqualByComparingTo("189000");
         assertThat(j.comptes().get(2).solde()).isEqualByComparingTo(caisse.getSoldesParType().get(TypeCompteTresorerie.BANQUE)).isEqualByComparingTo("255000");
         assertThat(j.total()).isEqualByComparingTo("1044000");
         assertThat(justificatifs.tresorerie(JOUR).total()).isEqualByComparingTo(j.total());

@@ -13,7 +13,7 @@
     <link th:href="@{/css/ergonomie.css}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
-<body class="stock-app sb-nav-fixed" th:with="page=${view != null and view != '' ? view : 'dashboard'}">
+<body class="stock-app sb-nav-fixed" th:attr="data-monnaie=${@montants.symbole}" th:with="page=${view != null and view != '' ? view : 'dashboard'}">
 <a class="visually-hidden-focusable app-skip-link" href="#mainContent">Aller au contenu</a>
 <nav class="sb-topnav navbar navbar-expand app-topbar" aria-label="Navigation principale">
     <a class="navbar-brand app-brand" th:href="@{/}">
@@ -194,37 +194,37 @@
                         <article class="app-metric-card app-metric-card--primary">
                             <span class="app-metric-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Solde total de la boutique</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeCaisse, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${@montants.nombre(soldeCaisse)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <a class="app-metric-foot" th:href="@{/caisse/journal}">Consulter le journal <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon text-success"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Entrées du jour</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(entreesJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${@montants.nombre(entreesJour)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <p class="app-metric-foot">Encaissements enregistrés aujourd’hui</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon text-danger"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Sorties du jour</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(sortiesJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${@montants.nombre(sortiesJour)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <p class="app-metric-foot">Décaissements enregistrés aujourd’hui</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-regular fa-sun" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Solde à l’ouverture</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(soldeOuverture, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${@montants.nombre(soldeOuverture)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <p class="app-metric-foot">Solde au début de la journée</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-solid fa-cash-register" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Variation de trésorerie du jour</h2>
-                            <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${#numbers.formatDecimal(caisseDuJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value" th:classappend="${caisseDuJour < 0 ? 'text-danger' : ''}"><span th:text="${@montants.nombre(caisseDuJour)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <p class="app-metric-foot">Entrées moins sorties du jour</p>
                         </article>
                         <article class="app-metric-card">
                             <span class="app-metric-icon"><i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
                             <h2 class="app-metric-label">Ventes du jour · réglé</h2>
-                            <p class="app-metric-value"><span th:text="${#numbers.formatDecimal(ventesDuJour, 1, 'WHITESPACE', 2, 'COMMA')}">0,00</span> <small>GNF</small></p>
+                            <p class="app-metric-value"><span th:text="${@montants.nombre(ventesDuJour)}">0</span> <small>[[${@montants.symbole}]]</small></p>
                             <p class="app-metric-foot">Montants réglés sur les ventes créées aujourd’hui</p>
                         </article>
                     </div>
@@ -238,7 +238,7 @@
                         <a class="app-shortcut" th:href="@{/clients}"><span class="app-shortcut-icon"><i class="fa-solid fa-user-group" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Clients</strong><small>Gérer les coordonnées de vos clients</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         <a class="app-shortcut" th:href="@{/achats}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Approvisionnements</strong><small>Consulter les achats et règlements</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         <a class="app-shortcut" th:href="@{/factures/liste}"><span class="app-shortcut-icon"><i class="fa-solid fa-file-invoice" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Historique et factures</strong><small>Retrouver les documents de vente</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
-                        <a class="app-shortcut" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal de trésorerie</strong><small>Caisse, Orange Money et Banque</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        <a class="app-shortcut" th:href="@{/caisse/journal}" sec:authorize="hasRole('ADMIN')"><span class="app-shortcut-icon"><i class="fa-solid fa-wallet" aria-hidden="true"></i></span><span class="app-shortcut-copy"><strong>Journal de trésorerie</strong><small>Caisse, mobile money et Banque</small></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                     </div>
                 </section>
             </div>

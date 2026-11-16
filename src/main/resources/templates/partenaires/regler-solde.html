@@ -50,7 +50,7 @@
                                 <td data-label="Date"><span th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></span>
                                     <th:block th:replace="~{fragments/annulation-reglement :: mention(${r}, ${annulations.get(r.id)})}"></th:block>
                                     <th:block th:replace="~{fragments/recu :: lien(${r}, ${estClient ? 'SOLDE_CLIENT' : 'SOLDE_FOURNISSEUR'}, ${actionUrl + '/recu/' + r.id})}"></th:block></td>
-                                <td class="text-end text-nowrap fw-semibold" data-label="Montant" th:text="${(r.source == 'ANNULATION' ? '− ' : '') + #numbers.formatDecimal(r.montant.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-end text-nowrap fw-semibold" data-label="Montant" th:text="${(r.source == 'ANNULATION' ? '− ' : '') + @montants.format(r.montant.abs())}"></td>
                                 <td class="text-nowrap" data-label="Compte" th:text="${r.compte.nom}"></td>
                                 <td data-label="Saisi par" th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
                                 <td class="text-end historique-action" sec:authorize="hasRole('ADMIN')">
@@ -72,16 +72,16 @@
                 </div>
                 <div class="operation-summary-total">
                     <span>Reste du solde de départ</span>
-                    <strong class="operation-total-value" th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong>
+                    <strong class="operation-total-value" th:text="${@montants.format(solde.resteSoldeDepart)}"></strong>
                 </div>
                 <dl class="operation-summary-lines">
                     <div>
                         <dt>Solde de départ</dt>
-                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(solde.soldeDepart.abs())}"></dd>
                     </div>
                     <div>
                         <dt>Déjà réglé</dt>
-                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepartRegle, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(solde.soldeDepartRegle)}"></dd>
                     </div>
                     <div>
                         <dt>Échéance</dt>
@@ -103,7 +103,7 @@
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help" th:text="${estClient ? 'La somme reçue est ajoutée à ce compte.' : 'La somme payée est retirée de ce compte.'}"></p>
                     </div>
-                    <label for="montantReglement" class="form-label fw-semibold" th:text="${estClient ? 'Somme reçue maintenant (GNF)' : 'Somme payée maintenant (GNF)'}"></label>
+                    <label for="montantReglement" class="form-label fw-semibold" th:text="${estClient ? 'Somme reçue maintenant ([[${@montants.symbole}]])' : 'Somme payée maintenant ([[${@montants.symbole}]])'}"></label>
                     <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
                            th:max="${solde.resteSoldeDepart}" class="form-control form-control-lg"
                            th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'"

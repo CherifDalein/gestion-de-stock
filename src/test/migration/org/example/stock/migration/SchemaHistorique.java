@@ -58,7 +58,7 @@ public final class SchemaHistorique {
 
     /**
      * Schéma antérieur au lot 3 (comptes de trésorerie multiples) : un compte par type désigné par une valeur d'énumération
-     * ({@code CAISSE}, {@code ORANGE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
+     * ({@code CAISSE}, {@code MOBILE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
      * et {@code retour.compte_tresorerie}, sans table des comptes autorisés aux caissiers.
      */
     public static String sansLot3(String schema) {

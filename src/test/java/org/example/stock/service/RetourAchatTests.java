@@ -130,10 +130,10 @@ class RetourAchatTests {
     @Test
     void unRemboursementPeutEntrerSurUnAutreCompte() throws Exception {
         Achat achat = achat(10, "10000", "100000");
-        envoyer(achat, ADMIN, "2", ModeRemboursement.ARGENT, TypeCompteTresorerie.ORANGE_MONEY).andExpect(status().is3xxRedirection());
+        envoyer(achat, ADMIN, "2", ModeRemboursement.ARGENT, TypeCompteTresorerie.MOBILE_MONEY).andExpect(status().is3xxRedirection());
         assertThat(caisse.findAll().stream().filter(m -> "RETOUR_ACHAT".equals(m.getSource())).map(m -> m.getCompte().getType()))
-                .containsExactly(TypeCompteTresorerie.ORANGE_MONEY);
-        assertThat(unique(achat).getCompteTresorerie().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
+                .containsExactly(TypeCompteTresorerie.MOBILE_MONEY);
+        assertThat(unique(achat).getCompteTresorerie().getType()).isEqualTo(TypeCompteTresorerie.MOBILE_MONEY);
     }
 
     @Test

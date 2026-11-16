@@ -27,7 +27,7 @@
                         <label for="platformPays">Pays de la boutique</label>
                         <select id="platformPays" class="form-select" name="pays" required aria-describedby="platformPaysHelp">
                             <option th:each="p : ${listePays}" th:value="${p.code}" th:selected="${p.code == formulaire.pays}"
-                                    th:text="${p.nom + ' (' + p.monnaie.symbole + ')'}">Guinée (GNF)</option>
+                                    th:text="${p.nom + ' (' + p.monnaie.symbole + ')'}">Guinée</option>
                         </select>
                         <p id="platformPaysHelp" class="record-help">Le pays fixe la monnaie de la boutique (franc guinéen, franc CFA UEMOA ou CEMAC). Ce choix est définitif.</p>
                         <p class="record-field-error" th:if="${#fields.hasErrors('paysValide')}" th:errors="*{paysValide}" role="alert"></p>

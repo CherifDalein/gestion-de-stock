@@ -24,8 +24,8 @@
                     <tbody>
                     <tr th:each="l : ${inventaire.lignes}" th:classappend="${l.aEcart() ? 'fin-ligne-retard' : ''}">
                         <td data-label="Partenaire"><strong th:text="${l.nom}">Aminata</strong><br><small th:text="${l.type.libelle}">Client</small></td>
-                        <td data-label="Solde appli" class="text-end ctl-montant" th:text="${l.soldeAppli.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(l.soldeAppli.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (l.soldeAppli.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
-                        <td data-label="Confirmé" class="text-end ctl-montant" th:text="${l.soldeConfirme.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(l.soldeConfirme.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (l.soldeConfirme.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
+                        <td data-label="Solde appli" class="text-end ctl-montant" th:text="${l.soldeAppli.signum() == 0 ? @montants.format(0) : @montants.format(l.soldeAppli.abs()) + ' (' + (l.soldeAppli.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0</td>
+                        <td data-label="Confirmé" class="text-end ctl-montant" th:text="${l.soldeConfirme.signum() == 0 ? @montants.format(0) : @montants.format(l.soldeConfirme.abs()) + ' (' + (l.soldeConfirme.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0</td>
                         <td data-label="Écart" class="text-end"><span th:replace="~{controles/navigation :: ecart(${l.ecart})}"></span></td>
                         <td data-label="Raison" th:text="${l.raison != null ? l.raison : '—'}">—</td>
                         <td data-label="Action" class="text-end">

@@ -79,7 +79,7 @@
                                 <td data-label="Date"><span th:text="${#temporals.format(r.dateMouvement, 'dd/MM/yyyy HH:mm:ss')}"></span>
                                     <th:block th:replace="~{fragments/annulation-reglement :: mention(${r}, ${annulations.get(r.id)})}"></th:block>
                                     <th:block th:replace="~{fragments/recu :: lien(${r}, 'REGLEMENT_ACHAT', ${'/achats/regler/' + achatReglement.id + '/recu/' + r.id})}"></th:block></td>
-                                <td class="text-end text-nowrap fw-semibold" data-label="Montant payé" th:text="${#numbers.formatDecimal(-r.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-end text-nowrap fw-semibold" data-label="Montant payé" th:text="${@montants.format(-r.montant)}"></td>
                                 <td class="text-nowrap" data-label="Compte débité" th:text="${r.compte.nom}"></td>
                                 <td data-label="Saisi par" th:text="${r.utilisateur != null ? r.utilisateur.nom : 'Non renseigné'}"></td>
                                 <td class="text-end historique-action" sec:authorize="hasRole('ADMIN')">
@@ -101,20 +101,20 @@
                 </div>
                 <div class="operation-summary-total">
                     <span>Reste à payer</span>
-                    <strong class="operation-total-value" th:text="${#numbers.formatDecimal(achatReglement.resteAPayer, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong>
+                    <strong class="operation-total-value" th:text="${@montants.format(achatReglement.resteAPayer)}"></strong>
                 </div>
                 <dl class="operation-summary-lines">
                     <div>
                         <dt>Total de l'achat</dt>
-                        <dd th:text="${#numbers.formatDecimal(achatReglement.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(achatReglement.montantTotal ?: 0)}"></dd>
                     </div>
                     <div th:if="${(achatReglement.montantRetours ?: 0) > 0}">
                         <dt>Retours au fournisseur</dt>
-                        <dd th:text="${'− ' + #numbers.formatDecimal(achatReglement.montantRetours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${'− ' + @montants.format(achatReglement.montantRetours)}"></dd>
                     </div>
                     <div>
                         <dt>Déjà versé</dt>
-                        <dd th:text="${#numbers.formatDecimal(achatReglement.montantVerse ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(achatReglement.montantVerse ?: 0)}"></dd>
                     </div>
                     <div>
                         <dt>Échéance</dt>
@@ -137,7 +137,7 @@
                         </select>
                         <p id="comptePaiementAide" class="operation-field-help">Le nouveau versement est retiré du compte choisi.</p>
                     </div>
-                    <label for="montantReglement" class="form-label fw-semibold">Somme payée maintenant (GNF)</label>
+                    <label for="montantReglement" class="form-label fw-semibold">Somme payée maintenant ([[${@montants.symbole}]])</label>
                     <input id="montantReglement" type="number" th:field="*{montant}" min="0.01" step="0.01"
                            th:max="${achatReglement.resteAPayer}" class="form-control form-control-lg"
                            th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'"

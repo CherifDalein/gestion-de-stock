@@ -121,10 +121,10 @@
                         <td class="products-name" th:text="${p.nom}"></td>
                         <td><span class="products-category" th:text="${p.categorie != null ? p.categorie.nom : 'Sans catégorie'}"></span></td>
                         <td class="products-supplier" sec:authorize="hasRole('ADMIN')" th:text="${p.fournisseur != null ? p.fournisseur.nom : 'Non défini'}"></td>
-                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.coutMoyen, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}" th:title="${service ? 'Coût fixe du service' : 'Coût moyen pondéré de tous les achats en stock'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
-                        <td class="products-price text-end"><span th:text="${p.prixDefinis ? #numbers.formatDecimal(p.prixVente, 1, 'WHITESPACE', 2, 'COMMA') : 'À définir'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">GNF</span></td>
+                        <td class="products-price text-end" sec:authorize="hasRole('ADMIN')"><span th:text="${p.prixDefinis ? @montants.nombre(p.coutMoyen) : 'À définir'}" th:title="${service ? 'Coût fixe du service' : 'Coût moyen pondéré de tous les achats en stock'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">[[${@montants.symbole}]]</span></td>
+                        <td class="products-price text-end"><span th:text="${p.prixDefinis ? @montants.nombre(p.prixVente) : 'À définir'}"></span> <span th:if="${p.prixDefinis}" class="products-currency">[[${@montants.symbole}]]</span></td>
                         <td class="products-price text-end" sec:authorize="hasRole('ADMIN')" th:classappend="${p.margeUnitaire != null and p.margeUnitaire.signum() < 0} ? 'text-danger'"
-                            th:text="${p.margeUnitaire != null ? #numbers.formatDecimal(p.margeUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + #numbers.formatDecimal(p.tauxMarge, 1, 'WHITESPACE', 1, 'COMMA') + ' %)' : '—'}"></td>
+                            th:text="${p.margeUnitaire != null ? @montants.format(p.margeUnitaire) + ' (' + #numbers.formatDecimal(p.tauxMarge, 1, 'WHITESPACE', 1, 'COMMA') + ' %)' : '—'}"></td>
                         <td>
                             <div class="products-stock">
                                 <span class="products-stock-quantity">

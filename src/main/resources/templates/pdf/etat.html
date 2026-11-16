@@ -9,7 +9,7 @@
 <div id="contenu">
     <h1 th:text="${titre}">Titre</h1>
     <p class="filtres" th:if="${!#strings.isEmpty(parametres)}" th:text="${parametres}">Période</p>
-    <p class="filtres">Montants en GNF</p>
+    <p class="filtres">Montants en [[${monnaie.symbole}]]</p>
     <p class="note-etat" th:each="note : ${notes}" th:text="${note}">Note</p>
     <div class="section-etat" th:each="section, is : ${sections}">
         <h2 th:if="${section.titre != titre}" th:text="${section.titre}">Section</h2>

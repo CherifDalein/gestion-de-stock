@@ -76,7 +76,7 @@
                 <form class="card shadow-sm h-100" method="get" th:action="@{/etats/justificatifs/tresorerie/pdf}">
                     <div class="card-body">
                         <h2 class="h5" id="jsTresorerie">Solde de trésorerie</h2>
-                        <p class="text-muted small">Le solde de la caisse, d'Orange Money et de la banque, et le total, calculés comme le journal de trésorerie.
+                        <p class="text-muted small">Le solde de la caisse, d'mobile money et de la banque, et le total, calculés comme le journal de trésorerie.
                             À rapprocher du comptage physique.</p>
                         <label for="jsDate" class="form-label small mb-1">Date d'arrêté (fin de journée)</label>
                         <input id="jsDate" name="date" type="date" class="form-control" required min="2000-01-01" th:max="${aujourdHui}" th:value="${aujourdHui}">

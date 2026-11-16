@@ -10,11 +10,11 @@
         <div class="alert alert-warning" role="status" th:unless="${modifiable}">Un remboursement est déjà enregistré : l’échéancier ne peut plus être modifié.</div>
         <form th:if="${modifiable}" th:action="@{/financements/emprunts/{id}/echeancier(id=${e.id})}" th:object="${echeancierForm}" method="post" class="operation-form">
             <section class="record-panel">
-                <div class="record-panel-heading"><h2 th:text="${'Capital à répartir : ' + #numbers.formatDecimal(e.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">Capital</h2></div>
+                <div class="record-panel-heading"><h2 th:text="${'Capital à répartir : ' + @montants.format(e.capital)}">Capital</h2></div>
                 <div th:replace="~{financements/navigation :: erreurs('echeancierForm')}"></div>
                 <div class="table-responsive">
                     <table class="table fin-table">
-                        <thead><tr><th>N°</th><th>Date</th><th>Capital (GNF)</th></tr></thead>
+                        <thead><tr><th>N°</th><th>Date</th><th>Capital ([[${@montants.symbole}]])</th></tr></thead>
                         <tbody>
                         <tr th:each="d, it : *{dates}">
                             <td th:text="${it.count}">1</td>

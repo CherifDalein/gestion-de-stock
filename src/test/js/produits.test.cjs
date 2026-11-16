@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 
 // Sans élément #stockProduits, le script n'initialise rien et n'expose que ses fonctions pures.
-const contexte = vm.createContext({ document: { readyState: 'complete', getElementById: () => null }, Intl, BigInt });
+const contexte = vm.createContext({ document: { readyState: 'complete', body: { dataset: { monnaie: 'FCFA' } }, getElementById: () => null }, Intl, BigInt });
 vm.runInContext(readFileSync(path.resolve(__dirname, '../../main/resources/static/js/produits.js'), 'utf8'), contexte);
 const P = contexte.ProduitsCalculs;
 
@@ -19,10 +19,10 @@ test('une marge signée est lue en centimes', () => {
 
 test('la marge s\'affiche avec son taux, ou un tiret quand elle n\'existe pas', () => {
     const espace = texte => texte.replace(/ | /g, ' ');
-    assert.equal(espace(P.afficherMarge(4000000n, '26.7')), '40 000,00 GNF (26,7 %)');
-    assert.equal(espace(P.afficherMarge(-500050n, '-3.3')), '-5 000,50 GNF (-3,3 %)');
+    assert.equal(espace(P.afficherMarge(4000000n, '26.7')), '40 000 FCFA (26,7 %)');
+    assert.equal(espace(P.afficherMarge(-500050n, '-3.3')), '-5 001 FCFA (-3,3 %)');
     assert.equal(P.afficherMarge(null, ''), '—');
-    assert.equal(espace(P.afficherMarge(4000000n, '')), '40 000,00 GNF');
+    assert.equal(espace(P.afficherMarge(4000000n, '')), '40 000 FCFA');
 });
 
 test('le tri par marge peut comparer des montants négatifs', () => {

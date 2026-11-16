@@ -90,27 +90,27 @@ class ComptesMultiplesTests {
 
     @Test
     void uneBoutiqueAPlusieursComptesDuMemeTypeEtLesTotauxParTypeSontLeurSomme() {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", "5000");
-        CompteTresorerieBoutique conakry = creer(ORANGE_MONEY, "Orange Money Conakry", "2500.50");
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", "5000");
+        CompteTresorerieBoutique conakry = creer(MOBILE_MONEY, "Orange Money Conakry", "2500.50");
         var ecran = comptes.ecran();
         assertThat(ecran.actifs()).isEqualTo(5);
-        var groupe = ecran.groupes().stream().filter(g -> g.type() == ORANGE_MONEY).findFirst().orElseThrow();
+        var groupe = ecran.groupes().stream().filter(g -> g.type() == MOBILE_MONEY).findFirst().orElseThrow();
         assertThat(groupe.comptes()).extracting(v -> v.compte().getNom()).containsExactly("Orange Money", "Orange Money Labé", "Orange Money Conakry");
         assertThat(groupe.total()).isEqualByComparingTo("7500.50");
         assertThat(caisseService.getSoldeCompte(labe.getId())).isEqualByComparingTo("5000");
         assertThat(caisseService.getSoldeCompte(conakry.getId())).isEqualByComparingTo("2500.50");
-        assertThat(caisseService.getSoldesParType().get(ORANGE_MONEY)).isEqualByComparingTo("7500.50");
+        assertThat(caisseService.getSoldesParType().get(MOBILE_MONEY)).isEqualByComparingTo("7500.50");
         assertThat(caisseService.getSoldesParType().get(ESPECES)).isZero();
         assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo("7500.50");
         assertThat(labe.isPrincipal()).isFalse();
-        assertThat(labe.getType()).isEqualTo(ORANGE_MONEY);
+        assertThat(labe.getType()).isEqualTo(MOBILE_MONEY);
     }
 
     @Test
     void leNomEstObligatoireEtUniqueSansTenirCompteDeLaCasse() {
         creer(BANQUE, "Ecobank", null);
         assertThatThrownBy(() -> creer(BANQUE, "  ecobank ", null)).hasMessageContaining("déjà");
-        assertThatThrownBy(() -> creer(ORANGE_MONEY, "ECOBANK", null)).hasMessageContaining("déjà");
+        assertThatThrownBy(() -> creer(MOBILE_MONEY, "ECOBANK", null)).hasMessageContaining("déjà");
         assertThatThrownBy(() -> creer(BANQUE, "Banque", null)).hasMessageContaining("déjà");
         assertThatThrownBy(() -> creer(BANQUE, "   ", null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> creer(BANQUE, "x".repeat(61), null)).isInstanceOf(IllegalArgumentException.class);
@@ -122,7 +122,7 @@ class ComptesMultiplesTests {
 
     @Test
     void uneBoutiqueNePeutPasDepasserDouzeComptesEtUnArchivageLibereUnePlace() {
-        for (int i = 1; i <= 9; i++) creer(ORANGE_MONEY, "Orange " + i, null);
+        for (int i = 1; i <= 9; i++) creer(MOBILE_MONEY, "Orange " + i, null);
         assertThat(comptes.ecran().actifs()).isEqualTo(12);
         assertThat(comptes.ecran().limiteAtteinte()).isTrue();
         assertThatThrownBy(() -> creer(BANQUE, "Treizième", null)).hasMessageContaining("12");
@@ -138,21 +138,21 @@ class ComptesMultiplesTests {
 
     @Test
     void unSeulCompteEstPrincipalParTypeEtChoisirUnAutreRetireLAncien() {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", null);
-        assertThat(principaux(ORANGE_MONEY)).extracting(CompteTresorerieBoutique::getNom).containsExactly("Orange Money");
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", null);
+        assertThat(principaux(MOBILE_MONEY)).extracting(CompteTresorerieBoutique::getNom).containsExactly("Orange Money");
         comptes.definirPrincipal(labe.getId());
-        assertThat(principaux(ORANGE_MONEY)).extracting(CompteTresorerieBoutique::getNom).containsExactly("Orange Money Labé");
+        assertThat(principaux(MOBILE_MONEY)).extracting(CompteTresorerieBoutique::getNom).containsExactly("Orange Money Labé");
         assertThat(principaux(ESPECES)).hasSize(1);
         assertThat(principaux(BANQUE)).hasSize(1);
-        assertThat(comptes.principal(ORANGE_MONEY).getId()).isEqualTo(labe.getId());
+        assertThat(comptes.principal(MOBILE_MONEY).getId()).isEqualTo(labe.getId());
     }
 
     @Test
     void unCompteArchivableADesSoldeNulEtN_EstPasPrincipal() {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", "100");
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", "100");
         assertThatThrownBy(() -> comptes.archiver(labe.getId())).hasMessageContaining("solde");
-        CompteTresorerieBoutique vide = creer(ORANGE_MONEY, "Orange vide", null);
-        CompteTresorerieBoutique principal = comptes.principal(ORANGE_MONEY);
+        CompteTresorerieBoutique vide = creer(MOBILE_MONEY, "Orange vide", null);
+        CompteTresorerieBoutique principal = comptes.principal(MOBILE_MONEY);
         assertThatThrownBy(() -> comptes.archiver(principal.getId())).hasMessageContaining("principal");
         comptes.archiver(vide.getId());
         assertThat(comptesRepo.findById(vide.getId()).orElseThrow().isActif()).isFalse();
@@ -180,7 +180,7 @@ class ComptesMultiplesTests {
 
     @Test
     void unCaissierSansAutorisationUtiliseLesComptesPrincipauxPuisSeulementCeuxQueLeGerantCoche() {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", null);
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", null);
         CompteTresorerieBoutique ecobank = creer(BANQUE, "Ecobank", null);
         connecter(CAISSIER, "CAISSIER");
         assertThat(comptes.utilisables()).extracting(CompteTresorerieBoutique::getNom).containsExactly("Caisse", "Orange Money", "Banque");
@@ -220,13 +220,13 @@ class ComptesMultiplesTests {
 
     @Test
     void unReglementUtiliseLeCompteChoisiEtSonAnnulationLeContrePasseSurLeMemeCompte() throws Exception {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", null);
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", null);
         Vente vente = vente("20000");
         venteService.reglerVente(vente.getId(), new BigDecimal("30000"), new BigDecimal("20000"), String.valueOf(labe.getId()), null);
         MouvementCaisse reglement = caisse.findAll().stream().filter(m -> "REGLEMENT_VENTE".equals(m.getSource())).findFirst().orElseThrow();
         assertThat(reglement.getCompte().getId()).isEqualTo(labe.getId());
         assertThat(caisseService.getSoldeCompte(labe.getId())).isEqualByComparingTo("30000");
-        assertThat(caisseService.getSoldeCompte(comptes.principal(ORANGE_MONEY).getId())).isZero();
+        assertThat(caisseService.getSoldeCompte(comptes.principal(MOBILE_MONEY).getId())).isZero();
         // Le compte est archivé après un règlement : l'annulation se fait quand même sur le compte d'origine.
         mvc.perform(post("/ventes/regler/" + vente.getId() + "/annuler/" + reglement.getId()).with(csrf()).with(user(ADMIN).roles("ADMIN")).param("motif", "Erreur"))
                 .andExpect(status().is3xxRedirection());
@@ -240,7 +240,7 @@ class ComptesMultiplesTests {
 
     @Test
     void unCompteInconnuArchiveNonAutoriseOuDUneAutreBoutiqueEstRefuseSansRienEcrire() throws Exception {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", null);
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", null);
         CompteTresorerieBoutique archive = creer(BANQUE, "Ancienne banque", null);
         comptes.archiver(archive.getId());
         CompteTresorerieBoutique etranger = comptesRepo.listerActifs(autre.getId()).getFirst();
@@ -271,13 +271,13 @@ class ComptesMultiplesTests {
 
     @Test
     void unTransfertEntreDeuxComptesDuMemeTypeConserveLeTotalDuType() {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", "1000");
-        CompteTresorerieBoutique conakry = creer(ORANGE_MONEY, "Orange Money Conakry", "0");
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", "1000");
+        CompteTresorerieBoutique conakry = creer(MOBILE_MONEY, "Orange Money Conakry", "0");
         BigDecimal totalAvant = caisseService.getSoldeActuel();
         assertThat(caisseService.transferer(transfert(labe.getId(), conakry.getId(), "400"))).isFalse();
         assertThat(caisseService.getSoldeCompte(labe.getId())).isEqualByComparingTo("600");
         assertThat(caisseService.getSoldeCompte(conakry.getId())).isEqualByComparingTo("400");
-        assertThat(caisseService.getSoldesParType().get(ORANGE_MONEY)).isEqualByComparingTo("1000");
+        assertThat(caisseService.getSoldesParType().get(MOBILE_MONEY)).isEqualByComparingTo("1000");
         assertThat(caisseService.getSoldeActuel()).isEqualByComparingTo(totalAvant);
         assertThatThrownBy(() -> caisseService.transferer(transfert(labe.getId(), labe.getId(), "1"))).hasMessageContaining("différents");
         assertThatThrownBy(() -> caisseService.transferer(transfert(labe.getId(), conakry.getId(), "601"))).hasMessageContaining("insuffisant");
@@ -290,7 +290,7 @@ class ComptesMultiplesTests {
 
     @Test
     void lePdfDuJournalEtLeRecuPortentLeNomDuCompte() throws Exception {
-        CompteTresorerieBoutique labe = creer(ORANGE_MONEY, "Orange Money Labé", null);
+        CompteTresorerieBoutique labe = creer(MOBILE_MONEY, "Orange Money Labé", null);
         Vente vente = vente("20000");
         venteService.reglerVente(vente.getId(), new BigDecimal("30000"), new BigDecimal("20000"), String.valueOf(labe.getId()), null);
         MouvementCaisse reglement = caisse.findAll().stream().filter(m -> "REGLEMENT_VENTE".equals(m.getSource())).findFirst().orElseThrow();

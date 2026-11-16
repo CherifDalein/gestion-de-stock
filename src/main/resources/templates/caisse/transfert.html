@@ -3,7 +3,7 @@
     <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
     <section class="record-page" aria-labelledby="transfertTitre">
         <header class="record-header">
-            <div><p class="record-kicker">Trésorerie</p><h1 id="transfertTitre">Transférer des fonds</h1><p class="record-intro">Déplacez de l’argent entre la caisse, Orange Money et la banque de votre boutique.</p></div>
+            <div><p class="record-kicker">Trésorerie</p><h1 id="transfertTitre">Transférer des fonds</h1><p class="record-intro">Déplacez de l’argent entre la caisse, mobile money et la banque de votre boutique.</p></div>
             <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au journal</a>
         </header>
         <form th:action="@{/caisse/transfert}" th:object="${transfertTresorerie}" method="post" class="operation-form tresorerie-form">
@@ -28,7 +28,7 @@
                         </select>
                     </div>
                     <div class="record-field">
-                        <label for="montant">Montant à transférer (GNF)</label>
+                        <label for="montant">Montant à transférer ([[${@montants.symbole}]])</label>
                         <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required aria-describedby="transfertMontantAide" th:attr="aria-invalid=${#fields.hasErrors('montant')}">
                         <p id="transfertMontantAide" class="record-help">Le compte de départ doit disposer du montant à transférer.</p>
                     </div>

@@ -8,9 +8,9 @@ import java.util.stream.Stream;
 
 /**
  * Lot 3 : comptes de trésorerie multiples. Avant le lot, une boutique avait un compte par type, désigné par une valeur
- * d'énumération ({@code CAISSE}, {@code ORANGE_MONEY}, {@code BANQUE}) dans {@code compte_tresorerie_boutique.compte},
+ * d'énumération ({@code CAISSE}, {@code MOBILE_MONEY}, {@code BANQUE}) dans {@code compte_tresorerie_boutique.compte},
  * {@code mouvement_caisse.compte}, {@code operation_tresorerie.compte_source}, {@code operation_tresorerie.compte_destination} et
- * {@code retour.compte_tresorerie}. Après le lot, le type est une notion ({@code ESPECES}, {@code ORANGE_MONEY}, {@code BANQUE})
+ * {@code retour.compte_tresorerie}. Après le lot, le type est une notion ({@code ESPECES}, {@code MOBILE_MONEY}, {@code BANQUE})
  * et chaque mouvement, opération et remboursement référence un compte par clé étrangère.
  *
  * <p>Déroulement, chaque étape pouvant être reprise après une interruption :

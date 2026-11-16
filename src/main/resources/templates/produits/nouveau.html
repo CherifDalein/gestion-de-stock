@@ -95,15 +95,15 @@
             </section>
 
             <section class="record-panel" aria-labelledby="serviceTitre" data-nature-panel="SERVICE" th:attr="hidden=${estService ? null : 'hidden'}">
-                <div class="record-panel-heading"><h2 id="serviceTitre">Prix du service</h2><p>Un service se vend sans stock : aucune quantité n’est vérifiée ni déduite. Les montants sont exprimés en francs guinéens (GNF).</p></div>
+                <div class="record-panel-heading"><h2 id="serviceTitre">Prix du service</h2><p>Un service se vend sans stock : aucune quantité n’est vérifiée ni déduite. Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p></div>
                 <div class="record-grid">
                     <div class="record-field">
-                        <label for="prixVente">Prix de vente (GNF)</label>
+                        <label for="prixVente">Prix de vente ([[${@montants.symbole}]])</label>
                         <input class="form-control" id="prixVente" th:field="*{prixVente}" th:disabled="${!estService}" th:errorclass="stateInvalid" required type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'prixVente-error' : null}" />
                         <p id="prixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
                     </div>
                     <div class="record-field">
-                        <label for="coutMoyen">Coût du service (GNF) <span class="record-optional">(facultatif)</span></label>
+                        <label for="coutMoyen">Coût du service ([[${@montants.symbole}]]) <span class="record-optional">(facultatif)</span></label>
                         <input class="form-control" id="coutMoyen" th:field="*{coutMoyen}" th:disabled="${!estService}" th:errorclass="stateInvalid" type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0" th:attr="aria-invalid=${#fields.hasErrors('coutMoyen')},aria-describedby=${#fields.hasErrors('coutMoyen') ? 'coutMoyen-help coutMoyen-error' : 'coutMoyen-help'}" />
                         <p id="coutMoyen-help" class="record-help">Ce que le service vous coûte à chaque vente (main-d’œuvre, transport…). Laissez 0 s’il n’y en a pas.</p>
                         <p id="coutMoyen-error" class="record-field-error" th:if="${#fields.hasErrors('coutMoyen')}" th:errors="*{coutMoyen}"></p>

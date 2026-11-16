@@ -63,7 +63,7 @@ class ComptageCaisseTests {
         utilisateur(GERANT, Role.ADMIN, boutique); utilisateur(CAISSIER, Role.CAISSIER, boutique); utilisateur(AUTRE_CAISSIER, Role.CAISSIER, boutique);
         utilisateur(AUTRE_GERANT, Role.ADMIN, autre);
         caisse = ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES);
-        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY);
+        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.MOBILE_MONEY);
         caisse2 = comptesRepo.saveAndFlush(new CompteTresorerieBoutique(boutique, TypeCompteTresorerie.ESPECES, "Caisse arrière", false, 9));
         caisseAutre = ComptesDeTest.de(autre, TypeCompteTresorerie.ESPECES);
         solde(caisse, "100000"); solde(orange, "50000"); solde(caisse2, "30000"); solde(caisseAutre, "999");

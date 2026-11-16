@@ -26,7 +26,7 @@
                                 <span class="d-block small text-muted" th:text="${'Du ' + T(org.example.stock.compta.ExercicesService).jour(l.exercice.debut) + ' au ' + T(org.example.stock.compta.ExercicesService).jour(l.exercice.fin)}"></span>
                             </th>
                             <td data-label="Statut"><span class="cloture-statut" th:classappend="${l.exercice.estCloture ? 'cloture-statut-ferme' : 'cloture-statut-ouvert'}" th:text="${l.statut}">Ouvert</span></td>
-                            <td class="text-end etat-nombre" data-label="Résultat" th:text="${l.resultat != null ? #numbers.formatInteger(l.resultat, 1, 'WHITESPACE') + ' GNF' : '—'}">—</td>
+                            <td class="text-end etat-nombre" data-label="Résultat" th:text="${l.resultat != null ? @montants.format(l.resultat) : '—'}">—</td>
                             <td data-label="Clôture" th:text="${l.cloture != null ? l.cloture : '—'}">—</td>
                             <td class="cloture-actions">
                                 <a class="btn btn-sm btn-outline-primary" th:href="@{__${l.lien}__}" th:text="${l.exercice.estCloture ? 'Voir' : 'Clôturer'}">Voir</a>

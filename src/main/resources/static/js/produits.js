@@ -18,9 +18,11 @@
         const absolu = lireMontant(negatif ? texte.slice(1) : texte);
         return absolu === null ? null : (negatif ? -absolu : absolu);
     };
+    // Symbole de la monnaie de la boutique (attribut data-monnaie du <body>) : jamais écrit en dur.
+    const symbole = () => (typeof document !== 'undefined' && document.body && document.body.dataset && document.body.dataset.monnaie) || '';
     const afficherMontant = valeur => valeur === null ? 'À définir'
-        : `${valeur < 0n ? '-' : ''}${nombres.format((valeur < 0n ? -valeur : valeur) / 100n)},${String((valeur < 0n ? -valeur : valeur) % 100n).padStart(2, '0')} GNF`;
-    // « 40 000,00 GNF (26,7 %) » ; « — » quand la marge n'existe pas (prix à définir ou prix de vente nul).
+        : `${valeur < 0n ? '-' : ''}${nombres.format((((valeur < 0n ? -valeur : valeur) + 50n) / 100n))}\u00a0${symbole()}`;
+    // « 40 000 FCFA (26,7 %) » ; « — » quand la marge n'existe pas (prix à définir ou prix de vente nul).
     const afficherMarge = (marge, taux) => marge === null ? '—'
         : `${afficherMontant(marge)}${/^-?\d{1,17}(?:\.\d)?$/.test(String(taux ?? '')) ? ` (${String(taux).replace('.', ',')} %)` : ''}`;
     // L'état est calculé par le serveur avec le seuil d'alerte propre à chaque produit.

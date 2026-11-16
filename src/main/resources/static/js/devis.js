@@ -51,7 +51,7 @@ function ajouterLigneDevis(produitId, nom, quantite, prixCentimes) {
     const prixCellule = ligne.insertCell();
     prixCellule.className = 'text-end';
     const prixTexte = document.createElement('span');
-    prixTexte.textContent = `${Montants.afficher(prixCentimes)} GNF`;
+    prixTexte.textContent = `${Montants.avecSymbole(prixCentimes)}`;
     prixCellule.appendChild(prixTexte);
     const prixInput = document.createElement('input');
     prixInput.type = 'hidden';
@@ -72,7 +72,7 @@ function ajouterLigneDevis(produitId, nom, quantite, prixCentimes) {
 
     const sousTotalCellule = ligne.insertCell();
     sousTotalCellule.className = 'text-end';
-    sousTotalCellule.textContent = `${Montants.afficher(sousTotal)} GNF`;
+    sousTotalCellule.textContent = `${Montants.avecSymbole(sousTotal)}`;
 
     const bouton = document.createElement('button');
     bouton.type = 'button';

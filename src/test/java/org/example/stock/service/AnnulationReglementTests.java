@@ -136,7 +136,7 @@ class AnnulationReglementTests {
     @Test
     void annulerUnPaiementFournisseurRetablitLaDetteEtLaTresorerie() throws Exception {
         Achat achat = achat(10, "20000");
-        authentifie(ADMIN, "ADMIN", () -> { achatService.reglerAchat(achat.getId(), new BigDecimal("30000"), new BigDecimal("20000"), TypeCompteTresorerie.ORANGE_MONEY.name(), null); return null; });
+        authentifie(ADMIN, "ADMIN", () -> { achatService.reglerAchat(achat.getId(), new BigDecimal("30000"), new BigDecimal("20000"), TypeCompteTresorerie.MOBILE_MONEY.name(), null); return null; });
         MouvementCaisse reglement = unique("REGLEMENT_ACHAT");
         BigDecimal avant = caisse.calculerSoldeTotal(boutique.getId());
         assertThat(avant).isEqualByComparingTo("-50000");
@@ -148,7 +148,7 @@ class AnnulationReglementTests {
         assertThat(apres.getMontantVerse()).isEqualByComparingTo("20000");
         MouvementCaisse inverse = unique("ANNULATION");
         assertThat(inverse.getMontant()).isEqualByComparingTo("30000");
-        assertThat(inverse.getCompte().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
+        assertThat(inverse.getCompte().getType()).isEqualTo(TypeCompteTresorerie.MOBILE_MONEY);
         assertThat(caisse.calculerSoldeTotal(boutique.getId())).isEqualByComparingTo("-20000");
     }
 

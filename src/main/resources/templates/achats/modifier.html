@@ -64,12 +64,12 @@
                             </select>
                         </div>
                         <div class="operation-field">
-                            <label for="inputPrix" class="form-label">Coût d’achat (GNF)</label>
+                            <label for="inputPrix" class="form-label">Coût d’achat ([[${@montants.symbole}]])</label>
                             <input type="number" id="inputPrix" class="form-control" placeholder="0" min="0" step="0.01"
                                    autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
                         </div>
                         <div class="operation-field">
-                            <label for="inputPrixVente" class="form-label">Prix de vente (GNF)</label>
+                            <label for="inputPrixVente" class="form-label">Prix de vente ([[${@montants.symbole}]])</label>
                             <input type="number" id="inputPrixVente" class="form-control" placeholder="À définir" min="0" step="0.01" autocomplete="off" inputmode="decimal" aria-describedby="produitFeedback">
                         </div>
                         <div class="operation-field">
@@ -122,12 +122,12 @@
                         <span id="totalAchatLibelle">Total de l’achat</span>
                         <div class="operation-total-value">
                             <output id="totalAchatAffiche" aria-labelledby="totalAchatLibelle">0</output>
-                            <span class="operation-currency">GNF</span>
+                            <span class="operation-currency">[[${@montants.symbole}]]</span>
                         </div>
                         <input type="hidden" th:value="${achat.montantTotal}" id="totalGeneral">
                     </div>
                     <div class="operation-field">
-                        <label for="montantVerse" class="form-label">Déjà versé (GNF)</label>
+                        <label for="montantVerse" class="form-label">Déjà versé ([[${@montants.symbole}]])</label>
                         <input type="number" th:value="${achat.montantVerse ?: 0}" id="montantVerse"
                                class="form-control" readonly data-saisie-manuelle="true" step="0.01" aria-describedby="versementAide">
                         <p id="versementAide" class="operation-field-help">Les versements enregistrés sont conservés pendant la modification.</p>
@@ -136,11 +136,11 @@
                         </a>
                     </div>
                     <div class="operation-field" th:if="${achat.avanceUtilisee != null and achat.avanceUtilisee.signum() > 0}">
-                        <label for="avanceDejaUtilisee" class="form-label">Avance utilisée (GNF)</label>
+                        <label for="avanceDejaUtilisee" class="form-label">Avance utilisée ([[${@montants.symbole}]])</label>
                         <input type="number" th:value="${achat.avanceUtilisee}" id="avanceDejaUtilisee" class="form-control" readonly>
                     </div>
                     <div class="operation-field">
-                        <label for="resteAPayer" class="form-label">Reste à payer (GNF)</label>
+                        <label for="resteAPayer" class="form-label">Reste à payer ([[${@montants.symbole}]])</label>
                         <input type="number" step="0.01" id="resteAPayer" class="form-control operation-balance-input" readonly>
                     </div>
                     <div class="operation-field" id="echeanceBloc" data-echeance>

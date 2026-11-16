@@ -41,6 +41,9 @@ public class FormatMontants {
     /** Code ISO de la monnaie : « GNF », « XOF » ou « XAF ». */
     public String code() { return monnaie().getCode(); }
 
+    /** « francs guinéens », « francs CFA » : pour les mentions « Montants exprimés en … ». */
+    public String nomPluriel() { return monnaie().getNomPluriel(); }
+
     /** « cent quarante mille francs CFA » (voir {@link MontantEnLettres}). */
     public String lettres(BigDecimal valeur) { return MontantEnLettres.montant(valeur, monnaie()); }
 }

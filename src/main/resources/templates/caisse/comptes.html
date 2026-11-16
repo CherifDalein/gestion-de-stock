@@ -7,7 +7,7 @@
             <div>
                 <p class="record-kicker">Trésorerie</p>
                 <h1 id="comptesTitre">Comptes de trésorerie</h1>
-                <p class="record-intro">Une boutique peut avoir plusieurs comptes de chaque type, par exemple « Orange Money Labé » et « Orange Money Conakry ». Le solde d’un compte est la somme de ses mouvements.</p>
+                <p class="record-intro">Une boutique peut avoir plusieurs comptes de chaque type, par exemple deux comptes de mobile money d’opérateurs différents. Le solde d’un compte est la somme de ses mouvements.</p>
             </div>
             <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour au journal</a>
         </header>
@@ -22,7 +22,7 @@
             </p>
             <p class="comptes-total">
                 <span>Total de la trésorerie</span>
-                <strong th:text="${#numbers.formatDecimal(ecran.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                <strong th:text="${@montants.format(ecran.total)}">0</strong>
             </p>
         </div>
         <p class="record-note comptes-limit" role="status" th:if="${ecran.limiteAtteinte}">
@@ -37,18 +37,19 @@
                 </div>
                 <p class="comptes-total-type">
                     <span>Total du type</span>
-                    <strong th:classappend="${groupe.total < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(groupe.total, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong>
+                    <strong th:classappend="${groupe.total < 0 ? 'text-danger' : ''}" th:text="${@montants.format(groupe.total)}">0</strong>
                 </p>
             </div>
             <ul class="comptes-liste">
                 <li class="compte-carte" th:each="vue : ${groupe.comptes}" th:attr="data-compte-id=${vue.compte.id}">
                     <div class="compte-resume">
                         <div class="compte-identite">
-                            <h3 class="compte-nom" th:text="${vue.compte.nom}">Orange Money Labé</h3>
+                            <h3 class="compte-nom" th:text="${vue.compte.nom}">Compte mobile money</h3>
                             <span class="compte-badge" th:if="${vue.compte.principal}">Principal</span>
+                            <p class="compte-numero" th:if="${vue.compte.operateur != null}" th:text="${'Mobile money · ' + vue.compte.operateur}">Mobile money · Wave</p>
                             <p class="compte-numero" th:if="${vue.compte.numero != null}" th:text="${'N° ' + vue.compte.numero}">N° 622 00 00 00</p>
                         </div>
-                        <p class="compte-solde" th:classappend="${vue.solde < 0 ? 'text-danger' : ''}" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
+                        <p class="compte-solde" th:classappend="${vue.solde < 0 ? 'text-danger' : ''}" th:text="${@montants.format(vue.solde)}">0</p>
                     </div>
                     <div class="compte-actions">
                         <form th:unless="${vue.compte.principal}" th:action="@{/caisse/comptes/{id}/principal(id=${vue.compte.id})}" method="post">
@@ -61,7 +62,7 @@
                         <span class="compte-indice" th:if="${!vue.archivable and !vue.compte.principal}">Solde non nul : non archivable</span>
                     </div>
                     <details class="compte-detail">
-                        <summary>Modifier le nom ou le numéro</summary>
+                        <summary>Modifier le nom, l’opérateur ou le numéro</summary>
                         <form th:action="@{/caisse/comptes/{id}/modifier(id=${vue.compte.id})}" method="post" class="compte-formulaire">
                             <div class="record-field">
                                 <label th:for="'nom-' + ${vue.compte.id}">Nom du compte</label>
@@ -71,6 +72,14 @@
                                 <label th:for="'numero-' + ${vue.compte.id}">Numéro <span class="record-optional">(facultatif)</span></label>
                                 <input th:id="'numero-' + ${vue.compte.id}" class="form-control" type="text" name="numero" th:value="${vue.compte.numero}" maxlength="40" autocomplete="off">
                             </div>
+                            <div class="record-field" th:if="${vue.compte.type.aUnOperateur()}">
+                                <label th:for="'operateur-' + ${vue.compte.id}">Opérateur</label>
+                                <select th:id="'operateur-' + ${vue.compte.id}" class="form-select" name="operateur" data-operateur-select>
+                                    <option th:each="o : ${operateurs}" th:value="${o}" th:text="${o}" th:selected="${o == vue.compte.operateur}"></option>
+                                    <option value="AUTRE" th:selected="${vue.compte.operateur != null and !operateurs.contains(vue.compte.operateur)}">Autre</option>
+                                </select>
+                                <input class="form-control mt-2" type="text" name="operateurAutre" maxlength="40" placeholder="Nom de l’opérateur" data-operateur-autre th:value="${vue.compte.operateur != null and !operateurs.contains(vue.compte.operateur) ? vue.compte.operateur : ''}" hidden>
+                            </div>
                             <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
                         </form>
                     </details>
@@ -78,8 +87,8 @@
                         <summary>Définir le solde de départ</summary>
                         <form th:action="@{/caisse/comptes/{id}/solde-depart(id=${vue.compte.id})}" method="post" class="compte-formulaire">
                             <div class="record-field">
-                                <label th:for="'depart-' + ${vue.compte.id}">Argent déjà présent sur ce compte (GNF)</label>
-                                <input th:id="'depart-' + ${vue.compte.id}" class="form-control" type="number" name="montant" min="0" step="0.01" inputmode="decimal" required>
+                                <label th:for="'depart-' + ${vue.compte.id}">Argent déjà présent sur ce compte ([[${@montants.symbole}]])</label>
+                                <input th:id="'depart-' + ${vue.compte.id}" class="form-control" type="number" name="montant" min="0" step="any" inputmode="decimal" required>
                                 <p class="record-help">Enregistré à la date du jour. Il sera figé dès le premier mouvement du compte.</p>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
@@ -101,7 +110,7 @@
                             <h3 class="compte-nom" th:text="${vue.compte.nom}">Ancien compte</h3>
                             <p class="compte-numero" th:text="${vue.compte.type.libelle}">Banque</p>
                         </div>
-                        <p class="compte-solde" th:text="${#numbers.formatDecimal(vue.solde, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</p>
+                        <p class="compte-solde" th:text="${@montants.format(vue.solde)}">0</p>
                     </div>
                     <div class="compte-actions">
                         <form th:action="@{/caisse/comptes/{id}/desarchiver(id=${vue.compte.id})}" method="post">
@@ -129,15 +138,23 @@
                         </div>
                         <div class="record-field">
                             <label for="nom">Nom du compte</label>
-                            <input id="nom" class="form-control" type="text" th:field="*{nom}" maxlength="60" required placeholder="Exemple : Orange Money Conakry" th:attr="aria-invalid=${#fields.hasErrors('nom')}">
+                            <input id="nom" class="form-control" type="text" th:field="*{nom}" maxlength="60" required placeholder="Exemple : Mobile money boutique" th:attr="aria-invalid=${#fields.hasErrors('nom')}">
+                        </div>
+                        <div class="record-field" id="operateurChamp" hidden>
+                            <label for="operateur">Opérateur mobile money</label>
+                            <select id="operateur" class="form-select" th:field="*{operateur}" data-operateur-select>
+                                <option th:each="o : ${operateurs}" th:value="${o}" th:text="${o}"></option>
+                                <option value="AUTRE">Autre</option>
+                            </select>
+                            <input id="operateurAutre" class="form-control mt-2" type="text" th:field="*{operateurAutre}" maxlength="40" placeholder="Nom de l’opérateur" data-operateur-autre hidden>
                         </div>
                         <div class="record-field">
                             <label for="numero">Numéro <span class="record-optional">(facultatif)</span></label>
                             <input id="numero" class="form-control" type="text" th:field="*{numero}" maxlength="40" autocomplete="off" placeholder="Numéro de compte ou de téléphone">
                         </div>
                         <div class="record-field">
-                            <label for="soldeDepart">Solde de départ (GNF)</label>
-                            <input id="soldeDepart" class="form-control" type="number" th:field="*{soldeDepart}" min="0" step="0.01" inputmode="decimal" placeholder="0" aria-describedby="soldeDepartAide" th:attr="aria-invalid=${#fields.hasErrors('soldeDepart')}">
+                            <label for="soldeDepart">Solde de départ ([[${@montants.symbole}]])</label>
+                            <input id="soldeDepart" class="form-control" type="number" th:field="*{soldeDepart}" min="0" step="any" inputmode="decimal" placeholder="0" aria-describedby="soldeDepartAide" th:attr="aria-invalid=${#fields.hasErrors('soldeDepart')}">
                             <p id="soldeDepartAide" class="record-help">Argent déjà présent sur ce compte, enregistré à la date du jour. Il sera figé dès le premier mouvement.</p>
                         </div>
                     </div>
@@ -173,4 +190,16 @@
             </form>
         </section>
     </section>
+    <script>
+    (function () {
+        function basculer(select) {
+            var autre = select.parentElement.querySelector('[data-operateur-autre]');
+            if (autre) { autre.hidden = select.value !== 'AUTRE'; autre.required = select.value === 'AUTRE'; }
+        }
+        document.querySelectorAll('[data-operateur-select]').forEach(function (s) { basculer(s); s.addEventListener('change', function () { basculer(s); }); });
+        var type = document.getElementById('type'), champ = document.getElementById('operateurChamp');
+        function typeChange() { if (type && champ) champ.hidden = type.value !== 'MOBILE_MONEY'; }
+        if (type) { typeChange(); type.addEventListener('change', typeChange); }
+    })();
+    </script>
 </div>

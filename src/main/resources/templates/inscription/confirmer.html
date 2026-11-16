@@ -59,7 +59,7 @@
                     <select id="pays" class="form-select" name="pays" required aria-describedby="paysAide"
                             th:classappend="${#fields.hasErrors('paysValide')} ? 'is-invalid' : ''">
                         <option th:each="p : ${listePays}" th:value="${p.code}" th:selected="${p.code == confirmationInscription.pays}"
-                                th:text="${p.nom + ' (' + p.monnaie.symbole + ')'}">Guinée (GNF)</option>
+                                th:text="${p.nom + ' (' + p.monnaie.symbole + ')'}">Guinée</option>
                     </select>
                     <p id="paysAide" class="auth-field-help">Le pays fixe la monnaie de votre boutique pour toujours : elle ne pourra plus être changée.</p>
                     <p class="auth-field-help text-danger" th:if="${#fields.hasErrors('paysValide')}" th:errors="*{paysValide}" role="alert"></p>

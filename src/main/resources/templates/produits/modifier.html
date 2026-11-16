@@ -77,16 +77,16 @@
             <section th:if="${estService}" class="record-panel" aria-labelledby="prixServiceTitre">
                 <div class="record-panel-heading">
                     <h2 id="prixServiceTitre">Prix du service</h2>
-                    <p>Un service se vend sans stock. Les montants sont exprimés en francs guinéens (GNF).</p>
+                    <p>Un service se vend sans stock. Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p>
                 </div>
                 <div class="record-grid">
                     <div class="record-field">
-                        <label for="inputPrixVente">Prix de vente (GNF)</label>
+                        <label for="inputPrixVente">Prix de vente ([[${@montants.symbole}]])</label>
                         <input class="form-control" id="inputPrixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'inputPrixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
                         <p id="inputPrixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
                     </div>
                     <div class="record-field">
-                        <label for="coutMoyen">Coût du service (GNF) <span class="record-optional">(facultatif)</span></label>
+                        <label for="coutMoyen">Coût du service ([[${@montants.symbole}]]) <span class="record-optional">(facultatif)</span></label>
                         <input class="form-control" id="coutMoyen" th:field="*{coutMoyen}" th:errorclass="stateInvalid" type="number" min="0" step="0.01" inputmode="decimal" autocomplete="off" placeholder="0" th:attr="aria-invalid=${#fields.hasErrors('coutMoyen')},aria-describedby=${#fields.hasErrors('coutMoyen') ? 'coutMoyen-help coutMoyen-error' : 'coutMoyen-help'}" />
                         <p id="coutMoyen-help" class="record-help">Ce que le service vous coûte à chaque vente. Laissez 0 s’il n’y en a pas.</p>
                         <p id="coutMoyen-error" class="record-field-error" th:if="${#fields.hasErrors('coutMoyen')}" th:errors="*{coutMoyen}"></p>
@@ -97,12 +97,12 @@
             <section th:if="${!estService and stockActuel != null and stockActuel.prixDefinis}" class="record-panel" aria-labelledby="prixTitre">
                 <div class="record-panel-heading">
                     <h2 id="prixTitre">Prix</h2>
-                    <p>Les montants sont exprimés en francs guinéens (GNF).</p>
+                    <p>Les montants sont exprimés en francs guinéens ([[${@montants.symbole}]]).</p>
                 </div>
                 <th:block th:replace="~{produits/couts :: lecture(${stockActuel})}"></th:block>
                 <div class="record-grid">
                     <div class="record-field">
-                        <label for="inputPrixVente">Prix de vente (GNF)</label>
+                        <label for="inputPrixVente">Prix de vente ([[${@montants.symbole}]])</label>
                         <input class="form-control" id="inputPrixVente" th:field="*{prixVente}" th:errorclass="stateInvalid" th:attr="aria-invalid=${#fields.hasErrors('prixVente')},aria-describedby=${#fields.hasErrors('prixVente') ? 'inputPrixVente-error' : null}" required type="number" autocomplete="off" step="0.01" min="0" inputmode="decimal" placeholder="0" />
                         <p id="inputPrixVente-error" class="record-field-error" th:if="${#fields.hasErrors('prixVente')}" th:errors="*{prixVente}"></p>
                     </div>

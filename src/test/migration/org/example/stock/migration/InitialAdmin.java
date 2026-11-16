@@ -120,7 +120,7 @@ public class InitialAdmin {
         String table = guillemet + nom + guillemet;
         var colonnes = BoutiquesMigration.colonnes(c, "compte_tresorerie_boutique").keySet();
         if (colonnes.containsAll(List.of("type", "nom", "nom_cle", "principal_type", "actif", "ordre"))) {
-            // Schéma de la migration pays/monnaie : mobile money + opérateur du pays. Avant elle, l'ancien type ORANGE_MONEY reste le seul accepté.
+            // Schéma de la migration pays/monnaie : mobile money + opérateur du pays. Avant elle, l'ancien type MOBILE_MONEY reste le seul accepté.
             boolean avecOperateur = colonnes.contains("operateur");
             for (var type : org.example.stock.enums.TypeCompteTresorerie.values()) {
                 String valeurType = !avecOperateur && type == org.example.stock.enums.TypeCompteTresorerie.MOBILE_MONEY ? "ORANGE_MONEY" : type.name();

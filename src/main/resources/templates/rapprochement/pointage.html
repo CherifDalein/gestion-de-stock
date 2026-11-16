@@ -60,7 +60,7 @@
             <div class="rap-colonnes">
                 <section class="record-panel rap-colonne" id="rapColReleve" aria-labelledby="rapColLignesTitre">
                     <div class="record-panel-heading"><h2 id="rapColLignesTitre">Lignes du relevé non rapprochées</h2>
-                        <p th:text="${#lists.size(ecran.lignesLibres()) + ' ligne(s) · total ' + @formatsVue.signe(ecran.totalLignesLibres())}">0 ligne</p></div>
+                        <p th:text="${#lists.size(ecran.lignesLibres()) + ' ligne(s) · total ' + @montants.signe(ecran.totalLignesLibres())}">0 ligne</p></div>
                     <p class="record-help" th:if="${#lists.isEmpty(ecran.lignesLibres())}">Toutes les lignes sont rapprochées.</p>
                     <ul class="rap-liste">
                         <li th:each="l : ${ecran.lignesLibres()}" class="rap-element" th:attr="data-ligne=${l.id}">
@@ -90,7 +90,7 @@
 
                 <section class="record-panel rap-colonne" id="rapColAppli" aria-labelledby="rapColAppliTitre">
                     <div class="record-panel-heading"><h2 id="rapColAppliTitre">Mouvements de l'appli non rapprochés</h2>
-                        <p th:text="${#lists.size(ecran.mouvementsLibres()) + ' mouvement(s) · total ' + @formatsVue.signe(ecran.totalMouvementsLibres())}">0 mouvement</p></div>
+                        <p th:text="${#lists.size(ecran.mouvementsLibres()) + ' mouvement(s) · total ' + @montants.signe(ecran.totalMouvementsLibres())}">0 mouvement</p></div>
                     <p class="record-help" th:if="${#lists.isEmpty(ecran.mouvementsLibres())}">Aucun mouvement à rapprocher sur cette période.</p>
                     <ul class="rap-liste">
                         <li th:each="v : ${ecran.mouvementsLibres()}" class="rap-element" th:classappend="${v.seulImpossible() ? 'rap-element--annule' : ''}" th:attr="data-mouvement=${v.mouvement().id}">
@@ -118,8 +118,8 @@
 
             <div class="rap-barre" th:if="${!fige}" id="barreAssocier">
                 <div class="rap-barre-chiffres" aria-live="polite">
-                    <span>Relevé choisi : <strong id="sommeLignes">0</strong> GNF</span>
-                    <span>Appli choisie : <strong id="sommeMouvements">0</strong> GNF</span>
+                    <span>Relevé choisi : <strong id="sommeLignes">0</strong> [[${@montants.symbole}]]</span>
+                    <span>Appli choisie : <strong id="sommeMouvements">0</strong> [[${@montants.symbole}]]</span>
                     <span id="verdictSommes" class="rap-verdict">Choisissez au moins une ligne et un mouvement.</span>
                 </div>
                 <form th:action="@{/rapprochements/{id}/pointage/rapprocher(id=${r.id})}" method="post" id="formRapprocher">
@@ -134,11 +134,11 @@
             <p class="record-help" th:if="${#lists.isEmpty(ecran.groupes())}">Aucun rapprochement pour le moment.</p>
             <ul class="rap-groupes" th:unless="${#lists.isEmpty(ecran.groupes())}">
                 <li th:each="g : ${ecran.groupes()}" class="rap-groupe" th:attr="data-rapprochement=${g.rapprochement().id}">
-                    <div class="rap-ligne-titre"><strong th:text="${g.rapprochement().type.libelle}">Pointage manuel</strong><span class="rap-montant" th:text="${@formatsVue.gnf(g.rapprochement().montant)}">0 GNF</span></div>
+                    <div class="rap-ligne-titre"><strong th:text="${g.rapprochement().type.libelle}">Pointage manuel</strong><span class="rap-montant" th:text="${@montants.format(g.rapprochement().montant)}">0</span></div>
                     <p class="rap-alerte" th:if="${g.annulationRompue()}" role="alert"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Un mouvement de ce rapprochement a été annulé depuis le pointage : défaites-le avant de valider.</p>
                     <div class="rap-groupe-cotes">
-                        <ul><li th:each="l : ${g.lignes()}" th:text="${'Relevé : ' + @formatsVue.date(l.dateOperation) + ' · ' + l.libelle + ' · ' + @formatsVue.signe(l.montant)}">Relevé</li></ul>
-                        <ul><li th:each="m : ${g.mouvements()}" th:text="${'Appli : ' + @formatsVue.date(m.dateMouvement.toLocalDate()) + ' · ' + (m.motif != null ? m.motif : m.sourceLibelle) + ' · ' + @formatsVue.signe(m.montant)}">Appli</li></ul>
+                        <ul><li th:each="l : ${g.lignes()}" th:text="${'Relevé : ' + @formatsVue.date(l.dateOperation) + ' · ' + l.libelle + ' · ' + @montants.signe(l.montant)}">Relevé</li></ul>
+                        <ul><li th:each="m : ${g.mouvements()}" th:text="${'Appli : ' + @formatsVue.date(m.dateMouvement.toLocalDate()) + ' · ' + (m.motif != null ? m.motif : m.sourceLibelle) + ' · ' + @montants.signe(m.montant)}">Appli</li></ul>
                     </div>
                     <form th:if="${!fige}" th:action="@{/rapprochements/{id}/pointage/defaire(id=${r.id})}" method="post">
                         <input type="hidden" name="rapprochement" th:value="${g.rapprochement().id}" />

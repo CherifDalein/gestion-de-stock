@@ -76,7 +76,7 @@ class RapprochementBancaireTests {
         boutique = boutique("Boutique rapprochement"); autre = boutique("Autre boutique rapprochement");
         utilisateur(GERANT, Role.ADMIN, boutique); utilisateur(CAISSIER, Role.CAISSIER, boutique); utilisateur(AUTRE_GERANT, Role.ADMIN, autre);
         banque = ComptesDeTest.de(boutique, TypeCompteTresorerie.BANQUE);
-        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY);
+        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.MOBILE_MONEY);
         especes = ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES);
         banqueAutre = ComptesDeTest.de(autre, TypeCompteTresorerie.BANQUE);
         mouvement(banque, "1000000", "2025-02-20T09:00", "SOLDE_INITIAL");

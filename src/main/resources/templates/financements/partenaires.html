@@ -25,7 +25,7 @@
                         <td data-label="Nom"><a th:href="@{/financements/partenaires/{id}(id=${v.partenaire.id})}" th:text="${v.partenaire.nom}">Nom</a><small th:unless="${v.partenaire.actif}"> (archivé)</small></td>
                         <td data-label="Type" th:text="${v.partenaire.type.libelle}">Banque</td>
                         <td data-label="Téléphone" th:text="${v.partenaire.telephone}">—</td>
-                        <td data-label="Solde" class="text-end"><span th:text="${#numbers.formatDecimal(v.solde.absolu(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</span><br>
+                        <td data-label="Solde" class="text-end"><span th:text="${@montants.format(v.solde.absolu())}">0</span><br>
                             <small th:text="${v.solde.laBoutiqueDoit() ? 'La boutique doit' : (v.solde.ilDoit() ? 'Il doit à la boutique' : 'Soldé')}"></small></td>
                         <td data-label="Dossiers en cours" th:text="${v.empruntsEnCours}">0</td>
                     </tr>

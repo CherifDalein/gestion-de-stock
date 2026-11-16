@@ -67,8 +67,8 @@ class TresorerieExportTests {
 
         m1 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 1, 8, 0), "5000000", "OUVERTURE", "SOLDE_INITIAL", "Ouverture caisse", awa, null, null);
         m2 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 5, 10, 0), "1500000", "ENTREE", "VENTE", "Vente FV-000001", awa, null, null);
-        m3 = mouvement(boutiqueA, TypeCompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 6, 11, 0), "300000", "ENTREE", "REGLEMENT_VENTE", "Règlement FV-000002", bakary, null, null);
-        m4 = mouvement(boutiqueA, TypeCompteTresorerie.ORANGE_MONEY, LocalDateTime.of(2026, 10, 7, 9, 0), "-300000", "SORTIE", "ANNULATION", "Erreur de compte", awa, m3, null);
+        m3 = mouvement(boutiqueA, TypeCompteTresorerie.MOBILE_MONEY, LocalDateTime.of(2026, 10, 6, 11, 0), "300000", "ENTREE", "REGLEMENT_VENTE", "Règlement FV-000002", bakary, null, null);
+        m4 = mouvement(boutiqueA, TypeCompteTresorerie.MOBILE_MONEY, LocalDateTime.of(2026, 10, 7, 9, 0), "-300000", "SORTIE", "ANNULATION", "Erreur de compte", awa, m3, null);
         m5 = mouvement(boutiqueA, TypeCompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 10, 12, 0), "-250000.50", "SORTIE", "ACHAT", "Achat FA-000003", null, null, null);
         m6 = mouvement(boutiqueA, TypeCompteTresorerie.ESPECES, LocalDateTime.of(2026, 10, 12, 12, 0), "-100000", "SORTIE", "DEPENSE", FORMULE, awa, null, depense);
         m7 = mouvement(boutiqueA, TypeCompteTresorerie.BANQUE, LocalDateTime.of(2026, 10, 14, 12, 0), null, null, null, null, awa, null, null);
@@ -148,7 +148,7 @@ class TresorerieExportTests {
         List<Cas> cas = List.of(
                 new Cas(new String[]{}, List.of(m7, m6, m5, m4, m3, m2, m1), "Journal complet"),
                 new Cas(new String[]{"compte", idP(TypeCompteTresorerie.ESPECES)}, List.of(m6, m2, m1), "Compte : Caisse"),
-                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.ORANGE_MONEY)}, List.of(m4, m3), "Compte : Orange Money"),
+                new Cas(new String[]{"compte", idP(TypeCompteTresorerie.MOBILE_MONEY)}, List.of(m4, m3), "Compte : Orange Money"),
                 new Cas(new String[]{"compte", idP(TypeCompteTresorerie.BANQUE)}, List.of(m7, m5), "Compte : Banque"),
                 new Cas(new String[]{"sens", "entree"}, List.of(m3, m2, m1), "Sens : entrées"),
                 new Cas(new String[]{"sens", "sortie"}, List.of(m6, m5, m4), "Sens : sorties"),
@@ -164,7 +164,7 @@ class TresorerieExportTests {
                         "Période du 01/10/2026 au 31/10/2026 · Compte : Caisse · Sens : sorties"),
                 // La recherche de l'écran porte sur tout le texte de la ligne, mention d'annulation comprise.
                 new Cas(new String[]{"q", "erreur"}, List.of(m4, m3), "Recherche : « erreur »"),
-                new Cas(new String[]{"q", "AWA gerante", "compte", idP(TypeCompteTresorerie.ORANGE_MONEY)}, List.of(m4), "Compte : Orange Money · Recherche : « AWA gerante »"),
+                new Cas(new String[]{"q", "AWA gerante", "compte", idP(TypeCompteTresorerie.MOBILE_MONEY)}, List.of(m4), "Compte : Orange Money · Recherche : « AWA gerante »"),
                 new Cas(new String[]{"q", "250000.50"}, List.of(m5), "Recherche : « 250000.50 »"));
         for (Cas c : cas) {
             String nom = String.join("=", c.parametres());
