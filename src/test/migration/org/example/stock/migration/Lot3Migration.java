@@ -470,7 +470,7 @@ public final class Lot3Migration {
             nonConforme("une opération de trésorerie a un compte inconnu");
         if (colonnes(c, "retour").containsKey("compte_tresorerie") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "retour")
                 + " WHERE compte_tresorerie IS NOT NULL AND compte_tresorerie NOT IN ('CAISSE','ORANGE_MONEY','BANQUE')") != 0) nonConforme("un remboursement a un compte inconnu");
-        if (comptes.containsKey("type") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, COMPTES) + " WHERE type IS NOT NULL AND type NOT IN ('ESPECES','ORANGE_MONEY','BANQUE')") != 0)
+        if (comptes.containsKey("type") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, COMPTES) + " WHERE type IS NOT NULL AND type NOT IN ('ESPECES','ORANGE_MONEY','MOBILE_MONEY','BANQUE')") != 0)
             nonConforme("un compte de trésorerie a un type inconnu");
         if (comptes.containsKey("type") && comptes.containsKey("principal_type") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, COMPTES)
                 + " WHERE principal_type IS NOT NULL AND (type IS NULL OR principal_type<>type)") != 0) nonConforme("un compte principal n'a pas le type qu'il représente");
@@ -513,7 +513,7 @@ public final class Lot3Migration {
             if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " WHERE statut NOT IN ('BROUILLON','VALIDE')") != 0) nonConforme("un relevé bancaire a un statut inconnu");
             coherenceBoutiques(c, "releve_bancaire", "compte_id");
             if (colonnes(c, COMPTES).containsKey("type") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " b JOIN " + table(c, COMPTES)
-                    + " x ON x.id=b.compte_id WHERE x.type NOT IN ('BANQUE','ORANGE_MONEY')") != 0) nonConforme("un relevé bancaire porte sur un compte qui n'est ni Banque ni Orange Money");
+                    + " x ON x.id=b.compte_id WHERE x.type NOT IN ('BANQUE','ORANGE_MONEY','MOBILE_MONEY')") != 0) nonConforme("un relevé bancaire porte sur un compte qui n'est ni Banque ni Orange Money");
             if (BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + r + " WHERE date_fin < date_debut OR statut='VALIDE' AND (valide_par_id IS NULL OR date_validation IS NULL)") != 0)
                 nonConforme("un relevé bancaire a une période inversée ou une validation incomplète");
             if (tables.containsKey("ligne_releve") && tables.containsKey("rapprochement") && BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM " + table(c, "ligne_releve") + " l JOIN "

@@ -8,6 +8,8 @@ CREATE DATABASE IF NOT EXISTS stock_pro
 
 USE stock_pro;
 
+-- Pays et monnaie (migration pays-monnaie) : pays (code ISO 3166, ex. GN, SN) et monnaie (GNF, XOF, XAF) sont choisis à la création de la
+-- boutique et ne changent jamais ; les boutiques existantes sont en Guinée (GN, GNF). operateur : opérateur mobile money d'un compte.
 CREATE TABLE IF NOT EXISTS boutique (
     id BIGINT NOT NULL AUTO_INCREMENT,
     nom VARCHAR(255) NOT NULL,
@@ -34,6 +36,8 @@ CREATE TABLE IF NOT EXISTS boutique (
     prochain_numero_pret BIGINT NOT NULL DEFAULT 1,
     format_recu VARCHAR(16) NOT NULL DEFAULT 'A4',
     proposer_impression_recu BOOLEAN NOT NULL DEFAULT TRUE,
+    pays VARCHAR(2) NOT NULL,
+    monnaie VARCHAR(3) NOT NULL,
     PRIMARY KEY (id)
 );
 
@@ -206,7 +210,7 @@ CREATE TABLE IF NOT EXISTS detail_vente (
         FOREIGN KEY (produit_id) REFERENCES produit (id)
 );
 
--- Lot 3 : comptes de trésorerie multiples. Un compte appartient à une boutique et à un type (ESPECES, ORANGE_MONEY, BANQUE).
+-- Lot 3 : comptes de trésorerie multiples. Un compte appartient à une boutique et à un type (ESPECES, MOBILE_MONEY, BANQUE ; MOBILE_MONEY s'appelait ORANGE_MONEY avant la migration pays-monnaie, l'opérateur est dans operateur).
 -- principal_type vaut le type du compte principal et reste vide sinon : l'unicité (boutique_id, principal_type) garantit un seul
 -- principal par type. nom_cle est le nom en minuscules : l'unicité du nom ne tient pas compte de la casse.
 CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique (
@@ -217,6 +221,7 @@ CREATE TABLE IF NOT EXISTS compte_tresorerie_boutique (
     nom_cle VARCHAR(60) NOT NULL,
     numero VARCHAR(40) NULL,
     principal_type VARCHAR(32) NULL,
+    operateur VARCHAR(40) NULL,
     actif BOOLEAN NOT NULL DEFAULT TRUE,
     ordre INT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
@@ -600,7 +605,7 @@ CREATE TABLE IF NOT EXISTS mouvement_caisse (
         FOREIGN KEY (vente_id) REFERENCES vente (id)
 );
 
--- Lot 3c : rapprochement bancaire. Un relevé (période, solde d'ouverture et de clôture) appartient à un compte Banque ou Orange Money ;
+-- Lot 3c : rapprochement bancaire. Un relevé (période, solde d'ouverture et de clôture) appartient à un compte Banque ou mobile money ;
 -- ses lignes (montant signé : crédit positif, débit négatif) se pointent avec les mouvements de l'appli dans des rapprochements. Un
 -- mouvement ne figure que dans un seul rapprochement (uk_rapprochement_mouvement_mouvement). Un relevé validé est figé ; l'historique
 -- (validations et dévalidations) est conservé. La correspondance des colonnes d'import est mémorisée par compte ; aucun fichier n'est gardé.

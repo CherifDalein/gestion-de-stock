@@ -56,7 +56,7 @@ class InitialAdminTests {
     @Test
     void uneBoutiqueExistanteConserveSesComptesEtRecoitSeulementLesManquants() throws Exception {
         try (var c = base()) {
-            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP)");
+            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation,pays,monnaie) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP,'GN','GNF')");
             AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(99,42,'ESPECES','Caisse','caisse','ESPECES',TRUE,0)");
             // Un compte secondaire déjà nommé « Banque » ne doit pas entrer en conflit avec le compte principal de base.
             AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(98,42,'ORANGE_MONEY','Banque','banque',NULL,TRUE,5)");
@@ -80,7 +80,7 @@ class InitialAdminTests {
     @Test
     void uneBaseDAvantLeLot3ReçoitLesTroisComptesDeLAncienSchemaSansDoublon() throws Exception {
         try (var c = baseAvantLot3()) {
-            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP)");
+            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation,pays,monnaie) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP,'GN','GNF')");
             AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,compte) VALUES(99,42,'CAISSE')");
             InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE boutique_id=42")).isEqualTo("3");

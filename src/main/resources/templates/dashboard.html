@@ -13,7 +13,7 @@
     <link th:href="@{/css/ergonomie.css}" rel="stylesheet" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
 </head>
-<body class="stock-app sb-nav-fixed" th:attr="data-monnaie=${@montants.symbole}" th:with="page=${view != null and view != '' ? view : 'dashboard'}">
+<body class="stock-app sb-nav-fixed" th:with="page=${view != null and view != '' ? view : 'dashboard'}, symboleMonnaie=${@montants.symbole}" th:attr="data-monnaie=${symboleMonnaie}">
 <a class="visually-hidden-focusable app-skip-link" href="#mainContent">Aller au contenu</a>
 <nav class="sb-topnav navbar navbar-expand app-topbar" aria-label="Navigation principale">
     <a class="navbar-brand app-brand" th:href="@{/}">

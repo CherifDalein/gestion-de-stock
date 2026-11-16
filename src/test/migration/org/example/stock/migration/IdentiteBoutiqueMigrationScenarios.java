@@ -97,16 +97,21 @@ final class IdentiteBoutiqueMigrationScenarios {
     /** Schéma neuf des lots 1 à 4 et 6 : le script sans les tables de la comptabilité du lot 5a (qui s'applique après le lot 6). */
     static void schemaNeufLot6(Connection c) throws Exception { schemaNeuf(c, true, true, false); }
 
-    /** Schéma neuf actuel : le script complet, avec la comptabilité du lot 5a. */
-    static void schemaNeufLot5(Connection c) throws Exception { schemaNeuf(c, true, true, true); }
+    /** Schéma neuf des lots 1 à 6 : le script sans pays, monnaie ni opérateur (la migration pays-monnaie s'applique après le lot 5). */
+    static void schemaNeufLot5(Connection c) throws Exception { schemaNeuf(c, true, true, true, false); }
+
+    /** Schéma neuf actuel : le script complet, avec la comptabilité du lot 5a, le pays et la monnaie des boutiques. */
+    static void schemaNeufPaysMonnaie(Connection c) throws Exception { schemaNeuf(c, true, true, true, true); }
 
     private static void schemaNeuf(Connection c, boolean avecLot3) throws Exception { schemaNeuf(c, avecLot3, false, false); }
 
     private static void schemaNeuf(Connection c, boolean avecLot3, boolean avecLot6) throws Exception { schemaNeuf(c, avecLot3, avecLot6, false); }
 
-    private static void schemaNeuf(Connection c, boolean avecLot3, boolean avecLot6, boolean avecLot5) throws Exception {
+    private static void schemaNeuf(Connection c, boolean avecLot3, boolean avecLot6, boolean avecLot5) throws Exception { schemaNeuf(c, avecLot3, avecLot6, avecLot5, false); }
+
+    private static void schemaNeuf(Connection c, boolean avecLot3, boolean avecLot6, boolean avecLot5, boolean avecPaysMonnaie) throws Exception {
         String brut = Files.readString(Path.of("docs/database-schema.sql"));
-        String choisi = avecLot3 ? (avecLot6 ? (avecLot5 ? brut : SchemaHistorique.sansLot5(brut)) : SchemaHistorique.sansLot6(brut)) : SchemaHistorique.sansLot3(brut);
+        String choisi = avecLot3 ? (avecLot6 ? (avecLot5 ? (avecPaysMonnaie ? brut : SchemaHistorique.sansPaysMonnaie(brut)) : SchemaHistorique.sansLot5(brut)) : SchemaHistorique.sansLot6(brut)) : SchemaHistorique.sansLot3(brut);
         String script = choisi.replaceAll("(?m)^--[^\\r\\n]*", "");
         if (!maria(c)) script = script.replace(" ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", "");
         for (String instruction : script.split(";")) {

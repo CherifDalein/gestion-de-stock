@@ -94,7 +94,7 @@ public final class Lot5Migration {
             Map.entry(AFFECTATIONS + ".boutique_id", "boutique"), Map.entry(AFFECTATIONS + ".exercice_id", EXERCICES));
 
     /** Compte officiel parent du sous-compte de chaque type de compte de trésorerie. */
-    static final Map<String, String> PARENTS = Map.of("ESPECES", "571", "ORANGE_MONEY", "552", "BANQUE", "521");
+    static final Map<String, String> PARENTS = Map.of("ESPECES", "571", "ORANGE_MONEY", "552", "MOBILE_MONEY", "552", "BANQUE", "521");
 
     private Lot5Migration() {}
 
@@ -226,7 +226,7 @@ public final class Lot5Migration {
         record Compte(long id, long boutique, String type, String nom) {}
         var a_creer = new ArrayList<Compte>();
         try (var s = c.createStatement(); var r = s.executeQuery("SELECT id, boutique_id, type, nom FROM compte_tresorerie_boutique WHERE id NOT IN (SELECT compte_tresorerie_id FROM "
-                + SOUS_COMPTES + " WHERE compte_tresorerie_id IS NOT NULL) ORDER BY boutique_id, CASE type WHEN 'ESPECES' THEN 0 WHEN 'ORANGE_MONEY' THEN 1 ELSE 2 END, ordre, id")) {
+                + SOUS_COMPTES + " WHERE compte_tresorerie_id IS NOT NULL) ORDER BY boutique_id, CASE type WHEN 'ESPECES' THEN 0 WHEN 'ORANGE_MONEY' THEN 1 WHEN 'MOBILE_MONEY' THEN 1 ELSE 2 END, ordre, id")) {
             while (r.next()) a_creer.add(new Compte(r.getLong(1), r.getLong(2), r.getString(3), r.getString(4)));
         }
         try (var insertion = c.prepareStatement("INSERT INTO " + SOUS_COMPTES + "(boutique_id, numero, parent_numero, intitule, compte_tresorerie_id, date_creation) VALUES(?,?,?,?,?,?)")) {
