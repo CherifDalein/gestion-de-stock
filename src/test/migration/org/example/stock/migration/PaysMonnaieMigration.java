@@ -98,9 +98,19 @@ public final class PaysMonnaieMigration {
 
     /** La migration s'applique après les lots 5 et 6 (donc après 1 à 4) : refus explicite tant qu'ils ne sont pas terminés et conformes. */
     private static void exigerLots5Et6(Connection c) throws SQLException {
-        if (!BoutiquesMigration.tables(c).containsKey(BOUTIQUE) || !Lot1Migration.finalise(c) || !Lot2Migration.finalise(c) || !Lot4Migration.finalise(c)
-                || !Lot3Migration.finalise(c) || !Lot6Migration.finalise(c) || !Lot5Migration.finalise(c))
-            throw new IllegalStateException("Les migrations des lots 5 et 6 (et 1 à 4) doivent être terminées avant pays-monnaie : lancer lot6Check, lot6Migrate puis lot5Check, lot5Migrate (LOT6_BACKUP_DIR, LOT5_BACKUP_DIR) après sauvegarde.");
+        var restants = new java.util.ArrayList<String>();
+        if (!BoutiquesMigration.tables(c).containsKey(BOUTIQUE)) restants.add("boutiques");
+        else {
+            if (!Lot1Migration.finalise(c)) restants.add("1");
+            if (!Lot2Migration.finalise(c)) restants.add("2");
+            if (!Lot4Migration.finalise(c)) restants.add("4");
+            if (!Lot3Migration.finalise(c)) restants.add("3");
+            if (!Lot6Migration.finalise(c)) restants.add("6");
+            if (!Lot5Migration.finalise(c)) restants.add("5");
+        }
+        if (!restants.isEmpty())
+            throw new IllegalStateException("Les migrations des lots 5 et 6 (et 1 à 4) doivent être terminées avant pays-monnaie (non terminés : " + String.join(", ", restants)
+                    + ") : lancer lot6Check, lot6Migrate puis lot5Check, lot5Migrate (LOT6_BACKUP_DIR, LOT5_BACKUP_DIR) après sauvegarde.");
         Lot6Migration.migrer(c, false);
         Lot5Migration.migrer(c, false);
     }

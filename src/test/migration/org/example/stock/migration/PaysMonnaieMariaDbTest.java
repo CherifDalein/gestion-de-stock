@@ -74,7 +74,7 @@ public final class PaysMonnaieMariaDbTest {
         Lot2Migration.migrer(c, true);
         Lot4Migration.migrer(c, true);
         Lot3Migration.migrer(c, true);
-        PaysMonnaieMigration.migrer(c, true);
+        Lot6Migration.migrer(c, true);
         Lot5Migration.migrer(c, true);
         PaysMonnaieMigration.migrer(c, true);
         int query = serveur.indexOf('?');
@@ -121,6 +121,7 @@ public final class PaysMonnaieMariaDbTest {
                     .setParameter("b", dakarId).setParameter("t", TypeCompteTresorerie.MOBILE_MONEY).getSingleResult() == 2, "Comptes de mobile money mal comptés");
         }
         // Une relance n'écrase pas ce que le code actuel a créé.
+        Lot5Migration.migrer(c, true);   // complète les sous-comptes des comptes de la boutique créée par JPA
         var avant = PaysMonnaieMigrationScenarios.etatComplet(c);
         PaysMonnaieMigration.migrer(c, true);
         PaysMonnaieMigrationScenarios.exiger(avant.equals(PaysMonnaieMigrationScenarios.etatComplet(c)), "La relance a modifié les boutiques créées par JPA");
