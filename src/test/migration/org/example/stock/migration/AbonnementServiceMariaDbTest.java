@@ -293,7 +293,7 @@ public final class AbonnementServiceMariaDbTest {
     @Profile("abonnement-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import(GestionAbonnementService.class)
+    @Import({GestionAbonnementService.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

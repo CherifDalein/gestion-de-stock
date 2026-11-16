@@ -405,7 +405,7 @@ public final class TresorerieServiceMariaDbTest {
     @Profile("tresorerie-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({VerrouExercice.class, CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class,
+    @Import({VerrouExercice.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class, CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class,
             ComptesTresorerieService.class})
     static class ConfigurationJpa {
         @Bean

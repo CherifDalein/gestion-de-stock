@@ -266,17 +266,17 @@ public class OrdreVerrousMariaDbTest {
         //    bloquent pas (les comptes sont verrouillés par identifiant croissant), pas plus qu'un règlement de vente sur un compte pendant
         //    un transfert qui le débite, ou l'archivage d'un compte vide pendant une écriture sur l'autre compte du même type.
         connecter(a);
-        long orange1 = comptePrincipal(a, "ORANGE_MONEY");
-        long orange2 = creerCompte(a, "Orange Money Labé", "ORANGE_MONEY");
-        fonds(a, "ORANGE_MONEY", "50000000");
+        long orange1 = comptePrincipal(a, "MOBILE_MONEY");
+        long orange2 = creerCompte(a, "Orange Money Labé", "MOBILE_MONEY");
+        fonds(a, "MOBILE_MONEY", "50000000");
         jdbc.update("INSERT INTO mouvement_caisse(boutique_id,date_mouvement,montant,type,motif,source,compte_id) SELECT boutique_id,NOW(6),50000000,'OUVERTURE','Fonds de test','SOLDE_INITIAL',id FROM compte_tresorerie_boutique WHERE id=?", orange2);
-        BigDecimal totalOrange = totalType(a, "ORANGE_MONEY");
+        BigDecimal totalOrange = totalType(a, "MOBILE_MONEY");
         for (int tour = 0; tour < TOURS; tour++) {
             simultanesSansErreur("transferts croisés entre deux comptes #" + tour,
                     () -> transferer(a, orange1, orange2, "1000"), () -> transferer(a, orange2, orange1, "1000"),
                     () -> transferer(a, orange1, orange2, "500"), () -> transferer(a, orange2, orange1, "500"));
         }
-        exiger(totalType(a, "ORANGE_MONEY").compareTo(totalOrange) == 0, "Le total du type Orange Money est inchangé par les transferts");
+        exiger(totalType(a, "MOBILE_MONEY").compareTo(totalOrange) == 0, "Le total du type Orange Money est inchangé par les transferts");
         for (int tour = 0; tour < TOURS; tour++) {
             connecter(a);
             vente(a, a.clientId, 5, "0");
@@ -285,7 +285,7 @@ public class OrdreVerrousMariaDbTest {
                     () -> reglerVenteSur(a, credit, "10000", BigDecimal.ZERO, orange1), () -> transferer(a, orange1, orange2, "1000"));
             exiger(decimal("SELECT montant_verse FROM vente WHERE id=" + credit).compareTo(new BigDecimal("10000")) == 0, "Règlement enregistré sur le compte choisi");
         }
-        long videId = creerCompte(a, "Orange vide", "ORANGE_MONEY");
+        long videId = creerCompte(a, "Orange vide", "MOBILE_MONEY");
         simultanesSansErreur("archivage d'un compte vide+écriture sur un autre compte du même type",
                 () -> archiver(a, videId), () -> reglerVenteSur(a, dernier("vente"), "1000", new BigDecimal("10000"), orange2));
         exiger(decimal("SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE id=" + videId + " AND actif=FALSE").signum() > 0, "Le compte vide est archivé");
@@ -548,6 +548,7 @@ public class OrdreVerrousMariaDbTest {
         try {
             var form = new org.example.stock.form.CompteTresorerieForm();
             form.setType(org.example.stock.enums.TypeCompteTresorerie.valueOf(type)); form.setNom(nom);
+            if (form.getType() == org.example.stock.enums.TypeCompteTresorerie.MOBILE_MONEY) form.setOperateur("Orange Money");
             return comptesService.creer(form).getId();
         } finally { SecurityContextHolder.clearContext(); }
     }

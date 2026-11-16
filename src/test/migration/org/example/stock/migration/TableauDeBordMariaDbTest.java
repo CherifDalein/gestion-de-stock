@@ -475,7 +475,7 @@ public final class TableauDeBordMariaDbTest {
     @Profile("tableau-de-bord-mariadb-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({VerrouExercice.class, TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class,
+    @Import({VerrouExercice.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class, TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class,
             org.example.stock.service.SoldePartenaireService.class, org.example.stock.repository.SoldePartenaireRepository.class,
             org.example.stock.service.EcheanceService.class})
     static class ConfigurationJpa {
