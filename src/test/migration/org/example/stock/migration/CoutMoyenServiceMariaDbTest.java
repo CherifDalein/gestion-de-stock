@@ -426,7 +426,8 @@ public final class CoutMoyenServiceMariaDbTest {
     @Import({VerrouExercice.class, AchatService.class, VenteService.class, InventaireService.class, ProduitService.class, CoutMoyenService.class,
             CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class,
             StockLockRepository.class, NumerotationFactureService.class, EcheanceService.class, SoldePartenaireService.class, SoldePartenaireRepository.class, DevisService.class,
-            RetourAchatService.class, ComptesTresorerieService.class, CorbeilleService.class, org.example.stock.config.CorbeilleProperties.class, SoldeDepartService.class})
+            RetourAchatService.class, ComptesTresorerieService.class, CorbeilleService.class, org.example.stock.config.CorbeilleProperties.class, SoldeDepartService.class,
+            org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class})
     static class ConfigurationJpa {
         @Bean
         LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {

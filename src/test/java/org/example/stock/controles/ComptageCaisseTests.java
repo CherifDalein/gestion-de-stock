@@ -264,7 +264,7 @@ class ComptageCaisseTests {
         assertThat(lu.getBilletage()).extracting(LigneBilletage::getCoupure).containsExactly(20000, 10000, 5000, 2000, 500, 100);
         assertThat(lu.getBilletage()).extracting(LigneBilletage::getQuantite).containsExactly(3, 2, 1, 4, 7, 1);
         String page = mvc.perform(get("/controles/comptages/" + c.getId()).with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("Billetage", "20 000 GNF", "96\u00a0600\u00a0GNF");
+        assertThat(page).contains("Billetage", "20\u00a0000\u00a0GNF", "96\u00a0600\u00a0GNF");
     }
 
     @Test
