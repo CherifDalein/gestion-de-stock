@@ -68,7 +68,7 @@ public class RecuPdf {
 
     static ContexteDocument sansLogoLourd(ContexteDocument c) {
         if (!c.aUnLogo() || tailleLogo(c.logoDataUri()) <= LOGO_TICKET_MAX_OCTETS) return c;
-        return new ContexteDocument(c.nomBoutique(), c.adresse(), c.telephones(), c.email(), null, c.editeur(), c.editeLe());
+        return new ContexteDocument(c.nomBoutique(), c.adresse(), c.telephones(), c.email(), null, c.editeur(), c.editeLe(), c.monnaie());
     }
 
     /** Taille du logo décodé, estimée sur le texte base64 (3 octets pour 4 caractères). */

@@ -82,7 +82,7 @@ public class PlateformeService {
         if (utilisateurs.existsByEmail(formulaire.getEmail())) throw new EmailDejaUtiliseException();
 
         String motDePasseEncode = passwordEncoder.encode(formulaire.getPassword());
-        Boutique boutique = new Boutique();
+        Boutique boutique = new Boutique(formulaire.lirePays());
         boutique.setNom(formulaire.getNomBoutique());
         boutique.setActif(true);
         boutique.setAccesOffert(formulaire.isAccesOffert());

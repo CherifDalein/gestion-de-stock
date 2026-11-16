@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @Controller
 public class RetourAchatController {
+    @Autowired private org.example.stock.pays.FormatMontants montants;
     @Autowired private RetourAchatService retourAchatService;
 
     @GetMapping("/achats/{id}/retour")
@@ -44,10 +45,10 @@ public class RetourAchatController {
         try {
             Retour retour = retourAchatService.enregistrer(id, saisie);
             redirectAttributes.addFlashAttribute("success", "Retour " + retour.getNumero() + " enregistré : "
-                    + formater(retour.getMontantTotal()) + " GNF"
-                    + (retour.getMontantImpute().signum() > 0 ? ", dont " + formater(retour.getMontantImpute()) + " GNF déduits de la dette envers le fournisseur" : "")
-                    + (retour.getMontantRembourse().signum() > 0 ? ", dont " + formater(retour.getMontantRembourse()) + " GNF remboursés en argent par le fournisseur" : "")
-                    + (retour.getMontantAvoir().signum() > 0 ? ", dont " + formater(retour.getMontantAvoir()) + " GNF gardés en avoir chez le fournisseur" : "") + ".");
+                    + montants.format(retour.getMontantTotal())
+                    + (retour.getMontantImpute().signum() > 0 ? ", dont " + montants.format(retour.getMontantImpute()) + " déduits de la dette envers le fournisseur" : "")
+                    + (retour.getMontantRembourse().signum() > 0 ? ", dont " + montants.format(retour.getMontantRembourse()) + " remboursés en argent par le fournisseur" : "")
+                    + (retour.getMontantAvoir().signum() > 0 ? ", dont " + montants.format(retour.getMontantAvoir()) + " gardés en avoir chez le fournisseur" : "") + ".");
             return "redirect:/retours?type=achat";
         } catch (RetourAchatObsoleteException e) {
             // Formulaire périmé ou second envoi : rien n'est enregistré, le formulaire est rouvert avec les quantités à jour.
@@ -78,8 +79,4 @@ public class RetourAchatController {
         return "dashboard";
     }
 
-    /** Montant lisible avec espaces de milliers, pour les messages. */
-    private static String formater(java.math.BigDecimal montant) {
-        return new java.text.DecimalFormat("#,##0.00", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.FRANCE)).format(montant);
-    }
 }

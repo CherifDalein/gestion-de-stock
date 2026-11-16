@@ -33,8 +33,8 @@ public class ComptesTresorerieController {
     @InitBinder("compteTresorerie")
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servlet) servlet.addHeaderPredicate(nom -> false);
-        if (request.getMethod().equals("POST")) exigerParametres(request, Set.of("type", "nom", "numero", "soldeDepart", "_csrf"), Set.of("type", "nom", "numero", "soldeDepart"));
-        binder.setAllowedFields("type", "nom", "numero", "soldeDepart", "_csrf");
+        if (request.getMethod().equals("POST")) exigerParametres(request, Set.of("type", "nom", "numero", "soldeDepart", "operateur", "operateurAutre", "_csrf"), Set.of("type", "nom", "numero", "soldeDepart", "operateur", "operateurAutre"));
+        binder.setAllowedFields("type", "nom", "numero", "soldeDepart", "operateur", "operateurAutre", "_csrf");
     }
 
     @GetMapping
@@ -42,6 +42,7 @@ public class ComptesTresorerieController {
         if (!model.containsAttribute("compteTresorerie")) model.addAttribute("compteTresorerie", new CompteTresorerieForm());
         model.addAttribute("ecran", comptes.ecran());
         model.addAttribute("types", org.example.stock.enums.TypeCompteTresorerie.values());
+        model.addAttribute("operateurs", comptes.operateursProposes());
         model.addAttribute("view", "caisse/comptes");
         return "dashboard";
     }
@@ -65,9 +66,10 @@ public class ComptesTresorerieController {
 
     @PostMapping("/{id}/modifier")
     public String modifier(@PathVariable Long id, @RequestParam String nom, @RequestParam(required = false) String numero,
+                           @RequestParam(required = false) String operateur, @RequestParam(required = false) String operateurAutre,
                            HttpServletRequest requete, RedirectAttributes redirect) {
-        exigerParametres(requete, Set.of("nom", "numero", "_csrf"), Set.of("nom", "numero"));
-        return action(redirect, "Compte modifié.", () -> comptes.modifier(id, nom, numero));
+        exigerParametres(requete, Set.of("nom", "numero", "operateur", "operateurAutre", "_csrf"), Set.of("nom", "numero", "operateur", "operateurAutre"));
+        return action(redirect, "Compte modifié.", () -> comptes.modifier(id, nom, numero, operateur, operateurAutre));
     }
 
     @PostMapping("/{id}/solde-depart")

@@ -56,7 +56,7 @@ public class PlateformeController {
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
         String[] champs = switch (binder.getObjectName()) {
-            case "formulaire" -> new String[]{"nomBoutique", "nom", "email", "password", "accesOffert", "_accesOffert", "_csrf"};
+            case "formulaire" -> new String[]{"nomBoutique", "nom", "email", "password", "pays", "accesOffert", "_accesOffert", "_csrf"};
             case "accesBoutique" -> new String[]{"actif", "accesOffert", "_actif", "_accesOffert", "_csrf"};
             case "accesUtilisateur" -> new String[]{"actif", "_csrf"};
             case "prolongationEssai" -> new String[]{"jours", "motif", "jetonAction", "_csrf"};
@@ -106,6 +106,7 @@ public class PlateformeController {
     public String nouvelle(Model model) {
         plateforme.verifierAdministrationPlateforme();
         model.addAttribute("formulaire", new CreationBoutiqueForm());
+        model.addAttribute("listePays", org.example.stock.pays.Pays.tries());
         model.addAttribute("view", "plateforme/boutiques/nouvelle");
         return "dashboard";
     }
@@ -129,6 +130,7 @@ public class PlateformeController {
                     result.reject("boutique.indisponible", "La boutique n'a pas pu être créée. Réessayez plus tard.");
                 }
             }
+            model.addAttribute("listePays", org.example.stock.pays.Pays.tries());
             model.addAttribute("view", "plateforme/boutiques/nouvelle");
             return "dashboard";
         } finally {

@@ -31,6 +31,7 @@ import java.util.*;
 @Service
 @Transactional(readOnly = true)
 public class EtatsListesService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     private static final int PAQUET = 1000;
     private static final List<String> SOURCES_HORS_ENCAISSEMENTS = List.of(BilanService.SOLDE_INITIAL, BilanService.TRANSFERT, BilanService.ANNULATION);
 
@@ -232,8 +233,7 @@ public class EtatsListesService {
         long autresNombre = autres.isEmpty() ? 0 : ((Number) autres.getFirst()[0]).longValue();
         if (autresNombre > 0) {
             annulations.note(autresNombre + (autresNombre > 1 ? " annulations de décaissements" : " annulation de décaissement")
-                    + " (règlement d'achat ou de solde fournisseur, dépense…) pour " + Textes.montant(TableauDeBordService.montant(autres.getFirst()[1]))
-                    + " GNF " + (autresNombre > 1 ? "n'apparaissent" : "n'apparaît") + " pas ici : ce ne sont pas des encaissements. "
+                    + " (règlement d'achat ou de solde fournisseur, dépense…) pour " + montants.format(TableauDeBordService.montant(autres.getFirst()[1])) + " " + (autresNombre > 1 ? "n'apparaissent" : "n'apparaît") + " pas ici : ce ne sont pas des encaissements. "
                     + "Elles figurent dans les annulations du bilan.");
         }
 

@@ -28,8 +28,8 @@ public class ComptageForm {
     @Digits(integer = 15, fraction = 2, message = "Le montant accepte au maximum 15 chiffres et 2 décimales")
     private BigDecimal montantCompte;
 
-    /** Quantités par coupure, dans l'ordre de {@code Billetage.COUPURES} (20 000 en premier). */
-    private List<Integer> quantites = new ArrayList<>(Collections.nCopies(7, (Integer) null));
+    /** Quantités par coupure, dans l'ordre de {@code Billetage.coupures(monnaie)} (la plus grande en premier) ; les cases en trop restent vides. */
+    private List<Integer> quantites = new ArrayList<>(Collections.nCopies(org.example.stock.service.Billetage.CASES_MAXIMALES, (Integer) null));
 
     @Size(max = 255, message = "Le commentaire comporte au plus 255 caractères")
     private String commentaire;

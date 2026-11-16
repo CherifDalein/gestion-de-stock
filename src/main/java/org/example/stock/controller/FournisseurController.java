@@ -28,6 +28,9 @@ public class FournisseurController {
     @Autowired
     private CorbeilleService corbeille;
 
+    @Autowired
+    private org.example.stock.pays.PaysCourant paysCourant;
+
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("fournisseurs", fournisseurService.listerTous());
@@ -42,6 +45,8 @@ public class FournisseurController {
     public String formulaire(Model model) {
         Fournisseur fournisseur = new Fournisseur();
         fournisseur.setSensSoldeDepart(SensSolde.IL_ME_DOIT);
+        // Indicatif du pays de la boutique proposé par défaut ; un numéro réduit à l'indicatif n'est pas enregistré.
+        fournisseur.setTelephone(paysCourant.indicatifSaisie());
         model.addAttribute("fournisseur", fournisseur);
         model.addAttribute("view", "fournisseurs/nouveau");
         return "dashboard";
@@ -56,6 +61,7 @@ public class FournisseurController {
             return "dashboard";
         }
         fournisseur.setSoldeDepartSoumis(FormBindingAdvice.soldeDepartSoumis(request));
+        fournisseur.setTelephone(paysCourant.telephoneSaisi(fournisseur.getTelephone()));
         try {
             fournisseurService.enregistrer(fournisseur);
         } catch (IllegalArgumentException | IncoherenceAvanceException e) {

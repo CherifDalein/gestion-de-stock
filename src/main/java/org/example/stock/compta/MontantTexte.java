@@ -1,24 +1,16 @@
 package org.example.stock.compta;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
+import org.example.stock.export.Textes;
 
-/** Montant lisible dans les messages des contrôles comptables : « 62 122 600,00 ». */
+import java.math.BigDecimal;
+
+/** Montant lisible dans les messages des contrôles comptables : « 62 122 600 » (sans décimales, arrondi {@code HALF_UP} ; la monnaie est celle de la boutique). */
 final class MontantTexte {
 
     private MontantTexte() {
     }
 
     static String de(BigDecimal montant) {
-        if (montant == null) return "0,00";
-        DecimalFormatSymbols symboles = new DecimalFormatSymbols(Locale.FRANCE);
-        symboles.setGroupingSeparator(' ');
-        symboles.setDecimalSeparator(',');
-        symboles.setMinusSign('-');
-        DecimalFormat format = new DecimalFormat("#,##0.00", symboles);
-        return format.format(montant.setScale(2, RoundingMode.HALF_UP));
+        return montant == null ? "0" : Textes.montant(montant);
     }
 }

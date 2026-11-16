@@ -87,6 +87,8 @@ public class DocumentPdfService {
         Context thymeleaf = new Context(Locale.FRANCE);
         thymeleaf.setVariables(variables);
         thymeleaf.setVariable("doc", contexte);
+        // Monnaie de la boutique : « ${monnaie.symbole} », « ${monnaie.formater(x)} » dans les gabarits PDF (jamais de monnaie écrite en dur).
+        thymeleaf.setVariable("monnaie", contexte.monnaie());
         thymeleaf.setVariable("format", format);
         thymeleaf.setVariable("cssPage", cssPage(contexte, format));
         String xhtml = Textes.pourXml(moteur.process(gabarit, thymeleaf));

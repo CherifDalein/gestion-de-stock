@@ -88,7 +88,7 @@ public class HomeController {
         }
         // Emprunts et prêts en retard : alerte du gérant seulement.
         model.addAttribute("retardsEmprunts", emprunts.retards(5));
-        // Dernier rapprochement validé de chaque compte Banque et Orange Money, avec alerte au-delà de 45 jours (étape 3c).
+        // Dernier rapprochement validé de chaque compte Banque et mobile money, avec alerte au-delà de 45 jours (étape 3c).
         var suiviRapprochement = suiviRapprochementService.suivi();
         if (!suiviRapprochement.isEmpty()) {
             model.addAttribute("suiviRapprochement", suiviRapprochement);

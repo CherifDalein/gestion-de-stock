@@ -24,6 +24,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 public class FinancementsExportService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     private final PartenairesFinanciersService partenaires;
     private final EmpruntService emprunts;
     private final EcheanceService echeances;
@@ -67,7 +68,7 @@ public class FinancementsExportService {
         var s = d.vue().solde();
         TableauExport t = TableauExport.titre("Relevé de " + d.vue().partenaire().getNom()).nomFeuille("Relevé")
                 .filtres(d.vue().partenaire().getType().getLibelle() + " · solde au " + Textes.date(echeances.aujourdHui()) + " : " + libelleSolde(s)
-                        + (s.nul() ? "" : " " + Textes.montant(s.absolu()) + " GNF"))
+                        + (s.nul() ? "" : " " + montants.format(s.absolu())))
                 .colonnes(Colonne.dateHeure("Date"), Colonne.texte("Opération"), Colonne.texte("Compte"), Colonne.texte("Motif"), Colonne.montant("Montant"), Colonne.texteCourt("État"), Colonne.texte("Saisi par"));
         for (var l : d.operations()) {
             OperationTresorerie o = l.operation();
@@ -86,7 +87,7 @@ public class FinancementsExportService {
         var e = v.emprunt();
         limite.verifier(s.lignes().size());
         TableauExport t = TableauExport.titre("Échéancier " + e.getNumero()).nomFeuille("Échéancier")
-                .filtres(e.getSens().getLibelle() + " · " + e.getPartenaire().getNom() + " · capital " + Textes.montant(e.getCapital()) + " GNF · taux annuel simple "
+                .filtres(e.getSens().getLibelle() + " · " + e.getPartenaire().getNom() + " · capital " + montants.format(e.getCapital()) + " · taux annuel simple "
                         + Textes.pourcentage(e.getTauxAnnuel()) + " · " + e.getNombreEcheances() + " échéances " + e.getPeriodicite().getLibelle().toLowerCase(java.util.Locale.ROOT) + "s"
                         + " · débloqué le " + Textes.date(e.getDateEmprunt()))
                 .colonnes(Colonne.entier("N°"), Colonne.date("Échéance"), Colonne.montant("Capital"), Colonne.montant("Intérêts"), Colonne.montant("Total prévu"),
@@ -101,7 +102,7 @@ public class FinancementsExportService {
         }
         t.totaux("Total", null, capital, interet, total, paye, reste, s.statut());
         t.note("Intérêts simples : capital restant dû avant l'échéance × taux annuel ÷ nombre de périodes par an, arrondi au centime. Capital constant, le reliquat d'arrondi est sur la dernière échéance.");
-        if (s.interetsRemis().signum() > 0) t.note("Intérêts remis lors du remboursement anticipé du solde : " + Textes.montant(s.interetsRemis()) + " GNF.");
+        if (s.interetsRemis().signum() > 0) t.note("Intérêts remis lors du remboursement anticipé du solde : " + montants.format(s.interetsRemis()) + ".");
         return t;
     }
 

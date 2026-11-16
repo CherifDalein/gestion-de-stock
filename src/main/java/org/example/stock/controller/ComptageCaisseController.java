@@ -15,6 +15,7 @@ import org.example.stock.service.ComptageCaissePdfService;
 import org.example.stock.service.ComptageCaisseService;
 import org.example.stock.service.ComptageExportService;
 import org.example.stock.service.IncoherenceAvanceException;
+import org.example.stock.pays.PaysCourant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpStatus;
@@ -48,6 +49,7 @@ import java.util.stream.Stream;
 @Controller
 @RequestMapping("/controles/comptages")
 public class ComptageCaisseController {
+    @Autowired private PaysCourant paysCourant;
     @Autowired private ComptageCaisseService service;
     @Autowired private ComptageExportService export;
     @Autowired private ComptageCaissePdfService pdf;
@@ -117,7 +119,7 @@ public class ComptageCaisseController {
     private void preparerSaisie(Model model) {
         model.addAttribute("voirTheorique", gerant());
         model.addAttribute("comptesAComter", service.comptesAComter());
-        model.addAttribute("coupures", Billetage.COUPURES);
+        model.addAttribute("coupures", Billetage.coupures(paysCourant.monnaie()));
         model.addAttribute("view", "controles/comptage-form");
     }
 

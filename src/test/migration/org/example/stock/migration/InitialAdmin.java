@@ -3,13 +3,18 @@ package org.example.stock.migration;
 import jakarta.validation.Validation;
 import org.example.stock.config.LengthCheckedBcryptPasswordEncoder;
 import org.example.stock.form.InscriptionForm;
+import org.example.stock.pays.Pays;
 import java.nio.file.*;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.sql.*;
 import java.security.SecureRandom;
 import java.util.*;
 
-/** Commande locale avec accès JDBC privilégié, jamais exposée par une route web. */
+/**
+ * Commande locale avec accès JDBC privilégié, jamais exposée par une route web. Le pays de la boutique créée (donc sa monnaie, définitive)
+ * se choisit avec {@code INITIAL_ADMIN_PAYS} (code ISO : GN, SN, CI…) ; Guinée par défaut. Sur une base qui a déjà une boutique, rien ne change
+ * son pays.
+ */
 public class InitialAdmin {
     public static void main(String[] args) {
         if (args.length != 1 || !args[0].equals("--create-if-empty")) throw new IllegalArgumentException("Utiliser --create-if-empty");
@@ -22,6 +27,9 @@ public class InitialAdmin {
             if (!Set.of("localhost", "127.0.0.1").contains(cible.getHost()) || !"/stock_pro".equals(cible.getPath()))
                 throw new IllegalStateException("Cette commande exige la base locale stock_pro");
             String email = System.getenv().getOrDefault("INITIAL_ADMIN_EMAIL", "admin@stock.local");
+            Pays pays = System.getenv("INITIAL_ADMIN_PAYS") == null || System.getenv("INITIAL_ADMIN_PAYS").isBlank() ? Pays.PAR_DEFAUT
+                    : Pays.depuisCode(System.getenv("INITIAL_ADMIN_PAYS"));
+            if (pays == null) throw new IllegalStateException("INITIAL_ADMIN_PAYS doit être un code pays connu (GN, SN, CI, ML, BF, NE, TG, BJ, GW, CM, GA, CG, TD, CF, GQ)");
             byte[] aleatoire = new byte[24]; new SecureRandom().nextBytes(aleatoire);
             String password = System.getenv().getOrDefault("INITIAL_ADMIN_PASSWORD", Base64.getUrlEncoder().withoutPadding().encodeToString(aleatoire));
             try (Connection c = DriverManager.getConnection(url, AccountEmailMigration.resolve(config.getProperty("spring.datasource.username")),
@@ -29,7 +37,7 @@ public class InitialAdmin {
                 // Conserver le secret même si la connexion échoue après une insertion validée par le serveur.
                 identifiants = Files.createTempFile("stock-admin-", ".txt", PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
                 Files.writeString(identifiants, "Email : " + email + "\nMot de passe : " + password + "\n");
-                creer(c, email, password);
+                creer(c, email, password, pays);
             }
             System.out.println("Premier administrateur créé. Identifiants dans le fichier privé : " + identifiants);
         } catch (Exception e) {
@@ -40,6 +48,11 @@ public class InitialAdmin {
     }
 
     static void creer(Connection c, String email, String password) throws Exception {
+        creer(c, email, password, Pays.PAR_DEFAUT);
+    }
+
+    static void creer(Connection c, String email, String password, Pays pays) throws Exception {
+        if (pays == null) throw new IllegalArgumentException("Pays absent");
         if (!c.getAutoCommit()) throw new IllegalStateException("Utiliser une connexion dédiée sans transaction ouverte");
         InscriptionForm formulaire = new InscriptionForm(); formulaire.setNom("Administrateur"); formulaire.setEmail(email); formulaire.setPassword(password);
         try (var factory = Validation.buildDefaultValidatorFactory()) {
@@ -64,14 +77,18 @@ public class InitialAdmin {
             c.setAutoCommit(false);
             try {
                 if (boutiqueId == null) {
-                    try (var s = c.prepareStatement("INSERT INTO boutique(nom,date_creation) VALUES(?,?)", Statement.RETURN_GENERATED_KEYS)) {
+                    // Avant la migration pays/monnaie, la boutique n'a ni pays ni monnaie : on ne les écrit que si les colonnes existent.
+                    boolean avecPays = BoutiquesMigration.colonnes(c, "boutique").keySet().containsAll(List.of("pays", "monnaie"));
+                    try (var s = c.prepareStatement("INSERT INTO boutique(nom,date_creation" + (avecPays ? ",pays,monnaie" : "") + ") VALUES(?,?" + (avecPays ? ",?,?" : "") + ")",
+                            Statement.RETURN_GENERATED_KEYS)) {
                         s.setString(1, "Boutique principale");
                         s.setTimestamp(2, Timestamp.valueOf(java.time.LocalDateTime.now()));
+                        if (avecPays) { s.setString(3, pays.getCode()); s.setString(4, pays.getMonnaie().name()); }
                         s.executeUpdate();
                         try (var ids = s.getGeneratedKeys()) { ids.next(); boutiqueId = ids.getLong(1); }
                     }
                 }
-                provisionnerTresorerieSiPresente(c, boutiqueId);
+                provisionnerTresorerieSiPresente(c, boutiqueId, pays);
                 try (var s = c.prepareStatement("INSERT INTO utilisateur(nom,email,mot_de_passe,date_inscription,role,boutique_id) VALUES(?,?,?,?,?,?)")) {
                 s.setString(1, formulaire.getNom()); s.setString(2, formulaire.getEmail());
                 s.setString(3, new LengthCheckedBcryptPasswordEncoder().encode(password));
@@ -94,7 +111,7 @@ public class InitialAdmin {
      * principaux de leur type. Le schéma est reconnu par ses colonnes : celui du lot 3 (type, nom, nom_cle, principal_type, actif, ordre)
      * ou, avant le lot 3, une seule colonne {@code compte}. Idempotent : un compte déjà présent n'est jamais dupliqué.
      */
-    private static void provisionnerTresorerieSiPresente(Connection c, Long boutiqueId) throws SQLException {
+    private static void provisionnerTresorerieSiPresente(Connection c, Long boutiqueId, Pays pays) throws SQLException {
         String nom = BoutiquesMigration.tables(c).get("compte_tresorerie_boutique");
         // Compatibilité avec les installations en cours de migration des versions précédentes.
         if (nom == null) return;
@@ -103,16 +120,22 @@ public class InitialAdmin {
         String table = guillemet + nom + guillemet;
         var colonnes = BoutiquesMigration.colonnes(c, "compte_tresorerie_boutique").keySet();
         if (colonnes.containsAll(List.of("type", "nom", "nom_cle", "principal_type", "actif", "ordre"))) {
+            // Schéma de la migration pays/monnaie : mobile money + opérateur du pays. Avant elle, l'ancien type ORANGE_MONEY reste le seul accepté.
+            boolean avecOperateur = colonnes.contains("operateur");
             for (var type : org.example.stock.enums.TypeCompteTresorerie.values()) {
-                String nomCompte = org.example.stock.model.CompteTresorerieBoutique.normaliserNom(type.getNomParDefaut());
+                String valeurType = !avecOperateur && type == org.example.stock.enums.TypeCompteTresorerie.MOBILE_MONEY ? "ORANGE_MONEY" : type.name();
+                String nomCompte = org.example.stock.model.CompteTresorerieBoutique.normaliserNom(
+                        avecOperateur ? type.getNomParDefaut(pays) : type.getNomParDefaut(Pays.PAR_DEFAUT));
+                String operateur = avecOperateur && type.aUnOperateur() ? pays.operateurParDefaut() : null;
                 String cle = org.example.stock.model.CompteTresorerieBoutique.cle(nomCompte);
                 try (var existe = c.prepareStatement("SELECT COUNT(*) FROM " + table + " WHERE boutique_id=? AND (principal_type=? OR nom_cle=?)")) {
-                    existe.setLong(1, boutiqueId); existe.setString(2, type.name()); existe.setString(3, cle);
+                    existe.setLong(1, boutiqueId); existe.setString(2, valeurType); existe.setString(3, cle);
                     try (var r = existe.executeQuery()) { r.next(); if (r.getLong(1) > 0) continue; }
                 }
-                try (var s = c.prepareStatement("INSERT INTO " + table + "(boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(?,?,?,?,?,?,?)")) {
-                    s.setLong(1, boutiqueId); s.setString(2, type.name()); s.setString(3, nomCompte); s.setString(4, cle);
-                    s.setString(5, type.name()); s.setBoolean(6, true); s.setInt(7, type.ordinal());
+                try (var s = c.prepareStatement("INSERT INTO " + table + "(boutique_id,type,nom,nom_cle,principal_type,actif,ordre" + (avecOperateur ? ",operateur" : "") + ") VALUES(?,?,?,?,?,?,?" + (avecOperateur ? ",?" : "") + ")")) {
+                    s.setLong(1, boutiqueId); s.setString(2, valeurType); s.setString(3, nomCompte); s.setString(4, cle);
+                    s.setString(5, valeurType); s.setBoolean(6, true); s.setInt(7, type.ordinal());
+                    if (avecOperateur) s.setString(8, operateur);
                     s.executeUpdate();
                 }
             }
@@ -157,6 +180,7 @@ public class InitialAdmin {
         String id = identifiant.toLowerCase(java.util.Locale.ROOT);
         id = id.substring(id.lastIndexOf('.') + 1);
         return switch (id) {
+            case "pays", "monnaie", "operateur" -> "la migration paysMonnaieMigrate";
             case "supprime_le", "supprime_par" -> "la migration lot6Migrate";
             case "sous_compte_boutique", "correspondance_compta", "reglage_comptable_boutique", "exercice_comptable" -> "la migration lot5Migrate";
             case "type", "nom_cle", "principal_type", "ordre", "compte_id", "compte_tresorerie_autorise" -> "la migration lot3Migrate";

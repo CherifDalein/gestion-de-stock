@@ -101,6 +101,12 @@ public class ComptesTresorerieService {
         return new Ecran(groupes, archives, actifs, LIMITE, total, caissiers, tous.stream().filter(CompteTresorerieBoutique::isActif).toList());
     }
 
+    /** Opérateurs de mobile money proposés au gérant : ceux du pays de sa boutique (le choix « Autre » est ajouté par l'écran). */
+    @Transactional(readOnly = true)
+    public List<String> operateursProposes() {
+        return gerant().getBoutique().getPays().getOperateurs();
+    }
+
     /** Solde de chaque compte de la boutique courante, par identifiant ; un compte sans mouvement n'a pas d'entrée. */
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> soldes(Long boutiqueId) {
@@ -246,9 +252,12 @@ public class ComptesTresorerieService {
         BigDecimal solde = Montants.positifOuNul(form.getSoldeDepart() == null ? Montants.ZERO : form.getSoldeDepart(), "Le solde de départ");
         if (comptes.listerActifs(boutique.getId()).size() >= LIMITE) throw limiteAtteinte();
         if (comptes.existsByBoutiqueIdAndNomCle(boutique.getId(), CompteTresorerieBoutique.cle(nom))) throw nomPris();
+        String operateur = form.getType().aUnOperateur()
+                ? boutique.getPays().operateurValide(form.getOperateur(), form.getOperateurAutre(), CompteTresorerieBoutique.TAILLE_OPERATEUR) : null;
         CompteTresorerieBoutique compte = new CompteTresorerieBoutique(boutique, form.getType(), nom, false,
                 comptes.dernierOrdre(boutique.getId(), form.getType()) + 1);
         compte.renommer(nom, numero);
+        compte.definirOperateur(operateur);
         compte = comptes.saveAndFlush(compte);
         if (solde.signum() > 0) ecrireSoldeDepart(compte, solde, gerant);
         return compte;
@@ -256,11 +265,23 @@ public class ComptesTresorerieService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void modifier(Long id, String nom, String numero) {
+        modifier(id, nom, numero, null, null);
+    }
+
+    /**
+     * Change le nom, le numéro et, pour un compte de mobile money, l'opérateur (liste du pays ou « Autre » avec un nom libre). Sans
+     * opérateur reçu, celui du compte est conservé.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public void modifier(Long id, String nom, String numero, String operateur, String operateurAutre) {
         Utilisateur gerant = gerantVerrouille();
         CompteTresorerieBoutique compte = deLaBoutique(id, gerant);
         String nomNettoye = nomValide(nom);
         if (comptes.existsByBoutiqueIdAndNomCleAndIdNot(gerant.getBoutique().getId(), CompteTresorerieBoutique.cle(nomNettoye), id)) throw nomPris();
         compte.renommer(nomNettoye, numeroValide(numero));
+        if (compte.getType().aUnOperateur() && operateur != null && !operateur.isBlank()) {
+            compte.definirOperateur(gerant.getBoutique().getPays().operateurValide(operateur, operateurAutre, CompteTresorerieBoutique.TAILLE_OPERATEUR));
+        }
         comptes.saveAndFlush(compte);
     }
 

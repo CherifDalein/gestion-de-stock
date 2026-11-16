@@ -46,7 +46,7 @@ public class InscriptionBoutiqueController {
     public void limiterChamps(WebDataBinder binder, HttpServletRequest request) {
         if (binder instanceof ExtendedServletRequestDataBinder servletBinder) servletBinder.addHeaderPredicate(nom -> false);
         Set<String> autorises = DEMANDE.equals(binder.getObjectName()) ? Set.of("email", "_csrf")
-                : Set.of("jeton", "nom", "nomBoutique", "nouveauMotDePasse", "confirmationMotDePasse", "_csrf");
+                : Set.of("jeton", "nom", "nomBoutique", "pays", "nouveauMotDePasse", "confirmationMotDePasse", "_csrf");
         if ("POST".equals(request.getMethod())) {
             for (String champ : request.getParameterMap().keySet()) {
                 if (!autorises.contains(champ) || !"_csrf".equals(champ) && request.getParameterValues(champ).length != 1) {
@@ -120,6 +120,7 @@ public class InscriptionBoutiqueController {
         model.addAttribute("emailInscription", email);
         model.addAttribute("lienInvalide", email == null);
         model.addAttribute("dureeEssaiJours", essais.dureeEssaiJours());
+        model.addAttribute("listePays", org.example.stock.pays.Pays.tries());
     }
 
     private static void protegerReponse(HttpServletResponse response) {

@@ -24,10 +24,10 @@ public interface CompteTresorerieBoutiqueRepository extends JpaRepository<Compte
 
     Optional<CompteTresorerieBoutique> findByIdAndBoutiqueId(Long id, Long boutiqueId);
 
-    @Query("select c from CompteTresorerieBoutique c where c.boutique.id = :boutique order by case c.type when org.example.stock.enums.TypeCompteTresorerie.ESPECES then 0 when org.example.stock.enums.TypeCompteTresorerie.ORANGE_MONEY then 1 else 2 end, c.ordre, c.id")
+    @Query("select c from CompteTresorerieBoutique c where c.boutique.id = :boutique order by case c.type when org.example.stock.enums.TypeCompteTresorerie.ESPECES then 0 when org.example.stock.enums.TypeCompteTresorerie.MOBILE_MONEY then 1 else 2 end, c.ordre, c.id")
     List<CompteTresorerieBoutique> lister(@Param("boutique") Long boutiqueId);
 
-    @Query("select c from CompteTresorerieBoutique c where c.boutique.id = :boutique and c.actif = true order by case c.type when org.example.stock.enums.TypeCompteTresorerie.ESPECES then 0 when org.example.stock.enums.TypeCompteTresorerie.ORANGE_MONEY then 1 else 2 end, c.ordre, c.id")
+    @Query("select c from CompteTresorerieBoutique c where c.boutique.id = :boutique and c.actif = true order by case c.type when org.example.stock.enums.TypeCompteTresorerie.ESPECES then 0 when org.example.stock.enums.TypeCompteTresorerie.MOBILE_MONEY then 1 else 2 end, c.ordre, c.id")
     List<CompteTresorerieBoutique> listerActifs(@Param("boutique") Long boutiqueId);
 
     @Query("select c from CompteTresorerieBoutique c where c.boutique.id = :boutique and c.type = :type and c.principalType is not null")

@@ -10,5 +10,5 @@ public class TransfertTresorerieForm extends OperationTresorerieForm {
     /** Identifiant du compte à créditer (ou nom d'un type : son compte principal) ; contrôlé côté serveur. */
     @NotBlank(message = "Choisissez le compte à créditer")
     @Size(max = 20, message = "Choisissez le compte à créditer")
-    private String compteDestination = "ORANGE_MONEY";
+    private String compteDestination = "MOBILE_MONEY";
 }

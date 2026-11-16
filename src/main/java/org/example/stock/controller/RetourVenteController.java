@@ -26,6 +26,7 @@ import java.util.Map;
  */
 @Controller
 public class RetourVenteController {
+    @Autowired private org.example.stock.pays.FormatMontants montants;
     @Autowired private RetourVenteService retourVenteService;
 
     @GetMapping("/ventes/{id}/retour")
@@ -43,10 +44,10 @@ public class RetourVenteController {
         try {
             Retour retour = retourVenteService.enregistrer(id, saisie);
             redirectAttributes.addFlashAttribute("success", "Retour " + retour.getNumero() + " enregistré : "
-                    + formater(retour.getMontantTotal()) + " GNF"
-                    + (retour.getMontantImpute().signum() > 0 ? ", dont " + formater(retour.getMontantImpute()) + " GNF déduits de la dette du client" : "")
-                    + (retour.getMontantRembourse().signum() > 0 ? ", dont " + formater(retour.getMontantRembourse()) + " GNF remboursés en argent" : "")
-                    + (retour.getMontantAvoir().signum() > 0 ? ", dont " + formater(retour.getMontantAvoir()) + " GNF gardés en avoir" : "") + ".");
+                    + montants.format(retour.getMontantTotal())
+                    + (retour.getMontantImpute().signum() > 0 ? ", dont " + montants.format(retour.getMontantImpute()) + " déduits de la dette du client" : "")
+                    + (retour.getMontantRembourse().signum() > 0 ? ", dont " + montants.format(retour.getMontantRembourse()) + " remboursés en argent" : "")
+                    + (retour.getMontantAvoir().signum() > 0 ? ", dont " + montants.format(retour.getMontantAvoir()) + " gardés en avoir" : "") + ".");
             return "redirect:/retours";
         } catch (RetourVenteObsoleteException e) {
             // Formulaire périmé ou second envoi : rien n'est enregistré, le formulaire est rouvert avec les quantités à jour.
@@ -77,8 +78,4 @@ public class RetourVenteController {
         return "dashboard";
     }
 
-    /** Montant lisible avec espaces de milliers, pour les messages. */
-    private static String formater(java.math.BigDecimal montant) {
-        return new java.text.DecimalFormat("#,##0.00", java.text.DecimalFormatSymbols.getInstance(java.util.Locale.FRANCE)).format(montant);
-    }
 }

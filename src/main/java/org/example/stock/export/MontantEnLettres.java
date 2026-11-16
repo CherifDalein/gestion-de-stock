@@ -1,5 +1,7 @@
 package org.example.stock.export;
 
+import org.example.stock.pays.Monnaie;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -7,7 +9,7 @@ import java.math.RoundingMode;
  * Écrit un montant en toutes lettres, en français de France (« soixante-dix », « quatre-vingts »), pour les documents
  * officiels : justificatifs de solde, reçus, chèques.
  *
- * <p>Orthographe suivie (graphie traditionnelle, celle de l'exemple « cent vingt-cinq mille francs guinéens ») :</p>
+ * <p>Orthographe suivie (graphie traditionnelle, celle de l'exemple « cent vingt-cinq mille francs guinéens » ou « … francs CFA ») :</p>
  * <ul>
  *   <li>trait d'union entre dizaines et unités (« vingt-cinq », « quatre-vingt-un », « soixante-dix-sept »), sauf avec « et »
  *       (« vingt et un », « soixante et onze ») ; pas de « et » après quatre-vingt (« quatre-vingt-un », « quatre-vingt-onze ») ;</li>
@@ -16,14 +18,14 @@ import java.math.RoundingMode;
  *       « mille » et devant un autre nombre : « deux cent mille », « quatre-vingt mille », « deux cent un » ;</li>
  *   <li>« mille » est invariable et n'est jamais précédé de « un » : « mille », « mille un », « deux mille » ;</li>
  *   <li>« million » et « milliard » sont des noms : « un million », « deux millions » ; une somme qui se termine par eux
- *       s'écrit « deux millions de francs guinéens ».</li>
+ *       s'écrit « deux millions de francs guinéens » (ou « … de francs CFA »).</li>
  * </ul>
  */
 public final class MontantEnLettres {
     private static final String[] UNITES = {"zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
             "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"};
     private static final String[] DIZAINES = {"", "", "vingt", "trente", "quarante", "cinquante", "soixante"};
-    /** Plus grand nombre écrit : moins de mille milliards (assez pour tout montant en francs guinéens). */
+    /** Plus grand nombre écrit : moins de mille milliards (assez pour tout montant en francs guinéens ou CFA). */
     public static final long MAXIMUM = 999_999_999_999L;
 
     private MontantEnLettres() { }
@@ -43,31 +45,27 @@ public final class MontantEnLettres {
     }
 
     /**
-     * Somme d'argent en francs guinéens : « cent vingt-cinq mille francs guinéens », « un franc guinéen », « zéro franc guinéen »,
-     * « deux millions de francs guinéens ». Les centimes éventuels (deux décimales) sont ajoutés : « … et cinquante centimes ».
-     * Un montant négatif est précédé de « moins ».
+     * Somme d'argent dans la monnaie de la boutique : « cent vingt-cinq mille francs guinéens », « un franc CFA », « zéro franc CFA »,
+     * « deux millions de francs CFA ». Le montant est arrondi au franc ({@code HALF_UP}) comme à l'écran : le texte écrit toujours le
+     * montant affiché, jamais de centimes. Un montant négatif est précédé de « moins ».
      */
-    public static String francsGuineens(BigDecimal montant) {
+    public static String montant(BigDecimal montant, Monnaie monnaie) {
         if (montant == null) throw new IllegalArgumentException("Montant absent");
-        BigDecimal arrondi = montant.setScale(2, RoundingMode.HALF_UP);
+        if (monnaie == null) throw new IllegalArgumentException("Monnaie absente");
+        BigDecimal arrondi = montant.setScale(0, RoundingMode.HALF_UP);
         boolean negatif = arrondi.signum() < 0;
-        BigDecimal absolu = arrondi.abs();
-        long francs = absolu.toBigInteger().longValueExact();
-        int centimes = absolu.remainder(BigDecimal.ONE).movePointRight(2).intValueExact();
+        long francs = arrondi.abs().toBigInteger().longValueExact();
         StringBuilder sb = new StringBuilder();
         if (negatif) sb.append("moins ");
         sb.append(enLettres(francs));
         boolean de = francs >= 1_000_000L && francs % 1_000_000L == 0;
-        sb.append(de ? " de franc" : " franc");
-        if (francs > 1) sb.append('s');
-        sb.append(" guinéen").append(francs > 1 ? "s" : "");
-        if (centimes > 0) sb.append(" et ").append(enLettres(centimes)).append(" centime").append(centimes > 1 ? "s" : "");
+        sb.append(de ? " de " : " ").append(monnaie.nom(francs));
         return sb.toString();
     }
 
     /** Même chose avec une majuscule initiale (début de phrase). */
-    public static String francsGuineensEnPhrase(BigDecimal montant) {
-        String t = francsGuineens(montant);
+    public static String montantEnPhrase(BigDecimal montant, Monnaie monnaie) {
+        String t = montant(montant, monnaie);
         return Character.toUpperCase(t.charAt(0)) + t.substring(1);
     }
 

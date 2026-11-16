@@ -39,6 +39,7 @@ import java.util.TreeSet;
  */
 @Service
 public class ValidationReleveService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     private final StockLockRepository verrous;
     private final CaisseService caisse;
@@ -74,14 +75,14 @@ public class ValidationReleveService {
         EtatRapprochementService.Etat etat = etats.calculer(r);
         if (!etat.controle().coherent()) {
             throw new IllegalArgumentException("Les soldes du relevé ne sont pas cohérents : ouverture " + Textes.montant(r.getSoldeOuverture()) + " + lignes "
-                    + Textes.montant(etat.controle().sommeLignes()) + " = " + Textes.montant(etat.controle().attendu()) + " GNF, mais la clôture indiquée est "
-                    + Textes.montant(r.getSoldeCloture()) + " GNF (écart " + Textes.montant(etat.controle().ecart()) + "). Complétez les lignes ou corrigez les soldes.");
+                    + Textes.montant(etat.controle().sommeLignes()) + " = " + montants.format(etat.controle().attendu()) + ", mais la clôture indiquée est "
+                    + montants.format(r.getSoldeCloture()) + " (écart " + Textes.montant(etat.controle().ecart()) + "). Complétez les lignes ou corrigez les soldes.");
         }
         exigerChainage(r);
         exigerAnnulationsEnsemble(boutiqueId, pointes);
         if (!etat.ecartNul()) {
-            throw new IllegalArgumentException("L'écart de rapprochement n'est pas nul : " + Textes.montant(etat.ecart()) + " GNF (solde calculé "
-                    + Textes.montant(etat.soldeCalcule()) + " GNF, solde du relevé " + Textes.montant(r.getSoldeCloture()) + " GNF). Pointez les lignes manquantes ou enregistrez-les dans l'appli.");
+            throw new IllegalArgumentException("L'écart de rapprochement n'est pas nul : " + montants.format(etat.ecart()) + " (solde calculé "
+                    + montants.format(etat.soldeCalcule()) + ", solde du relevé " + montants.format(r.getSoldeCloture()) + "). Pointez les lignes manquantes ou enregistrez-les dans l'appli.");
         }
         r.setStatut(StatutReleve.VALIDE); r.setValidePar(gerant); r.setDateValidation(horloge.maintenant()); r.setSoldeAppliValidation(etat.soldeAppli());
         evenement(r, gerant, TypeEvenementReleve.VALIDATION, null, etat.soldeAppli());
@@ -132,8 +133,8 @@ public class ValidationReleveService {
             throw new IllegalArgumentException("Validez d'abord le relevé précédent du compte (" + precedent.getNumero() + ") : les relevés d'un compte se valident dans l'ordre.");
         }
         if (precedent.getSoldeCloture().compareTo(r.getSoldeOuverture()) != 0) {
-            throw new IllegalArgumentException("Le solde d'ouverture (" + Textes.montant(r.getSoldeOuverture()) + " GNF) doit être la clôture du relevé précédent "
-                    + precedent.getNumero() + " (" + Textes.montant(precedent.getSoldeCloture()) + " GNF).");
+            throw new IllegalArgumentException("Le solde d'ouverture (" + montants.format(r.getSoldeOuverture()) + ") doit être la clôture du relevé précédent "
+                    + precedent.getNumero() + " (" + montants.format(precedent.getSoldeCloture()) + ").");
         }
     }
 

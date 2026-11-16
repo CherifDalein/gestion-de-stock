@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Relevé bancaire ou Orange Money d'un compte (étape 3c) : une période, les soldes d'ouverture et de clôture donnés par la banque et des
+ * Relevé bancaire ou de mobile money d'un compte (étape 3c) : une période, les soldes d'ouverture et de clôture donnés par la banque et des
  * lignes ({@link LigneReleve}). Les relevés d'un compte se suivent sans se chevaucher. Une fois validé il est figé, avec ses rapprochements.
  */
 @Entity

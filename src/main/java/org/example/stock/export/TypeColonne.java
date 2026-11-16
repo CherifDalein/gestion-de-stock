@@ -6,7 +6,7 @@ public enum TypeColonne {
     TEXTE,
     /** Nombre entier (Integer, Long, BigInteger… ). */
     ENTIER,
-    /** Montant en GNF : {@link java.math.BigDecimal} ou tout nombre ; affiché sans décimales si elles sont nulles. */
+    /** Montant dans la monnaie de la boutique : {@link java.math.BigDecimal} ou tout nombre ; affiché sans décimales (arrondi HALF_UP), la valeur exacte reste dans la cellule Excel. */
     MONTANT,
     /** {@link java.time.LocalDate} (un LocalDateTime est accepté : seule la date est gardée). */
     DATE,

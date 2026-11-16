@@ -108,7 +108,7 @@ public class OperationsInscriptionBoutique {
         if (inscription != null) entityManager.refresh(inscription, LockModeType.PESSIMISTIC_WRITE);
         if (!utilisable(inscription, formulaire.getJeton())) throw lienInvalide();
         String hash = encoder.encode(formulaire.getNouveauMotDePasse());
-        Boutique boutique = new Boutique();
+        Boutique boutique = new Boutique(formulaire.lirePays());
         boutique.setNom(formulaire.getNomBoutique());
         boutique.setActif(true);
         boutique.setAccesOffert(false);

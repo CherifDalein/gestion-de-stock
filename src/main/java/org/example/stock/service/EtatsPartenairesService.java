@@ -32,6 +32,7 @@ import java.util.*;
 @Service
 @Transactional(readOnly = true)
 public class EtatsPartenairesService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     /** Côté de l'état : les clients qui doivent à la boutique, ou les fournisseurs à qui la boutique doit. */
     public enum Cote {
         CLIENT("client", "Ventes sans client", "créances", "Créances", "Client"),
@@ -398,7 +399,7 @@ public class EtatsPartenairesService {
         t.note(client ? "Solde positif : le client doit cette somme à la boutique ; négatif : le client a une avance."
                 : "Solde positif : la boutique doit cette somme au fournisseur ; négatif : la boutique a une avance chez lui.");
         if (!corrections.isEmpty()) {
-            t.note("Le solde de départ d'origine (" + Textes.montant(soldeDepart.abs()) + " GNF) a été corrigé par " + corrections.size()
+            t.note("Le solde de départ d'origine (" + montants.format(soldeDepart.abs()) + ") a été corrigé par " + corrections.size()
                     + (corrections.size() > 1 ? " ajustements" : " ajustement") + " : chacun figure à sa date. Un ajustement ne crée aucun mouvement de trésorerie "
                     + "et ne modifie aucun règlement passé.");
         }
@@ -406,10 +407,9 @@ public class EtatsPartenairesService {
                 + "le solde négatif reste en avance). Une annulation remet le règlement d'origine. L'avance utilisée à la création d'une facture ne s'écrit pas : "
                 + "elle est déjà comprise dans le solde.");
         if (soldeTous.compareTo(soldeFiche) == 0) {
-            t.note("Concordance : le solde de toutes les opérations (" + Textes.montant(soldeTous) + " GNF) est celui de la fiche et du tableau de bord.");
+            t.note("Concordance : le solde de toutes les opérations (" + montants.format(soldeTous) + ") est celui de la fiche et du tableau de bord.");
         } else {
-            t.note("ATTENTION : le solde de toutes les opérations (" + Textes.montant(soldeTous) + " GNF) diffère du solde de la fiche (" + Textes.montant(soldeFiche)
-                    + " GNF). Vérifiez ce partenaire avant de vous fier à ce relevé.");
+            t.note("ATTENTION : le solde de toutes les opérations (" + montants.format(soldeTous) + ") diffère du solde de la fiche (" + montants.format(soldeFiche) + "). Vérifiez ce partenaire avant de vous fier à ce relevé.");
         }
         if (apres.signum() != 0 || evenements.stream().anyMatch(e -> e.date() != null && !e.date().isBefore(fin))) {
             t.note("Des opérations postérieures au " + Textes.date(periode.au()) + " existent : elles ne figurent pas ici, mais comptent dans le solde de la fiche.");

@@ -6,6 +6,9 @@ import org.example.stock.compta.ComptabiliteService.Statut;
 import org.example.stock.compta.EtatsFinanciersCalcul.Exercice;
 import org.example.stock.enums.SystemeComptable;
 import org.example.stock.model.ReglageComptableBoutique;
+import org.example.stock.pays.Monnaie;
+import org.example.stock.pays.Pays;
+import org.example.stock.repository.BoutiqueRepository;
 import org.example.stock.repository.ReglageComptableBoutiqueRepository;
 import org.example.stock.service.BoutiqueService;
 import org.springframework.stereotype.Service;
@@ -31,10 +34,17 @@ public class EtatsFinanciersService {
     private final BoutiqueService boutiques;
     private final ExercicesService exercices;
     private final InstantanesService instantanes;
+    private final BoutiqueRepository boutiquesRepo;
 
     public EtatsFinanciersService(ComptabiliteService compta, ReglageComptableBoutiqueRepository reglages, BoutiqueService boutiques, ExercicesService exercices,
-                                  InstantanesService instantanes) {
+                                  InstantanesService instantanes, BoutiqueRepository boutiquesRepo) {
         this.compta = compta; this.reglages = reglages; this.boutiques = boutiques; this.exercices = exercices; this.instantanes = instantanes;
+        this.boutiquesRepo = boutiquesRepo;
+    }
+
+    /** Monnaie de la boutique : celle des montants de tous ses états (les calculs restent en {@code BigDecimal}, l'arrondi se fait à l'affichage). */
+    private Monnaie monnaie(Long boutiqueId) {
+        return boutiquesRepo.findById(boutiqueId).map(b -> b.getMonnaie()).orElse(Pays.PAR_DEFAUT.getMonnaie());
     }
 
     /** Système des états financiers de la boutique : le système normal tant que le gérant n'a rien choisi. */
@@ -54,9 +64,10 @@ public class EtatsFinanciersService {
     }
 
     /** Résultat : l'exercice N, l'exercice N-1 (ou {@code null} s'il n'y a pas de données), et la correspondance qui a produit les écritures. */
-    public record Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules, Fige fige) {
-        public Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules) {
-            this(boutiqueId, du, au, n, n1, correspondance, intitules, null);
+    public record Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules, Fige fige,
+                        Monnaie monnaie) {
+        public Etats(Long boutiqueId, LocalDate du, LocalDate au, Exercice n, Exercice n1, Correspondance correspondance, Map<String, String> intitules, Monnaie monnaie) {
+            this(boutiqueId, du, au, n, n1, correspondance, intitules, null, monnaie);
         }
 
         public LocalDate du1() { return du.minusYears(1); }
@@ -78,7 +89,7 @@ public class EtatsFinanciersService {
         if (figee.isPresent()) {
             var i = figee.get().instantane();
             ContenuInstantane c = figee.get().contenu();
-            return new Etats(boutiqueId, du, au, c.exercice(), c.exercicePrecedent(), null, Map.of(), new Fige(i.getId(), i.getVersion(), i.getCreeLe(), i.getCreePar()));
+            return new Etats(boutiqueId, du, au, c.exercice(), c.exercicePrecedent(), null, Map.of(), new Fige(i.getId(), i.getVersion(), i.getCreeLe(), i.getCreePar()), monnaie(boutiqueId));
         }
         return calculerEnDirect(boutiqueId, du, au);
     }
@@ -99,7 +110,7 @@ public class EtatsFinanciersService {
             n1 = fin1.ecritures().isEmpty() ? null
                     : EtatsFinanciersCalcul.calculer(fin1.ecritures(), livres(cache, boutiqueId, du1, du1.minusDays(1)).ecritures(), du1, au1, report);
         }
-        return new Etats(boutiqueId, du, au, n, n1, fin.correspondance(), fin.intitules());
+        return new Etats(boutiqueId, du, au, n, n1, fin.correspondance(), fin.intitules(), monnaie(boutiqueId));
     }
 
     /** Écritures arrêtées à {@code fin}, avec le report à nouveau choisi d'après le début {@code du} de la période (le même pour la fin et pour la veille du début). */

@@ -52,6 +52,7 @@ import java.util.Set;
  */
 @Service
 public class RetourAchatService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final int MOTIF_LONGUEUR_MAXIMALE = 255;
 
@@ -229,13 +230,13 @@ public class RetourAchatService {
         if (excedent.signum() > 0) {
             mode = form.getModeRemboursement();
             if (mode == null) {
-                throw new IllegalArgumentException("Il reste " + excedent.toPlainString() + " GNF déjà payés au fournisseur : choisissez qu'il vous rembourse ou de les garder en avoir chez lui.");
+                throw new IllegalArgumentException("Il reste " + montants.format(excedent) + " déjà payés au fournisseur : choisissez qu'il vous rembourse ou de les garder en avoir chez lui.");
             }
             if (mode == ModeRemboursement.AVOIR && fournisseur == null) {
                 throw new IllegalArgumentException("Un achat sans fournisseur ne peut être remboursé qu'en argent : un avoir demande un fournisseur chez qui le garder.");
             }
             if (mode == ModeRemboursement.ARGENT) {
-                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui reçoit l'argent (caisse, Orange Money ou banque).");
+                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui reçoit l'argent (caisse, mobile money ou banque).");
                 compte = comptes.resoudreUtilisable(form.getComptePaiement());
             }
         }
