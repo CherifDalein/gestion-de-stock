@@ -215,7 +215,7 @@ public final class Lot3MariaDbTest {
             Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,actif,ordre) VALUES(" + boutiqueId + ",'BANQUE','ORANGE MONEY LABÉ','orange money labé',TRUE,5)");
         } catch (SQLException e) { doublonNom = e.getSQLState().startsWith("23"); }
         try {
-            Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(" + boutiqueId + ",'ORANGE_MONEY','Autre principal','autre principal','ORANGE_MONEY',TRUE,5)");
+            Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(" + boutiqueId + ",'MOBILE_MONEY','Autre principal','autre principal','MOBILE_MONEY',TRUE,5)");
         } catch (SQLException e) { doublonPrincipal = e.getSQLState().startsWith("23"); }
         Lot3MigrationScenarios.exiger(doublonNom && doublonPrincipal, "Les unicités du nom ou du compte principal n'ont pas refusé le doublon");
         boolean autorisationDouble = false;
