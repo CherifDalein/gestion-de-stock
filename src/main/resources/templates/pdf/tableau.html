@@ -8,7 +8,7 @@
 <div id="contenu">
     <h1 th:text="${tableau.titre}">Titre</h1>
     <p class="filtres" th:if="${!#strings.isEmpty(tableau.filtres)}" th:text="${tableau.filtres}">Période</p>
-    <p class="filtres" th:if="${tableau.aDesMontants()}">Montants en GNF</p>
+    <p class="filtres" th:if="${tableau.aDesMontants()}">Montants en [[${monnaie.symbole}]]</p>
     <table class="tableau" th:classappend="${tableau.dense ? 'dense' : ''}">
         <thead>
         <tr>

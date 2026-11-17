@@ -4,7 +4,7 @@
     <section class="record-page fin-page" aria-labelledby="annOpTitre">
         <header class="record-header">
             <div><p class="record-kicker" th:text="${operation.type.libelle}">Apport</p><h1 id="annOpTitre" th:text="${'Annuler l’opération n° ' + operation.id}">Annuler</h1>
-                <p class="record-intro" th:text="${#temporals.format(operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + #numbers.formatDecimal(operation.montant, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF · ' + operation.compteSource.nom}"></p></div>
+                <p class="record-intro" th:text="${#temporals.format(operation.dateOperation, 'dd/MM/yyyy HH:mm') + ' · ' + @montants.format(operation.montant) + ' · ' + operation.compteSource.nom}"></p></div>
             <a th:href="${retourUrl}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
         </header>
         <div class="alert alert-info" role="status" th:if="${dejaAnnulee}">Cette opération est déjà annulée.</div>

@@ -1,6 +1,7 @@
 package org.example.stock.service;
 
 import org.example.stock.enums.TypeCompteTresorerie;
+import org.example.stock.pays.Monnaie;
 import org.example.stock.model.CompteTresorerieBoutique;
 import org.example.stock.repository.CompteTresorerieBoutiqueRepository;
 import org.example.stock.export.LimiteExport;
@@ -61,7 +62,7 @@ public class JustificatifSoldeService {
     public record JustificatifPartenaire(Cote cote, Long partenaireId, String numero, LocalDate arrete, LocalDateTime edition, String nom,
                                          String telephone, String email, String adresse, BigDecimal resteSoldeDepart, LocalDate echeanceSoldeDepart,
                                          List<Facture> factures, BigDecimal resteFactures, BigDecimal avance, BigDecimal solde,
-                                         List<Ajustement> ajustements) {
+                                         List<Ajustement> ajustements, Monnaie monnaie) {
         public boolean estClient() { return cote == Cote.CLIENT; }
 
         public BigDecimal montant() { return solde.abs(); }
@@ -86,7 +87,7 @@ public class JustificatifSoldeService {
             return estDette() ? "Solde dû par la boutique" : "Avance de la boutique chez le fournisseur";
         }
 
-        public String montantEnLettres() { return MontantEnLettres.francsGuineens(montant()); }
+        public String montantEnLettres() { return MontantEnLettres.montant(montant(), monnaie); }
 
         public String arreteEnPhrase() { return "Arrêté à la somme de " + montantEnLettres() + "."; }
     }
@@ -99,7 +100,8 @@ public class JustificatifSoldeService {
      * positif = la boutique doit au partenaire ; négatif = le partenaire doit à la boutique.
      */
     public record JustificatifFinancier(Long partenaireId, String numero, LocalDate arrete, LocalDateTime edition, String nom, String type,
-                                        String telephone, String note, List<LigneFinancier> lignes, BigDecimal capitalApporte, BigDecimal solde) {
+                                        String telephone, String note, List<LigneFinancier> lignes, BigDecimal capitalApporte, BigDecimal solde,
+                                        Monnaie monnaie) {
         public BigDecimal montant() { return solde.abs(); }
         public boolean estNul() { return solde.signum() == 0; }
         public boolean laBoutiqueDoit() { return solde.signum() > 0; }
@@ -108,17 +110,18 @@ public class JustificatifSoldeService {
             return laBoutiqueDoit() ? "La boutique doit au partenaire la somme de" : "Le partenaire doit à la boutique la somme de";
         }
         public String titreSolde() { return estNul() ? "Solde nul" : laBoutiqueDoit() ? "Solde dû par la boutique" : "Solde dû à la boutique"; }
-        public String montantEnLettres() { return MontantEnLettres.francsGuineens(montant()); }
+        public String montantEnLettres() { return MontantEnLettres.montant(montant(), monnaie); }
         public String arreteEnPhrase() { return "Arrêté à la somme de " + montantEnLettres() + "."; }
     }
 
     /** Solde d'un compte de trésorerie à la date d'arrêté. */
     public record SoldeCompte(CompteTresorerieBoutique compte, BigDecimal solde) { }
 
-    /** Sous-total d'un type de compte (par exemple tous les comptes Orange Money). */
+    /** Sous-total d'un type de compte (par exemple tous les comptes de mobile money). */
     public record SoldeType(TypeCompteTresorerie type, List<SoldeCompte> comptes, BigDecimal solde) { }
 
-    public record JustificatifTresorerie(String numero, LocalDate arrete, boolean aujourdHui, LocalDateTime edition, List<SoldeCompte> comptes, BigDecimal total) {
+    public record JustificatifTresorerie(String numero, LocalDate arrete, boolean aujourdHui, LocalDateTime edition, List<SoldeCompte> comptes, BigDecimal total,
+                                         Monnaie monnaie) {
         /** Les comptes regroupés par type, avec le sous-total de chaque type (les types sans compte sont omis). */
         public List<SoldeType> types() {
             List<SoldeType> types = new ArrayList<>();
@@ -130,7 +133,7 @@ public class JustificatifSoldeService {
             return types;
         }
 
-        public String totalEnLettres() { return MontantEnLettres.francsGuineens(total); }
+        public String totalEnLettres() { return MontantEnLettres.montant(total, monnaie); }
 
         public String arreteEnPhrase() { return "Arrêté à la somme de " + totalEnLettres() + "."; }
     }
@@ -211,7 +214,7 @@ public class JustificatifSoldeService {
         String numero = numero(arrete, cote == Cote.CLIENT ? 'C' : 'F', id);
         return new JustificatifPartenaire(cote, id, numero, arrete, echeances.maintenant(), nom, blanc(telephone), blanc(email), blanc(adresse),
                 s.resteSoldeDepart(), s.resteSoldeDepart().signum() > 0 ? s.echeanceSoldeDepart() : null, List.copyOf(detail), somme, s.avanceDisponible(), solde,
-                historique(cote, id));
+                historique(cote, id), boutiques.boutiqueCourante().getMonnaie());
     }
 
     /** Ajustements du solde de départ, du plus ancien au plus récent : ils figurent sur le justificatif. */
@@ -250,7 +253,7 @@ public class JustificatifSoldeService {
         LocalDate arrete = echeances.aujourdHui();
         var p = vue.partenaire();
         return new JustificatifFinancier(p.getId(), numero(arrete, 'P', p.getId()), arrete, echeances.maintenant(), Textes.pourXml(p.getNom()),
-                p.getType().getLibelle(), blanc(p.getTelephone()), blanc(p.getNote()), List.copyOf(lignes), solde.capitalApporte(), solde.total());
+                p.getType().getLibelle(), blanc(p.getTelephone()), blanc(p.getNote()), List.copyOf(lignes), solde.capitalApporte(), solde.total(), boutiques.boutiqueCourante().getMonnaie());
     }
 
     // ---- Trésorerie ----------------------------------------------------------------------------------------------
@@ -287,6 +290,6 @@ public class JustificatifSoldeService {
             comptes.add(new SoldeCompte(compte, solde));
             total = total.add(solde);
         }
-        return new JustificatifTresorerie(numero(arrete, 'T', boutiqueId), arrete, aujourdHui, echeances.maintenant(), List.copyOf(comptes), total);
+        return new JustificatifTresorerie(numero(arrete, 'T', boutiqueId), arrete, aujourdHui, echeances.maintenant(), List.copyOf(comptes), total, boutiques.boutiqueCourante().getMonnaie());
     }
 }

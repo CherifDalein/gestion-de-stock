@@ -23,6 +23,7 @@ import java.util.Map;
 /** Documents de l'état de rapprochement : PDF A4 (en-tête de la boutique, numéro du relevé, signatures) et tableau pour l'export Excel. */
 @Service
 public class EtatRapprochementDocumentService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     /** Mises en forme exposées au gabarit PDF sous le nom {@code fmt}. */
     public static final class Formats {
         public String montant(Number valeur) { return Textes.montant(valeur); }
@@ -72,7 +73,7 @@ public class EtatRapprochementDocumentService {
         var r = e.releve();
         TableauExport t = TableauExport.titre("État de rapprochement " + r.getNumero()).nomFeuille("Rapprochement")
                 .filtres("Compte : " + r.getCompte().getNom() + " · Période du " + Textes.date(r.getDateDebut()) + " au " + Textes.date(r.getDateFin())
-                        + " · Ouverture " + Textes.montant(r.getSoldeOuverture()) + " GNF · Clôture " + Textes.montant(r.getSoldeCloture()) + " GNF · " + r.getStatut().getLibelle())
+                        + " · Ouverture " + montants.format(r.getSoldeOuverture()) + " · Clôture " + montants.format(r.getSoldeCloture()) + " · " + r.getStatut().getLibelle())
                 .colonnes(Colonne.texte("Rubrique"), Colonne.date("Date"), Colonne.texte("Libellé"), Colonne.montant("Montant"));
         t.sousTotal("Solde du compte selon l'appli au " + Textes.date(r.getDateFin()), null, null, e.soldeAppli());
         if (e.pointesApresCloture().signum() != 0) t.ligne("Plus : mouvements rapprochés datés après la clôture", null, null, e.pointesApresCloture());

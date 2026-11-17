@@ -5,7 +5,7 @@
     <section class="record-page fin-page rap-page" aria-labelledby="rapListeTitre">
         <header class="record-header">
             <div><p class="record-kicker">Trésorerie</p><h1 id="rapListeTitre">Rapprochement bancaire</h1>
-                <p class="record-intro">Comparez les relevés de vos comptes Banque et Orange Money avec les mouvements de l'application. Pour la caisse en espèces, utilisez le <a th:href="@{/controles/comptages}">comptage de caisse</a>.</p></div>
+                <p class="record-intro">Comparez les relevés de vos comptes Banque et mobile money avec les mouvements de l'application. Pour la caisse en espèces, utilisez le <a th:href="@{/controles/comptages}">comptage de caisse</a>.</p></div>
             <div class="fin-actions"><a th:href="@{/rapprochements/nouveau}" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Nouveau relevé</a></div>
         </header>
         <div th:replace="~{rapprochement/commun :: alertes}"></div>
@@ -13,7 +13,7 @@
         <section class="record-panel" aria-labelledby="rapSuiviTitre">
             <div class="record-panel-heading"><h2 id="rapSuiviTitre">Dernier rapprochement validé par compte</h2>
                 <p th:text="${'Un compte est signalé quand son dernier rapprochement validé date de plus de ' + alerteJours + ' jours.'}">Alerte au-delà de 45 jours.</p></div>
-            <p class="record-help" th:if="${#lists.isEmpty(suivi)}">Aucun compte Banque ou Orange Money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
+            <p class="record-help" th:if="${#lists.isEmpty(suivi)}">Aucun compte Banque ou mobile money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
             <div class="rap-comptes" th:unless="${#lists.isEmpty(suivi)}">
                 <article class="rap-compte" th:each="s : ${suivi}" th:classappend="${s.alerte ? 'rap-compte--alerte' : ''}" th:attr="data-compte=${s.compte.id}">
                     <header><strong th:text="${s.compte.nom}">Ecobank</strong><small th:text="${s.compte.type.libelle}">Banque</small></header>
@@ -36,8 +36,8 @@
                         <td data-label="Numéro"><a th:href="@{/rapprochements/{id}(id=${r.id})}" th:text="${r.numero}">RB-202610-3</a></td>
                         <td data-label="Compte" th:text="${r.compte.nom}">Ecobank</td>
                         <td data-label="Période" th:text="${@formatsVue.date(r.dateDebut) + ' au ' + @formatsVue.date(r.dateFin)}">01/10/2026 au 31/10/2026</td>
-                        <td data-label="Ouverture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeOuverture)}">0 GNF</td>
-                        <td data-label="Clôture" class="text-end rap-montant" th:text="${@formatsVue.gnf(r.soldeCloture)}">0 GNF</td>
+                        <td data-label="Ouverture" class="text-end rap-montant" th:text="${@montants.format(r.soldeOuverture)}">0</td>
+                        <td data-label="Clôture" class="text-end rap-montant" th:text="${@montants.format(r.soldeCloture)}">0</td>
                         <td data-label="Statut"><span th:replace="~{rapprochement/commun :: statut(${r})}"></span></td>
                     </tr>
                     </tbody>

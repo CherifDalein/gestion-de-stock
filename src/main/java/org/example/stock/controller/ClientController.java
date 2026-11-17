@@ -31,6 +31,9 @@ public class ClientController {
     @Autowired
     private CorbeilleService corbeille;
 
+    @Autowired
+    private org.example.stock.pays.PaysCourant paysCourant;
+
     @GetMapping
     public String liste(Model model) {
         model.addAttribute("clients", clientService.listerTous());
@@ -45,6 +48,8 @@ public class ClientController {
     public String formulaire(Model model) {
         Client client = new Client();
         client.setSensSoldeDepart(SensSolde.IL_ME_DOIT);
+        // Indicatif du pays de la boutique proposé par défaut ; un numéro réduit à l'indicatif n'est pas enregistré.
+        client.setTelephone(paysCourant.indicatifSaisie());
         model.addAttribute("client", client);
         model.addAttribute("view", "clients/nouveau");
         return "dashboard";
@@ -55,6 +60,7 @@ public class ClientController {
                               Model model, RedirectAttributes redirectAttributes) {
         FormBindingAdvice.verifier(result);
         client.setSoldeDepartSoumis(FormBindingAdvice.soldeDepartSoumis(request));
+        client.setTelephone(paysCourant.telephoneSaisi(client.getTelephone()));
         try {
             clientService.enregistrerClient(client);
         } catch (IllegalArgumentException | IncoherenceAvanceException e) {

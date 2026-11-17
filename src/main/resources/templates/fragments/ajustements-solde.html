@@ -25,8 +25,8 @@
         <tr th:each="a : ${historique}">
             <td data-label="Date" class="text-nowrap" th:text="${#temporals.format(a.dateAjustement, 'dd/MM/yyyy HH:mm')}"></td>
             <td data-label="Saisi par" th:text="${a.utilisateur.nom}"></td>
-            <td data-label="Ancien solde" class="text-end text-nowrap" th:text="${a.ancienSolde.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(a.ancienSolde.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (a.ancienSolde.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></td>
-            <td data-label="Nouveau solde" class="text-end text-nowrap fw-semibold" th:text="${a.nouveauSolde.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(a.nouveauSolde.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (a.nouveauSolde.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></td>
+            <td data-label="Ancien solde" class="text-end text-nowrap" th:text="${a.ancienSolde.signum() == 0 ? @montants.format(0) : @montants.format(a.ancienSolde.abs()) + ' (' + (a.ancienSolde.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></td>
+            <td data-label="Nouveau solde" class="text-end text-nowrap fw-semibold" th:text="${a.nouveauSolde.signum() == 0 ? @montants.format(0) : @montants.format(a.nouveauSolde.abs()) + ' (' + (a.nouveauSolde.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></td>
             <td data-label="Motif" th:text="${a.motif}"></td>
         </tr>
         </tbody>

@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Relevés bancaires et Orange Money (étape 3c), réservés au gérant : création, lignes saisies ou importées, correspondance des colonnes
+ * Relevés bancaires et de mobile money (étape 3c), réservés au gérant : création, lignes saisies ou importées, correspondance des colonnes
  * mémorisée par compte, doublons. Tant qu'un relevé n'est pas validé il se modifie librement ; une fois validé il est figé.
  *
  * <p>Ordre des verrous des écritures : boutique, puis relevé (docs/lot-2.md, « Ordre des verrous »). Ces écritures ne touchent aucun
@@ -79,7 +79,7 @@ public class ReleveBancaireService {
     }
 
     public static boolean rapprochable(CompteTresorerieBoutique compte) {
-        return compte.getType() == TypeCompteTresorerie.BANQUE || compte.getType() == TypeCompteTresorerie.ORANGE_MONEY;
+        return compte.getType() == TypeCompteTresorerie.BANQUE || compte.getType() == TypeCompteTresorerie.MOBILE_MONEY;
     }
 
     // ---- Lectures (gérant) ----------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ public class ReleveBancaireService {
         return releves.findByIdAndBoutiqueId(id, boutiques.idBoutiqueCourante()).orElseThrow(ReleveBancaireService::introuvable);
     }
 
-    /** Comptes actifs de type banque ou Orange Money, dans l'ordre habituel. */
+    /** Comptes actifs de type banque ou mobile money, dans l'ordre habituel. */
     @Transactional(readOnly = true)
     public List<CompteTresorerieBoutique> comptesRapprochables() {
         DroitsExport.exigerGerant();
@@ -327,7 +327,7 @@ public class ReleveBancaireService {
         if (compteId == null) throw new IllegalArgumentException("Choisissez le compte du relevé.");
         CompteTresorerieBoutique compte = comptes.findByIdAndBoutiqueId(compteId, boutiqueId).orElseThrow(() -> new IllegalArgumentException("Compte introuvable."));
         if (!rapprochable(compte)) {
-            throw new IllegalArgumentException("Le rapprochement bancaire concerne les comptes Banque et Orange Money. Pour la caisse en espèces, utilisez le comptage de caisse.");
+            throw new IllegalArgumentException("Le rapprochement bancaire concerne les comptes Banque et mobile money. Pour la caisse en espèces, utilisez le comptage de caisse.");
         }
         if (actif && !compte.isActif()) throw new IllegalArgumentException("Ce compte est archivé : désarchivez-le pour créer un relevé.");
         return compte;

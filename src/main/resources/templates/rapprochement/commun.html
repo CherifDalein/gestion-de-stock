@@ -4,7 +4,7 @@
     <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 </div>
 <!-- Montant signé coloré : crédit en vert, débit en rouge. -->
-<span th:fragment="signe(valeur)" class="rap-montant" th:classappend="${valeur.signum() > 0 ? 'rap-credit' : (valeur.signum() < 0 ? 'rap-debit' : 'rap-neutre')}" th:text="${@formatsVue.signe(valeur)}">+ 5 000 GNF</span>
+<span th:fragment="signe(valeur)" class="rap-montant" th:classappend="${valeur.signum() > 0 ? 'rap-credit' : (valeur.signum() < 0 ? 'rap-debit' : 'rap-neutre')}" th:text="${@montants.signe(valeur)}">0</span>
 <span th:fragment="statut(releve)" class="rap-statut" th:classappend="${releve.statut.name() == 'VALIDE' ? 'rap-statut--valide' : 'rap-statut--brouillon'}" th:text="${releve.statut.libelle}">En cours</span>
 <!-- Onglets de la section : liste, puis les écrans d'un relevé. -->
 <nav th:fragment="onglets(releve, actif)" class="fin-onglets" aria-label="Écrans du relevé">

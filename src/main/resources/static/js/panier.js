@@ -17,8 +17,8 @@ function definirAvanceDisponible(centimes) {
 function actualiserAvanceUtilisee(utilisee, surplus) {
     const info = document.getElementById('avanceUtiliseeInfo');
     if (!info) return;
-    info.textContent = utilisee > 0n ? `Avance utilisée automatiquement : ${Montants.afficher(utilisee)} GNF`
-        : surplus > 0n ? `Trop-payé : ${Montants.afficher(surplus)} GNF deviendront une avance du client.` : '';
+    info.textContent = utilisee > 0n ? `Avance utilisée automatiquement : ${Montants.avecSymbole(utilisee)}`
+        : surplus > 0n ? `Trop-payé : ${Montants.avecSymbole(surplus)} deviendront une avance du client.` : '';
     info.hidden = utilisee <= 0n && surplus <= 0n;
 }
 
@@ -132,7 +132,7 @@ function ajouterAuPanier(chargement = false) {
     produitInput.value = pId;
     nomCellule.appendChild(produitInput);
 
-    row.insertCell().textContent = `${Montants.afficher(pPrix)} GNF`;
+    row.insertCell().textContent = `${Montants.avecSymbole(pPrix)}`;
     const quantiteCellule = row.insertCell();
     const quantiteTexte = document.createElement('span');
     quantiteTexte.textContent = libelleQuantite(qty, unite);
@@ -146,7 +146,7 @@ function ajouterAuPanier(chargement = false) {
     const totalCellule = row.insertCell();
     totalCellule.className = 'sous-total-val';
     totalCellule.dataset.centimes = sousTotal.toString();
-    totalCellule.textContent = `${Montants.afficher(sousTotal)} GNF`;
+    totalCellule.textContent = `${Montants.avecSymbole(sousTotal)}`;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'btn btn-outline-danger btn-sm';

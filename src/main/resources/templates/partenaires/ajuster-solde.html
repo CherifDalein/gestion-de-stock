@@ -48,15 +48,15 @@
                 <dl class="operation-summary-lines">
                     <div>
                         <dt>Solde de départ actuel</dt>
-                        <dd th:text="${solde.soldeDepart.signum() == 0 ? 'Aucun' : #numbers.formatDecimal(solde.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (solde.soldeDepart.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></dd>
+                        <dd th:text="${solde.soldeDepart.signum() == 0 ? 'Aucun' : @montants.format(solde.soldeDepart.abs()) + ' (' + (solde.soldeDepart.signum() > 0 ? (estClient ? 'il me doit' : 'avance chez lui') : (estClient ? 'avance du client' : 'je lui dois')) + ')'}"></dd>
                     </div>
                     <div>
                         <dt>Déjà réglé</dt>
-                        <dd th:text="${#numbers.formatDecimal(solde.soldeDepartRegle, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(solde.soldeDepartRegle)}"></dd>
                     </div>
                     <div>
                         <dt>Reste à régler</dt>
-                        <dd th:text="${#numbers.formatDecimal(solde.resteSoldeDepart, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+                        <dd th:text="${@montants.format(solde.resteSoldeDepart)}"></dd>
                     </div>
                 </dl>
                 <form th:action="@{${actionUrl}}" method="post" id="formAjustementSolde">
@@ -65,7 +65,7 @@
                     </div>
                     <input type="hidden" th:field="*{jeton}" />
                     <div class="operation-field mb-3">
-                        <label for="montantAjustement" class="form-label fw-semibold">Nouveau montant (GNF)</label>
+                        <label for="montantAjustement" class="form-label fw-semibold">Nouveau montant ([[${@montants.symbole}]])</label>
                         <input id="montantAjustement" type="number" th:field="*{montant}" min="0" step="0.01" inputmode="decimal"
                                class="form-control form-control-lg" th:classappend="${#fields.hasErrors('montant')} ? 'is-invalid'" required />
                     </div>

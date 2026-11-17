@@ -30,19 +30,19 @@
                     <p>Indiquez le nombre de billets et de pièces de chaque valeur : le total devient le montant compté.</p></div>
                 <div class="ctl-billetage">
                     <div class="ctl-billetage-ligne" th:each="coupure, i : ${coupures}">
-                        <label th:for="${'quantite' + i.index}" th:text="${#numbers.formatDecimal(coupure, 1, 'WHITESPACE', 0, 'COMMA') + ' GNF'}">20 000 GNF</label>
+                        <label th:for="${'quantite' + i.index}" th:text="${@montants.format(coupure)}">0</label>
                         <input th:id="${'quantite' + i.index}" type="number" min="0" max="1000000" step="1" inputmode="numeric" class="form-control"
                                th:name="${'quantites[' + i.index + ']'}" th:value="*{quantites[__${i.index}__]}" th:attr="data-coupure=${coupure}" placeholder="0" />
                         <output th:id="${'comptageLigne' + i.index}" class="ctl-montant" th:attr="aria-label=${'Total pour ' + coupure}">0</output>
                     </div>
                 </div>
-                <div class="ctl-billetage-total"><span>Total du billetage</span><span id="comptageTotalBilletage" class="ctl-montant">0 GNF</span></div>
+                <div class="ctl-billetage-total"><span>Total du billetage</span><span id="comptageTotalBilletage" class="ctl-montant">0</span></div>
             </section>
 
             <section class="record-panel" aria-labelledby="montantTitre">
                 <div class="record-panel-heading"><h2 id="montantTitre">Montant compté</h2></div>
                 <div class="record-field">
-                    <label for="comptageMontant">Montant compté (GNF)</label>
+                    <label for="comptageMontant">Montant compté ([[${@montants.symbole}]])</label>
                     <input id="comptageMontant" class="form-control form-control-lg" type="number" min="0" step="0.01" inputmode="decimal" th:field="*{montantCompte}" th:attr="aria-describedby=${voirTheorique} ? 'comptageEcart' : null" />
                 </div>
                 <p id="comptageEcart" class="ctl-ecart-direct" th:if="${voirTheorique}" aria-live="polite">Saisissez le montant compté pour voir l'écart</p>

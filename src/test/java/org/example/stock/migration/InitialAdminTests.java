@@ -44,7 +44,7 @@ class InitialAdminTests {
         try (var c = base()) {
             InitialAdmin.creer(c, "admin@example.test", "MotDePasseTest42");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique t JOIN utilisateur u ON u.boutique_id=t.boutique_id")).isEqualTo("3");
-            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(type ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("ESPECES,ORANGE_MONEY,BANQUE");
+            assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(type ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("ESPECES,MOBILE_MONEY,BANQUE");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(nom ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("Caisse,Orange Money,Banque");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT GROUP_CONCAT(nom_cle ORDER BY ordre SEPARATOR ',') FROM compte_tresorerie_boutique")).isEqualTo("caisse,orange money,banque");
             assertThat(AccountEmailMigrationTests.valeur(c, "SELECT COUNT(*) FROM compte_tresorerie_boutique WHERE principal_type=type AND actif")).isEqualTo("3");
@@ -56,7 +56,7 @@ class InitialAdminTests {
     @Test
     void uneBoutiqueExistanteConserveSesComptesEtRecoitSeulementLesManquants() throws Exception {
         try (var c = base()) {
-            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP)");
+            AccountEmailMigration.executer(c, "INSERT INTO boutique(id,nom,date_creation,pays,monnaie) VALUES(42,'Boutique existante',CURRENT_TIMESTAMP,'GN','GNF')");
             AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(99,42,'ESPECES','Caisse','caisse','ESPECES',TRUE,0)");
             // Un compte secondaire déjà nommé « Banque » ne doit pas entrer en conflit avec le compte principal de base.
             AccountEmailMigration.executer(c, "INSERT INTO compte_tresorerie_boutique(id,boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(98,42,'ORANGE_MONEY','Banque','banque',NULL,TRUE,5)");

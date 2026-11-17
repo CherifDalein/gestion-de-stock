@@ -70,6 +70,8 @@ public final class Lot3MariaDbTest {
         // Les entités décrivent aussi la corbeille du lot 6 : Hibernate en mode validate exige ses colonnes.
         Lot6Migration.migrer(c, true);
         Lot5Migration.migrer(c, true);
+        // Et le pays et la monnaie des boutiques.
+        PaysMonnaieMigration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);
@@ -95,7 +97,7 @@ public final class Lot3MariaDbTest {
             em.getTransaction().begin();
             var b2 = em.find(Boutique.class, boutiqueId);
             var orange = comptes.get(1);
-            var orange2 = new CompteTresorerieBoutique(b2, TypeCompteTresorerie.ORANGE_MONEY, "Orange Money Labé", false, 3);
+            var orange2 = new CompteTresorerieBoutique(b2, TypeCompteTresorerie.MOBILE_MONEY, "Orange Money Labé", false, 3);
             orange2.renommer("Orange Money Labé", "622 00 00 00"); em.persist(orange2);
             em.flush();
             var m = new MouvementCaisse(); m.setBoutique(b2); m.setCompte(orange2); m.setMontant(new java.math.BigDecimal("1500.00")); m.setType("ENTREE"); m.setSource("VENTE");
@@ -108,7 +110,7 @@ public final class Lot3MariaDbTest {
             orange2Id = orange2.getId(); mouvementId = m.getId();
             em.clear();
             var relu = em.find(MouvementCaisse.class, mouvementId);
-            Lot3MigrationScenarios.exiger(relu.getCompte().getId().equals(orange2Id) && relu.getCompte().getType() == TypeCompteTresorerie.ORANGE_MONEY
+            Lot3MigrationScenarios.exiger(relu.getCompte().getId().equals(orange2Id) && relu.getCompte().getType() == TypeCompteTresorerie.MOBILE_MONEY
                     && "Orange Money Labé".equals(relu.getCompte().getNom()) && "622 00 00 00".equals(relu.getCompte().getNumero()) && !relu.getCompte().isPrincipal(), "Mouvement ou compte non relu par JPA");
             // Financements (3b1) : partenaire, emprunt, échéancier, remboursement et imputation relus par JPA.
             em.getTransaction().begin();
@@ -213,7 +215,7 @@ public final class Lot3MariaDbTest {
             Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,actif,ordre) VALUES(" + boutiqueId + ",'BANQUE','ORANGE MONEY LABÉ','orange money labé',TRUE,5)");
         } catch (SQLException e) { doublonNom = e.getSQLState().startsWith("23"); }
         try {
-            Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(" + boutiqueId + ",'ORANGE_MONEY','Autre principal','autre principal','ORANGE_MONEY',TRUE,5)");
+            Lot3MigrationScenarios.sql(c, "INSERT INTO compte_tresorerie_boutique(boutique_id,type,nom,nom_cle,principal_type,actif,ordre) VALUES(" + boutiqueId + ",'MOBILE_MONEY','Autre principal','autre principal','MOBILE_MONEY',TRUE,5)");
         } catch (SQLException e) { doublonPrincipal = e.getSQLState().startsWith("23"); }
         Lot3MigrationScenarios.exiger(doublonNom && doublonPrincipal, "Les unicités du nom ou du compte principal n'ont pas refusé le doublon");
         boolean autorisationDouble = false;

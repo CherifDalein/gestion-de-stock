@@ -71,6 +71,8 @@ public final class Lot4MariaDbTest {
         // Et la corbeille du lot 6 (colonnes supprime_le, supprime_par, nom_cle des fiches).
         Lot6Migration.migrer(c, true);
         Lot5Migration.migrer(c, true);
+        // Et le pays et la monnaie des boutiques.
+        PaysMonnaieMigration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM boutique WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);

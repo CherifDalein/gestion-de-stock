@@ -40,8 +40,8 @@
                         <td data-label="Numéro"><a th:href="@{/controles/comptages/{id}(id=${c.id})}" th:text="${'CC-' + c.id}">CC-1</a></td>
                         <td data-label="Date" class="text-nowrap" th:text="${#temporals.format(c.dateComptage, 'dd/MM/yyyy HH:mm')}">09/11/2026 10:00</td>
                         <td data-label="Compte" th:text="${c.compte.nom}">Caisse</td>
-                        <td data-label="Théorique" th:if="${voirTheorique}" class="text-end ctl-montant" th:text="${#numbers.formatDecimal(c.soldeTheorique, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</td>
-                        <td data-label="Compté" class="text-end ctl-montant" th:text="${#numbers.formatDecimal(c.montantCompte, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0 GNF</td>
+                        <td data-label="Théorique" th:if="${voirTheorique}" class="text-end ctl-montant" th:text="${@montants.format(c.soldeTheorique)}">0</td>
+                        <td data-label="Compté" class="text-end ctl-montant" th:text="${@montants.format(c.montantCompte)}">0</td>
                         <td data-label="Écart" class="text-end" th:if="${voirTheorique}"><span th:replace="~{controles/navigation :: ecart(${c.ecart})}"></span></td>
                         <td data-label="Statut"><span th:replace="~{controles/navigation :: statut(${c.statut})}"></span></td>
                         <td data-label="Saisi par" th:text="${c.utilisateur.nom}">Awa</td>

@@ -26,7 +26,7 @@
 <h2 class="js-section" th:text="${'Soldes des comptes ' + (j.aujourdHui ? 'au ' + #temporals.format(j.edition, 'dd/MM/yyyy à HH:mm') : 'à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy'))}">Soldes des comptes</h2>
 <table class="js-detail">
     <thead>
-    <tr><th>Compte</th><th class="num">Solde (GNF)</th></tr>
+    <tr><th>Compte</th><th class="num">Solde ([[${monnaie.symbole}]])</th></tr>
     </thead>
     <tbody>
     <th:block th:each="t : ${j.types}">
@@ -35,7 +35,7 @@
             <td class="num" th:text="${fmt.montant(c.solde)}">0</td>
         </tr>
         <tr th:if="${t.comptes.size() > 1}" class="js-sous-total">
-            <td th:text="${'Total ' + t.type.libelle}">Total Orange Money</td>
+            <td th:text="${'Total ' + t.type.libelle}">Total Mobile money</td>
             <td class="num" th:text="${fmt.montant(t.solde)}">0</td>
         </tr>
     </th:block>
@@ -48,13 +48,13 @@
 
 <div class="js-cadre">
     <p class="js-phrase" th:text="${j.aujourdHui ? 'Trésorerie totale de la boutique à la date d’édition' : 'Trésorerie totale de la boutique à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy')}">Trésorerie totale</p>
-    <p class="js-chiffres" th:text="${fmt.montant(j.total)} + ' GNF'">1 039 000 GNF</p>
+    <p class="js-chiffres" th:text="${monnaie.formater(j.total)}">0</p>
     <p class="js-lettres" th:text="${'Soit ' + j.totalEnLettres + '.'}">Soit un million trente-neuf mille francs guinéens.</p>
 </div>
 
 <p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de un million trente-neuf mille francs guinéens.</p>
 <p class="js-mention">Solde calculé par l'application ; à rapprocher du comptage physique.</p>
-<p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Chaque solde est la somme des mouvements du journal de trésorerie de la boutique ' + (j.aujourdHui ? 'au moment de l’édition.' : 'jusqu’à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy') + ' (23 h 59 comprise).')}">Mention</p>
+<p class="js-mention" th:text="${'Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + '). Chaque solde est la somme des mouvements du journal de trésorerie de la boutique ' + (j.aujourdHui ? 'au moment de l’édition.' : 'jusqu’à la fin du ' + #temporals.format(j.arrete, 'dd/MM/yyyy') + ' (23 h 59 comprise).')}">Mention</p>
 
 <table class="js-signatures">
     <tr>

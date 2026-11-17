@@ -76,6 +76,8 @@ public final class Lot2MariaDbTest {
         // Et la corbeille du lot 6 (colonnes supprime_le, supprime_par, nom_cle des fiches).
         Lot6Migration.migrer(c, true);
         Lot5Migration.migrer(c, true);
+        // Et le pays et la monnaie des boutiques.
+        PaysMonnaieMigration.migrer(c, true);
         boolean historique = BoutiquesMigration.compter(c, "SELECT COUNT(*) FROM vente WHERE id=1") == 1;
         int query = serveur.indexOf('?');
         String url = query < 0 ? serveur + base : serveur.substring(0, query) + base + serveur.substring(query);
@@ -106,13 +108,13 @@ public final class Lot2MariaDbTest {
             d.getLignes().add(ligneDevis); em.persist(d);
             var r = new Retour(); r.setBoutique(b); r.setNumero("RV-000001"); r.setType(TypeRetour.VENTE); r.setVente(v); r.setClient(k); r.setUtilisateur(u);
             r.setDateRetour(LocalDateTime.of(2026, 1, 3, 10, 0)); r.setMontantTotal(new BigDecimal("10.00")); r.setMontantRembourse(new BigDecimal("6.00"));
-            r.setCompteTresorerie(compte(b, TypeCompteTresorerie.ORANGE_MONEY)); r.setMontantAvoir(new BigDecimal("4.00")); r.setMotif("Défectueux");
+            r.setCompteTresorerie(compte(b, TypeCompteTresorerie.MOBILE_MONEY)); r.setMontantAvoir(new BigDecimal("4.00")); r.setMotif("Défectueux");
             var ligneRetour = new DetailRetour(); ligneRetour.setRetour(r); ligneRetour.setProduit(p); ligneRetour.setDetailVente(ligneVente); ligneRetour.setQuantite(1);
             ligneRetour.setPrixUnitaire(new BigDecimal("10.00")); r.getLignes().add(ligneRetour); em.persist(r);
-            var rembourse = new MouvementCaisse(); rembourse.setBoutique(b); rembourse.setUtilisateur(u); rembourse.setRetour(r); rembourse.setCompte(compte(b, TypeCompteTresorerie.ORANGE_MONEY));
+            var rembourse = new MouvementCaisse(); rembourse.setBoutique(b); rembourse.setUtilisateur(u); rembourse.setRetour(r); rembourse.setCompte(compte(b, TypeCompteTresorerie.MOBILE_MONEY));
             rembourse.setDateMouvement(LocalDateTime.of(2026, 1, 3, 10, 1)); rembourse.setMontant(new BigDecimal("-6.00")); rembourse.setType("DECAISSEMENT"); rembourse.setSource("RETOUR");
             em.persist(rembourse);
-            var annulation = new MouvementCaisse(); annulation.setBoutique(b); annulation.setUtilisateur(u); annulation.setAnnulationDe(rembourse); annulation.setCompte(compte(b, TypeCompteTresorerie.ORANGE_MONEY));
+            var annulation = new MouvementCaisse(); annulation.setBoutique(b); annulation.setUtilisateur(u); annulation.setAnnulationDe(rembourse); annulation.setCompte(compte(b, TypeCompteTresorerie.MOBILE_MONEY));
             annulation.setDateMouvement(LocalDateTime.of(2026, 1, 4, 10, 1)); annulation.setMontant(new BigDecimal("6.00")); annulation.setType("ENCAISSEMENT"); annulation.setSource("ANNULATION");
             em.persist(annulation);
             em.getTransaction().commit();
@@ -124,7 +126,7 @@ public final class Lot2MariaDbTest {
             Lot2MigrationScenarios.exiger(relu.getStatut() == StatutDevis.EN_COURS && relu.getVersion() == 0L && relu.getLignes().size() == 1 && relu.getVente() == null
                     && relu.getMontantTotal().compareTo(new BigDecimal("20.00")) == 0 && relu.getDateValidite().equals(LocalDate.of(2026, 2, 1)), "Devis non relu par JPA");
             var retour = em.find(Retour.class, retourId);
-            Lot2MigrationScenarios.exiger(retour.getType() == TypeRetour.VENTE && retour.getCompteTresorerie().getType() == TypeCompteTresorerie.ORANGE_MONEY && retour.getLignes().size() == 1
+            Lot2MigrationScenarios.exiger(retour.getType() == TypeRetour.VENTE && retour.getCompteTresorerie().getType() == TypeCompteTresorerie.MOBILE_MONEY && retour.getLignes().size() == 1
                     && retour.getMontantAvoir().compareTo(new BigDecimal("4.00")) == 0 && retour.getLignes().getFirst().getCoutUnitaire() == null, "Retour non relu par JPA");
             Lot2MigrationScenarios.exiger(em.find(Vente.class, venteId).getVendeur() != null && em.find(Achat.class, achatId).getUtilisateur() != null, "Vendeur ou auteur non relu");
             Lot2MigrationScenarios.exiger(em.find(MouvementCaisse.class, annulationId).getAnnulationDe().getId().equals(remboursementId)

@@ -14,12 +14,18 @@
         return match[1] ? -centimes : centimes;
     }
 
-    /** « 1 000 000 », « − 1 000,50 » : espaces entre les milliers, virgule décimale, décimales seulement si non nulles. */
+    /** Symbole de la monnaie de la boutique (attribut data-monnaie du <body>, posé par le serveur) ; jamais écrit en dur. */
+    function symbole() {
+        return (typeof document !== 'undefined' && document.body && document.body.dataset && document.body.dataset.monnaie) || '';
+    }
+
+    /** Arrondi HALF_UP à l'unité, comme l'affichage serveur : les calculs restent en centimes. */
+    function entierArrondi(absolu) { return (absolu + 50n) / 100n; }
+
+    /** « 1 000 000 », « − 1 000 » : espaces insécables entre les milliers, sans décimales (HALF_UP). */
     function formater(centimes) {
         const absolu = centimes < 0n ? -centimes : centimes;
-        const entier = String(absolu / 100n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-        const fraction = absolu % 100n;
-        const texte = fraction === 0n ? entier : `${entier},${String(fraction).padStart(2, '0')}`;
+        const texte = String(entierArrondi(absolu)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
         return centimes < 0n ? `− ${texte}` : texte;
     }
 
@@ -36,7 +42,7 @@
         if (lignes.length === 0 || mouvements.length === 0) return { etat: 'vide', texte: 'Choisissez au moins une ligne et un mouvement.' };
         const ecart = somme(lignes) - somme(mouvements);
         if (ecart === 0n) return { etat: 'egal', texte: 'Les sommes sont égales : vous pouvez associer.' };
-        return { etat: 'ecart', texte: `Écart de ${formater(ecart)} GNF : aucun écart n'est toléré.` };
+        return { etat: 'ecart', texte: `Écart ${entierArrondi(ecart < 0n ? -ecart : ecart) === 0n ? 'inférieur à 1' : 'de ' + formater(ecart)}\u00a0${symbole()} : aucun écart n'est toléré.` };
     }
 
     function initialiser() {

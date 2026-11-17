@@ -324,7 +324,7 @@ public final class CorbeilleMariaDbTest {
     @Profile("corbeille-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({VerrouExercice.class, CorbeilleService.class, ClientService.class, FournisseurService.class, CategorieService.class, ProduitService.class,
+    @Import({VerrouExercice.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class, CorbeilleService.class, ClientService.class, FournisseurService.class, CategorieService.class, ProduitService.class,
             BoutiqueService.class, EssaiBoutiqueService.class, StockLockRepository.class, EcheanceService.class, SoldeDepartService.class,
             SoldePartenaireService.class, SoldePartenaireRepository.class, CaisseService.class, InitialisationBoutiqueService.class,
             ComptesTresorerieService.class, NumerotationFactureService.class, DevisService.class})

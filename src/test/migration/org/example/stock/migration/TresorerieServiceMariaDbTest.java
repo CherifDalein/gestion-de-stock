@@ -178,11 +178,11 @@ public final class TresorerieServiceMariaDbTest {
 
     private void concurrenceInverse() throws Exception {
         Env e = environnement();
-        concurrent(() -> { connecter(e.premier()); caisse.transferer(transfert(ESPECES, ORANGE_MONEY, "80")); return "ok"; },
-                () -> { connecter(e.second()); caisse.transferer(transfert(ORANGE_MONEY, ESPECES, "80")); return "ok"; });
+        concurrent(() -> { connecter(e.premier()); caisse.transferer(transfert(ESPECES, MOBILE_MONEY, "80")); return "ok"; },
+                () -> { connecter(e.second()); caisse.transferer(transfert(MOBILE_MONEY, ESPECES, "80")); return "ok"; });
         connecter(e.premier());
         exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("100")) == 0
-                && caisse.getSoldesParType().get(ORANGE_MONEY).compareTo(new BigDecimal("100")) == 0,
+                && caisse.getSoldesParType().get(MOBILE_MONEY).compareTo(new BigDecimal("100")) == 0,
                 "Les transferts inverses ont perdu une écriture.");
         exiger(caisse.getSoldeActuel().compareTo(new BigDecimal("300")) == 0 && caisse.listerTous().size() == 7,
                 "Le total ou les quatre jambes sont incorrects.");
@@ -251,7 +251,7 @@ public final class TresorerieServiceMariaDbTest {
             exiger(comptePris.await(5, TimeUnit.SECONDS), "Le verrou du compte n'a pas été acquis.");
             var transfert = executeur.submit(() -> {
                 connecter(e.premier());
-                try { transfertDemarre.countDown(); caisse.transferer(transfert(ESPECES, ORANGE_MONEY, "80")); }
+                try { transfertDemarre.countDown(); caisse.transferer(transfert(ESPECES, MOBILE_MONEY, "80")); }
                 finally { SecurityContextHolder.clearContext(); }
             });
             try {
@@ -274,7 +274,7 @@ public final class TresorerieServiceMariaDbTest {
         }
         connecter(e.premier());
         exiger(caisse.getSoldesParType().get(ESPECES).compareTo(new BigDecimal("10")) == 0
-                && caisse.getSoldesParType().get(ORANGE_MONEY).compareTo(new BigDecimal("180")) == 0
+                && caisse.getSoldesParType().get(MOBILE_MONEY).compareTo(new BigDecimal("180")) == 0
                 && caisse.getSoldeActuel().compareTo(new BigDecimal("290")) == 0,
                 "L'paiement et le transfert du même acteur n'ont pas conservé les écritures.");
         reussi("paiement et transfert du même acteur : aucune inversion des verrous auteur/compte");
@@ -405,7 +405,7 @@ public final class TresorerieServiceMariaDbTest {
     @Profile("tresorerie-mariadb-service-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({VerrouExercice.class, CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class,
+    @Import({VerrouExercice.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class, CaisseService.class, BoutiqueService.class, EssaiBoutiqueService.class, InitialisationBoutiqueService.class, org.example.stock.repository.StockLockRepository.class,
             ComptesTresorerieService.class})
     static class ConfigurationJpa {
         @Bean

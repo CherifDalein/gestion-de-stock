@@ -115,7 +115,7 @@ class VenteExportTests {
             assertThat(v1.getCell(3).getStringCellValue()).isEqualTo("Awa Gérante");
             assertThat(nombres(v1)).containsExactly(1_500_000d, 500_000d, 1_500_000d, 0d, 0d, 400_000d);
             assertThat(v1.getCell(9).getStringCellValue()).isEqualTo("Réglée");
-            assertThat(v1.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(v1.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             assertThat(v1.getCell(10)).isNull();
             assertThat(nombres(v2)).containsExactly(2_000_000d, 0d, 500_000d, 0d, 1_500_000d, 1_200_000d);
             assertThat(v2.getCell(9).getStringCellValue()).isEqualTo("À régler (en retard)");
@@ -123,7 +123,7 @@ class VenteExportTests {
             assertThat(DateUtil.isCellDateFormatted(v2.getCell(10))).isTrue();
             assertThat(v3.getCell(2).getStringCellValue()).isEqualTo("Client de passage");
             assertThat(nombres(v3)).containsExactly(250_000.5, 0d, 250_000.5, 0d, 0d, 250_000.5);
-            assertThat(v3.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            assertThat(v3.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             // Totaux : 3 750 000,50 ; retours 500 000 ; versé 2 250 000,50 ; reste 1 500 000 ; bénéfice 1 850 000,50.
             Row totaux = f.getRow(lignes.get(2).getRowNum() + 1);
             assertThat(totaux.getCell(0).getStringCellValue()).isEqualTo("3 ventes");
@@ -158,7 +158,7 @@ class VenteExportTests {
         assertThat(new String(octets, 0, 4, StandardCharsets.US_ASCII)).isEqualTo("%PDF");
         String texte = texte(octets);
         assertThat(texte).contains("Boutique Étoile A", "12 rue de l'Œuvre, Conakry", "Journal des ventes", "FV-000001", "FV-000002", "FV-000003",
-                "Élève Ça’ñ", "Awa Gérante", "Bénéfice brut", "1 500 000", "250 000,50", "3 750 000,50", "1 850 000,50", "Réglée",
+                "Élève Ça’ñ", "Awa Gérante", "Bénéfice brut", "1 500 000", "250 001", "3 750 001", "1 850 001", "Réglée",
                 "À régler (en retard)", "3 ventes", "Édité le", "par Awa Gérante", "Page 1 / 1");
         assertThat(texte).doesNotContain("RFC-COMPTA", "FV-000777", "Client Secret B", "Boutique Autre B", "9 999 999");
     }
@@ -243,7 +243,7 @@ class VenteExportTests {
             assertThat(nombres(f.getRow(lignes.get(2).getRowNum() + 1))).containsExactly(3_750_000.5, 500_000d, 2_250_000.5, 0d, 1_500_000d);
         }
         String pdf = texte(mvc.perform(caissier(get("/ventes/export/pdf"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray());
-        assertThat(pdf).contains("Boutique Étoile A", "FV-000001", "3 750 000,50", "par Bakary Caissier")
+        assertThat(pdf).contains("Boutique Étoile A", "FV-000001", "3 750 001", "par Bakary Caissier")
                 .doesNotContain("Bénéfice", "1 850 000", "400 000", "1 200 000", "sans coût", "FV-000777");
     }
 

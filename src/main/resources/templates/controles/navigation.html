@@ -8,7 +8,7 @@
     <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 </div>
-<!-- Écart signé : « + 5 000 GNF » (excédent), « − 5 000 GNF » (manque) ou « 0 GNF ». -->
+<!-- Écart signé : « + 5 000 » (excédent), « − 5 000 » (manque) ou « 0 » suivis du symbole de la monnaie. -->
 <span th:fragment="ecart(valeur)" class="ctl-montant" th:classappend="${valeur.signum() > 0 ? 'ctl-excedent' : (valeur.signum() < 0 ? 'ctl-manque' : 'ctl-neutre')}"
-      th:text="${(valeur.signum() > 0 ? '+ ' : (valeur.signum() < 0 ? '− ' : '')) + #numbers.formatDecimal(valeur.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">+ 5 000,00 GNF</span>
+      th:text="${(valeur.signum() > 0 ? '+ ' : (valeur.signum() < 0 ? '− ' : '')) + @montants.format(valeur.abs())}">0</span>
 <span th:fragment="statut(statut)" class="ctl-statut" th:classappend="${'ctl-statut--' + #strings.toLowerCase(statut.name())}" th:text="${statut.libelle}">Conforme</span>

@@ -3,7 +3,7 @@
     <link rel="stylesheet" th:href="@{/css/tresorerie.css}">
     <section class="record-page" aria-labelledby="ouvertureTitre">
         <header class="record-header">
-            <div><p class="record-kicker">Démarrage de la boutique</p><h1 id="ouvertureTitre">Soldes initiaux de trésorerie</h1><p class="record-intro">Renseignez l’argent déjà disponible en caisse, sur Orange Money et à la banque avant vos premières opérations.</p></div>
+            <div><p class="record-kicker">Démarrage de la boutique</p><h1 id="ouvertureTitre">Soldes initiaux de trésorerie</h1><p class="record-intro">Renseignez l’argent déjà disponible en caisse, sur mobile money et à la banque avant vos premières opérations.</p></div>
             <a th:href="@{/caisse/journal}" class="btn btn-outline-secondary record-back">Retour au journal</a>
         </header>
         <div class="alert alert-danger" role="alert" th:if="${error}" th:text="${error}"></div>
@@ -21,7 +21,7 @@
                         </select>
                     </div>
                     <div class="record-field">
-                        <label for="ouvertureMontant">Argent déjà disponible (GNF)</label>
+                        <label for="ouvertureMontant">Argent déjà disponible ([[${@montants.symbole}]])</label>
                         <input id="ouvertureMontant" class="form-control" th:field="*{montant}" type="number" min="0" max="999999999999999.99" step="0.01" inputmode="decimal" required aria-describedby="ouvertureMontantAide" th:attr="aria-invalid=${#fields.hasErrors('montant')}">
                         <p id="ouvertureMontantAide" class="record-help">Saisissez zéro si ce compte est vide au démarrage.</p>
                     </div>
@@ -44,7 +44,7 @@
                     <p th:unless="${initialisationOuverte}">Le démarrage de la boutique est terminé : les soldes initiaux ne peuvent plus être ajoutés.</p>
                     <p th:if="${initialisationOuverte}">Tous les comptes sont déjà initialisés.</p>
                     <p>Consultez le journal pour retrouver les opérations.</p>
-                    <p>Solde total de la boutique : <strong th:text="${#numbers.formatDecimal(soldeTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
+                    <p>Solde total de la boutique : <strong th:text="${@montants.format(soldeTotal)}"></strong></p>
                 </div>
             </section>
         </div>

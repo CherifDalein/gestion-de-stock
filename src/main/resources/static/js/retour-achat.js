@@ -36,7 +36,7 @@ if (typeof document !== 'undefined') {
                 const quantite = quantiteSaisie(rangee);
                 lignes.push({prix, quantite});
                 const cellule = rangee.querySelector('[data-montant-ligne]');
-                if (cellule) cellule.textContent = `${Montants.afficher(prix * BigInt(quantite))} GNF`;
+                if (cellule) cellule.textContent = `${Montants.avecSymbole(prix * BigInt(quantite))}`;
             }
             const {montant, impute, excedent} = RetourAchat.calculer(lignes, reste);
             texte('retourMontant', Montants.afficher(montant));
@@ -46,11 +46,11 @@ if (typeof document !== 'undefined') {
             if (montant === 0n) {
                 explication = 'Saisissez une quantité pour voir le détail.';
             } else if (excedent === 0n) {
-                explication = `Vous devez encore ${Montants.afficher(reste)} GNF au fournisseur : ce retour réduit votre dette de ${Montants.afficher(impute)} GNF. Aucun argent n’est rendu.`;
+                explication = `Vous devez encore ${Montants.avecSymbole(reste)} au fournisseur : ce retour réduit votre dette de ${Montants.avecSymbole(impute)}. Aucun argent n’est rendu.`;
             } else if (impute === 0n) {
-                explication = `Vous ne devez plus rien au fournisseur : les ${Montants.afficher(excedent)} GNF déjà payés sont à récupérer en argent ou à garder en avoir chez lui.`;
+                explication = `Vous ne devez plus rien au fournisseur : les ${Montants.avecSymbole(excedent)} déjà payés sont à récupérer en argent ou à garder en avoir chez lui.`;
             } else {
-                explication = `${Montants.afficher(impute)} GNF réduisent votre dette envers le fournisseur (sans argent) ; les ${Montants.afficher(excedent)} GNF déjà payés sont à récupérer en argent ou à garder en avoir chez lui.`;
+                explication = `${Montants.avecSymbole(impute)} réduisent votre dette envers le fournisseur (sans argent) ; les ${Montants.avecSymbole(excedent)} déjà payés sont à récupérer en argent ou à garder en avoir chez lui.`;
             }
             texte('retourExplication', explication);
 

@@ -54,7 +54,7 @@ public class PlanComptesService {
 
     /** Parent officiel proposé pour un type de compte de trésorerie. */
     public static String parentTresorerie(TypeCompteTresorerie type) {
-        return switch (type) { case ESPECES -> "571"; case ORANGE_MONEY -> "552"; case BANQUE -> "521"; };
+        return switch (type) { case ESPECES -> "571"; case MOBILE_MONEY -> "552"; case BANQUE -> "521"; };
     }
 
     /** Crée le sous-compte de chaque compte de trésorerie qui n'en a pas, et remet à jour l'intitulé de ceux dont le compte a été renommé. */

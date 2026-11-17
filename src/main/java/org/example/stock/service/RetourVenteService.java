@@ -50,6 +50,7 @@ import java.util.Set;
  */
 @Service
 public class RetourVenteService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     public static final int MOTIF_LONGUEUR_MAXIMALE = 255;
 
@@ -210,13 +211,13 @@ public class RetourVenteService {
         if (excedent.signum() > 0) {
             mode = form.getModeRemboursement();
             if (mode == null) {
-                throw new IllegalArgumentException("Il reste " + excedent.toPlainString() + " GNF à rembourser : choisissez de rendre l'argent ou de le garder en avoir.");
+                throw new IllegalArgumentException("Il reste " + montants.format(excedent) + " à rembourser : choisissez de rendre l'argent ou de le garder en avoir.");
             }
             if (mode == ModeRemboursement.AVOIR && client == null) {
                 throw new IllegalArgumentException("Une vente sans client ne peut être remboursée qu'en argent : un avoir demande un client pour le garder.");
             }
             if (mode == ModeRemboursement.ARGENT) {
-                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui rend l'argent (caisse, Orange Money ou banque).");
+                if (form.getComptePaiement() == null || form.getComptePaiement().isBlank()) throw new IllegalArgumentException("Choisissez le compte qui rend l'argent (caisse, mobile money ou banque).");
                 compte = comptes.resoudreUtilisable(form.getComptePaiement());
             }
         }

@@ -28,10 +28,12 @@ public final class Textes {
         return format("#,##0", valeur);
     }
 
-    /** Montant GNF comme à l'écran : sans décimales quand elles sont nulles, sinon deux décimales (virgule). */
+    /**
+     * Montant comme à l'écran : sans décimales (arrondi {@code HALF_UP}), espace insécable entre les milliers, sans symbole. La monnaie
+     * s'ajoute avec {@link org.example.stock.pays.Monnaie#formater(Number)} ; la base garde ses deux décimales, seul l'affichage arrondit.
+     */
     public static String montant(Number valeur) {
-        BigDecimal b = enDecimal(valeur).setScale(2, RoundingMode.HALF_UP);
-        return format(b.stripTrailingZeros().scale() <= 0 ? "#,##0" : "#,##0.00", b);
+        return org.example.stock.pays.Monnaie.nombre(valeur);
     }
 
     /** Pourcentage donné en pourcents : « 12,5 % » (espace insécable avant le signe). */

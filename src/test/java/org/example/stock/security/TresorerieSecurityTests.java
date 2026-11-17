@@ -77,7 +77,7 @@ class TresorerieSecurityTests {
         connecter();
         try {
             assertThat(caisse.getSoldesParType().get(ESPECES)).isEqualByComparingTo("900");
-            assertThat(caisse.getSoldesParType().get(ORANGE_MONEY)).isEqualByComparingTo("1100");
+            assertThat(caisse.getSoldesParType().get(MOBILE_MONEY)).isEqualByComparingTo("1100");
             assertThat(caisse.getSoldeActuel()).isEqualByComparingTo("3000"); assertThat(caisse.listerTous()).hasSize(5);
         } finally { SecurityContextHolder.clearContext(); }
         mvc.perform(commeGerant(transfert(jeton).param("motif", "Contenu modifié")).with(csrf())).andExpect(status().isBadRequest());

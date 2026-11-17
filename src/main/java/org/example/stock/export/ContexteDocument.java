@@ -1,5 +1,8 @@
 package org.example.stock.export;
 
+import org.example.stock.pays.Monnaie;
+import org.example.stock.pays.Pays;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,9 +13,19 @@ import java.util.List;
  *
  * @param logoDataUri logo PNG de la boutique en {@code data:image/png;base64,…} ; null s'il n'y en a pas
  * @param editeur     nom du compte qui édite le document
+ * @param monnaie     monnaie de la boutique : symbole des en-têtes de montants, format des cellules Excel, montants en lettres
  */
 public record ContexteDocument(String nomBoutique, String adresse, String telephones, String email, String logoDataUri,
-                               String editeur, LocalDateTime editeLe) {
+                               String editeur, LocalDateTime editeLe, Monnaie monnaie) {
+
+    public ContexteDocument {
+        if (monnaie == null) monnaie = Pays.PAR_DEFAUT.getMonnaie();
+    }
+
+    /** Contexte d'un document en monnaie par défaut (franc guinéen) : tests et documents sans boutique. */
+    public ContexteDocument(String nomBoutique, String adresse, String telephones, String email, String logoDataUri, String editeur, LocalDateTime editeLe) {
+        this(nomBoutique, adresse, telephones, email, logoDataUri, editeur, editeLe, null);
+    }
 
     /** Les lignes de coordonnées non vides, dans l'ordre d'affichage : adresse, téléphones, email. */
     public List<String> coordonnees() {

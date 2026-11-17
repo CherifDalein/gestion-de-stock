@@ -4,7 +4,7 @@
     <section class="record-page fin-page" aria-labelledby="annTitre">
         <header class="record-header">
             <div><p class="record-kicker" th:text="${e.numero}">EM-000001</p><h1 id="annTitre" th:text="${'Annuler le remboursement n° ' + remboursement.operation.id}">Annuler</h1>
-                <p class="record-intro" th:text="${'Capital ' + #numbers.formatDecimal(remboursement.capital, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF, intérêts ' + #numbers.formatDecimal(remboursement.interet, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF. Des mouvements inverses seront enregistrés ; rien n’est effacé.'}"></p></div>
+                <p class="record-intro" th:text="${'Capital ' + @montants.format(remboursement.capital) + ', intérêts ' + @montants.format(remboursement.interet) + '. Des mouvements inverses seront enregistrés ; rien n’est effacé.'}"></p></div>
             <a th:href="${retourUrl}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
         </header>
         <div class="alert alert-info" th:if="${remboursement.annule}" role="status">Ce remboursement est déjà annulé.</div>

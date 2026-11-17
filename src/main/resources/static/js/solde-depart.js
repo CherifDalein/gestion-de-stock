@@ -15,17 +15,23 @@
     }
 
     /** « 1 000 000 » ou « 1 000 000,50 » (valeur absolue). */
-    function formater(centimes) {
-        const absolu = centimes < 0n ? -centimes : centimes;
-        const entier = String(absolu / 100n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-        const fraction = absolu % 100n;
-        return fraction === 0n ? entier : `${entier},${String(fraction).padStart(2, '0')}`;
+    /** Symbole de la monnaie de la boutique (attribut data-monnaie du <body>, posé par le serveur) ; jamais écrit en dur. */
+    function symbole() {
+        return (typeof document !== 'undefined' && document.body && document.body.dataset && document.body.dataset.monnaie) || '';
     }
 
-    /** Solde avec son sens, sans signe : « 1 000 000 GNF (il me doit) », « 1 000 000 GNF (je lui dois) » ou « 0 GNF ». */
+    /** Arrondi HALF_UP à l'unité, comme l'affichage serveur : les calculs restent en centimes. */
+    function entierArrondi(absolu) { return (absolu + 50n) / 100n; }
+
+    function formater(centimes) {
+        const absolu = centimes < 0n ? -centimes : centimes;
+        return String(entierArrondi(absolu)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    }
+
+    /** Solde avec son sens, sans signe : « 1 000 000 FCFA (il me doit) », « 1 000 000 FCFA (je lui dois) » ou « 0 FCFA » (symbole de la boutique). */
     function signe(centimes) {
-        if (centimes === 0n) return '0 GNF';
-        return centimes > 0n ? `${formater(centimes)} GNF (il me doit)` : `${formater(centimes)} GNF (je lui dois)`;
+        if (centimes === 0n) return `0\u00a0${symbole()}`;
+        return centimes > 0n ? `${formater(centimes)}\u00a0${symbole()} (il me doit)` : `${formater(centimes)}\u00a0${symbole()} (je lui dois)`;
     }
 
     /** Solde signé saisi : le montant, négatif quand le sens est « je lui dois ». */
@@ -37,7 +43,7 @@
 
     function apercu(montant) {
         const centimes = lire(montant);
-        return centimes === null || centimes === 0n ? '' : `= ${formater(centimes)} GNF`;
+        return centimes === null || centimes === 0n ? '' : `= ${formater(centimes)}\u00a0${symbole()}`;
     }
 
     function confirmation(ancien, nouveau) {

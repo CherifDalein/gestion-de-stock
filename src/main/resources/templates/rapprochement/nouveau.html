@@ -8,7 +8,7 @@
                 <p class="record-intro">Recopiez la période et les deux soldes imprimés sur le relevé de la banque ou de l'opérateur. Les lignes viennent ensuite, à la main ou par un fichier.</p></div>
             <a th:href="@{/rapprochements}" class="btn btn-outline-secondary record-back"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Retour</a>
         </header>
-        <p class="alert alert-warning" th:if="${#lists.isEmpty(comptes)}">Aucun compte Banque ou Orange Money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
+        <p class="alert alert-warning" th:if="${#lists.isEmpty(comptes)}">Aucun compte Banque ou mobile money actif. Ajoutez-en un dans <a th:href="@{/caisse/comptes}">Comptes de trésorerie</a>.</p>
         <form th:unless="${#lists.isEmpty(comptes)}" th:action="@{/rapprochements}" th:object="${releveForm}" method="post" id="formReleve" novalidate>
             <div class="record-errors" role="alert" th:if="${#fields.hasErrors('*')}"><p th:each="err : ${#fields.errors('*')}" th:text="${err}"></p></div>
             <input type="hidden" th:field="*{jeton}" />
@@ -30,8 +30,8 @@
                 <div class="record-panel-heading"><h2 id="rapNouveauSoldesTitre">Soldes du relevé</h2>
                     <p>Le solde d'ouverture proposé est la clôture du relevé précédent du compte. Un solde peut être négatif.</p></div>
                 <div class="rap-grille">
-                    <div class="record-field"><label for="releveOuverture">Solde d'ouverture (GNF)</label><input id="releveOuverture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeOuverture}" required /></div>
-                    <div class="record-field"><label for="releveCloture">Solde de clôture (GNF)</label><input id="releveCloture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeCloture}" required /></div>
+                    <div class="record-field"><label for="releveOuverture">Solde d'ouverture ([[${@montants.symbole}]])</label><input id="releveOuverture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeOuverture}" required /></div>
+                    <div class="record-field"><label for="releveCloture">Solde de clôture ([[${@montants.symbole}]])</label><input id="releveCloture" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{soldeCloture}" required /></div>
                 </div>
             </section>
             <div class="record-actions">

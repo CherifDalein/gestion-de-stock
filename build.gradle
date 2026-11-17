@@ -464,6 +464,23 @@ tasks.register('lot6MariaDbTest', JavaExec) {
     finalizedBy 'corbeilleMariaDbTest'
 }
 
+['paysMonnaieCheck': '--check', 'paysMonnaieMigrate': '--apply'].each { taskName, mode ->
+    tasks.register(taskName, JavaExec) {
+        group = 'database'
+        description = 'Ajoute le pays et la monnaie des boutiques (Guinée, GNF pour les existantes) et l’opérateur des comptes de mobile money (ORANGE_MONEY devient MOBILE_MONEY) ; --apply exige PAYS_MONNAIE_BACKUP_DIR'
+        classpath = sourceSets.migration.runtimeClasspath
+        mainClass = 'org.example.stock.migration.PaysMonnaieMigration'
+        args mode
+    }
+}
+
+tasks.register('paysMonnaieMariaDbTest', JavaExec) {
+    group = 'verification'
+    description = 'Vérifie la migration pays-monnaie (idempotence, données conservées, immuabilité) et la validation Hibernate dans des bases MariaDB temporaires'
+    classpath = sourceSets.migration.runtimeClasspath
+    mainClass = 'org.example.stock.migration.PaysMonnaieMariaDbTest'
+}
+
 tasks.register('corbeilleMariaDbTest', JavaExec) {
     group = 'verification'
     description = 'Vérifie la corbeille (SQL natif de CorbeilleService : lister, restaurer, conflit de nom, effacement, vidage, purge) sur MariaDB temporaire'

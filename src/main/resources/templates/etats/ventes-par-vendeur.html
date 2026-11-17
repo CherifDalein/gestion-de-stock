@@ -54,26 +54,26 @@
                                 <small th:if="${l.desactive}" class="text-muted"> (compte désactivé)</small>
                             </th>
                             <td class="text-end" data-colonne="ventes" th:text="${l.nombreVentes}"></td>
-                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${#numbers.formatDecimal(l.chiffreAffaires, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${@montants.format(l.chiffreAffaires)}"></td>
                             <td class="text-end" data-colonne="benefice">
-                                <span th:text="${#numbers.formatDecimal(l.beneficeBrut, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                                <span th:text="${@montants.format(l.beneficeBrut)}"></span>
                                 <small th:if="${l.lignesSansCout > 0}" class="d-block text-muted" data-sans-cout
                                        th:text="${l.lignesSansCout + (l.lignesSansCout == 1 ? ' ligne sans coût connu, comptée à 0' : ' lignes sans coût connu, comptées à 0')}"></small>
                             </td>
-                            <td class="text-end" data-colonne="panier" th:text="${#numbers.formatDecimal(l.panierMoyen, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                            <td class="text-end" data-colonne="panier" th:text="${@montants.format(l.panierMoyen)}"></td>
                         </tr>
                         </tbody>
                         <tfoot>
                         <tr data-vendeur-total>
                             <th scope="row">Total</th>
                             <td class="text-end" data-colonne="ventes" th:text="${etat.total.nombreVentes}"></td>
-                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${#numbers.formatDecimal(etat.total.chiffreAffaires, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                            <td class="text-end fw-bold" data-colonne="chiffre" th:text="${@montants.format(etat.total.chiffreAffaires)}"></td>
                             <td class="text-end" data-colonne="benefice">
-                                <span th:text="${#numbers.formatDecimal(etat.total.beneficeBrut, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span>
+                                <span th:text="${@montants.format(etat.total.beneficeBrut)}"></span>
                                 <small th:if="${etat.lignesSansCout > 0}" class="d-block text-muted" data-sans-cout
                                        th:text="${etat.lignesSansCout + (etat.lignesSansCout == 1 ? ' ligne sans coût connu, comptée à 0' : ' lignes sans coût connu, comptées à 0')}"></small>
                             </td>
-                            <td class="text-end" data-colonne="panier" th:text="${#numbers.formatDecimal(etat.total.panierMoyen, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                            <td class="text-end" data-colonne="panier" th:text="${@montants.format(etat.total.panierMoyen)}"></td>
                         </tr>
                         </tfoot>
                     </table>

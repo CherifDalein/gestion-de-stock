@@ -63,7 +63,7 @@ class ComptageCaisseTests {
         utilisateur(GERANT, Role.ADMIN, boutique); utilisateur(CAISSIER, Role.CAISSIER, boutique); utilisateur(AUTRE_CAISSIER, Role.CAISSIER, boutique);
         utilisateur(AUTRE_GERANT, Role.ADMIN, autre);
         caisse = ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES);
-        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY);
+        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.MOBILE_MONEY);
         caisse2 = comptesRepo.saveAndFlush(new CompteTresorerieBoutique(boutique, TypeCompteTresorerie.ESPECES, "Caisse arrière", false, 9));
         caisseAutre = ComptesDeTest.de(autre, TypeCompteTresorerie.ESPECES);
         solde(caisse, "100000"); solde(orange, "50000"); solde(caisse2, "30000"); solde(caisseAutre, "999");
@@ -97,7 +97,7 @@ class ComptageCaisseTests {
         assertThat(nombreEnAttente()).isEqualTo(1);
         String liste = mvc.perform(get("/controles/comptages").with(user(CAISSIER).roles("CAISSIER"))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
-        assertThat(liste).contains("CC-" + c.getId(), "En attente de validation", "97 500,00 GNF").doesNotContain("100 000", "2 500,00", "Théorique");
+        assertThat(liste).contains("CC-" + c.getId(), "En attente de validation", "97\u00a0500\u00a0GNF").doesNotContain("100 000", "2\u00a0500", "Théorique");
         // Le badge du gérant sur le tableau de bord.
         String accueil = mvc.perform(get("/").with(user(GERANT).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(accueil).contains("comptagesEnAttenteAlerte", "1 comptage de caisse attend");
@@ -264,7 +264,7 @@ class ComptageCaisseTests {
         assertThat(lu.getBilletage()).extracting(LigneBilletage::getCoupure).containsExactly(20000, 10000, 5000, 2000, 500, 100);
         assertThat(lu.getBilletage()).extracting(LigneBilletage::getQuantite).containsExactly(3, 2, 1, 4, 7, 1);
         String page = mvc.perform(get("/controles/comptages/" + c.getId()).with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString();
-        assertThat(page).contains("Billetage", "20 000 GNF", "96 600,00 GNF");
+        assertThat(page).contains("Billetage", "20\u00a0000\u00a0GNF", "96\u00a0600\u00a0GNF");
     }
 
     @Test
@@ -330,7 +330,7 @@ class ComptageCaisseTests {
                 .doesNotContain("100000.00", "100 000", "50000.00", "50 000", "data-solde", "comptageTheorique", "comptageEcart", "Solde théorique", "Écart");
         ComptageCaisse c = compter(CAISSIER, "CAISSE", "97500", "j-aveugle");
         String detail = page("/controles/comptages/" + c.getId(), CAISSIER, "CAISSIER");
-        assertThat(detail).contains("En attente de validation", "97 500,00 GNF")
+        assertThat(detail).contains("En attente de validation", "97\u00a0500\u00a0GNF")
                 .doesNotContain("100000.00", "100 000", "2 500", "Solde théorique", "Écart", "/pdf", "Procès-verbal");
         String liste = page("/controles/comptages", CAISSIER, "CAISSIER");
         assertThat(liste).doesNotContain("100 000", "2 500", "Théorique", "Écart");
@@ -353,8 +353,8 @@ class ComptageCaisseTests {
         assertThat(formulaire).contains("data-solde=\"100000.00\"", "comptageTheorique", "comptageEcart", "Solde théorique");
         ComptageCaisse c = compter(CAISSIER, "CAISSE", "97500", "j-gerant-voit");
         String detail = page("/controles/comptages/" + c.getId(), GERANT, "ADMIN");
-        assertThat(detail).contains("100 000,00 GNF", "2 500,00", "Solde théorique", "/pdf");
-        assertThat(page("/controles/comptages", GERANT, "ADMIN")).contains("100 000,00 GNF", "Théorique");
+        assertThat(detail).contains("100\u00a0000\u00a0GNF", "2\u00a0500", "Solde théorique", "/pdf");
+        assertThat(page("/controles/comptages", GERANT, "ADMIN")).contains("100\u00a0000\u00a0GNF", "Théorique");
     }
 
     @Test
@@ -363,7 +363,7 @@ class ComptageCaisseTests {
         ComptageCaisse c = compter(CAISSIER, "CAISSE", "1000", "j-negatif");   // théorique 100 000, manque de 99 000
         solde(caisse, "-98000");                                            // le solde actuel tombe à 2 000 : valider le laisserait à -97 000
         String attente = page("/controles/comptages/en-attente", GERANT, "ADMIN");
-        assertThat(attente).contains("valider ce manque le rendrait négatif", "2 000,00 GNF");
+        assertThat(attente).contains("valider ce manque le rendrait négatif", "2\u00a0000\u00a0GNF");
         assertThat(page("/controles/comptages/" + c.getId(), GERANT, "ADMIN")).contains("valider ce manque le rendrait négatif");
         ComptageCaisse petit = compter(CAISSIER, "CAISSE", "1999", "j-negatif2");
         solde(caisse, "200000");

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import org.example.stock.pays.Monnaie;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,28 +35,37 @@ class MontantEnLettresTests {
 
     @Test
     void lesMontantsEnFrancsGuineens() {
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("125000"))).isEqualTo("cent vingt-cinq mille francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("125000.00"))).isEqualTo("cent vingt-cinq mille francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(BigDecimal.ZERO)).isEqualTo("zéro franc guinéen");
-        assertThat(MontantEnLettres.francsGuineens(BigDecimal.ONE)).isEqualTo("un franc guinéen");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("2"))).isEqualTo("deux francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("125000"), Monnaie.GNF)).isEqualTo("cent vingt-cinq mille francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("125000.00"), Monnaie.GNF)).isEqualTo("cent vingt-cinq mille francs guinéens");
+        assertThat(MontantEnLettres.montant(BigDecimal.ZERO, Monnaie.GNF)).isEqualTo("zéro franc guinéen");
+        assertThat(MontantEnLettres.montant(BigDecimal.ONE, Monnaie.GNF)).isEqualTo("un franc guinéen");
+        assertThat(MontantEnLettres.montant(new BigDecimal("2"), Monnaie.GNF)).isEqualTo("deux francs guinéens");
         // Une somme qui se termine par « million(s) » ou « milliard(s) » prend « de ».
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("1000000"))).isEqualTo("un million de francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("2000000"))).isEqualTo("deux millions de francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("3000000000"))).isEqualTo("trois milliards de francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("2000001"))).isEqualTo("deux millions un francs guinéens");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("1250300"))).isEqualTo("un million deux cent cinquante mille trois cents francs guinéens");
-        // Centimes et montant négatif.
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("1250.50"))).isEqualTo("mille deux cent cinquante francs guinéens et cinquante centimes");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("0.01"))).isEqualTo("zéro franc guinéen et un centime");
-        assertThat(MontantEnLettres.francsGuineens(new BigDecimal("-5000"))).isEqualTo("moins cinq mille francs guinéens");
-        assertThat(MontantEnLettres.francsGuineensEnPhrase(new BigDecimal("80"))).isEqualTo("Quatre-vingts francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("1000000"), Monnaie.GNF)).isEqualTo("un million de francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("2000000"), Monnaie.GNF)).isEqualTo("deux millions de francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("3000000000"), Monnaie.GNF)).isEqualTo("trois milliards de francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("2000001"), Monnaie.GNF)).isEqualTo("deux millions un francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("1250300"), Monnaie.GNF)).isEqualTo("un million deux cent cinquante mille trois cents francs guinéens");
+        // Pas de centimes : le montant est arrondi au franc (HALF_UP), comme à l'affichage.
+        assertThat(MontantEnLettres.montant(new BigDecimal("1250.50"), Monnaie.GNF)).isEqualTo("mille deux cent cinquante et un francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("0.01"), Monnaie.GNF)).isEqualTo("zéro franc guinéen");
+        assertThat(MontantEnLettres.montant(new BigDecimal("-5000"), Monnaie.GNF)).isEqualTo("moins cinq mille francs guinéens");
+        assertThat(MontantEnLettres.montantEnPhrase(new BigDecimal("80"), Monnaie.GNF)).isEqualTo("Quatre-vingts francs guinéens");
+    }
+
+    @Test
+    void lesMontantsEnFrancsCfa() {
+        assertThat(MontantEnLettres.montant(new BigDecimal("140000"), Monnaie.XOF)).isEqualTo("cent quarante mille francs CFA");
+        assertThat(MontantEnLettres.montant(new BigDecimal("140000"), Monnaie.GNF)).isEqualTo("cent quarante mille francs guinéens");
+        assertThat(MontantEnLettres.montant(new BigDecimal("1"), Monnaie.XAF)).isEqualTo("un franc CFA");
+        assertThat(MontantEnLettres.montant(new BigDecimal("2000000"), Monnaie.XAF)).isEqualTo("deux millions de francs CFA");
+        assertThat(MontantEnLettres.montantEnPhrase(new BigDecimal("80"), Monnaie.XOF)).isEqualTo("Quatre-vingts francs CFA");
     }
 
     @Test
     void lesNombresTropGrandsSontRefuses() {
         assertThatThrownBy(() -> MontantEnLettres.enLettres(MontantEnLettres.MAXIMUM + 1)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> MontantEnLettres.francsGuineens(null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> MontantEnLettres.montant(null, Monnaie.GNF)).isInstanceOf(IllegalArgumentException.class);
         assertThat(MontantEnLettres.enLettres(MontantEnLettres.MAXIMUM)).startsWith("neuf cent quatre-vingt-dix-neuf milliards");
     }
 

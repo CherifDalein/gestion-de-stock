@@ -17,8 +17,8 @@ function definirAvanceDisponible(centimes) {
 function actualiserAvanceUtilisee(utilisee, surplus) {
     const info = document.getElementById('avanceUtiliseeInfo');
     if (!info) return;
-    info.textContent = utilisee > 0n ? `Avance utilisée automatiquement : ${Montants.afficher(utilisee)} GNF`
-        : surplus > 0n ? `Trop-payé : ${Montants.afficher(surplus)} GNF deviendront une avance chez le fournisseur.` : '';
+    info.textContent = utilisee > 0n ? `Avance utilisée automatiquement : ${Montants.avecSymbole(utilisee)}`
+        : surplus > 0n ? `Trop-payé : ${Montants.avecSymbole(surplus)} deviendront une avance chez le fournisseur.` : '';
     info.hidden = utilisee <= 0n && surplus <= 0n;
 }
 

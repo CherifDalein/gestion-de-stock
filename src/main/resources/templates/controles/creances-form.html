@@ -28,12 +28,12 @@
                 <p class="record-help" th:if="${#lists.isEmpty(candidats.liste)}">Aucun partenaire à inventorier.</p>
                 <div class="table-responsive" th:unless="${#lists.isEmpty(candidats.liste)}">
                     <table class="table fin-table fin-empilee">
-                        <thead><tr><th>Partenaire</th><th class="text-end">Solde de l'application</th><th>Solde confirmé (GNF)</th><th>Sens</th><th>Raison d'un écart</th></tr></thead>
+                        <thead><tr><th>Partenaire</th><th class="text-end">Solde de l'application</th><th>Solde confirmé ([[${@montants.symbole}]])</th><th>Sens</th><th>Raison d'un écart</th></tr></thead>
                         <tbody>
                         <tr th:each="c, i : ${candidats.liste}">
                             <td data-label="Partenaire"><strong th:text="${c.nom}">Aminata</strong><br><small th:text="${c.type.libelle}">Client</small>
                                 <input type="hidden" th:name="${'cles[' + i.index + ']'}" th:value="${c.cle()}" /></td>
-                            <td data-label="Solde appli" class="text-end ctl-montant" th:text="${c.solde.signum() == 0 ? '0 GNF' : #numbers.formatDecimal(c.solde.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF (' + (c.solde.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0 GNF</td>
+                            <td data-label="Solde appli" class="text-end ctl-montant" th:text="${c.solde.signum() == 0 ? @montants.format(0) : @montants.format(c.solde.abs()) + ' (' + (c.solde.signum() > 0 ? 'il me doit' : 'je lui dois') + ')'}">0</td>
                             <td data-label="Confirmé"><input type="number" min="0" step="0.01" inputmode="decimal" class="form-control" th:name="${'montants[' + i.index + ']'}" th:attr="aria-label=${'Solde confirmé par ' + c.nom}" /></td>
                             <td data-label="Sens"><select class="form-select" th:name="${'sens[' + i.index + ']'}" th:attr="aria-label=${'Sens du solde confirmé par ' + c.nom}">
                                 <option value="IL_ME_DOIT" th:selected="${c.solde.signum() >= 0}">Il me doit</option>

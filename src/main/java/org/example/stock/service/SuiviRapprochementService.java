@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Suivi du dernier rapprochement validé de chaque compte Banque et Orange Money (tableau de bord du gérant). */
+/** Suivi du dernier rapprochement validé de chaque compte Banque et mobile money (tableau de bord du gérant). */
 @Service
 public class SuiviRapprochementService {
     /** Au-delà de ce nombre de jours sans rapprochement validé, le compte est signalé. */

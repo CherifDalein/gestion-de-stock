@@ -34,9 +34,9 @@
 <h2 class="js-section" th:text="${j.titreSolde} + ' au ' + ${#temporals.format(j.arrete, 'dd/MM/yyyy')}">Solde</h2>
 <div class="js-cadre">
     <p class="js-phrase" th:text="${j.attestation}">Le client doit à la boutique la somme de</p>
-    <p class="js-chiffres" th:unless="${j.estNul()}" th:text="${fmt.montant(j.montant)} + ' GNF'">125 000 GNF</p>
+    <p class="js-chiffres" th:unless="${j.estNul()}" th:text="${monnaie.formater(j.montant)}">0</p>
     <p class="js-lettres" th:unless="${j.estNul()}" th:text="${'Soit ' + j.montantEnLettres + '.'}">Soit cent vingt-cinq mille francs guinéens.</p>
-    <p class="js-chiffres" th:if="${j.estNul()}">0 GNF</p>
+    <p class="js-chiffres" th:if="${j.estNul()}">0</p>
     <p class="js-lettres" th:if="${j.estNul()}" th:text="${'Soit ' + j.montantEnLettres + '.'}">Soit zéro franc guinéen.</p>
 </div>
 
@@ -44,7 +44,7 @@
 <table class="js-detail">
     <thead>
     <tr>
-        <th>Élément</th><th>Date</th><th>Échéance</th><th class="num">Montant (GNF)</th>
+        <th>Élément</th><th>Date</th><th>Échéance</th><th class="num">Montant ([[${monnaie.symbole}]])</th>
     </tr>
     </thead>
     <tbody>
@@ -96,7 +96,7 @@
 </th:block>
 
 <p class="js-arrete" th:text="${j.arreteEnPhrase}">Arrêté à la somme de cent vingt-cinq mille francs guinéens.</p>
-<p class="js-mention" th:text="${'Montants en francs guinéens (GNF). Ce solde est celui de la fiche du ' + (j.estClient() ? 'client' : 'fournisseur') + ' à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.'}">Mention</p>
+<p class="js-mention" th:text="${'Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + '). Ce solde est celui de la fiche du ' + (j.estClient() ? 'client' : 'fournisseur') + ' à la date du jour d’édition : l’application ne conserve pas l’historique des soldes, la date d’arrêté est donc la date d’édition.'}">Mention</p>
 
 <table class="js-signatures">
     <tr>

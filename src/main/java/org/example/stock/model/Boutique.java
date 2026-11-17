@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Email;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.DynamicUpdate;
@@ -13,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.example.stock.enums.TypeCompteTresorerie;
 import org.example.stock.enums.FormatRecu;
+import org.example.stock.pays.Monnaie;
+import org.example.stock.pays.Pays;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -26,9 +29,53 @@ public class Boutique {
     @OneToMany(mappedBy = "boutique", cascade = CascadeType.ALL)
     private List<CompteTresorerieBoutique> comptesTresorerie = new ArrayList<>();
 
+    /**
+     * Pays et monnaie : choisis à la création de la boutique, JAMAIS modifiés ensuite (colonnes non modifiables, pas de setter, refus de
+     * {@link #definirPays(Pays)} une fois la boutique enregistrée). Le pays fixe la monnaie. Guinée / GNF tant qu'on n'en choisit pas d'autre.
+     */
+    @Convert(converter = PaysConvertisseur.class)
+    @Column(name = "pays", nullable = false, updatable = false, length = 2)
+    @Setter(AccessLevel.NONE)
+    private Pays pays = Pays.PAR_DEFAUT;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "monnaie", nullable = false, updatable = false, length = 3)
+    @Setter(AccessLevel.NONE)
+    private Monnaie monnaie = Pays.PAR_DEFAUT.getMonnaie();
+
     public Boutique() {
         for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
-            comptesTresorerie.add(new CompteTresorerieBoutique(this, type, type.getNomParDefaut(), true, type.ordinal()));
+            CompteTresorerieBoutique compte = new CompteTresorerieBoutique(this, type, type.getNomParDefaut(Pays.PAR_DEFAUT), true, type.ordinal());
+            if (type == TypeCompteTresorerie.MOBILE_MONEY) compte.definirOperateur(Pays.PAR_DEFAUT.operateurParDefaut());
+            comptesTresorerie.add(compte);
+        }
+    }
+
+    /** Boutique créée dans un pays donné : sa monnaie en découle, et son compte mobile money de base porte l'opérateur le plus répandu de ce pays. */
+    public Boutique(Pays pays) {
+        this();
+        definirPays(pays);
+    }
+
+    /**
+     * Fixe le pays (donc la monnaie) d'une boutique qui n'est pas encore enregistrée.
+     *
+     * @throws IllegalStateException si la boutique existe déjà et que le pays change : le pays et la monnaie ne changent jamais
+     */
+    public void definirPays(Pays nouveau) {
+        if (nouveau == null) throw new IllegalArgumentException("Choisissez le pays de la boutique.");
+        if (id != null) {
+            if (nouveau != pays) throw new IllegalStateException("Le pays et la monnaie d'une boutique ne peuvent plus être modifiés après sa création.");
+            return;
+        }
+        pays = nouveau;
+        monnaie = nouveau.getMonnaie();
+        for (CompteTresorerieBoutique compte : comptesTresorerie) {
+            if (compte.getType() == TypeCompteTresorerie.MOBILE_MONEY) {
+                compte.renommer(compte.getType().getNomParDefaut(nouveau), null);
+                compte.definirOperateur(nouveau.operateurParDefaut());
+            }
         }
     }
 

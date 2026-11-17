@@ -20,7 +20,7 @@
                 <ul class="record-help rap-regles">
                     <li>5 000 lignes au plus par fichier. Le format Excel ancien (.xls) et le PDF ne sont pas pris en charge.</li>
                     <li>CSV : séparateur <code>;</code>, virgule ou tabulation, encodage UTF-8 ou Windows-1252, reconnus automatiquement.</li>
-                    <li>Dates : jj/mm/aaaa, aaaa-mm-jj ou jj-mm-aaaa. Montants : virgule ou point décimal ; les espaces, « GNF » et « FG » sont ignorés.</li>
+                    <li>Dates : jj/mm/aaaa, aaaa-mm-jj ou jj-mm-aaaa. Montants : virgule ou point décimal ; les espaces, le symbole de la monnaie (« [[${@montants.symbole}]] ») et « FG » sont ignorés.</li>
                     <li>Le fichier n'est pas conservé : il est lu en mémoire, puis oublié après l'import ou au bout de 30 minutes.</li>
                     <li>Une ligne déjà importée sur ce compte (même date, montant, libellé et référence) est signalée comme doublon et ignorée par défaut.</li>
                 </ul>

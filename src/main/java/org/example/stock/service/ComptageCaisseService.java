@@ -10,6 +10,7 @@ import org.example.stock.model.Montants;
 import org.example.stock.model.MouvementCaisse;
 import org.example.stock.model.SourceMouvement;
 import org.example.stock.model.Utilisateur;
+import org.example.stock.pays.Monnaie;
 import org.example.stock.repository.ComptageCaisseRepository;
 import org.example.stock.repository.MouvementCaisseRepository;
 import org.example.stock.repository.StockLockRepository;
@@ -76,7 +77,8 @@ public class ComptageCaisseService {
         if (note != null && (note.length() > COMMENTAIRE_MAXIMUM || note.chars().anyMatch(c -> Character.isISOControl(c) && c != '\n' && c != '\r'))) {
             throw new IllegalArgumentException("Le commentaire comporte au plus " + COMMENTAIRE_MAXIMUM + " caractères, sans caractère de contrôle.");
         }
-        Billetage.controler(quantites);
+        Monnaie monnaie = boutiques.boutiqueCourante().getMonnaie();
+        Billetage.controler(monnaie, quantites);
         verrous.verrouillerBoutiqueCourante();
         verrouExercice.exigerOuvert(LocalDateTime.now());
         Utilisateur acteur = utilisateurCourant();
@@ -90,7 +92,7 @@ public class ComptageCaisseService {
         // Compte verrouillé en exclusif : le solde théorique lu ensuite est celui de l'instant du comptage, sans mouvement concurrent.
         CompteTresorerieBoutique compte = comptes.verrouiller(boutiqueId, acteur, false, true, List.of(choisi.getId())).get(choisi.getId());
 
-        BigDecimal total = montantCompte(compte, montantSaisi, quantites);
+        BigDecimal total = montantCompte(compte, montantSaisi, quantites, monnaie);
         BigDecimal theorique = Montants.ouZero(mouvements.calculerSoldeCompte(boutiqueId, compte.getId()));
         BigDecimal ecart = total.subtract(theorique);
 
@@ -106,24 +108,25 @@ public class ComptageCaisseService {
         comptage.setStatut(ecart.signum() == 0 ? StatutComptage.CONFORME : StatutComptage.EN_ATTENTE);
         comptage.setJeton(jeton);
         if (Billetage.saisi(quantites)) {
-            for (int i = 0; i < Billetage.COUPURES.size() && i < quantites.size(); i++) {
+            List<Integer> coupures = Billetage.coupures(monnaie);
+            for (int i = 0; i < coupures.size() && i < quantites.size(); i++) {
                 Integer quantite = quantites.get(i);
-                if (quantite != null && quantite > 0) comptage.ajouterLigne(Billetage.COUPURES.get(i), quantite);
+                if (quantite != null && quantite > 0) comptage.ajouterLigne(coupures.get(i), quantite);
             }
         }
         return comptages.saveAndFlush(comptage);
     }
 
-    private static BigDecimal montantCompte(CompteTresorerieBoutique compte, BigDecimal montantSaisi, List<Integer> quantites) {
+    private static BigDecimal montantCompte(CompteTresorerieBoutique compte, BigDecimal montantSaisi, List<Integer> quantites, Monnaie monnaie) {
         boolean billetage = Billetage.saisi(quantites);
         if (billetage && compte.getType() != TypeCompteTresorerie.ESPECES) {
             throw new IllegalArgumentException("Le billetage ne concerne que les comptes d'espèces.");
         }
         if (billetage) {
-            BigDecimal total = Montants.valider(Billetage.total(quantites), "Le total du billetage");
+            BigDecimal total = Montants.valider(Billetage.total(monnaie, quantites), "Le total du billetage");
             if (montantSaisi != null && montantSaisi.compareTo(total) != 0) {
-                throw new IllegalArgumentException("Le montant compté (" + Montants.valider(montantSaisi, "Le montant compté").toPlainString()
-                        + ") ne correspond pas au total du billetage (" + total.toPlainString() + ").");
+                throw new IllegalArgumentException("Le montant compté (" + monnaie.formater(Montants.valider(montantSaisi, "Le montant compté"))
+                        + ") ne correspond pas au total du billetage (" + monnaie.formater(total) + ").");
             }
             return total;
         }

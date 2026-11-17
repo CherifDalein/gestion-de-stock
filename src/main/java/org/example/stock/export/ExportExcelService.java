@@ -44,7 +44,7 @@ public class ExportExcelService {
     public byte[] ecrire(List<TableauExport> tableaux, ContexteDocument contexte) {
         if (tableaux == null || tableaux.isEmpty()) throw new IllegalArgumentException("Un classeur doit avoir au moins une feuille");
         try (Workbook classeur = new XSSFWorkbook(); ByteArrayOutputStream sortie = new ByteArrayOutputStream()) {
-            Styles styles = new Styles(classeur);
+            Styles styles = new Styles(classeur, contexte.monnaie());
             for (TableauExport tableau : tableaux) ecrireFeuille(classeur, styles, tableau, contexte);
             classeur.write(sortie);
             return sortie.toByteArray();
@@ -67,7 +67,7 @@ public class ExportExcelService {
             for (String note : tableau.getNotes()) ligne = texteEnTete(feuille, ligne, note, styles.normal, styles);
             String edition = "Édité le " + contexte.editeLeTexte()
                     + (contexte.editeur() == null || contexte.editeur().isBlank() ? "" : " par " + contexte.editeur())
-                    + (tableau.aDesMontants() ? " · Montants en GNF" : "");
+                    + (tableau.aDesMontants() ? " · Montants en " + contexte.monnaie().getSymbole() : "");
             ligne = texteEnTete(feuille, ligne, edition, styles.normal, styles);
             ligne++; // ligne vide
 
@@ -142,11 +142,11 @@ public class ExportExcelService {
                     return Textes.entier(n).length();
                 }
                 case MONTANT -> {
+                    // Un vrai nombre, valeur exacte conservée ; le format de la cellule n'affiche pas de décimales et ajoute le symbole.
                     BigDecimal b = Textes.enDecimal((Number) valeur);
-                    boolean entier = b.setScale(2, java.math.RoundingMode.HALF_UP).stripTrailingZeros().scale() <= 0;
                     cellule.setCellValue(b.doubleValue());
-                    cellule.setCellStyle(styles.nombre(entier ? Styles.MONTANT_ENTIER : Styles.MONTANT_DECIMAL, totaux));
-                    return Textes.montant(b).length();
+                    cellule.setCellStyle(styles.nombre(Styles.MONTANT, totaux));
+                    return Textes.montant(b).length() + styles.symbole.length() + 1;
                 }
                 case POURCENTAGE -> {
                     BigDecimal b = Textes.enDecimal((Number) valeur);
@@ -203,17 +203,22 @@ public class ExportExcelService {
 
     /** Styles du classeur, créés une seule fois (Excel limite leur nombre à environ 64 000). */
     private static final class Styles {
-        static final int ENTIER = 0, MONTANT_ENTIER = 1, MONTANT_DECIMAL = 2, POURCENT_0 = 3, POURCENT_1 = 4, POURCENT_2 = 5, DATE = 6, DATE_HEURE = 7;
-        static final String[] FORMATS = {"#,##0", "#,##0", "#,##0.00", "0%", "0.0%", "0.00%", "dd/mm/yyyy", "dd/mm/yyyy hh:mm"};
+        static final int ENTIER = 0, MONTANT = 1, POURCENT_0 = 2, POURCENT_1 = 3, POURCENT_2 = 4, DATE = 5, DATE_HEURE = 6;
 
         private final Workbook classeur;
+        final String symbole;
+        final String[] formats;
         final CellStyle boutique, titre, normal, texte, totalTexte, totalVide;
-        private final CellStyle[] donnees = new CellStyle[FORMATS.length], totaux = new CellStyle[FORMATS.length];
+        private final CellStyle[] donnees, totaux;
         private final Map<CellStyle, CellStyle> litteraux = new HashMap<>();
         private final Map<Boolean, CellStyle> entetes = new HashMap<>();
 
-        Styles(Workbook classeur) {
+        Styles(Workbook classeur, org.example.stock.pays.Monnaie monnaie) {
             this.classeur = classeur;
+            this.symbole = monnaie.getSymbole();
+            // Montant : séparateur de milliers, AUCUNE décimale, symbole de la monnaie de la boutique (« 150 000 FCFA »).
+            this.formats = new String[]{"#,##0", "#,##0 \"" + symbole + "\"", "0%", "0.0%", "0.00%", "dd/mm/yyyy", "dd/mm/yyyy hh:mm"};
+            donnees = new CellStyle[formats.length]; totaux = new CellStyle[formats.length];
             Font gras = police(true, 11), grosGras = police(true, 14), titreGras = police(true, 12), normalPolice = police(false, 10);
             boutique = style(grosGras, null, false);
             titre = style(titreGras, null, false);
@@ -221,9 +226,9 @@ public class ExportExcelService {
             texte = style(normalPolice, null, false);
             totalTexte = style(gras, null, true);
             totalVide = style(gras, null, true);
-            for (int i = 0; i < FORMATS.length; i++) {
-                donnees[i] = style(normalPolice, FORMATS[i], false);
-                totaux[i] = style(gras, FORMATS[i], true);
+            for (int i = 0; i < formats.length; i++) {
+                donnees[i] = style(normalPolice, formats[i], false);
+                totaux[i] = style(gras, formats[i], true);
             }
         }
 

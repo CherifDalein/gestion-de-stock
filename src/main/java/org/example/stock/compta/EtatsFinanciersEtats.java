@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 /**
  * Met les états financiers sous la forme d'un {@link Etat} : la page, le PDF et l'Excel montrent les mêmes lignes. Les références, les
- * libellés et l'ordre des lignes sont ceux des modèles officiels de {@link PostesOhada} ; les montants sont en GNF, arrondis au franc.
+ * libellés et l'ordre des lignes sont ceux des modèles officiels de {@link PostesOhada} ; les montants sont dans la monnaie de la boutique, arrondis au franc.
  * Les écarts de contrôle (actif différent du passif, trésorerie différente de la balance) sont écrits en tête des notes et repris à l'écran.
  */
 public final class EtatsFinanciersEtats {
@@ -30,7 +30,7 @@ public final class EtatsFinanciersEtats {
                 : " · exercice N-1 : du " + Textes.date(e.du1()) + " au " + Textes.date(e.au1()));
     }
 
-    private static String filtres(Etats e) { return periode(e) + " · montants en GNF · " + MENTION; }
+    private static String filtres(Etats e) { return periode(e) + " · montants en " + e.monnaie().getSymbole() + " · " + MENTION; }
 
     private static BigDecimal r(BigDecimal x) { return x == null ? null : x.setScale(0, RoundingMode.HALF_UP); }
 
@@ -48,13 +48,13 @@ public final class EtatsFinanciersEtats {
         List<String> a = new ArrayList<>();
         Exercice n = e.n();
         BigDecimal ecart = r(n.bilan().ecart());
-        if (ecart.signum() != 0) a.add("ÉCART : le total de l'actif (" + Textes.montant(r(n.bilan().totalActif())) + ") diffère du total du passif (" + Textes.montant(r(n.bilan().totalPassif())) + ") de " + Textes.montant(ecart) + " GNF.");
+        if (ecart.signum() != 0) a.add("ÉCART : le total de l'actif (" + Textes.montant(r(n.bilan().totalActif())) + ") diffère du total du passif (" + Textes.montant(r(n.bilan().totalPassif())) + ") de " + e.monnaie().formater(ecart) + ".");
         BigDecimal ecartResultat = r(n.bilan().passif("CJ").subtract(n.compteResultat().montant("XI")));
-        if (ecartResultat.signum() != 0) a.add("ÉCART : le résultat du bilan diffère du résultat du compte de résultat de " + Textes.montant(ecartResultat) + " GNF.");
+        if (ecartResultat.signum() != 0) a.add("ÉCART : le résultat du bilan diffère du résultat du compte de résultat de " + e.monnaie().formater(ecartResultat) + ".");
         BigDecimal ecartCr = r(n.compteResultat().ecart());
-        if (ecartCr.signum() != 0) a.add("ÉCART : le compte de résultat ne reprend pas tous les comptes de gestion (" + Textes.montant(ecartCr) + " GNF).");
+        if (ecartCr.signum() != 0) a.add("ÉCART : le compte de résultat ne reprend pas tous les comptes de gestion (" + e.monnaie().formater(ecartCr) + ").");
         BigDecimal ecartFlux = r(n.ecartFlux());
-        if (ecartFlux.signum() != 0) a.add("ÉCART : la trésorerie du tableau des flux diffère de celle de la balance de " + Textes.montant(ecartFlux) + " GNF.");
+        if (ecartFlux.signum() != 0) a.add("ÉCART : la trésorerie du tableau des flux diffère de celle de la balance de " + e.monnaie().formater(ecartFlux) + ".");
         return a;
     }
 
@@ -122,7 +122,7 @@ public final class EtatsFinanciersEtats {
         }
         t.note("Méthode indirecte : la capacité d'autofinancement part de l'excédent brut d'exploitation, puis les variations du besoin de financement et les flux d'investissement "
                 + "et de financement se lisent sur les variations des soldes de la balance. La trésorerie finale doit égaler la classe 5 hors 59 de la balance : "
-                + Textes.montant(r(e.n().tresorerieBalance())) + " GNF.");
+                + e.monnaie().formater(r(e.n().tresorerieBalance())) + ".");
         return new Etat("flux", "Tableau des flux de trésorerie", periode(e), notes(alertes(e), "Modèle du système normal, SYSCOHADA révisé (Acte uniforme, p. 997)."),
                 List.of(t), FormatPapier.A4_PORTRAIT, "tableau-des-flux", e.du(), e.au());
     }
@@ -163,7 +163,7 @@ public final class EtatsFinanciersEtats {
         }
         List<String> alertes = new ArrayList<>(alertes(e));
         BigDecimal ecart = r(s.ecart());
-        if (ecart.signum() != 0) alertes.add("ÉCART : le total de l'actif SMT diffère du total du passif SMT de " + Textes.montant(ecart) + " GNF.");
+        if (ecart.signum() != 0) alertes.add("ÉCART : le total de l'actif SMT diffère du total du passif SMT de " + e.monnaie().formater(ecart) + ".");
         return new Etat("smt", "Système minimal de trésorerie", periode(e), notes(alertes, "Modèle du système minimal de trésorerie, SYSCOHADA révisé (Acte uniforme, p. 1056)."),
                 List.of(rd, bi), FormatPapier.A4_PORTRAIT, "systeme-minimal-tresorerie", e.du(), e.au());
     }

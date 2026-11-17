@@ -59,24 +59,24 @@ class TresorerieServiceTests {
 
     @Test void troisComptesSontProvisionnesAvecChaqueNouvelleBoutique() {
         assertThat(comptes.findAll().stream().filter(c -> c.getBoutique().getId().equals(boutique.getId())))
-                .extracting(c -> c.getType()).containsExactlyInAnyOrder(ESPECES, ORANGE_MONEY, BANQUE);
-        assertThat(caisse.getSoldesParType()).containsOnlyKeys(ESPECES, ORANGE_MONEY, BANQUE);
+                .extracting(c -> c.getType()).containsExactlyInAnyOrder(ESPECES, MOBILE_MONEY, BANQUE);
+        assertThat(caisse.getSoldesParType()).containsOnlyKeys(ESPECES, MOBILE_MONEY, BANQUE);
         assertThat(caisse.getSoldesParType().values()).allSatisfy(v -> assertThat(v).isZero());
     }
 
     @Test void chaqueSoldeInitialSeSaisitUneFoisPendantLeDemarrage() {
         initialiser(ESPECES, "0");
         assertThat(caisse.peutInitialiser()).isFalse();
-        assertThat(caisse.getComptesInitialisables()).extracting(c -> c.getType()).containsExactly(ORANGE_MONEY, BANQUE);
+        assertThat(caisse.getComptesInitialisables()).extracting(c -> c.getType()).containsExactly(MOBILE_MONEY, BANQUE);
         assertThatThrownBy(() -> initialiser(ESPECES, "100")).hasMessageContaining("une seule fois");
-        initialiser(ORANGE_MONEY, "200"); initialiser(BANQUE, "300");
+        initialiser(MOBILE_MONEY, "200"); initialiser(BANQUE, "300");
         assertThat(caisse.getSoldeActuel()).isEqualByComparingTo("500");
         assertThat(caisse.getComptesInitialisables()).isEmpty();
         assertThat(boutiques.findById(boutique.getId()).orElseThrow().isInitialisationTerminee()).isFalse();
     }
 
     @ParameterizedTest
-    @CsvSource({"ESPECES,ORANGE_MONEY", "ESPECES,BANQUE", "ORANGE_MONEY,ESPECES", "ORANGE_MONEY,BANQUE", "BANQUE,ESPECES", "BANQUE,ORANGE_MONEY"})
+    @CsvSource({"ESPECES,MOBILE_MONEY", "ESPECES,BANQUE", "MOBILE_MONEY,ESPECES", "MOBILE_MONEY,BANQUE", "BANQUE,ESPECES", "BANQUE,MOBILE_MONEY"})
     void unTransfertDansChaqueSensConserveLeTotalEtNeGonflePasLesFlux(TypeCompteTresorerie source, TypeCompteTresorerie destination) {
         provisionner();
         var formulaire = transfert(source, destination, "100");
@@ -105,7 +105,7 @@ class TresorerieServiceTests {
         assertThat(caisse.depenser(depense(BANQUE, "150"))).isFalse();
         assertThat(caisse.getSoldesParType().get(BANQUE)).isEqualByComparingTo("850");
         assertThat(caisse.getSoldesParType().get(ESPECES)).isEqualByComparingTo("1000");
-        assertThat(caisse.getSoldesParType().get(ORANGE_MONEY)).isEqualByComparingTo("1000");
+        assertThat(caisse.getSoldesParType().get(MOBILE_MONEY)).isEqualByComparingTo("1000");
         assertThat(caisse.getSoldeActuel()).isEqualByComparingTo("2850");
         assertThat(caisse.getSortiesDuJour(LocalDate.now())).isEqualByComparingTo("150");
         assertThat(caisse.getNetDuJour(LocalDate.now())).isEqualByComparingTo("-150");
@@ -114,7 +114,7 @@ class TresorerieServiceTests {
 
     @Test void repeterUnTransfertOuUneDepenseNeDoubleAucunMouvement() {
         provisionner();
-        var transfert = transfert(ESPECES, ORANGE_MONEY, "100");
+        var transfert = transfert(ESPECES, MOBILE_MONEY, "100");
         var depense = depense(BANQUE, "20");
         assertThat(caisse.transferer(transfert)).isFalse(); assertThat(caisse.transferer(transfert)).isTrue();
         assertThat(caisse.depenser(depense)).isFalse(); assertThat(caisse.depenser(depense)).isTrue();
@@ -124,12 +124,12 @@ class TresorerieServiceTests {
 
     @Test void unJetonRejoueAvecAutreContenuOuAutreActeurEstRefuse() {
         provisionner();
-        var formulaire = transfert(ESPECES, ORANGE_MONEY, "100"); caisse.transferer(formulaire);
+        var formulaire = transfert(ESPECES, MOBILE_MONEY, "100"); caisse.transferer(formulaire);
         formulaire.setMontant(new BigDecimal("101"));
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(OperationTresorerieConflitException.class);
         formulaire.setMontant(new BigDecimal("100")); formulaire.setCompteDestination(BANQUE.name());
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(OperationTresorerieConflitException.class);
-        formulaire.setCompteDestination(ORANGE_MONEY.name()); formulaire.setMotif("Autre motif");
+        formulaire.setCompteDestination(MOBILE_MONEY.name()); formulaire.setMotif("Autre motif");
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(OperationTresorerieConflitException.class);
         formulaire.setMotif("Transfert de test"); connecter(compte(boutique, Role.ADMIN));
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(OperationTresorerieConflitException.class);
@@ -139,7 +139,7 @@ class TresorerieServiceTests {
 
     @Test void lesBoutiquesNePeuventNiConsommerLesSoldesNiRejouerLesOperationsDesAutres() {
         provisionner();
-        var formulaire = transfert(ESPECES, ORANGE_MONEY, "100"); caisse.transferer(formulaire);
+        var formulaire = transfert(ESPECES, MOBILE_MONEY, "100"); caisse.transferer(formulaire);
         var autre = nouvelleBoutique(); connecter(compte(autre, Role.ADMIN));
         assertThat(caisse.getSoldeActuel()).isZero(); assertThat(caisse.listerTous()).isEmpty();
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(OperationTresorerieConflitException.class);
@@ -151,7 +151,7 @@ class TresorerieServiceTests {
     @ParameterizedTest @ValueSource(strings = {"0", "-1", "1.001", "1000000000000000"})
     void lesMontantsInvalidesNeLaissentAucuneOperation(String montant) {
         provisionner();
-        var formulaire = transfert(ESPECES, ORANGE_MONEY, montant);
+        var formulaire = transfert(ESPECES, MOBILE_MONEY, montant);
         assertThatThrownBy(() -> caisse.transferer(formulaire)).isInstanceOf(IllegalArgumentException.class);
         assertThat(operations.findByJeton(formulaire.getJetonOperation())).isEmpty();
         assertThat(caisse.listerTous()).hasSize(3);
@@ -162,7 +162,7 @@ class TresorerieServiceTests {
         provisionner();
         assertThatThrownBy(() -> caisse.transferer(transfert(ESPECES, ESPECES, "1"))).hasMessageContaining("différents");
         assertThatThrownBy(() -> caisse.transferer(transfert(ESPECES, BANQUE, "1001"))).hasMessageContaining("insuffisant");
-        assertThatThrownBy(() -> caisse.depenser(depense(ORANGE_MONEY, "1001"))).hasMessageContaining("insuffisant");
+        assertThatThrownBy(() -> caisse.depenser(depense(MOBILE_MONEY, "1001"))).hasMessageContaining("insuffisant");
         var incomplet = transfert(ESPECES, BANQUE, "10"); incomplet.setCompteDestination(null);
         assertThatThrownBy(() -> caisse.transferer(incomplet)).isInstanceOf(IllegalArgumentException.class);
         assertThat(caisse.listerTous()).hasSize(3);

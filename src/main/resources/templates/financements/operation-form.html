@@ -25,7 +25,7 @@
                         <p class="record-help">Obligatoire pour un apport ou un retrait. <a th:href="@{/financements/partenaires/nouveau}">Créer un associé</a>.</p></div>
                     <div class="record-field"><label for="compte">Compte</label>
                         <select id="compte" class="form-select" th:field="*{compte}" required><th:block th:replace="~{fragments/comptes :: options(*{compte})}"></th:block></select></div>
-                    <div class="record-field"><label for="montant">Montant (GNF)</label>
+                    <div class="record-field"><label for="montant">Montant ([[${@montants.symbole}]])</label>
                         <input id="montant" class="form-control" type="number" th:field="*{montant}" min="0.01" max="999999999999999.99" step="0.01" inputmode="decimal" required></div>
                     <div class="record-field"><label for="motif">Motif</label>
                         <textarea id="motif" class="form-control" th:field="*{motif}" rows="3" maxlength="255" required></textarea></div>

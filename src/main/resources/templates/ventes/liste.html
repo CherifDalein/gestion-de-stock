@@ -80,10 +80,10 @@
                             <td class="text-nowrap jt-echeance" data-label="Échéance" th:attr="data-order=${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'yyyyMMdd') : '0'}" th:text="${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'dd/MM/yyyy') : '—'}"></td>
                             <td class="jt-partenaire" data-label="Client" th:attr="data-order=${v.client != null ? v.client.nom : 'Client de passage'}"><span th:text="${v.client != null ? v.client.nom : 'Client de passage'}"></span><small class="jt-par" th:text="${'par ' + (v.vendeur != null and !#strings.isEmpty(#strings.trim(v.vendeur.nom)) ? v.vendeur.nom : 'Non renseigné')}"></small></td>
                             <td class="jt-saisi" data-label="Saisi par" data-vendeur th:text="${v.vendeur != null and !#strings.isEmpty(#strings.trim(v.vendeur.nom)) ? v.vendeur.nom : 'Non renseigné'}"></td>
-                            <td class="fw-bold jt-total" data-label="Total" th:attr="data-order=${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'NONE', 2, 'POINT')}"><span th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span><small th:if="${(v.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-vente th:text="${'− retours ' + #numbers.formatDecimal(v.montantRetours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></td>
-                            <td class="text-success jt-verse" data-label="Versé" th:attr="data-order=${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'NONE', 2, 'POINT')}"><span th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></span><small th:if="${(v.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + #numbers.formatDecimal(v.avanceUtilisee, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></small></td>
+                            <td class="fw-bold jt-total" data-label="Total" th:attr="data-order=${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'NONE', 2, 'POINT')}"><span th:text="${@montants.format(v.montantTotal ?: 0)}"></span><small th:if="${(v.montantRetours ?: 0) > 0}" class="d-block text-muted fw-normal" data-retours-vente th:text="${'− retours ' + @montants.format(v.montantRetours)}"></small></td>
+                            <td class="text-success jt-verse" data-label="Versé" th:attr="data-order=${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'NONE', 2, 'POINT')}"><span th:text="${@montants.format((v.montantVerse ?: 0))}"></span><small th:if="${(v.avanceUtilisee ?: 0) > 0}" class="d-block text-muted" th:text="${'+ avance ' + @montants.format(v.avanceUtilisee)}"></small></td>
                             <td class="fw-bold jt-reste" data-label="Reste" th:classappend="${v.resteAPayer > 0 ? 'text-danger' : 'text-muted'}"
-                                th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"
+                                th:text="${@montants.format(v.resteAPayer)}"
                                 th:attr="data-order=${#numbers.formatDecimal(v.resteAPayer, 1, 'NONE', 2, 'POINT')}"></td>
                             <td class="jt-statut" data-label="Statut">
                                 <span th:if="${v.resteAPayer <= 0}" class="badge bg-success">Réglée</span>
@@ -142,12 +142,12 @@
                                 <strong>Échéance :</strong> <span th:text="${v.dateEcheance != null ? #temporals.format(v.dateEcheance, 'dd/MM/yyyy') : 'Aucune'}"></span>
                             </div>
                             <div class="col-6 text-end">
-                                <p class="mb-1">Total facture : <strong th:text="${#numbers.formatDecimal(v.montantTotal ?: 0, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
-                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1 text-muted" data-detail-retours>Retours : <strong th:text="${'− ' + #numbers.formatDecimal(v.montantRetours, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
-                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1" data-detail-total-net>Total net : <strong th:text="${#numbers.formatDecimal(v.totalEffectif, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
-                                <p class="mb-1 text-success">Montant reçu : <strong th:text="${#numbers.formatDecimal((v.montantVerse ?: 0), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
-                                <p th:if="${(v.avanceUtilisee ?: 0) > 0}" class="mb-1 text-success">Avance du client utilisée : <strong th:text="${#numbers.formatDecimal(v.avanceUtilisee, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></strong></p>
-                                <h4 class="text-danger">Reste à payer : <span th:text="${#numbers.formatDecimal(v.resteAPayer, 1, 'WHITESPACE', 2, 'COMMA')}"></span> GNF</h4>
+                                <p class="mb-1">Total facture : <strong th:text="${@montants.format(v.montantTotal ?: 0)}"></strong></p>
+                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1 text-muted" data-detail-retours>Retours : <strong th:text="${'− ' + @montants.format(v.montantRetours)}"></strong></p>
+                                <p th:if="${(v.montantRetours ?: 0) > 0}" class="mb-1" data-detail-total-net>Total net : <strong th:text="${@montants.format(v.totalEffectif)}"></strong></p>
+                                <p class="mb-1 text-success">Montant reçu : <strong th:text="${@montants.format((v.montantVerse ?: 0))}"></strong></p>
+                                <p th:if="${(v.avanceUtilisee ?: 0) > 0}" class="mb-1 text-success">Avance du client utilisée : <strong th:text="${@montants.format(v.avanceUtilisee)}"></strong></p>
+                                <h4 class="text-danger">Reste à payer : <span th:text="${@montants.nombre(v.resteAPayer)}"></span> [[${@montants.symbole}]]</h4>
                             </div>
                         </div>
                         <p th:unless="${#lists.isEmpty(v.retours)}" class="small mb-3" data-detail-numeros-retours>Retours enregistrés :
@@ -164,9 +164,9 @@
                             <tbody>
                             <tr th:each="ligne : ${v.lignes}">
                                 <td th:text="${ligne.produit.nom}"></td>
-                                <td class="text-end" th:text="${#numbers.formatDecimal(ligne.prixUnitaire, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-end" th:text="${@montants.format(ligne.prixUnitaire)}"></td>
                                 <td class="text-center" th:text="${ligne.quantite + (ligne.produit != null and ligne.produit.unite != null ? ' ' + ligne.produit.unite : '')}"></td>
-                                <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(ligne.prixUnitaire * ligne.quantite, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                                <td class="text-end fw-bold" th:text="${@montants.format(ligne.prixUnitaire * ligne.quantite)}"></td>
                             </tr>
                             </tbody>
                         </table>

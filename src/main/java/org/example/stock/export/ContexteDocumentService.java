@@ -41,7 +41,7 @@ public class ContexteDocumentService {
         String email = vide(boutique.getEmail()) == null ? null : "Email : " + vide(boutique.getEmail());
         return new ContexteDocument(
                 nettoyer(boutique.getNom(), "Boutique"), nettoyer(boutique.getAdresse(), null), telephones == null ? null : Textes.pourXml(telephones),
-                email == null ? null : Textes.pourXml(email), logo, nomEditeur(), horloge.maintenant());
+                email == null ? null : Textes.pourXml(email), logo, nomEditeur(), horloge.maintenant(), boutique.getMonnaie());
     }
 
     private String nomEditeur() {

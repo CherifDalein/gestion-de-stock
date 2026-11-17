@@ -50,6 +50,7 @@ import java.util.Set;
 @Service
 @Transactional(readOnly = true)
 public class RecuService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     /** Un reçu produit : le PDF et un nom de fichier sûr. */
     public record Recu(byte[] pdf, String nomFichier) { }
 
@@ -199,7 +200,7 @@ public class RecuService {
         for (MouvementCaisse m : mouvements.findByOperationTresorerieIdOrderByIdAsc(op.getId()))
             if (SourceMouvement.ANNULATION.equals(m.getSource())) { annulation = m; break; }
         String annuleLe = annulation == null ? null : "ANNULÉ le " + (annulation.getDateMouvement() == null ? "date non renseignée" : Textes.dateHeure(annulation.getDateMouvement()));
-        String document = (pret ? "Prêt " : "Emprunt ") + emprunt.getNumero() + " (" + douces(emprunt.getPartenaire().getNom()) + ") : capital " + Textes.montant(capital) + " GNF, intérêts " + Textes.montant(interets) + " GNF";
+        String document = (pret ? "Prêt " : "Emprunt ") + emprunt.getNumero() + " (" + douces(emprunt.getPartenaire().getNom()) + ") : capital " + montants.format(capital) + ", intérêts " + montants.format(interets);
         RecuReglement vue = new RecuReglement(pret ? "Remboursement d'un prêt accordé" : "Remboursement d'un emprunt", "Remboursement n° " + op.getId(),
                 Textes.dateHeure(op.getDateOperation()), document, null, pret,
                 Textes.montant(capital.add(interets)), op.getCompteSource() == null ? "Non renseigné" : op.getCompteSource().getNom(),

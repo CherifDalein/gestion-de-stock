@@ -34,9 +34,9 @@
 
         <section class="invoices-metrics" aria-label="Totaux de la période sélectionnée">
             <div class="invoices-metric"><span>Achats</span><strong data-invoice-summary="count" th:text="${nombreDocuments}">0</strong><small>Dans cette période</small></div>
-            <div class="invoices-metric"><span>Montant total</span><strong data-invoice-summary="total" th:text="${#numbers.formatDecimal(totalMontants, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Valeur des achats</small></div>
-            <div class="invoices-metric"><span>Déjà versé</span><strong data-invoice-summary="verse" th:text="${#numbers.formatDecimal(totalVerse, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Règlements enregistrés</small></div>
-            <div class="invoices-metric invoices-metric--remaining"><span>Reste à payer</span><strong data-invoice-summary="reste" th:text="${#numbers.formatDecimal(totalReste, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}">0,00 GNF</strong><small>Solde de cette période</small></div>
+            <div class="invoices-metric"><span>Montant total</span><strong data-invoice-summary="total" th:text="${@montants.format(totalMontants)}">0</strong><small>Valeur des achats</small></div>
+            <div class="invoices-metric"><span>Déjà versé</span><strong data-invoice-summary="verse" th:text="${@montants.format(totalVerse)}">0</strong><small>Règlements enregistrés</small></div>
+            <div class="invoices-metric invoices-metric--remaining"><span>Reste à payer</span><strong data-invoice-summary="reste" th:text="${@montants.format(totalReste)}">0</strong><small>Solde de cette période</small></div>
         </section>
 
         <section class="invoices-panel" aria-labelledby="facturesCatalogueTitle">
@@ -64,9 +64,9 @@
                         <td class="invoices-reference" data-label="Numéro" th:text="${a.numero ?: '#' + a.id}"></td>
                         <td class="invoices-date" data-label="Date et heure" th:text="${a.dateAchat != null ? #temporals.format(a.dateAchat, 'dd/MM/yyyy HH:mm') : 'Date non renseignée'}"></td>
 
-                        <td class="invoices-money" data-label="Total" th:text="${#numbers.formatDecimal(a.montantTotal, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
-                        <td class="invoices-money invoices-money--paid" data-label="Versé" th:text="${#numbers.formatDecimal(verse, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
-                        <td class="invoices-money invoices-money--remaining" data-label="Reste" th:text="${#numbers.formatDecimal(a.resteAPayer, 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></td>
+                        <td class="invoices-money" data-label="Total" th:text="${@montants.format(a.montantTotal)}"></td>
+                        <td class="invoices-money invoices-money--paid" data-label="Versé" th:text="${@montants.format(verse)}"></td>
+                        <td class="invoices-money invoices-money--remaining" data-label="Reste" th:text="${@montants.format(a.resteAPayer)}"></td>
                         <td data-label="Règlement"><span class="invoice-status" th:classappend="${'invoice-status--' + statut}" th:text="${statut == 'reglee' ? 'Réglée' : (statut == 'partielle' ? 'Partiel' : 'À régler')}"></span><small th:if="${a.dateEcheance != null and a.resteAPayer > 0}" class="invoices-due d-block text-muted" th:text="${'Échéance : ' + #temporals.format(a.dateEcheance, 'dd/MM/yyyy')}"></small><span th:if="${a.estEnRetard(aujourdHui)}" class="badge bg-dark">En retard</span></td>
                         <td class="invoices-document"><a th:href="@{/factures/achat/{id}(id=${a.id})}" class="btn btn-outline-primary btn-sm app-row-action" th:attr="aria-label=${'Consulter achat n° ' + a.id}"><i class="fas fa-eye" aria-hidden="true"></i><span>Consulter</span></a></td>
                     </tr>

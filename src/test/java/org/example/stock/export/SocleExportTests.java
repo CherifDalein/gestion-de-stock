@@ -158,7 +158,7 @@ class SocleExportTests {
                 .totaux("Total", new BigDecimal("1500.50"));
         ContexteDocument piege = new ContexteDocument("Chez \"Awa\" \\ \n<i>Fils</i>", null, null, null, null, null, LocalDateTime.of(2026, 1, 2, 3, 4));
         String texte = texte(pdf.rendreTableau(t, piege, FormatPapier.A4_PORTRAIT));
-        assertThat(texte).contains("<script>alert(1)</script>", "AB <b>gras</b> &amp; \"guillemets\"", "1 500,50", "Chez \"Awa\"");
+        assertThat(texte).contains("<script>alert(1)</script>", "AB <b>gras</b> &amp; \"guillemets\"", "1 501", "Chez \"Awa\"");
     }
 
     @Test
@@ -200,7 +200,7 @@ class SocleExportTests {
             assertThat(ligne.getCell(3).getCellType()).isEqualTo(CellType.NUMERIC);
             assertThat(ligne.getCell(4).getCellType()).isEqualTo(CellType.NUMERIC);
             assertThat(ligne.getCell(4).getNumericCellValue()).isEqualTo(1_012_345d);
-            assertThat(ligne.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
+            assertThat(ligne.getCell(4).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             assertThat(ligne.getCell(5).getNumericCellValue()).isEqualTo(0.125);
             assertThat(ligne.getCell(5).getCellStyle().getDataFormatString()).isEqualTo("0.0%");
             assertThat(ligne.getCell(6)).isNull(); // cellule vide : rien n'est écrit
@@ -216,14 +216,15 @@ class SocleExportTests {
     }
 
     @Test
-    void lesDecimalesNeSontAfficheesQueSiElleNeSontPasNulles() throws Exception {
+    void lesMontantsSontAfficheSansDecimalesMemeQuandIlsEnOntEtGardentLeurValeur() throws Exception {
         TableauExport t = TableauExport.titre("Montants").colonnes(Colonne.montant("M"))
                 .ligne(new BigDecimal("1500.00")).ligne(new BigDecimal("1500.50")).ligne((Object) null).ligne(2000L);
         try (Workbook classeur = new XSSFWorkbook(new ByteArrayInputStream(excel.ecrire(t, contexte(null))))) {
             Sheet f = classeur.getSheetAt(0);
             int base = 5; // boutique, titre, édition, ligne vide, en-têtes (sans filtres ni notes) : première donnée en ligne 5
-            assertThat(f.getRow(base).getCell(0).getCellStyle().getDataFormatString()).isEqualTo("#,##0");
-            assertThat(f.getRow(base + 1).getCell(0).getCellStyle().getDataFormatString()).isEqualTo("#,##0.00");
+            // Même format de cellule pour tous les montants : sans décimales, avec le symbole de la monnaie ; la valeur reste un vrai nombre exact.
+            assertThat(f.getRow(base).getCell(0).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
+            assertThat(f.getRow(base + 1).getCell(0).getCellStyle().getDataFormatString()).isEqualTo("#,##0 \"GNF\"");
             assertThat(f.getRow(base + 1).getCell(0).getNumericCellValue()).isEqualTo(1500.5);
             assertThat(f.getRow(base + 2).getCell(0)).isNull();
             assertThat(f.getRow(base + 3).getCell(0).getNumericCellValue()).isEqualTo(2000d);

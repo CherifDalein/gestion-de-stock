@@ -18,8 +18,18 @@ const Montants = Object.freeze({
         const du = total - verse;
         return du <= 0n ? 0n : (avance < du ? avance : du);
     },
+    /** Affichage sans décimales, arrondi HALF_UP (comme le serveur) : « -1 000 000 ». Les calculs restent en centimes. */
     afficher(centimes) {
-        const [entier, fraction] = this.formater(centimes).split('.');
-        return `${entier.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')},${fraction}`;
+        const signe = centimes < 0n ? '-' : '';
+        const absolu = centimes < 0n ? -centimes : centimes;
+        return signe + String((absolu + 50n) / 100n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    },
+    /** Symbole de la monnaie de la boutique (attribut data-monnaie du <body>, posé par le serveur). */
+    symbole() {
+        return (typeof document !== 'undefined' && document.body && document.body.dataset && document.body.dataset.monnaie) || '';
+    },
+    /** « 150 000 FCFA » : montant arrondi suivi du symbole de la boutique. */
+    avecSymbole(centimes) {
+        return `${this.afficher(centimes)}\u00a0${this.symbole()}`;
     }
 });

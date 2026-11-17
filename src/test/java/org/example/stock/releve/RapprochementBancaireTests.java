@@ -76,7 +76,7 @@ class RapprochementBancaireTests {
         boutique = boutique("Boutique rapprochement"); autre = boutique("Autre boutique rapprochement");
         utilisateur(GERANT, Role.ADMIN, boutique); utilisateur(CAISSIER, Role.CAISSIER, boutique); utilisateur(AUTRE_GERANT, Role.ADMIN, autre);
         banque = ComptesDeTest.de(boutique, TypeCompteTresorerie.BANQUE);
-        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY);
+        orange = ComptesDeTest.de(boutique, TypeCompteTresorerie.MOBILE_MONEY);
         especes = ComptesDeTest.de(boutique, TypeCompteTresorerie.ESPECES);
         banqueAutre = ComptesDeTest.de(autre, TypeCompteTresorerie.BANQUE);
         mouvement(banque, "1000000", "2025-02-20T09:00", "SOLDE_INITIAL");
@@ -322,9 +322,9 @@ class RapprochementBancaireTests {
     }
 
     @Test
-    void seulsLesComptesBanqueEtOrangeMoneyOntDesReleves() throws Exception {
+    void seulsLesComptesBanqueEtMobileMoneyOntDesReleves() throws Exception {
         assertThatThrownBy(() -> releves.creer(especes.getId(), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), BigDecimal.ZERO, BigDecimal.ZERO, "esp"))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Banque et Orange Money");
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Banque et mobile money");
         assertThat(releves.creer(orange.getId(), LocalDate.of(2025, 3, 1), LocalDate.of(2025, 3, 31), BigDecimal.ZERO, BigDecimal.ZERO, "om").getNumero()).startsWith("RB-202503-");
     }
 

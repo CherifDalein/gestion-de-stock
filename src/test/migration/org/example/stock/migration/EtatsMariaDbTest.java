@@ -146,11 +146,11 @@ public final class EtatsMariaDbTest {
 
         // --- Journal de trésorerie de A (mars 2026 : [01/03 00:00, 01/04 00:00))
         mouvement(a, "OUVERTURE", "SOLDE_INITIAL", TypeCompteTresorerie.ESPECES, "1000.50", LocalDateTime.of(2026, 2, 1, 8, 0), null);
-        mouvement(a, "ENTREE", "SOLDE_CLIENT", TypeCompteTresorerie.ORANGE_MONEY, "40", LocalDateTime.of(2026, 2, 20, 8, 0), m -> m.setClient(y));
+        mouvement(a, "ENTREE", "SOLDE_CLIENT", TypeCompteTresorerie.MOBILE_MONEY, "40", LocalDateTime.of(2026, 2, 20, 8, 0), m -> m.setClient(y));
         mouvement(a, "ENTREE", "DIVERS", TypeCompteTresorerie.ESPECES, "5", null, null);                                   // sans date : compté avant tout
         Vente v = venteClient(a, x, "100.10", "30", "20.05", LocalDateTime.of(2026, 3, 5, 9, 0), LocalDate.now().minusDays(10));
         MouvementCaisse paiement = mouvement(a, "ENTREE", "VENTE", TypeCompteTresorerie.ESPECES, "200.25", DU.atStartOfDay(), m -> m.setVente(v));       // borne basse incluse
-        mouvement(a, "ENTREE", "VENTE", TypeCompteTresorerie.ORANGE_MONEY, "99.75", AU.plusDays(1).atStartOfDay().minusNanos(1_000), null);              // dernier instant
+        mouvement(a, "ENTREE", "VENTE", TypeCompteTresorerie.MOBILE_MONEY, "99.75", AU.plusDays(1).atStartOfDay().minusNanos(1_000), null);              // dernier instant
         mouvement(a, "ENTREE", "REGLEMENT_VENTE", TypeCompteTresorerie.BANQUE, "50", AU.plusDays(1).atStartOfDay(), null);                              // 01/04 : exclu
         OperationTresorerie loyer = operation(a, LocalDateTime.of(2026, 3, 10, 9, 0), "30.10", TypeOperationTresorerie.DEPENSE, TypeCompteTresorerie.ESPECES, null);
         mouvement(a, "SORTIE", "DEPENSE", TypeCompteTresorerie.ESPECES, "-30.10", LocalDateTime.of(2026, 3, 10, 9, 0), m -> m.setOperationTresorerie(loyer));
@@ -391,7 +391,7 @@ public final class EtatsMariaDbTest {
     @Profile("etats-mariadb-test")
     @EnableTransactionManagement
     @EnableJpaRepositories(basePackageClasses = BoutiqueRepository.class)
-    @Import({VerrouExercice.class, TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class, BilanService.class,
+    @Import({VerrouExercice.class, org.example.stock.pays.FormatMontants.class, org.example.stock.pays.PaysCourant.class, TableauDeBordService.class, BoutiqueService.class, EssaiBoutiqueService.class, BilanService.class,
             EtatsPartenairesService.class, EtatsListesService.class, org.example.stock.export.LimiteExport.class,
             org.example.stock.service.SoldePartenaireService.class, org.example.stock.repository.SoldePartenaireRepository.class,
             org.example.stock.service.EcheanceService.class})

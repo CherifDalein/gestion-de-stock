@@ -36,7 +36,7 @@ if (typeof document !== 'undefined') {
                 const quantite = quantiteSaisie(rangee);
                 lignes.push({prix, quantite});
                 const cellule = rangee.querySelector('[data-montant-ligne]');
-                if (cellule) cellule.textContent = `${Montants.afficher(prix * BigInt(quantite))} GNF`;
+                if (cellule) cellule.textContent = `${Montants.avecSymbole(prix * BigInt(quantite))}`;
             }
             const {montant, impute, excedent} = RetourVente.calculer(lignes, reste);
             texte('retourMontant', Montants.afficher(montant));
@@ -46,11 +46,11 @@ if (typeof document !== 'undefined') {
             if (montant === 0n) {
                 explication = 'Saisissez une quantité pour voir le détail.';
             } else if (excedent === 0n) {
-                explication = `Le client doit encore ${Montants.afficher(reste)} GNF : ce retour réduit sa dette de ${Montants.afficher(impute)} GNF. Aucun argent n’est rendu.`;
+                explication = `Le client doit encore ${Montants.avecSymbole(reste)} : ce retour réduit sa dette de ${Montants.avecSymbole(impute)}. Aucun argent n’est rendu.`;
             } else if (impute === 0n) {
-                explication = `Le client ne doit plus rien : les ${Montants.afficher(excedent)} GNF sont à rendre en argent ou à garder en avoir.`;
+                explication = `Le client ne doit plus rien : les ${Montants.avecSymbole(excedent)} sont à rendre en argent ou à garder en avoir.`;
             } else {
-                explication = `${Montants.afficher(impute)} GNF réduisent la dette du client (sans argent) ; les ${Montants.afficher(excedent)} GNF restants sont à rendre en argent ou à garder en avoir.`;
+                explication = `${Montants.avecSymbole(impute)} réduisent la dette du client (sans argent) ; les ${Montants.avecSymbole(excedent)} restants sont à rendre en argent ou à garder en avoir.`;
             }
             texte('retourExplication', explication);
 

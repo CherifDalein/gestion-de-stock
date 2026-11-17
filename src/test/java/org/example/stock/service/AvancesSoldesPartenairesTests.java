@@ -303,11 +303,11 @@ class AvancesSoldesPartenairesTests {
         var mouvements = caisse.findAll();
         assertThat(mouvements).hasSize(1);
         assertThat(mouvements.getFirst().getMontant()).isEqualByComparingTo("-30000");
-        assertThat(mouvements.getFirst().getCompte().getType()).isEqualTo(TypeCompteTresorerie.ORANGE_MONEY);
+        assertThat(mouvements.getFirst().getCompte().getType()).isEqualTo(TypeCompteTresorerie.MOBILE_MONEY);
         assertThat(mouvements.getFirst().getSource()).isEqualTo("SOLDE_FOURNISSEUR");
         assertThat(mouvements.getFirst().getFournisseur().getId()).isEqualTo(creancier.getId());
         assertThat(soldes().soldeFournisseur(creancier.getId()).resteSoldeDepart()).isEqualByComparingTo("70000");
-        assertThat(caisse.calculerSoldeCompte(boutique.getId(), ComptesDeTest.de(boutique, TypeCompteTresorerie.ORANGE_MONEY).getId())).isEqualByComparingTo("-30000");
+        assertThat(caisse.calculerSoldeCompte(boutique.getId(), ComptesDeTest.de(boutique, TypeCompteTresorerie.MOBILE_MONEY).getId())).isEqualByComparingTo("-30000");
         mvc.perform(reglementSolde("/fournisseurs/solde/regler/" + creancier.getId(), "70000.01", "30000", "CAISSE").with(csrf()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk());
         assertThat(caisse.count()).isEqualTo(1);
@@ -489,12 +489,12 @@ class AvancesSoldesPartenairesTests {
         achat(fournisseur, 10, "0");
         for (String url : List.of("/clients/modifier/" + client.getId(), "/fournisseurs/modifier/" + fournisseur.getId())) {
             String html = mvc.perform(get(url).with(user(ADMIN).roles("ADMIN"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            assertThat(html).contains("soldeDepartFige", "soldeDepartLectureSeule", "1 000 000,00 GNF", "ajustement de solde")
+            assertThat(html).contains("soldeDepartFige", "soldeDepartLectureSeule", "1\u00a0000\u00a0000\u00a0GNF", "ajustement de solde")
                     .doesNotContain("inputMontantSoldeDepart", "inputConfirmationSoldeDepart", "name=\"montantSoldeDepart\"", "name=\"sensSoldeDepart\"");
         }
         // Après une tentative refusée, l'écran montre toujours le solde enregistré, pas la valeur forgée.
         String html = modifier("clients", client.getId(), client.getNom(), "10000000", "JE_LUI_DOIS", true).andReturn().getResponse().getContentAsString();
-        assertThat(html).contains("1 000 000,00 GNF").doesNotContain("10 000 000");
+        assertThat(html).contains("1\u00a0000\u00a0000\u00a0GNF").doesNotContain("10 000 000");
     }
 
     @Test
@@ -842,7 +842,7 @@ class AvancesSoldesPartenairesTests {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Il me doit")));
         String factureSurplus = mvc.perform(get("/factures/vente/" + tropPayee.getId()).with(user(CAISSIER).roles("CAISSIER")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-        assertThat(factureSurplus).contains("Surplus versé").contains("20 000,00");
+        assertThat(factureSurplus).contains("Surplus versé").contains("20\u00a0000");
         String factureAvance = mvc.perform(get("/factures/vente/" + creditAvecAvance.getId()).with(user(ADMIN).roles("ADMIN")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(factureAvance).contains("Avance utilisée");

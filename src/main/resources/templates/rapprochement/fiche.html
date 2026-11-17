@@ -15,14 +15,14 @@
         <p class="alert alert-info" th:if="${!brouillon}" role="status">Ce relevé est validé : il est figé avec ses rapprochements. Pour le modifier, dévalidez-le depuis l'<a th:href="@{/rapprochements/{id}/etat(id=${releve.id})}">état de rapprochement</a> (seul le dernier relevé validé du compte peut l'être).</p>
 
         <section class="fin-chiffres" aria-label="Soldes du relevé">
-            <article><span>Solde d'ouverture</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.ouverture())}">0 GNF</strong></article>
+            <article><span>Solde d'ouverture</span><strong class="rap-montant" th:text="${@montants.format(controle.ouverture())}">0</strong></article>
             <article><span th:text="${'Somme des ' + nombreLignes + (nombreLignes > 1 ? ' lignes' : ' ligne')}">Somme des lignes</span><strong th:replace="~{rapprochement/commun :: signe(${controle.sommeLignes()})}"></strong></article>
-            <article><span>Clôture attendue (ouverture + lignes)</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.attendu())}">0 GNF</strong></article>
-            <article><span>Clôture du relevé</span><strong class="rap-montant" th:text="${@formatsVue.gnf(controle.cloture())}">0 GNF</strong></article>
+            <article><span>Clôture attendue (ouverture + lignes)</span><strong class="rap-montant" th:text="${@montants.format(controle.attendu())}">0</strong></article>
+            <article><span>Clôture du relevé</span><strong class="rap-montant" th:text="${@montants.format(controle.cloture())}">0</strong></article>
         </section>
         <div class="alert alert-warning" role="alert" id="avertissementSoldes" th:unless="${controle.coherent()}">
             <strong>Les soldes ne concordent pas.</strong>
-            <span th:text="${'Ouverture + lignes = ' + @formatsVue.gnf(controle.attendu()) + ', mais la clôture du relevé est ' + @formatsVue.gnf(controle.cloture()) + ' (écart ' + @formatsVue.signe(controle.ecart()) + '). Il manque peut-être des lignes ou un solde est mal recopié. Vous pouvez continuer la saisie et le pointage ; la validation reste bloquée tant que cet écart existe.'}">Écart</span>
+            <span th:text="${'Ouverture + lignes = ' + @montants.format(controle.attendu()) + ', mais la clôture du relevé est ' + @montants.format(controle.cloture()) + ' (écart ' + @montants.signe(controle.ecart()) + '). Il manque peut-être des lignes ou un solde est mal recopié. Vous pouvez continuer la saisie et le pointage ; la validation reste bloquée tant que cet écart existe.'}">Écart</span>
         </div>
         <p class="alert alert-success" role="status" th:if="${controle.coherent()}">Les soldes concordent : ouverture + lignes = clôture.</p>
 
@@ -38,7 +38,7 @@
                 <div class="record-field"><label for="ligneDate">Date</label><input id="ligneDate" type="date" class="form-control" th:field="*{dateOperation}" th:min="${releve.dateDebut}" th:max="${releve.dateFin}" required /></div>
                 <div class="record-field rap-large"><label for="ligneLibelle">Libellé</label><input id="ligneLibelle" type="text" maxlength="255" class="form-control" th:field="*{libelle}" required /></div>
                 <div class="record-field"><label for="ligneReference">Référence <span class="record-optional">(facultatif)</span></label><input id="ligneReference" type="text" maxlength="100" class="form-control" th:field="*{reference}" /></div>
-                <div class="record-field"><label for="ligneMontant">Montant (GNF)</label><input id="ligneMontant" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{montant}" required /></div>
+                <div class="record-field"><label for="ligneMontant">Montant ([[${@montants.symbole}]])</label><input id="ligneMontant" type="number" step="0.01" inputmode="decimal" class="form-control" th:field="*{montant}" required /></div>
                 <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter</button></div>
             </form>
         </section>
@@ -64,7 +64,7 @@
                                         <div class="record-field"><label th:for="${'md' + l.id}">Date</label><input th:id="${'md' + l.id}" type="date" name="dateOperation" class="form-control" th:value="${l.dateOperation}" th:min="${releve.dateDebut}" th:max="${releve.dateFin}" required /></div>
                                         <div class="record-field rap-large"><label th:for="${'ml' + l.id}">Libellé</label><input th:id="${'ml' + l.id}" type="text" name="libelle" maxlength="255" class="form-control" th:value="${l.libelle}" required /></div>
                                         <div class="record-field"><label th:for="${'mr' + l.id}">Référence</label><input th:id="${'mr' + l.id}" type="text" name="reference" maxlength="100" class="form-control" th:value="${l.reference}" /></div>
-                                        <div class="record-field"><label th:for="${'mm' + l.id}">Montant (GNF)</label><input th:id="${'mm' + l.id}" type="number" name="montant" step="0.01" class="form-control" th:value="${l.montant}" required /></div>
+                                        <div class="record-field"><label th:for="${'mm' + l.id}">Montant ([[${@montants.symbole}]])</label><input th:id="${'mm' + l.id}" type="number" name="montant" step="0.01" class="form-control" th:value="${l.montant}" required /></div>
                                         <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary btn-sm">Enregistrer</button></div>
                                     </form>
                                 </details>
@@ -87,8 +87,8 @@
                 <form th:action="@{/rapprochements/{id}/entete(id=${releve.id})}" th:object="${releveForm}" method="post" class="rap-ligne-form">
                     <div class="record-field"><label for="enteteDebut">Du</label><input id="enteteDebut" type="date" class="form-control" th:field="*{dateDebut}" required /></div>
                     <div class="record-field"><label for="enteteFin">Au</label><input id="enteteFin" type="date" class="form-control" th:field="*{dateFin}" required /></div>
-                    <div class="record-field"><label for="enteteOuverture">Ouverture (GNF)</label><input id="enteteOuverture" type="number" step="0.01" class="form-control" th:field="*{soldeOuverture}" required /></div>
-                    <div class="record-field"><label for="enteteCloture">Clôture (GNF)</label><input id="enteteCloture" type="number" step="0.01" class="form-control" th:field="*{soldeCloture}" required /></div>
+                    <div class="record-field"><label for="enteteOuverture">Ouverture ([[${@montants.symbole}]])</label><input id="enteteOuverture" type="number" step="0.01" class="form-control" th:field="*{soldeOuverture}" required /></div>
+                    <div class="record-field"><label for="enteteCloture">Clôture ([[${@montants.symbole}]])</label><input id="enteteCloture" type="number" step="0.01" class="form-control" th:field="*{soldeCloture}" required /></div>
                     <div class="record-field rap-bouton"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
                 </form>
             </details>

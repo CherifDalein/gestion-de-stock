@@ -89,7 +89,10 @@ class Lot5MigrationTests {
     @Test void lesParentsDeTresorerieSontDesComptesOfficiels() {
         var plan = org.example.stock.compta.PlanOfficiel.charger();
         for (String parent : Lot5Migration.PARENTS.values()) assertThat(plan.existe(parent)).as(parent).isTrue();
-        assertThat(Lot5Migration.PARENTS).containsOnlyKeys(java.util.Arrays.stream(org.example.stock.enums.TypeCompteTresorerie.values()).map(Enum::name).toArray(String[]::new));
+        // Les types actuels, plus l'ancien nom ORANGE_MONEY que portent encore les bases d'avant la migration pays-monnaie.
+        var attendus = new java.util.ArrayList<>(java.util.Arrays.stream(org.example.stock.enums.TypeCompteTresorerie.values()).map(Enum::name).toList()); attendus.add("ORANGE_MONEY");
+        assertThat(Lot5Migration.PARENTS).containsOnlyKeys(attendus.toArray(String[]::new));
+        assertThat(Lot5Migration.PARENTS.get("ORANGE_MONEY")).isEqualTo(Lot5Migration.PARENTS.get("MOBILE_MONEY"));
         for (var type : org.example.stock.enums.TypeCompteTresorerie.values())
             assertThat(org.example.stock.compta.PlanComptesService.parentTresorerie(type)).isEqualTo(Lot5Migration.PARENTS.get(type.name()));
     }

@@ -50,6 +50,7 @@ import java.util.UUID;
  */
 @Service
 public class RapprochementService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     @org.springframework.beans.factory.annotation.Autowired private org.example.stock.compta.VerrouExercice verrouExercice;
     /** Marge, en jours, autour de la période du relevé pour les mouvements proposés au pointage. */
     public static final int MARGE_JOURS = 7;
@@ -286,7 +287,7 @@ public class RapprochementService {
 
     /**
      * « Enregistrer dans l'appli » : crée sur le compte du relevé l'opération adaptée à une ligne sans mouvement (frais bancaires, agios,
-     * intérêts, frais Orange Money, virement reçu inconnu), à la date de la ligne, avec la classification de l'étape 3b1, puis la rapproche
+     * intérêts, frais de mobile money, virement reçu inconnu), à la date de la ligne, avec la classification de l'étape 3b1, puis la rapproche
      * aussitôt. Aucun contrôle de solde pour une sortie : la banque a déjà débité, l'appli ne fait que le constater.
      */
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -358,8 +359,8 @@ public class RapprochementService {
         BigDecimal sommeLignes = ls.stream().map(LigneReleve::getMontant).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal sommeMouvements = ms.stream().map(MouvementCaisse::getMontant).reduce(BigDecimal.ZERO, BigDecimal::add);
         if (sommeLignes.compareTo(sommeMouvements) != 0) {
-            throw new IllegalArgumentException("Les sommes ne sont pas égales : lignes du relevé " + Textes.montant(sommeLignes) + " GNF, mouvements de l'appli "
-                    + Textes.montant(sommeMouvements) + " GNF (écart " + Textes.montant(sommeLignes.subtract(sommeMouvements)) + " GNF). Aucun écart n'est toléré dans un rapprochement.");
+            throw new IllegalArgumentException("Les sommes ne sont pas égales : lignes du relevé " + montants.format(sommeLignes) + ", mouvements de l'appli "
+                    + montants.format(sommeMouvements) + " (écart " + montants.format(sommeLignes.subtract(sommeMouvements)) + "). Aucun écart n'est toléré dans un rapprochement.");
         }
         Rapprochement g = new Rapprochement();
         g.setReleve(c.releve()); g.setType(type); g.setMontant(Montants.valider(sommeLignes, "Le montant")); g.setUtilisateur(c.gerant()); g.setDateCreation(horloge.maintenant());

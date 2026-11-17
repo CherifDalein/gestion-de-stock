@@ -22,14 +22,14 @@
     </tr>
     <tr>
         <td><span class="js-etiquette">Période du relevé</span><span class="js-valeur" th:text="${fmt.date(e.releve.dateDebut) + ' au ' + fmt.date(e.releve.dateFin)}">01/11/2026 au 30/11/2026</span></td>
-        <td><span class="js-etiquette">Solde d'ouverture</span><span class="js-valeur" th:text="${fmt.montant(e.releve.soldeOuverture) + ' GNF'}">0 GNF</span></td>
-        <td><span class="js-etiquette">Solde de clôture</span><span class="js-valeur" th:text="${fmt.montant(e.releve.soldeCloture) + ' GNF'}">0 GNF</span></td>
+        <td><span class="js-etiquette">Solde d'ouverture</span><span class="js-valeur" th:text="${monnaie.formater(e.releve.soldeOuverture)}">0</span></td>
+        <td><span class="js-etiquette">Solde de clôture</span><span class="js-valeur" th:text="${monnaie.formater(e.releve.soldeCloture)}">0</span></td>
     </tr>
 </table>
 
 <h2 class="js-section">Calcul</h2>
 <table class="js-detail">
-    <thead><tr><th>Élément</th><th class="num">Montant (GNF)</th></tr></thead>
+    <thead><tr><th>Élément</th><th class="num">Montant ([[${monnaie.symbole}]])</th></tr></thead>
     <tbody>
     <tr class="js-sous"><td th:text="${'Solde du compte selon l’appli au ' + fmt.date(e.releve.dateFin)}">Solde selon l'appli</td><td class="num" th:text="${fmt.montant(e.soldeAppli)}">0</td></tr>
     <tr th:if="${e.pointesApresCloture.signum() != 0}"><td>Plus : mouvements rapprochés datés après la clôture</td><td class="num" th:text="${fmt.signe(e.pointesApresCloture)}">0</td></tr>
@@ -44,7 +44,7 @@
 <th:block th:if="${!e.mouvementsNonPointes.isEmpty()}">
 <h2 class="js-section">Mouvements de l'appli non pointés</h2>
 <table class="js-detail">
-    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant (GNF)</th></tr></thead>
+    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant ([[${monnaie.symbole}]])</th></tr></thead>
     <tbody>
     <tr th:each="m : ${e.mouvementsNonPointes}">
         <td class="nw" th:text="${fmt.date(m.dateMouvement.toLocalDate())}">01/11/2026</td>
@@ -59,7 +59,7 @@
 <th:block th:if="${!e.lignesNonPointees.isEmpty()}">
 <h2 class="js-section">Lignes du relevé non pointées</h2>
 <table class="js-detail">
-    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant (GNF)</th></tr></thead>
+    <thead><tr><th>Date</th><th>Libellé</th><th class="num">Montant ([[${monnaie.symbole}]])</th></tr></thead>
     <tbody>
     <tr th:each="l : ${e.lignesNonPointees}">
         <td class="nw" th:text="${fmt.date(l.dateOperation)}">01/11/2026</td>
@@ -71,7 +71,7 @@
 </table>
 </th:block>
 
-<p class="js-mention" th:text="${groupes + (groupes == 1 ? ' rapprochement' : ' rapprochements') + ' enregistré' + (groupes == 1 ? '' : 's') + '. Montants en francs guinéens (GNF) ; crédit positif, débit négatif. Un rapprochement valide a des sommes égales, sans écart toléré.'}">Mention</p>
+<p class="js-mention" th:text="${groupes + (groupes == 1 ? ' rapprochement' : ' rapprochements') + ' enregistré' + (groupes == 1 ? '' : 's') + '. Montants en ' + monnaie.nomPluriel + ' (' + monnaie.symbole + ') ; crédit positif, débit négatif. Un rapprochement valide a des sommes égales, sans écart toléré.'}">Mention</p>
 <p class="js-mention" th:if="${e.releve.dateValidation != null}" th:text="${'Validé le ' + fmt.dateHeure(e.releve.dateValidation) + ' par ' + e.releve.validePar.nom + '.'}">Validé</p>
 
 <table class="js-signatures">

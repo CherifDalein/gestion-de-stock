@@ -6,11 +6,11 @@ import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 /**
- * Lecture d'un montant de relevé saisi comme un texte : « 1 200 000,50 GNF », « 1.200.000,50 », « (500) », « 500- », « -1 000 FG ».
- * Les espaces (insécables compris), « GNF » et « FG » sont ignorés ; l'autre signe que le séparateur décimal sépare les milliers.
+ * Lecture d'un montant de relevé saisi comme un texte : « 1 200 000,50 GNF », « 1 200 000 FCFA », « 1.200.000,50 », « (500) », « 500- », « -1 000 FG ».
+ * Les espaces (insécables compris) et le nom de la monnaie (« GNF », « FG », « FCFA », « F CFA », « XOF », « XAF », « CFA ») sont ignorés ; l'autre signe que le séparateur décimal sépare les milliers.
  */
 public final class MontantReleve {
-    private static final Pattern DEVISE = Pattern.compile("(?i)(GNF|FG)");
+    private static final Pattern DEVISE = Pattern.compile("(?i)(GNF|FCFA|F\\s*CFA|XOF|XAF|CFA|FG)");
     private static final Pattern FORME = Pattern.compile("[0-9]+(\\.[0-9]+)?");
     private static final int CHIFFRES_ENTIERS_MAX = 15;
 

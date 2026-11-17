@@ -81,10 +81,10 @@ class AffichageCoutMoyenTests {
         assertThat(html).contains(">Coût moyen</button>").contains(">Marge unitaire</button>")
                 .doesNotContain("Prix d’achat</button>").doesNotContain("data-sort=\"prixAchat\"");
         String ligne = ligne(html, "RIZ-50");
-        assertThat(ligne).contains("110 000,00").contains("40 000,00 GNF (26,7 %)")
+        assertThat(ligne).contains("110\u00a0000").contains("40\u00a0000\u00a0GNF (26,7 %)")
                 .contains("data-cost=\"110000.00\"").contains("data-margin=\"40000.00\"").contains("data-margin-rate=\"26.7\"")
                 .contains("data-last-purchase-price=\"120000.00\"")
-                .doesNotContain("120 000,00");
+                .doesNotContain("120\u00a0000");
         assertThat(html).contains("Coût moyen pondéré").contains("Dernier prix d’achat");
     }
 
@@ -92,8 +92,8 @@ class AffichageCoutMoyenTests {
     void uneMargeNegativeSAfficheEnRouge() throws Exception {
         produit("Sucre", "SUCRE", NatureProduit.STOCK, 5L, "4000", "3000", "4000");
         String ligne = ligne(pageGerant("/produits"), "SUCRE");
-        assertThat(ligne).contains("-1 000,00 GNF (-33,3 %)");
-        assertThat(cellule(ligne, "-1 000,00 GNF")).contains("text-danger");
+        assertThat(ligne).contains("-1\u00a0000\u00a0GNF (-33,3 %)");
+        assertThat(cellule(ligne, "-1\u00a0000\u00a0GNF")).contains("text-danger");
         assertThat(cellule(ligne(pageGerant("/produits"), "RIZ-50"), "26,7 %")).doesNotContain("text-danger");
     }
 
@@ -101,8 +101,8 @@ class AffichageCoutMoyenTests {
     void unServiceAfficheSonCoutFixeEtSaMarge() throws Exception {
         produit("Livraison", "SRV-LIV", NatureProduit.SERVICE, 0L, "20000", "50000", "20000");
         String ligne = ligne(pageGerant("/produits"), "SRV-LIV");
-        assertThat(ligne).contains("title=\"Coût fixe du service\"").contains("20 000,00")
-                .contains("30 000,00 GNF (60,0 %)").contains("data-cost=\"20000.00\"")
+        assertThat(ligne).contains("title=\"Coût fixe du service\"").contains("20\u00a0000")
+                .contains("30\u00a0000\u00a0GNF (60,0 %)").contains("data-cost=\"20000.00\"")
                 .doesNotContain("data-last-purchase-price");
     }
 
@@ -124,10 +124,10 @@ class AffichageCoutMoyenTests {
     void laFicheEtLaModificationMontrentCoutMoyenDernierPrixEtMarge() throws Exception {
         for (String url : List.of("/produits/" + riz.getId() + "/stock", "/produits/modifier/" + riz.getId())) {
             String html = pageGerant(url);
-            assertThat(html).contains("Coût moyen pondéré").contains("110 000,00 GNF")
-                    .contains("Dernier prix d’achat").contains("120 000,00 GNF")
+            assertThat(html).contains("Coût moyen pondéré").contains("110\u00a0000\u00a0GNF")
+                    .contains("Dernier prix d’achat").contains("120\u00a0000\u00a0GNF")
                     .contains("Le coût moyen tient compte de tous les achats en stock ; c’est lui qui sert au calcul du bénéfice.")
-                    .contains("Marge unitaire").contains("40 000,00 GNF (26,7 %)");
+                    .contains("Marge unitaire").contains("40\u00a0000\u00a0GNF (26,7 %)");
         }
     }
 
@@ -148,7 +148,7 @@ class AffichageCoutMoyenTests {
         }
         // Le caissier voit toujours le prix de vente et le stock.
         String liste = mvc.perform(get("/produits").with(user(CAISSIER).roles("CAISSIER"))).andReturn().getResponse().getContentAsString();
-        assertThat(liste).contains("data-sale-price=\"150000.00\"").contains("150 000,00");
+        assertThat(liste).contains("data-sale-price=\"150000.00\"").contains("150\u00a0000");
     }
 
     // ----- Outils -----

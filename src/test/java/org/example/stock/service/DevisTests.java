@@ -528,8 +528,8 @@ class DevisTests {
         String page = mvc.perform(avec(get("/devis/" + id + "/imprimer"), CAISSIER_A, "CAISSIER")).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         assertThat(page).contains("Devis FD-000001").contains("Ce devis n'est pas une facture")
-                .contains("22/11/2026").contains("Mamadou").contains("Livraison incluse").contains("29 000,00 GNF")
-                .contains("4 500,00 GNF").contains("Riz");
+                .contains("22/11/2026").contains("Mamadou").contains("Livraison incluse").contains("29\u00a0000\u00a0GNF")
+                .contains("4\u00a0500\u00a0GNF").contains("Riz");
         assertThat(page.toLowerCase()).doesNotContain("versé").doesNotContain("reste à payer").doesNotContain("réglée")
                 .doesNotContain("échéance").doesNotContain("à régler").doesNotContain("avance").doesNotContain("paiement");
         assertThat(page).doesNotContain("Facture de vente");

@@ -11,7 +11,7 @@
         <p class="text-muted" role="status" id="soldeDepartFige">Ce solde de départ a déjà servi (règlement, avance utilisée ou ajustement) : il ne peut plus être modifié ici. Une correction se fait par un ajustement de solde.</p>
         <dl class="row mb-0" id="soldeDepartLectureSeule">
             <dt class="col-sm-3">Montant</dt>
-            <dd class="col-sm-9" th:text="${#numbers.formatDecimal(situation.soldeDepart.abs(), 1, 'WHITESPACE', 2, 'COMMA') + ' GNF'}"></dd>
+            <dd class="col-sm-9" th:text="${@montants.format(situation.soldeDepart.abs())}"></dd>
             <dt class="col-sm-3">Sens</dt>
             <dd class="col-sm-9" th:text="${situation.soldeDepart.signum() == 0 ? 'Aucun solde de départ' : situation.soldeDepart.signum() < 0 ? libelleDois : libelleDoit}"></dd>
             <dt class="col-sm-3">Échéance</dt>
@@ -21,7 +21,7 @@
     <th:block th:unless="${fige}">
         <div class="record-grid">
             <div class="record-field">
-                <label for="inputMontantSoldeDepart">Montant (GNF)</label>
+                <label for="inputMontantSoldeDepart">Montant ([[${@montants.symbole}]])</label>
                 <input class="form-control" id="inputMontantSoldeDepart" th:field="*{montantSoldeDepart}" type="number" min="0" step="0.01" inputmode="decimal"
                        placeholder="0" aria-describedby="soldeDepartApercu" />
                 <p id="soldeDepartApercu" class="form-text mb-0" aria-live="polite"></p>

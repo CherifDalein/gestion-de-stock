@@ -53,6 +53,17 @@
                     </div>
                 </div>
             </section>
+            <section class="record-panel" aria-labelledby="boutiquePaysTitle">
+                <div class="record-panel-heading">
+                    <h2 id="boutiquePaysTitle">Pays et monnaie</h2>
+                    <p>Choisis à la création de la boutique : ils ne peuvent plus être modifiés.</p>
+                </div>
+                <dl class="record-summary mb-0">
+                    <div><dt>Pays</dt><dd th:text="${@paysCourant.pays().nom}">Guinée</dd></div>
+                    <div><dt>Monnaie</dt><dd th:text="${@montants.monnaie().nomSingulier + ' (' + @montants.symbole + ')'}">monnaie</dd></div>
+                </dl>
+            </section>
+
             <section class="record-panel" aria-labelledby="boutiqueIdentityTitle">
                 <div class="record-panel-heading">
                     <h2 id="boutiqueIdentityTitle">Identité et coordonnées</h2>

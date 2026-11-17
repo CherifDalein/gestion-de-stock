@@ -4,7 +4,13 @@
 (() => {
     'use strict';
 
-    const COUPURES = [20000, 10000, 5000, 2000, 1000, 500, 100];
+    /** Symbole de la monnaie de la boutique (attribut data-monnaie du <body>, posé par le serveur) ; jamais écrit en dur. */
+    function symbole() {
+        return (typeof document !== 'undefined' && document.body && document.body.dataset && document.body.dataset.monnaie) || '';
+    }
+
+    /** Arrondi HALF_UP à l'unité, comme l'affichage serveur : les calculs restent en centimes. */
+    function entierArrondi(absolu) { return (absolu + 50n) / 100n; }
 
     /** Montant en centimes (BigInt) depuis « 1000 » ou « 1000,5 » ; vide = 0 ; illisible = null. */
     function lire(valeur) {
@@ -16,12 +22,10 @@
         return match[1] ? -centimes : centimes;
     }
 
-    /** « 1 000 000 » ou « 1 000 000,50 » (valeur absolue). */
+    /** « 1 000 000 » (valeur absolue, sans décimales, HALF_UP). */
     function formater(centimes) {
         const absolu = centimes < 0n ? -centimes : centimes;
-        const entier = String(absolu / 100n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-        const fraction = absolu % 100n;
-        return fraction === 0n ? entier : `${entier},${String(fraction).padStart(2, '0')}`;
+        return String(entierArrondi(absolu)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
     }
 
     /** Quantité entière positive ou nulle ; vide = 0 ; illisible = null. */
@@ -31,10 +35,10 @@
         return /^\d{1,7}$/.test(texte) ? Number(texte) : null;
     }
 
-    /** Total du billetage en centimes ; une quantité illisible compte zéro. */
-    function totalBilletage(quantites) {
+    /** Total du billetage en centimes ; une quantité illisible compte zéro. Les coupures viennent de la page (monnaie de la boutique). */
+    function totalBilletage(quantites, coupures) {
         let total = 0n;
-        COUPURES.forEach((coupure, i) => {
+        coupures.forEach((coupure, i) => {
             const q = quantite(quantites[i]);
             if (q) total += BigInt(coupure) * BigInt(q) * 100n;
         });
@@ -46,10 +50,10 @@
         return compte - theorique;
     }
 
-    /** « Aucun écart », « Excédent de 5 000 GNF » ou « Manque de 5 000 GNF ». */
+    /** « Aucun écart », « Excédent de 5 000 » ou « Manque de 5 000 » suivis du symbole de la monnaie. */
     function texteEcart(centimes) {
         if (centimes === 0n) return 'Aucun écart : la caisse est conforme';
-        return centimes > 0n ? `Excédent de ${formater(centimes)} GNF` : `Manque de ${formater(centimes)} GNF`;
+        return centimes > 0n ? `Excédent de ${formater(centimes)}\u00a0${symbole()}` : `Manque de ${formater(centimes)}\u00a0${symbole()}`;
     }
 
     function initialiser() {
@@ -62,6 +66,7 @@
         const billetage = document.getElementById('comptageBilletage');
         const total = document.getElementById('comptageTotalBilletage');
         const champs = Array.from(formulaire.querySelectorAll('[data-coupure]'));
+        const COUPURES = champs.map(c => Number(c.dataset.coupure));
 
         function option() { return compte.options[compte.selectedIndex]; }
 
@@ -70,9 +75,9 @@
             const especes = !!choisi && choisi.dataset.type === 'ESPECES';
             if (billetage) billetage.hidden = !especes;
             const quantites = champs.map(c => especes ? c.value : '');
-            const somme = totalBilletage(quantites);
+            const somme = totalBilletage(quantites, COUPURES);
             const billeteJuste = especes && somme > 0n;
-            if (billetage && total) total.textContent = `${formater(somme)} GNF`;
+            if (billetage && total) total.textContent = `${formater(somme)}\u00a0${symbole()}`;
             champs.forEach((c, i) => {
                 const sousTotal = document.getElementById(`comptageLigne${i}`);
                 const q = quantite(c.value);
@@ -87,7 +92,7 @@
             // Comptage à l'aveugle : sans data-solde (caissier), aucun solde ni écart n'est calculé.
             const solde = choisi && choisi.dataset.solde !== undefined ? lire(choisi.dataset.solde) : null;
             const compteMontant = lire(montant.value);
-            if (theorique) theorique.textContent = solde === null ? '—' : `${solde < 0n ? '− ' : ''}${formater(solde)} GNF`;
+            if (theorique) theorique.textContent = solde === null ? '—' : `${solde < 0n ? '− ' : ''}${formater(solde)}\u00a0${symbole()}`;
             if (ecartTexte) {
                 if (solde === null || compteMontant === null || montant.value.trim() === '') {
                     ecartTexte.textContent = 'Saisissez le montant compté pour voir l\'écart';
@@ -106,7 +111,7 @@
         maj();
     }
 
-    const api = Object.freeze({ COUPURES, lire, formater, quantite, totalBilletage, ecart, texteEcart });
+    const api = Object.freeze({ lire, formater, quantite, totalBilletage, ecart, texteEcart });
     if (typeof globalThis !== 'undefined') globalThis.Comptage = api;
     if (typeof document === 'undefined') return;
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialiser);

@@ -46,7 +46,7 @@
 
         <p th:if="${etat != null}" class="etat-impression" data-etat-periode
            th:text="${etat.parametres + ' · édité le ' + #temporals.format(genereLe, 'dd/MM/yyyy HH:mm')}"></p>
-        <p th:if="${etat != null}" class="small text-muted no-print" data-etat-parametres th:text="${etat.parametres + ' · montants en GNF'}"></p>
+        <p th:if="${etat != null}" class="small text-muted no-print" data-etat-parametres th:text="${etat.parametres + ' · montants en ' + @montants.symbole}"></p>
 
         <section th:each="vue, it : ${vues}" class="card shadow-sm mb-4" th:attr="aria-labelledby='etatSection' + ${it.index}" data-etat-section>
             <div class="card-body">

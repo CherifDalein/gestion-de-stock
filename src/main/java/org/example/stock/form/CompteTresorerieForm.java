@@ -20,11 +20,23 @@ public class CompteTresorerieForm {
     @Size(max = 40, message = "Le numéro accepte au maximum 40 caractères")
     private String numero;
 
+    /**
+     * Opérateur d'un compte de mobile money : un nom de la liste du pays de la boutique, ou {@code AUTRE} avec le nom libre dans
+     * {@link #operateurAutre}. Ignoré pour les autres types.
+     */
+    @Size(max = 60, message = "L'opérateur accepte au maximum 60 caractères")
+    private String operateur;
+
+    @Size(max = 40, message = "Le nom de l'opérateur accepte au maximum 40 caractères")
+    private String operateurAutre;
+
     /** Argent déjà présent sur le compte à la date du jour ; sans objet en modification. */
     @PositiveOrZero(message = "Le solde de départ ne peut pas être négatif")
     @Digits(integer = 15, fraction = 2, message = "Le solde de départ accepte au maximum 15 chiffres et 2 décimales")
     private BigDecimal soldeDepart;
 
     public void setNom(String nom) { this.nom = nom == null ? null : nom.strip(); }
+    public void setOperateur(String operateur) { this.operateur = operateur == null ? null : operateur.strip(); }
+    public void setOperateurAutre(String operateurAutre) { this.operateurAutre = operateurAutre == null ? null : operateurAutre.strip(); }
     public void setNumero(String numero) { this.numero = numero == null ? null : numero.strip(); }
 }

@@ -40,8 +40,19 @@ public final class SchemaHistorique {
      * après le lot 6 : tous les schémas plus anciens passent par ici.
      */
     public static String sansLot5(String schema) {
-        return schema.replaceAll("(?m)^-- Lot 5[ac] \\((?:comptabilité|clôture d'exercice)\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "")
+        return sansPaysMonnaie(schema).replaceAll("(?m)^-- Lot 5[ac] \\((?:comptabilité|clôture d'exercice)\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "")
                 .replaceAll("(?s)CREATE TABLE IF NOT EXISTS (?:sous_compte_boutique|correspondance_compta|reglage_comptable_boutique|exercice_comptable|solde_ouverture|instantane_exercice|instantane_document|affectation_resultat) \\(.*?\\) ENGINE=InnoDB[^;]*;[ \\t]*\\R(?:[ \\t]*\\R)?", "");
+    }
+
+    /**
+     * Schéma antérieur à la migration pays-monnaie : sans {@code boutique.pays}, {@code boutique.monnaie} ni {@code operateur} des comptes de
+     * trésorerie. Elle s'applique après les lots 5 et 6 : tous les schémas plus anciens passent par ici.
+     */
+    public static String sansPaysMonnaie(String schema) {
+        String resultat = schema.replaceAll("(?m)^-- Pays et monnaie \\(migration pays-monnaie\\)[^\\r\\n]*\\R(?:-- [^\\r\\n]*\\R)*", "");
+        for (String ligne : List.of("pays VARCHAR(2) NOT NULL,", "monnaie VARCHAR(3) NOT NULL,", "operateur VARCHAR(40) NULL,"))
+            resultat = resultat.replaceAll("(?m)^[ \\t]*" + Pattern.quote(ligne) + "[ \\t]*\\R", "");
+        return resultat;
     }
 
     private static final List<String> LIGNES_LOT6 = List.of("supprime_le DATETIME(6) NULL,", "supprime_par BIGINT NULL,", "nom_cle VARCHAR(255) NULL,");
@@ -58,7 +69,7 @@ public final class SchemaHistorique {
 
     /**
      * Schéma antérieur au lot 3 (comptes de trésorerie multiples) : un compte par type désigné par une valeur d'énumération
-     * ({@code CAISSE}, {@code ORANGE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
+     * ({@code CAISSE}, {@code MOBILE_MONEY}, {@code BANQUE}) dans {@code compte}, {@code compte_source}, {@code compte_destination}
      * et {@code retour.compte_tresorerie}, sans table des comptes autorisés aux caissiers.
      */
     public static String sansLot3(String schema) {

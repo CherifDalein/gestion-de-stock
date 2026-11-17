@@ -31,6 +31,7 @@ import java.util.Set;
 @Service
 @Transactional(readOnly = true)
 public class TresorerieExportService {
+    @org.springframework.beans.factory.annotation.Autowired private org.example.stock.pays.FormatMontants montants;
     private static final int PAQUET = 1000;
     public static final Set<String> SENS = Set.of("entree", "sortie", "neutre", "inconnu");
     public static final String SOURCE_VIDE = "Non renseignée", SOURCE_INITIALE = "Solde initial";
@@ -82,8 +83,8 @@ public class TresorerieExportService {
             tableau.ligne(m.getDateMouvement(), m.getCompte().getNom(), sens(m), montant, source(m), motif(m), utilisateur(m), mentionAnnulation(m, annulations.get(m.getId())));
         }
         tableau.totaux(retenus.size() + (retenus.size() > 1 ? " mouvements" : " mouvement"), null, null, entrees.subtract(sorties), null, null, null, null);
-        tableau.note("Dans la sélection : entrées " + Textes.montant(entrees) + " GNF · sorties " + Textes.montant(sorties) + " GNF · variation nette "
-                + Textes.montant(entrees.subtract(sorties)) + " GNF (transferts et soldes initiaux compris).");
+        tableau.note("Dans la sélection : entrées " + montants.format(entrees) + " · sorties " + montants.format(sorties) + " · variation nette "
+                + montants.format(entrees.subtract(sorties)) + " (transferts et soldes initiaux compris).");
         ajouterSoldesDeLEcran(tableau);
         return tableau;
     }
@@ -93,18 +94,18 @@ public class TresorerieExportService {
         LocalDate jour = LocalDate.now();
         List<CaisseService.SoldeCompte> parCompte = caisse.getSoldesParCompte();
         List<String> comptes = new ArrayList<>();
-        for (CaisseService.SoldeCompte c : parCompte) comptes.add(c.compte().getNom() + " " + Textes.montant(c.solde()) + " GNF");
+        for (CaisseService.SoldeCompte c : parCompte) comptes.add(c.compte().getNom() + " " + montants.format(c.solde()));
         // Un type qui compte plusieurs comptes porte aussi son sous-total.
         Map<TypeCompteTresorerie, BigDecimal> parType = caisse.getSoldesParType();
         for (TypeCompteTresorerie type : TypeCompteTresorerie.values()) {
             if (parCompte.stream().filter(c -> c.compte().getType() == type).count() > 1) {
-                comptes.add("Total " + type.getLibelle() + " " + Textes.montant(parType.get(type)) + " GNF");
+                comptes.add("Total " + type.getLibelle() + " " + montants.format(parType.get(type)));
             }
         }
-        tableau.note("Soldes actuels de la boutique, indépendants des filtres : " + String.join(" · ", comptes) + " · Total " + Textes.montant(caisse.getSoldeActuel()) + " GNF.");
-        tableau.note("Journée du " + Textes.date(jour) + " : solde à l’ouverture " + Textes.montant(caisse.getSoldeOuverture(jour)) + " GNF · entrées "
-                + Textes.montant(caisse.getEntreesDuJour(jour)) + " GNF · sorties " + Textes.montant(caisse.getSortiesDuJour(jour)) + " GNF · variation "
-                + Textes.montant(caisse.getNetDuJour(jour)) + " GNF (hors transferts et soldes initiaux).");
+        tableau.note("Soldes actuels de la boutique, indépendants des filtres : " + String.join(" · ", comptes) + " · Total " + montants.format(caisse.getSoldeActuel()) + ".");
+        tableau.note("Journée du " + Textes.date(jour) + " : solde à l’ouverture " + montants.format(caisse.getSoldeOuverture(jour)) + " · entrées "
+                + montants.format(caisse.getEntreesDuJour(jour)) + " · sorties " + montants.format(caisse.getSortiesDuJour(jour)) + " · variation "
+                + montants.format(caisse.getNetDuJour(jour)) + " (hors transferts et soldes initiaux).");
     }
 
     private Specification<MouvementCaisse> specification(FiltreJournal filtre) {

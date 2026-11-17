@@ -224,14 +224,14 @@ class ErgonomieListesTests {
         String avecEmail = ligne(html, "Boubacar Bah");
         assertThat(avecEmail).contains("href=\"mailto:boubacar.bah@example.test\"").doesNotContain("tel:");
         // Badges de solde : Me doit / Avance / Soldé, avec leur couleur (classe).
-        assertThat(avecTelephone).contains("solde-badge--doit", ">Me doit<", "70 000,00 GNF");
-        assertThat(avecEmail).contains("solde-badge--doit", "220 000,00 GNF");
-        assertThat(ligne(html, "Mariama Sow")).contains("solde-badge--avance", ">Avance<", "20 000,00 GNF");
+        assertThat(avecTelephone).contains("solde-badge--doit", ">Me doit<", "70\u00a0000\u00a0GNF");
+        assertThat(avecEmail).contains("solde-badge--doit", "220\u00a0000\u00a0GNF");
+        assertThat(ligne(html, "Mariama Sow")).contains("solde-badge--avance", ">Avance<", "20\u00a0000\u00a0GNF");
         assertThat(ligne(html, "Fatou Sylla")).contains("solde-badge--solde", ">Soldé<");
         String fournisseurs = page("/fournisseurs", GERANT, "ADMIN");
-        assertThat(ligne(fournisseurs, "Sidi Import")).contains("href=\"tel:620001122\"", "solde-badge--dois", ">Je lui dois<", "50 000,00 GNF");
-        assertThat(ligne(fournisseurs, "Kaba Grossiste")).contains("solde-badge--dois", "90 000,00 GNF").doesNotContain("tel:", "mailto:");
-        assertThat(ligne(fournisseurs, "Diallo Distribution")).contains("solde-badge--avance", ">Avance<", "Il me doit 30 000,00 GNF");
+        assertThat(ligne(fournisseurs, "Sidi Import")).contains("href=\"tel:+224620001122\"", "solde-badge--dois", ">Je lui dois<", "50\u00a0000\u00a0GNF");
+        assertThat(ligne(fournisseurs, "Kaba Grossiste")).contains("solde-badge--dois", "90\u00a0000\u00a0GNF").doesNotContain("tel:", "mailto:");
+        assertThat(ligne(fournisseurs, "Diallo Distribution")).contains("solde-badge--avance", ">Avance<", "Il me doit 30\u00a0000\u00a0GNF");
     }
 
     // ==== Menu « Plus » : actions déplacées, droits inchangés ============================================================

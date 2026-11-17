@@ -111,8 +111,8 @@ class VentesParVendeurTests {
         assertThat(etat.lignesSansCout()).isEqualTo(1);
 
         String page = resultat.getResponse().getContentAsString();
-        assertThat(page).contains("Ventes par vendeur", "Imprimer", "1 ligne sans coût connu, comptée à 0", "2 333,33 GNF", "4 633,33 GNF",
-                        "1 166,67 GNF", "(compte désactivé)", "Période du 01/03/2026 au 31/03/2026 inclus", "Non renseigné")
+        assertThat(page).contains("Ventes par vendeur", "Imprimer", "1 ligne sans coût connu, comptée à 0", "2\u00a0333\u00a0GNF", "4\u00a0633\u00a0GNF",
+                        "1\u00a0167\u00a0GNF", "(compte désactivé)", "Période du 01/03/2026 au 31/03/2026 inclus", "Non renseigné")
                 .doesNotContain("Zoé Autre Boutique", "77 777", "66 666", "9 999", "8 888");
     }
 
@@ -168,7 +168,7 @@ class VentesParVendeurTests {
         ligne(etat, "Zoé Autre Boutique", 1, "77777", "77770", 0, "77777");
         ligne(etat, "Non renseigné", 1, "66666", "66660", 0, "66666");
         assertThat(etat.total().chiffreAffaires()).isEqualByComparingTo("144443");
-        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Awa Gérante", "Bakary Caissier", "Cellou", "1 500,00", "4 633");
+        assertThat(resultat.getResponse().getContentAsString()).doesNotContain("Awa Gérante", "Bakary Caissier", "Cellou", "1\u00a0500", "4 633");
     }
 
     @Test
